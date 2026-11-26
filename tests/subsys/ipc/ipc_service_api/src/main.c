@@ -400,6 +400,39 @@ ZTEST(ipc_service_api, test_nocopy_send_without_timeout)
 	test_nocopy_send(false);
 }
 
+static int release_tx_buf(struct test_context *ctx, void *buf)
+{
+	struct api_test_msg req = {.cmd = API_TEST_CMD_ECHO};
+	struct api_test_msg rsp = {.cmd = API_TEST_CMD_ECHO_RSP};
+	int ret;
+
+	ret = ipc_service_drop_tx_buffer(&ctx->ep, buf);
+	if (ret != -ENOTSUP && ret != -EIO) {
+		return ret;
+	}
+
+	/* If dropping a buffer is not supported, send a test message to
+	 * consume the buffer.
+	 */
+	memset(req.data, 0xab, sizeof(req.data));
+	memcpy(rsp.data, req.data, sizeof(rsp.data));
+	memcpy(buf, &req, sizeof(req));
+
+	test_context_reset_rx(ctx);
+	ret = ipc_service_send_nocopy(&ctx->ep, buf, sizeof(req));
+	if (ret != sizeof(req)) {
+		LOG_ERR("ipc_service_send_nocopy failed: %d", ret);
+		return -EIO;
+	}
+
+	ret = wait_for_msg(ctx, &rsp, sizeof(rsp), 100);
+	if (ret != 0) {
+		LOG_ERR("No ECHO_RSP for nocopy send: %d", ret);
+	}
+
+	return ret;
+}
+
 ZTEST(ipc_service_api, test_drop_tx_buffer)
 {
 	int ret;
@@ -421,24 +454,8 @@ ZTEST(ipc_service_api, test_drop_tx_buffer)
 
 	ret = ipc_service_drop_tx_buffer(&ctx->ep, tx_buf);
 	if (ret == -ENOTSUP || ret == -EIO) {
-		/* If dropping a buffer is not supported, send a test message to
-		 * consume the buffer.
-		 */
-		struct api_test_msg *msg = (struct api_test_msg *)tx_buf;
-		uint8_t expected[API_TEST_MSG_DATA_SIZE];
-		struct api_test_msg rsp;
-
-		msg->cmd = API_TEST_CMD_ECHO;
-		memset(msg->data, 0xab, sizeof(msg->data));
-		memcpy(expected, msg->data, sizeof(expected));
-
-		ret = ipc_service_send_nocopy(&ctx->ep, tx_buf, sizeof(*msg));
-		zassert_equal(ret, sizeof(*msg), "ipc_service_send_nocopy failed: %d", ret);
-
-		rsp = *msg;
-		rsp.cmd = API_TEST_CMD_ECHO_RSP;
-		ret = wait_for_msg(ctx, &rsp, sizeof(rsp), 100);
-		zassert_ok(ret, "No ECHO_RSP for nocopy send");
+		ret = release_tx_buf(ctx, tx_buf);
+		zassert_ok(ret, "Failed to consume TX buffer: %d", ret);
 		return;
 	}
 
@@ -453,16 +470,19 @@ ZTEST(ipc_service_api, test_drop_tx_buffer)
 static void *held_tx_bufs[HELD_TX_BUF_MAX];
 static void *tx_buf_to_release;
 
-static void release_tx_buf_timer_handler(struct k_timer *timer)
+#if IS_ENABLED(CONFIG_MULTITHREADING)
+/* Use a work item: if buffer dropping is unsupported, sending a test message may take a mutex. */
+static void release_tx_buf_work_handler(struct k_work *work)
 {
-	ARG_UNUSED(timer);
+	ARG_UNUSED(work);
 	int ret;
 
-	ret = ipc_service_drop_tx_buffer(&ep0()->ep, tx_buf_to_release);
-	zassert_ok(ret, "release timer drop failed: %d", ret);
+	ret = release_tx_buf(ep0(), tx_buf_to_release);
+	zassert_ok(ret, "release_tx_buf failed: %d", ret);
 }
 
-static K_TIMER_DEFINE(release_tx_buf_timer, release_tx_buf_timer_handler, NULL);
+static K_WORK_DELAYABLE_DEFINE(release_tx_buf_work, release_tx_buf_work_handler);
+#endif /* CONFIG_MULTITHREADING */
 
 static bool tx_buffer_timeout_supported(struct test_context *ctx)
 {
@@ -479,7 +499,8 @@ static bool tx_buffer_timeout_supported(struct test_context *ctx)
 		return false;
 	}
 	if (ret == 0) {
-		ipc_service_drop_tx_buffer(&ctx->ep, buf);
+		ret = release_tx_buf(ctx, buf);
+		zassert_ok(ret, "Failed to release probe TX buffer: %d", ret);
 	}
 
 	return true;
@@ -520,11 +541,20 @@ ZTEST(ipc_service_api, test_get_tx_buffer_timeout)
 	zassert_true(held_count > 0, "Failed to allocate any TX buffers");
 
 	tx_buf_to_release = held_tx_bufs[0];
-	k_timer_start(&release_tx_buf_timer, K_MSEC(1), K_NO_WAIT);
+#if IS_ENABLED(CONFIG_MULTITHREADING)
+	k_work_schedule(&release_tx_buf_work, K_MSEC(1));
+#endif
 
 	ret = ipc_service_get_tx_buffer(&ctx->ep, &tx_buf, &tx_size, K_MSEC(100));
 	zassert_ok(ret, "Timed ipc_service_get_tx_buffer failed: %d", ret);
 	zassert_true(tx_size >= sizeof(struct api_test_msg), "TX buffer too small: %u", tx_size);
+
+#if IS_ENABLED(CONFIG_MULTITHREADING)
+	/* Wait for the release to finish, it may still be waiting for its ECHO_RSP. */
+	struct k_work_sync sync;
+
+	k_work_flush_delayable(&release_tx_buf_work, &sync);
+#endif
 
 	msg = tx_buf;
 	msg->cmd = API_TEST_CMD_ECHO;
@@ -540,8 +570,8 @@ ZTEST(ipc_service_api, test_get_tx_buffer_timeout)
 	zassert_ok(ret, "No ECHO_RSP for timed nocopy send");
 
 	for (size_t i = 1; i < held_count; i++) {
-		ret = ipc_service_drop_tx_buffer(&ctx->ep, held_tx_bufs[i]);
-		zassert_ok(ret, "drop held TX buffer %u failed: %d", i, ret);
+		ret = release_tx_buf(ctx, held_tx_bufs[i]);
+		zassert_ok(ret, "release held TX buffer %u failed: %d", i, ret);
 	}
 }
 
