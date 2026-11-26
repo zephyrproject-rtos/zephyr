@@ -14,6 +14,7 @@ extern "C" {
 #endif
 
 bool user_chan_rx_ready(int fd);
+long user_chan_send(int fd, const void *data, unsigned long len);
 int user_chan_is_ipaddr_ok(char ip_addr[]);
 int user_chan_socket_open(unsigned short bt_dev_index);
 int user_chan_net_connect(char ip_addr[], unsigned int port);
