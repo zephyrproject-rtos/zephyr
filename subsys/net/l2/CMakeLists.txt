@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
+add_definitions(-D__ZEPHYR_SUPERVISOR__)
+
 if(CONFIG_NET_L2_VIRTUAL)
   add_subdirectory(virtual)
 endif()
