@@ -56,7 +56,8 @@
 	pinctrl-0 = <&usart0_i2s_default>;
 	pinctrl-names = "default";
 	dmas = <&dma0 DMA_REQSEL_USART0TXBL>,
-	       <&dma0 DMA_REQSEL_USART0TXBLRIGHT>;
-	dma-names = "txbl", "txblright";
+	       <&dma0 DMA_REQSEL_USART0TXBLRIGHT>,
+	       <&dma0 DMA_REQSEL_USART0RXDATAV>;
+	dma-names = "txbl", "txblright", "rxdatav";
 	status = "okay";
 };
