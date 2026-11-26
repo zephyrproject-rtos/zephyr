@@ -243,7 +243,8 @@ static void dma_emul_work_handler(struct k_work *work)
 
 				if (state == DMA_EMUL_CHANNEL_STOPPED) {
 					LOG_DBG("asynchronously canceled");
-					if (!xfer_config.error_callback_dis) {
+					if (!xfer_config.error_callback_dis &&
+					    xfer_config.dma_callback != NULL) {
 						xfer_config.dma_callback(dev, xfer_config.user_data,
 									 channel, -ECANCELED);
 					} else {
@@ -268,12 +269,9 @@ static void dma_emul_work_handler(struct k_work *work)
 		dma_emul_set_channel_state(dev, channel, DMA_EMUL_CHANNEL_STOPPED);
 		k_spin_unlock(&data->lock, key);
 
-		/* FIXME: tests/drivers/dma/chan_blen_transfer/ does not set complete_callback_en */
-		if (true) {
+		if (xfer_config.dma_callback != NULL) {
 			xfer_config.dma_callback(dev, xfer_config.user_data, channel,
 						 DMA_STATUS_COMPLETE);
-		} else {
-			LOG_DBG("complete_callback_en is not set");
 		}
 
 		if (xfer_config.source_chaining_en || xfer_config.dest_chaining_en) {
