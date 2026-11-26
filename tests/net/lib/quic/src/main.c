@@ -8945,6 +8945,23 @@ ZTEST(net_socket_quic, test_561_idle_period_starts_before_the_timeout_is_enabled
 	quic_test_endpoint_unref(ep);
 }
 
+ZTEST(net_socket_quic, test_562_local_idle_timeout_is_the_advertised_one)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	uint64_t advertised_ms = CONFIG_QUIC_MAX_IDLE_TIMEOUT;
+
+	/* The transport parameters advertise CONFIG_QUIC_MAX_IDLE_TIMEOUT, so
+	 * the negotiation has to start from the same value.
+	 */
+	quic_endpoint_init_idle_timeout(ep);
+	zexpect_equal(ep->idle.local_max_idle_timeout_ms, advertised_ms,
+		      "Own idle timeout %" PRIu64 " ms, advertised %" PRIu64 " ms",
+		      ep->idle.local_max_idle_timeout_ms, advertised_ms);
+	zexpect_equal(ep->idle.idle_timeout_disabled, advertised_ms == 0U,
+		      "Idle timeout disabled %d with %" PRIu64 " ms advertised",
+		      ep->idle.idle_timeout_disabled, advertised_ms);
+}
+
 ZTEST(net_socket_quic, test_488_token_replay_entry_survives_the_expiry_second)
 {
 	uint8_t nonce[8] = {
