@@ -330,16 +330,18 @@ static void frag_transport_package_callback(uint8_t port, uint8_t flags, int16_t
 			uint8_t index = (hdr->frag_index_n >> 14) & 0x03;
 
 			rx_pos += sizeof(*hdr);
-			ctx.nb_frag_received++;
 
+			/* The fragment payload follows the header. Returning instead of
+			 * breaking keeps those bytes from being parsed as further commands.
+			 */
 			if (!ctx.is_active || index != ctx.frag_index) {
 				LOG_DBG("DataFragment received for inactive session %u", index);
-				break;
+				return;
 			}
 
 			if (frag_counter == 0U) {
 				LOG_DBG("Invalid fragment index 0");
-				break;
+				return;
 			}
 
 			/* The decoder reads ctx.frag_size bytes from rx_buf[rx_pos].
@@ -347,8 +349,10 @@ static void frag_transport_package_callback(uint8_t port, uint8_t flags, int16_t
 			 */
 			if ((len - rx_pos) < ctx.frag_size) {
 				LOG_ERR("DataFragment payload shorter than frag_size");
-				break;
+				return;
 			}
+
+			ctx.nb_frag_received++;
 
 			if (frag_counter > ctx.nb_frag) {
 				/* Additional fragments have to be cached in RAM for recovery
