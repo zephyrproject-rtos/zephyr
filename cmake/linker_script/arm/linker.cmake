@@ -128,6 +128,7 @@ if(CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION)
 endif()
 
 zephyr_linker_group(NAME RAM_REGION VMA RAM LMA ROM_REGION)
+zephyr_linker_group(NAME RAM_NOLOAD_REGION VMA RAM LMA RAM SYMBOL SECTION)
 if(CONFIG_ROMSTART_DEPRECATED_SET AND CONFIG_ROMSTART_RELOCATION_ROM)
   zephyr_linker_group(NAME ROMSTART_REGION VMA ROMSTART LMA ROMSTART)
 elseif(DT_CHOSEN_ROMSTART_EXISTS AND CONFIG_ROMSTART_RELOCATION_ROM)
@@ -136,7 +137,7 @@ endif()
 zephyr_linker_group(NAME TEXT_REGION GROUP ROM_REGION SYMBOL SECTION)
 zephyr_linker_group(NAME RODATA_REGION GROUP ROM_REGION)
 zephyr_linker_group(NAME DATA_REGION GROUP RAM_REGION SYMBOL SECTION)
-zephyr_linker_group(NAME NOINIT_REGION GROUP RAM_REGION SYMBOL SECTION)
+zephyr_linker_group(NAME NOINIT_REGION GROUP RAM_NOLOAD_REGION SYMBOL SECTION)
 
 # should go to a relocation.cmake - from include/linker/rel-sections.ld - start
 zephyr_linker_section(NAME  .rel.plt  HIDDEN)
@@ -212,7 +213,7 @@ if(CONFIG_USERSPACE)
   zephyr_linker_symbol(SYMBOL "_app_smem_rom_start" EXPR "@__app_smem_group_load_start@")
 
 
-  zephyr_linker_section(NAME .bss GROUP RAM_REGION TYPE BSS)
+  zephyr_linker_section(NAME .bss GROUP RAM_NOLOAD_REGION TYPE BSS)
   zephyr_linker_section_configure(SECTION .bss INPUT COMMON)
   zephyr_linker_section_configure(SECTION .bss INPUT ".kernel_bss.*")
 
@@ -232,7 +233,7 @@ include(${COMMON_ZEPHYR_LINKER_DIR}/common-ram.cmake)
 include(${COMMON_ZEPHYR_LINKER_DIR}/kobject-data.cmake)
 
 if(NOT CONFIG_USERSPACE)
-  zephyr_linker_section(NAME .bss GROUP RAM_REGION TYPE BSS)
+  zephyr_linker_section(NAME .bss GROUP RAM_NOLOAD_REGION TYPE BSS)
   zephyr_linker_section_configure(SECTION .bss INPUT COMMON)
   zephyr_linker_section_configure(SECTION .bss INPUT ".kernel_bss.*")
   # As memory is cleared in words only, it is simpler to ensure the BSS

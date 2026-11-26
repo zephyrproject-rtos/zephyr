@@ -6,7 +6,7 @@ if(CONFIG_USERSPACE)
   if(CONFIG_GEN_PRIV_STACKS)
     # Padding is needed to preserve kobject addresses
     # if we have reserved more space than needed.
-    zephyr_linker_section(NAME .priv_stacks_noinit GROUP NOINIT_REGION NOINPUT NOINIT
+    zephyr_linker_section(NAME .priv_stacks_noinit GROUP NOINIT_REGION TYPE NOLOAD NOINPUT NOINIT
                 MIN_SIZE @KOBJECT_PRIV_STACKS_SZ,undef:0@ MAX_SIZE @KOBJECT_PRIV_STACKS_SZ,undef:0@)
 
     zephyr_linker_section_configure(
