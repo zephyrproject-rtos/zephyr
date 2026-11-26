@@ -175,10 +175,16 @@ extern "C" {
 /** PKE clock (misc domain) */
 #define AMEBA_PKE_CLK  44
 
+/** CAN0 clock */
+#define AMEBA_CAN0_CLK 45
+
+/** CAN1 clock */
+#define AMEBA_CAN1_CLK 46
+
 /**
  * @brief Maximum clock index (one past the last valid index).
  */
-#define AMEBA_CLK_MAX 45 /* clk idx max */
+#define AMEBA_CLK_MAX 47 /* clk idx max */
 
 /** @} */
 
@@ -283,8 +289,8 @@ extern "C" {
 /**
  * @brief A2C clock peripheral mappings.
  */
-#define AMEBA_A2C_PERIPHS                                                                  \
-	AMEBA_NUMERICAL_PERIPH(A2C, 0) /* AMEBA_A2C0_CLK */                                \
+#define AMEBA_A2C_PERIPHS                                                                          \
+	AMEBA_NUMERICAL_PERIPH(A2C, 0) /* AMEBA_A2C0_CLK */                                        \
 	AMEBA_NUMERICAL_PERIPH(A2C, 1) /* AMEBA_A2C1_CLK */
 
 /**
@@ -388,36 +394,43 @@ extern "C" {
 #define AMEBA_MJPEG_PERIPHS   AMEBA_SINGLE_PERIPH(MJPEG)      /* AMEBA_MJPEG_CLK */
 
 /**
+ * @brief CAN clock peripheral mappings.
+ */
+#define AMEBA_CAN_PERIPHS                                                                          \
+	AMEBA_NUMERICAL_PERIPH(CAN, 0) /* AMEBA_CAN0_CLK */                                        \
+	AMEBA_NUMERICAL_PERIPH(CAN, 1) /* AMEBA_CAN1_CLK */
+
+/**
  * @brief Aggregated core peripheral clock mappings.
  *
  * This macro expands to mappings of all core peripherals used by
  * the clock control implementation.
  */
-#define AMEBA_CORE_PERIPHS                                                                 \
-	AMEBA_RTC_PERIPHS                                                                  \
-	AMEBA_PWM_PERIPHS                                                                  \
-	AMEBA_LEDC_PERIPHS                                                                 \
-	AMEBA_UART_PERIPHS                                                                 \
-	AMEBA_LOGUART_PERIPHS                                                              \
-	AMEBA_ADC_PERIPHS                                                                  \
-	AMEBA_GPIO_PERIPHS                                                                 \
-	AMEBA_LTIM_PERIPHS                                                                 \
-	AMEBA_PTIM_PERIPHS                                                                 \
-	AMEBA_DMAC_PERIPHS                                                                 \
-	AMEBA_SDH_PERIPHS                                                                  \
-	AMEBA_SDD_PERIPHS                                                                  \
-	AMEBA_SPI_PERIPHS                                                                  \
-	AMEBA_USB_PERIPHS                                                                  \
-	AMEBA_FLASH_PERIPHS                                                                \
-	AMEBA_SPORT_PERIPHS                                                                \
-	AMEBA_AC_PERIPHS                                                                   \
-	AMEBA_I2C_PERIPHS                                                                  \
-	AMEBA_TRNG_PERIPHS                                                                 \
-	AMEBA_LCDC_PERIPHS                                                                 \
-	AMEBA_A2C_PERIPHS                                                                  \
-	AMEBA_GMAC_PERIPHS                                                                 \
-	AMEBA_PPE_PERIPHS                                                                  \
-	AMEBA_MJPEG_PERIPHS                                                                \
+#define AMEBA_CORE_PERIPHS                                                                         \
+	AMEBA_RTC_PERIPHS                                                                          \
+	AMEBA_PWM_PERIPHS                                                                          \
+	AMEBA_LEDC_PERIPHS                                                                         \
+	AMEBA_UART_PERIPHS                                                                         \
+	AMEBA_LOGUART_PERIPHS                                                                      \
+	AMEBA_ADC_PERIPHS                                                                          \
+	AMEBA_GPIO_PERIPHS                                                                         \
+	AMEBA_LTIM_PERIPHS                                                                         \
+	AMEBA_PTIM_PERIPHS                                                                         \
+	AMEBA_DMAC_PERIPHS                                                                         \
+	AMEBA_SDH_PERIPHS                                                                          \
+	AMEBA_SDD_PERIPHS                                                                          \
+	AMEBA_SPI_PERIPHS                                                                          \
+	AMEBA_USB_PERIPHS                                                                          \
+	AMEBA_FLASH_PERIPHS                                                                        \
+	AMEBA_SPORT_PERIPHS                                                                        \
+	AMEBA_AC_PERIPHS                                                                           \
+	AMEBA_I2C_PERIPHS                                                                          \
+	AMEBA_TRNG_PERIPHS                                                                         \
+	AMEBA_LCDC_PERIPHS                                                                         \
+	AMEBA_GMAC_PERIPHS                                                                         \
+	AMEBA_PPE_PERIPHS                                                                          \
+	AMEBA_MJPEG_PERIPHS                                                                        \
+	AMEBA_CAN_PERIPHS                                                                          \
 	AMEBA_BTON_PERIPHS
 
 /** @} */

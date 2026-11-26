@@ -115,10 +115,10 @@
 #define AMEBA_UART3_RXD      104 /**< UART3 RXD function */
 #define AMEBA_UART3_CTS      105 /**< UART3 CTS function */
 #define AMEBA_UART3_RTS      106 /**< UART3 RTS function */
-#define AMEBA_A2C0_TX        107 /**< A2C0 TX function */
-#define AMEBA_A2C0_RX        108 /**< A2C0 RX function */
-#define AMEBA_A2C1_TX        109 /**< A2C1 TX function */
-#define AMEBA_A2C1_RX        110 /**< A2C1 RX function */
+#define AMEBA_CAN0_TX        107 /**< A2C0 TX function */
+#define AMEBA_CAN0_RX        108 /**< A2C0 RX function */
+#define AMEBA_CAN1_TX        109 /**< A2C1 TX function */
+#define AMEBA_CAN1_RX        110 /**< A2C1 RX function */
 #define AMEBA_TIM4_PWM0      111 /**< TIM4 PWM0 function */
 #define AMEBA_TIM4_PWM1      112 /**< TIM4 PWM1 function */
 #define AMEBA_TIM4_PWM2      113 /**< TIM4 PWM2 function */
