@@ -18,6 +18,9 @@
 #include <helpers/nrfx_reset_reason.h>
 #include <hal/nrf_memconf.h>
 #endif
+#if defined(CONFIG_SOC_SERIES_NRF71)
+#include <lfxo_pixo.h>
+#endif
 
 #if defined(CONFIG_HAS_NORDIC_RAM_CTRL)
 #include <helpers/nrfx_ram_ctrl.h>
@@ -58,6 +61,7 @@ void z_sys_poweroff(void)
 #elif defined(CONFIG_SOC_SERIES_NRF54H) || defined(CONFIG_SOC_SERIES_NRF92)
 	nrf_poweroff();
 #elif defined(CONFIG_SOC_SERIES_NRF71)
+	nrf71_lfxo_prepare_system_off();
 	nrf_regulators_system_off(NRF_REGULATORS_NS);
 #else
 	nrf_regulators_system_off(NRF_REGULATORS);
