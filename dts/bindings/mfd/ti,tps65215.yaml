@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: TI TPS65215 PMIC
+
+description: |
+  TI TPS65215 PMIC: three buck converters and two LDOs.
+
+  The regulators are described in a child node with the
+  "ti,tps6521x-regulator" compatible.
+
+compatible: "ti,tps65215"
+
+include: i2c-device.yaml

@@ -59,6 +59,7 @@ source "drivers/mfd/Kconfig.sc18is606_mfd"
 source "drivers/mfd/Kconfig.tla2528"
 source "drivers/mfd/Kconfig.tle9104"
 source "drivers/mfd/Kconfig.tle927x"
+source "drivers/mfd/Kconfig.tps6521x"
 # zephyr-keep-sorted-stop
 
 endif # MFD
