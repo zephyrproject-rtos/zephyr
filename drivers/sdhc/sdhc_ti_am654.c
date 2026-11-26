@@ -482,6 +482,16 @@ static void ti_am654_writeback_residuals(const struct device *dev, struct sdhc_d
 	size_t start_residual_bytes = (-address) & (cache_line_size - 1);
 	size_t end_residual_bytes = end_addr & (cache_line_size - 1);
 
+	if (IS_ENABLED(CONFIG_CACHE_MANAGEMENT) && IS_ENABLED(CONFIG_DCACHE)) {
+		sys_cache_data_invd_range(data->residual_start, sizeof(data->residual_start));
+		sys_cache_data_invd_range(data->residual_end, sizeof(data->residual_end));
+		if (start_residual_bytes + end_residual_bytes < length) {
+			sys_cache_data_invd_range(
+				(void *)(address + start_residual_bytes),
+				length - start_residual_bytes - end_residual_bytes);
+		}
+	}
+
 	if (start_residual_bytes != 0) {
 		if (start_residual_bytes < length) {
 			memcpy(dat->data, data->residual_start, start_residual_bytes);
