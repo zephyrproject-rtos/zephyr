@@ -227,9 +227,12 @@ static void zsock_accepted_cb(struct net_context *new_ctx,
 	NET_DBG("parent=%p, ctx=%p, st=%d", parent, new_ctx, status);
 
 	if (status == 0) {
-		/* This just installs a callback, so cannot fail. */
-		(void)net_context_recv(new_ctx, zsock_received_cb, K_NO_WAIT,
-				       NULL);
+		/* recv_q and condvar are initialized here; the recv callback is
+		 * deferred to accept() (see zsock_accept_ctx). Otherwise data
+		 * arriving on a not-yet-accepted connection (e.g. the second
+		 * client parked in the accept queue of a busy single-client
+		 * server) would fill recv_q immediately, pinning the global RX
+		 * net_pkt pool until the whole device stops receiving. */
 		k_fifo_init(&new_ctx->recv_q);
 		k_condvar_init(&new_ctx->cond.recv);
 
@@ -585,6 +588,13 @@ int zsock_accept_ctx(struct net_context *parent, struct net_sockaddr *addr,
 		errno = EAGAIN;
 		return -1;
 	}
+
+	/* Install the recv callback only now: before accept() the connection
+	 * has no recv_cb, so in-order segments are dropped (NET_DROP in
+	 * tcp_data_get()) and out-of-order segments stay in queue_recv_data,
+	 * aged by CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT. An un-accepted connection
+	 * can therefore never exhaust the global RX net_pkt pool. */
+	(void)net_context_recv(ctx, zsock_received_cb, K_NO_WAIT, NULL);
 
 	net_tcp_conn_accepted(ctx);
 
