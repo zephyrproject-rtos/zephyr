@@ -18,6 +18,8 @@ properties:
   foo-names: {type: "string-array"}
   pwms: {type: "phandle-array"}
   pwm-names: {type: "string-array"}
+  counter-alarms: {type: "phandle-array"}
+  counter-alarm-names: {type: "string-array"}
   counter-captures: {type: "phandle-array"}
   counter-capture-names: {type: "string-array"}
   bar:

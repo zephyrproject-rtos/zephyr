@@ -87,6 +87,8 @@
 			foo-names = "A", "b-c";
 			pwms = <&test_pwm1 8 200 3>, <&test_pwm2 5 100 1>;
 			pwm-names = "red", "green";
+			counter-alarms = <&test_counter1 1>, <&test_counter2 3>;
+			counter-alarm-names = "alpha", "beta";
 			counter-captures = <&test_counter1 2 4>, <&test_counter2 7 9>;
 			counter-capture-names = "alpha", "beta";
 			bar = <&test_gpio_1 200>, <&test_gpio_2 210>;
@@ -809,6 +811,7 @@
 		test_counter1: counter@55553333 {
 			compatible = "vnd,counter";
 			reg = <0x55553333 0x1000>;
+			#counter-alarm-cells = <1>;
 			#counter-capture-cells = <2>;
 			status = "okay";
 		};
@@ -823,6 +826,7 @@
 		test_counter2: counter@55554444 {
 			compatible = "vnd,counter";
 			reg = <0x55554444 0x1000>;
+			#counter-alarm-cells = <1>;
 			#counter-capture-cells = <2>;
 			status = "okay";
 		};
