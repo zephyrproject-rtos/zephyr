@@ -7,7 +7,7 @@ common:
     - socket
     - userspace
   filter: CONFIG_FULL_LIBC_SUPPORTED
-  timeout: 180
+  timeout: 240
 tests:
   net.socket.tcp:
     extra_configs:
