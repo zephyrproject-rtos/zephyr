@@ -107,6 +107,18 @@ config NET_ARP_TABLE_SIZE
 	help
 	  Each entry in the ARP table consumes 48 bytes of memory.
 
+config NET_ARP_PENDING_MAX
+	int "Maximum number of packets queued per unresolved ARP entry"
+	depends on NET_ARP
+	default 3
+	range 1 32
+	help
+	  Maximum number of packets parked in an ARP entry's pending queue
+	  while address resolution is in flight. Each queued packet pins one
+	  entry of the global TX net_pkt pool (CONFIG_NET_PKT_TX_COUNT), so an
+	  unreachable neighbour can otherwise starve every other sender. When
+	  the queue is full, the oldest queued packet is dropped.
+
 config NET_ARP_GRATUITOUS
 	bool "Support gratuitous ARP requests/replies."
 	depends on NET_ARP
