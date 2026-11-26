@@ -49,6 +49,34 @@ BUILD_ASSERT(sizeof(net_socklen_t) == sizeof(uint32_t),
 
 const struct socket_op_vtable sock_fd_op_vtable;
 
+/* Guards the receive queue of a socket that has no lock of its own, which is
+ * the case for a connection until accept() returns it. Only held to work on
+ * the queue and to set the lock of the socket, never while waiting.
+ */
+static K_MUTEX_DEFINE(zsock_no_fd_lock);
+
+static struct k_mutex *zsock_recv_lock_get(struct net_context *ctx)
+{
+	return ctx->cond.lock != NULL ? ctx->cond.lock : &zsock_no_fd_lock;
+}
+
+/* Lock the receive queue against the receive callback, or from it */
+static struct k_mutex *zsock_recv_lock(struct net_context *ctx)
+{
+	struct k_mutex *lock = zsock_recv_lock_get(ctx);
+
+	(void)k_mutex_lock(lock, K_FOREVER);
+
+	/* The socket may have got its own lock in the meantime */
+	while (lock != zsock_recv_lock_get(ctx)) {
+		(void)k_mutex_unlock(lock);
+		lock = zsock_recv_lock_get(ctx);
+		(void)k_mutex_lock(lock, K_FOREVER);
+	}
+
+	return lock;
+}
+
 static void zsock_received_cb(struct net_context *ctx,
 			      struct net_pkt *pkt,
 			      union net_ip_header *ip_hdr,
@@ -92,29 +120,62 @@ static k_timeout_t zsock_get_rcvtimeo(const struct net_context *ctx)
 #endif
 }
 
-static void zsock_flush_queue(struct net_context *ctx)
+/* Release the packets in the receive queue of a socket */
+static void zsock_flush_recv_q(struct net_context *ctx)
 {
-	bool is_listen = net_context_get_state(ctx) == NET_CONTEXT_LISTENING;
-	void *p;
+	struct k_mutex *lock;
+	struct net_pkt *pkt;
 
-	/* recv_q and accept_q are shared via a union */
-	while ((p = k_fifo_get(&ctx->recv_q, K_NO_WAIT)) != NULL) {
-		if (is_listen) {
-			NET_DBG("discarding ctx %p", p);
+	/* The receive callback works on the queued packets */
+	lock = zsock_recv_lock(ctx);
 
-			/* Note that we must release all the packets we
-			 * might have received to the accepted socket.
-			 */
-			zsock_flush_queue(p);
-			net_context_put(p);
-		} else {
-			NET_DBG("discarding pkt %p", p);
-			net_pkt_unref(p);
-		}
+	for (pkt = k_fifo_get(&ctx->recv_q, K_NO_WAIT); pkt != NULL;
+	     pkt = k_fifo_get(&ctx->recv_q, K_NO_WAIT)) {
+		NET_DBG("discarding pkt %p", pkt);
+		net_pkt_unref(pkt);
 	}
+
+	(void)k_mutex_unlock(lock);
 
 	/* Some threads might be waiting on recv, cancel the wait */
 	k_fifo_cancel_wait(&ctx->recv_q);
+
+	/* Wake reader if it was sleeping */
+	(void)k_condvar_signal(&ctx->cond.recv);
+}
+
+/* Release a connection that accept() has not returned */
+static void zsock_discard_conn(struct net_context *ctx)
+{
+	/* So that nothing is queued behind the flush */
+	(void)net_context_recv(ctx, NULL, K_NO_WAIT, NULL);
+
+	zsock_flush_recv_q(ctx);
+	(void)net_context_put(ctx);
+}
+
+static void zsock_flush_queue(struct net_context *ctx)
+{
+	struct net_context *child;
+
+	if (net_context_get_state(ctx) != NET_CONTEXT_LISTENING) {
+		zsock_flush_recv_q(ctx);
+		return;
+	}
+
+	/* recv_q and accept_q are shared via a union */
+	for (child = k_fifo_get(&ctx->accept_q, K_NO_WAIT); child != NULL;
+	     child = k_fifo_get(&ctx->accept_q, K_NO_WAIT)) {
+		NET_DBG("discarding ctx %p", child);
+
+		/* Note that we must release all the packets we
+		 * might have received to the accepted socket.
+		 */
+		zsock_discard_conn(child);
+	}
+
+	/* Some threads might be waiting on accept, cancel the wait */
+	k_fifo_cancel_wait(&ctx->accept_q);
 
 	/* Wake reader if it was sleeping */
 	(void)k_condvar_signal(&ctx->cond.recv);
@@ -262,6 +323,8 @@ static void zsock_received_cb(struct net_context *ctx,
 			      int status,
 			      void *user_data)
 {
+	struct k_mutex *lock;
+
 	if (sock_is_eof(ctx)) {
 		/* If receiving is not desired and socket is shutdown,
 		 * ignore all incoming data.
@@ -272,9 +335,7 @@ static void zsock_received_cb(struct net_context *ctx,
 		return;
 	}
 
-	if (ctx->cond.lock) {
-		(void)k_mutex_lock(ctx->cond.lock, K_FOREVER);
-	}
+	lock = zsock_recv_lock(ctx);
 
 	if (!net_context_is_used(ctx)) {
 		/* close() released the context while this waited for the
@@ -324,9 +385,7 @@ unlock:
 	/* Wake reader if it was sleeping */
 	(void)k_condvar_signal(&ctx->cond.recv);
 
-	if (ctx->cond.lock) {
-		(void)k_mutex_unlock(ctx->cond.lock);
-	}
+	(void)k_mutex_unlock(lock);
 }
 
 int zsock_shutdown_ctx(struct net_context *ctx, int how)
@@ -592,8 +651,7 @@ int zsock_accept_ctx(struct net_context *parent, struct net_sockaddr *addr,
 
 	fd = zvfs_reserve_fd();
 	if (fd < 0) {
-		zsock_flush_queue(ctx);
-		net_context_put(ctx);
+		zsock_discard_conn(ctx);
 		return -1;
 	}
 
@@ -601,8 +659,7 @@ int zsock_accept_ctx(struct net_context *parent, struct net_sockaddr *addr,
 	if (ret < 0) {
 		zvfs_free_fd(fd);
 		errno = -ret;
-		zsock_flush_queue(ctx);
-		net_context_put(ctx);
+		zsock_discard_conn(ctx);
 		return -1;
 	}
 
@@ -3611,7 +3668,10 @@ static ssize_t sock_write_vmeth(void *obj, const void *buffer, size_t count)
 
 static void zsock_ctx_set_lock(struct net_context *ctx, struct k_mutex *lock)
 {
+	/* Not while a receive callback works on the queue without this lock */
+	(void)k_mutex_lock(&zsock_no_fd_lock, K_FOREVER);
 	ctx->cond.lock = lock;
+	(void)k_mutex_unlock(&zsock_no_fd_lock);
 }
 
 static int sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
