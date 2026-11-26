@@ -51,6 +51,10 @@
 	gptfreq = <DT_FREQ_K(12500)>;
 };
 
+&wdog0 {
+	interrupts = <74 0>;
+};
+
 &edma0 {
 	/* Each channel has separate interrupt entry */
 	irq-shared-offset = <0>;
