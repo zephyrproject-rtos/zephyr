@@ -669,6 +669,15 @@ uint8_t ll_adv_sync_set_info_transfer(uint16_t conn_handle, uint16_t service_dat
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
+	/* Periodic advertising that is enabled does not start until extended
+	 * advertising is enabled. Until then there is no auxiliary PDU to take
+	 * AdvA from and no periodic advertising event to reference in the
+	 * LL_PERIODIC_SYNC_IND.
+	 */
+	if (!sync->is_started) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
 	/* Call llcp to start LLCP_PERIODIC_SYNC_IND */
 	return ull_cp_periodic_sync(conn, NULL, sync, service_data);
 }
