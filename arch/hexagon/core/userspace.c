@@ -190,6 +190,15 @@ void arch_user_mode_enter(k_thread_entry_t user_entry, void *p1, void *p2, void 
 	struct k_thread *thread = k_sched_current_thread_query();
 
 	/*
+	 * Events taken from user mode run on priv_stack, so the user stack
+	 * never needs its reserved area. Hand it back to the stack buffer:
+	 * the map rounds the stack to whole pages, so leaving it out of
+	 * stack_info would not keep user mode out of it anyway.
+	 */
+	thread->stack_info.start -= K_THREAD_STACK_RESERVED;
+	thread->stack_info.size += K_THREAD_STACK_RESERVED;
+
+	/*
 	 * stack_info.delta reserves the TLS block at the top of the stack
 	 * buffer; without subtracting it, user_sp would land inside the TLS
 	 * block arch_tls_stack_setup() just populated.
