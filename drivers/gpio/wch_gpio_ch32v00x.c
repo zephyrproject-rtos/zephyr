@@ -19,6 +19,22 @@
 
 #define GPIO_CH32V00X_CFGLR_MASK 0x0FU
 
+static void gpio_ch32v00x_set_mode(GPIO_TypeDef *regs, gpio_pin_t pin, uint32_t cnf_mode)
+{
+	if (pin < 8) {
+		regs->CFGLR = (regs->CFGLR & ~(GPIO_CH32V00X_CFGLR_MASK << (4 * pin))) |
+			      (cnf_mode << (4 * pin));
+	} else {
+		regs->CFGHR = (regs->CFGHR & ~(GPIO_CH32V00X_CFGLR_MASK << ((pin - 8) * 4))) |
+			      (cnf_mode << ((pin - 8) * 4));
+	}
+}
+
+static void gpio_ch32v00x_write_pins(GPIO_TypeDef *regs, uint32_t set, uint32_t reset)
+{
+	regs->BSHR = set | (reset << 16);
+}
+
 #if defined(CONFIG_SOC_SERIES_CH32H41X)
 #define GPIO_CH32V00X_OUT_PP GPIO_CFGLR_OUT_PP
 #define GPIO_CH32V00X_OUT_OD GPIO_CFGLR_OUT_OD
@@ -58,7 +74,8 @@ static int gpio_ch32v00x_configure(const struct device *dev, gpio_pin_t pin, gpi
 	const struct gpio_ch32v00x_config *config = dev->config;
 	GPIO_TypeDef *regs = config->regs;
 	uint32_t cnf_mode;
-	uint32_t bshr = 0;
+	uint32_t set = 0;
+	uint32_t reset = 0;
 
 	if (flags == GPIO_DISCONNECTED) {
 		cnf_mode = GPIO_CFGLR_IN_FLOAT;
@@ -82,9 +99,9 @@ static int gpio_ch32v00x_configure(const struct device *dev, gpio_pin_t pin, gpi
 		}
 		gpio_ch32v00x_set_output_speed(regs, pin);
 		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
-			bshr = GPIO_BSHR_BS0 << pin;
+			set = BIT(pin);
 		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0) {
-			bshr = GPIO_BSHR_BR0 << pin;
+			reset = BIT(pin);
 		}
 	} else if ((flags & GPIO_INPUT) != 0) {
 		switch (flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) {
@@ -94,12 +111,12 @@ static int gpio_ch32v00x_configure(const struct device *dev, gpio_pin_t pin, gpi
 		case GPIO_PULL_UP:
 			cnf_mode = GPIO_CFGLR_IN_PUPD;
 			/* Set the ODR to enable the pull up */
-			bshr = GPIO_BSHR_BS0 << pin;
+			set = BIT(pin);
 			break;
 		case GPIO_PULL_DOWN:
 			cnf_mode = GPIO_CFGLR_IN_PUPD;
 			/* Reset the ODR to enable the pull down */
-			bshr = GPIO_BSHR_BR0 << pin;
+			reset = BIT(pin);
 			break;
 		default:
 			return -EINVAL;
@@ -108,14 +125,8 @@ static int gpio_ch32v00x_configure(const struct device *dev, gpio_pin_t pin, gpi
 		return -EINVAL;
 	}
 
-	if (pin < 8) {
-		regs->CFGLR = (regs->CFGLR & ~(GPIO_CH32V00X_CFGLR_MASK << (4 * pin))) |
-			      (cnf_mode << (4 * pin));
-	} else {
-		regs->CFGHR = (regs->CFGHR & ~(GPIO_CH32V00X_CFGLR_MASK << ((pin - 8) * 4))) |
-			      (cnf_mode << ((pin - 8) * 4));
-	}
-	regs->BSHR = bshr;
+	gpio_ch32v00x_set_mode(regs, pin, cnf_mode);
+	gpio_ch32v00x_write_pins(regs, set, reset);
 
 	return 0;
 }
@@ -134,7 +145,7 @@ static int gpio_ch32v00x_port_set_masked_raw(const struct device *dev, uint32_t 
 {
 	const struct gpio_ch32v00x_config *config = dev->config;
 
-	config->regs->BSHR = ((~value & mask) << 16) | (value & mask);
+	gpio_ch32v00x_write_pins(config->regs, value & mask, ~value & mask);
 
 	return 0;
 }
@@ -143,7 +154,7 @@ static int gpio_ch32v00x_port_set_bits_raw(const struct device *dev, uint32_t pi
 {
 	const struct gpio_ch32v00x_config *config = dev->config;
 
-	config->regs->BSHR = pins;
+	gpio_ch32v00x_write_pins(config->regs, pins, 0);
 
 	return 0;
 }
@@ -152,7 +163,7 @@ static int gpio_ch32v00x_port_clear_bits_raw(const struct device *dev, uint32_t 
 {
 	const struct gpio_ch32v00x_config *config = dev->config;
 
-	config->regs->BCR = pins;
+	gpio_ch32v00x_write_pins(config->regs, 0, pins);
 
 	return 0;
 }
@@ -160,9 +171,10 @@ static int gpio_ch32v00x_port_clear_bits_raw(const struct device *dev, uint32_t 
 static int gpio_ch32v00x_port_toggle_bits(const struct device *dev, uint32_t pins)
 {
 	const struct gpio_ch32v00x_config *config = dev->config;
-	uint32_t current = config->regs->OUTDR;
+	GPIO_TypeDef *regs = config->regs;
+	uint32_t current = regs->OUTDR;
 
-	config->regs->BSHR = (~current & pins) | (current & pins) << 16;
+	gpio_ch32v00x_write_pins(regs, ~current & pins, current & pins);
 
 	return 0;
 }
