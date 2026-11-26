@@ -67,6 +67,13 @@ tests:
       - esp32s31_function_coreboard/esp32s31/hpcore
     filter: dt_alias_exists("pwm-test")
     depends_on: pwm
+  drivers.pwm.am62l_evm_ecap:
+    extra_args:
+      - FILE_SUFFIX=ecap
+    platform_allow:
+      - am62l_evm/am62l3/a53
+    filter: dt_alias_exists("pwm-test")
+    depends_on: pwm
   drivers.pwm.native_sim:
     platform_allow:
       - native_sim

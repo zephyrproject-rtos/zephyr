@@ -1,0 +1,17 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * EPWM0 channel A on ball G22, VOUT0_DATA13. Output only: the test reads
+ * nothing back, so it needs no wiring.
+ */
+/ {
+	aliases {
+		pwm-test = &main_epwm0;
+	};
+};
+
+&main_epwm0 {
+	status = "okay";
+};

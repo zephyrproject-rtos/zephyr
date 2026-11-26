@@ -1,0 +1,18 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * ECAP0 in APWM output mode on ball L22.
+ * The FILE_SUFFIX=ecap build uses this file in place of the board overlay, so
+ * it stands alone.
+ */
+/ {
+	aliases {
+		pwm-test = &main_ecap0;
+	};
+};
+
+&main_ecap0 {
+	status = "okay";
+};
