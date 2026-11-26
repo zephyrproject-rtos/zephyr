@@ -1,0 +1,96 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Microchip External Bus Interface (EBI) G1.
+
+  SAM EBI includes the following hardware peripheral:
+    - module name="EBI" id="0" version="0"
+
+examples:
+  - |
+    Example devicetree configuration:
+
+      pinctrl_nand_default: nand-default {
+        group1 {
+          pinmux = <PIN_PD9__D0>,
+                   <PIN_PD10__D1>,
+                   <PIN_PD11__D2>,
+                   <PIN_PC21__D3>,
+                   <PIN_PC22__D4>,
+                   <PIN_PC23__D5>,
+                   <PIN_PC24__D6>,
+                   <PIN_PD2__D7>,
+                   <PIN_PD3__NANDRDY>,
+                   <PIN_PD4__GPIO>,
+                   <PIN_PD5__NWE_NWR0_NANDWE>,
+                   <PIN_PD6__NRD_NANDOE>,
+                   <PIN_PD7__A21_NANDALE>,
+                   <PIN_PD8__A22_NANDCLE>;
+          bias-disable;
+        };
+      };
+
+      &ebi {
+        pinctrl-names = "default";
+        pinctrl-0 = <&pinctrl_nand_default>;
+        status = "okay";
+
+        cs3: cs@58000000 {
+          reg = <0x3 0x0 0x800000>;
+          status = "okay";
+
+          smc-tdf-mode;
+          smc-write-mode = "nwe";
+          smc-read-mode = "nrd";
+          smc-bus-width = "8-bit";
+          smc-setup-timing = <4 0 0 0>;
+          smc-pulse-timing = <10 20 10 20>;
+          smc-cycle-timing = <20 20>;
+        };
+      };
+
+    The above example configure a NAND Flash with default timing mode.
+    TDF mode is enabled (and the maximum clock cycle 15 will be set by default).
+    The NWE and NRD signals are used to contril write and read operations.
+    For SAMA7G54, the clock source of EBI is MCK1 with frenqucy 200MHz,
+    so one clock cycle is 1 s / 200MHz = 5 ns
+    Setup timing:
+      NWE setup time is 4 * 5 ns = 20 ns
+      NCS and NRD setup time is 0 ns
+    Pulse timing:
+      NWE pulse time is 10 * 5 ns = 50 ns
+      NCS pulse time in write access is 20 * 5 ns = 100 ns
+      NRD pulse time is 10 * 5 ns = 50 ns
+      NCS pulse time in read access is 20 * 5 ns = 100 ns
+    Cycle timing:
+      Total write cycle time is 20 * 5 ns = 100 ns
+      Total read cycle time is 20 * 5 ns = 100 ns
+
+compatible: "microchip,ebi-g1-memc"
+
+include:
+  - name: base.yaml
+  - name: pinctrl-device.yaml
+  - name: microchip,smc-g1-memc-timing.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  smc:
+    type: phandle
+    required: true
+    description: |
+      Hold a phandle reference to the smc controller.
+
+  "#address-cells":
+    required: true
+    const: 2
+
+  "#size-cells":
+    required: true
+    const: 1
