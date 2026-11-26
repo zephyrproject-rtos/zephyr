@@ -93,6 +93,19 @@ GDATA(__data_region_num_words)
 #else /* ! _ASMLANGUAGE */
 
 #include <zephyr/types.h>
+
+/*
+ * Calculate a section size from an address extent. The start and limit must be
+ * in the same address domain, and the limit is exclusive.
+ */
+#define LINKER_SECTION_SIZE(start, limit)      ((size_t)((uintptr_t)(limit) - (uintptr_t)(start)))
+
+/*
+ * Load a linker-generated size as a link-time constant. Use this form in
+ * static initializers and other contexts that cannot calculate a value.
+ */
+#define LINKER_SECTION_SIZE_CONST(size_symbol) ((size_t)(uintptr_t)(size_symbol))
+
 /*
  * Memory owned by the kernel, to be used as shared memory between
  * application threads.

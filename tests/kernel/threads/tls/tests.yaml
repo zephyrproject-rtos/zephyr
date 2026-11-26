@@ -25,3 +25,12 @@ tests:
     toolchain_exclude: arcmwdt
     extra_configs:
       - CONFIG_TEST_USERSPACE=y
+  kernel.threads.tls.riscv64_lld:
+    platform_allow:
+      - qemu_riscv64
+    integration_platforms:
+      - qemu_riscv64
+    integration_toolchains:
+      - host/llvm
+    extra_configs:
+      - CONFIG_LLVM_USE_LLD=y

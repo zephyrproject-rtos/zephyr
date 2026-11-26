@@ -14,6 +14,7 @@
 #include <zephyr/init.h>
 #include <zephyr/irq.h>
 #include <zephyr/cache.h>
+#include <zephyr/linker/linker-defs.h>
 
 #include <string.h>
 
@@ -25,7 +26,7 @@
 #if defined(CONFIG_BT_BFLB_BL70XL) || defined(CONFIG_IEEE802154_BFLB)
 extern char _hbn_load_start[];
 extern char _hbn_run_start[];
-extern char _hbn_run_size[];
+extern char _hbn_run_end[];
 #endif
 
 void soc_early_init_hook(void)
@@ -76,6 +77,6 @@ void soc_early_init_hook(void)
 
 #if defined(CONFIG_BT_BFLB_BL70XL) || defined(CONFIG_IEEE802154_BFLB)
 	/* Copy .hbn_code from flash (LMA) to HBN RAM (VMA) */
-	memcpy(_hbn_run_start, _hbn_load_start, (size_t)_hbn_run_size);
+	memcpy(_hbn_run_start, _hbn_load_start, LINKER_SECTION_SIZE(_hbn_run_start, _hbn_run_end));
 #endif
 }
