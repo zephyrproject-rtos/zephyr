@@ -174,6 +174,9 @@ static const struct clk_cfg_t clk_cfg[] = {
 
 	{.clock_id = NPCM_CLOCK_UART4, .bus = NPCM_CLOCK_BUS_APB2},
 
+	{.clock_id = NPCM_CLOCK_ITIM4, .bus = NPCM_CLOCK_BUS_LFCLK},
+	{.clock_id = NPCM_CLOCK_ITIM5, .bus = NPCM_CLOCK_BUS_LFCLK},
+	{.clock_id = NPCM_CLOCK_ITIM6, .bus = NPCM_CLOCK_BUS_LFCLK},
 	{.clock_id = NPCM_CLOCK_ESPI, .bus = NPCM_CLOCK_BUS_APB3},
 
 	{.clock_id = NPCM_CLOCK_SMB7, .bus = NPCM_CLOCK_BUS_APB3},
