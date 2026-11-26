@@ -794,12 +794,19 @@ void sys_clock_idle_exit(void)
 	if (timeout_stdby) {
 		uint64_t missed_lptim_cnt;
 		uint32_t stdby_timer_diff, stdby_timer_post;
-		uint64_t stdby_timer_us;
+		static uint32_t counter_clock_freq;
+
+		if (counter_clock_freq == 0) {
+			counter_clock_freq = counter_get_frequency(stdby_timer);
+		}
 
 		/* Get current value for standby timer and reset LPTIM counter value
 		 * to start anew.
 		 */
-		LL_LPTIM_ResetCounter(LPTIM);
+		LL_LPTIM_EnableResetAfterRead(LPTIM);
+		LL_LPTIM_GetCounter(LPTIM);
+		LL_LPTIM_DisableResetAfterRead(LPTIM);
+
 		/* Set the Autoreload value once the timer is enabled for non tickless system */
 		if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 			/* nb of LPTIM counter unit per kernel tick
@@ -823,11 +830,10 @@ void sys_clock_idle_exit(void)
 		} else {
 			stdby_timer_diff = stdby_timer_post - stdby_timer_pre_stdby;
 		}
-		stdby_timer_us = counter_ticks_to_us(stdby_timer, stdby_timer_diff);
 
 		/* Convert standby time in LPTIM cnt */
-		missed_lptim_cnt = (CONFIG_STM32_LPTIM_CLOCK * stdby_timer_us) /
-				   USEC_PER_SEC;
+		missed_lptim_cnt = (lptim_clock_freq * stdby_timer_diff) /
+			counter_clock_freq;
 		/* Add the LPTIM cnt pre standby */
 		missed_lptim_cnt += lptim_cnt_pre_stdby;
 
@@ -840,7 +846,7 @@ void sys_clock_idle_exit(void)
 
 		accumulated_lptim_cnt += (uint32_t)missed_lptim_cnt;
 
-		timer_core_announce_cycles64_from(key, missed_lptim_cnt);
+		timer_core_announce_from(key);
 
 		SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
 		/* We've already performed all needed operations */
