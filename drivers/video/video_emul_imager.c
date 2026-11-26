@@ -160,6 +160,7 @@ static const struct video_format_cap fmts[] = {
 static int emul_imager_read_reg(const struct device *const dev, uint8_t reg_addr, uint8_t *value)
 {
 	LOG_DBG("Placeholder for I2C read from 0x%02x", reg_addr);
+
 	switch (reg_addr) {
 	case EMUL_IMAGER_REG_SENSOR_ID:
 		*value = EMUL_IMAGER_SENSOR_ID;

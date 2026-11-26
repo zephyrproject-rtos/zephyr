@@ -16,8 +16,8 @@ enum {
 
 static const struct video_format_cap fmts[] = {
 	[RGB565] = {.pixelformat = VIDEO_PIX_FMT_RGB565,
-		    .width_min  = 1280, .width_max  = 1280, .width_step  = 50,
-		    .height_min = 720,  .height_max = 720,  .height_step = 50},
+		    .width_min  = 1280, .width_max  = 1280, .width_step  = 16,
+		    .height_min = 720,  .height_max = 720,  .height_step = 16},
 	[YUYV_A] = {.pixelformat = VIDEO_PIX_FMT_YUYV,
 		    .width_min  = 100,  .width_max  = 1000, .width_step  = 50,
 		    .height_min = 100,  .height_max = 1000, .height_step = 50},

@@ -7,6 +7,13 @@ menuconfig VIDEO
 	help
 	  Enable support for the video subsystem as well as video drivers.
 
+config VIDEO_MAX_FORMAT_CAPS
+	int "Maximum number of format caps supported"
+	default 8
+	help
+	  Configure the number of format capabilities the video subsystem can support,
+	  internally used to list formats of video device drivers.
+
 if VIDEO
 
 module = VIDEO

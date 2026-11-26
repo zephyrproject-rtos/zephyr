@@ -96,10 +96,7 @@ struct uvc_desc {
 };
 
 struct uvc_data {
-	/* Input buffers to which enqueued video buffers land */
-	struct k_fifo fifo_in;
-	/* Output buffers from which dequeued buffers are picked */
-	struct k_fifo fifo_out;
+	struct video_device vdev;
 	/* Default video probe stored at boot time and sent back to the host when requested */
 	struct uvc_probe default_probe;
 	/* Video payload header content sent before every frame, updated between every frame */
@@ -116,8 +113,6 @@ struct uvc_data {
 	uint32_t last_pix_fmt;
 	/* Last format descriptor that was added by uvc_add_format() */
 	struct uvc_format_common_descriptor *last_format_desc;
-	/* Makes sure flushing the stream only happens in one context at a time */
-	struct k_mutex mutex;
 	/* Zero Length packet used to reset a stream when restarted */
 	struct net_buf zlp;
 	/* Byte offset within the currently transmitted video buffer */
@@ -1696,19 +1691,13 @@ static int uvc_request(struct usbd_class_data *const c_data, struct net_buf *con
 {
 	const struct device *dev = usbd_class_get_private(c_data);
 	struct uvc_buf_info bi = *(struct uvc_buf_info *)udc_get_buf_info(buf);
-	struct uvc_data *data = dev->data;
 
 	net_buf_unref(buf);
 
 	if (bi.udc.ep == uvc_get_bulk_in(dev)) {
 		LOG_DBG("Request completed for USB buffer %p, video buffer %p", buf, bi.vbuf);
 		if (bi.vbuf != NULL) {
-			k_fifo_put(&data->fifo_out, bi.vbuf);
-
-			if (IS_ENABLED(CONFIG_POLL) && data->video_sig != NULL) {
-				LOG_DBG("Raising VIDEO_BUF_DONE signal");
-				k_poll_signal_raise(data->video_sig, VIDEO_BUF_DONE);
-			}
+			video_buffer_done(dev, bi.vbuf, 0);
 		}
 
 		/* There is now one more net_buf buffer available */
@@ -1923,7 +1912,6 @@ static int uvc_flush_vbuf(const struct device *dev, struct video_buffer *const v
 static void uvc_flush_queue(const struct device *dev)
 {
 	struct uvc_data *data = dev->data;
-	struct video_buffer *vbuf;
 	int ret;
 
 	__ASSERT_NO_MSG(atomic_test_bit(&data->state, UVC_STATE_INITIALIZED));
@@ -1939,11 +1927,18 @@ static void uvc_flush_queue(const struct device *dev)
 	 * K_FOREVER is not expected to take long, as uvc_flush_vbuf() never blocks.
 	 */
 	LOG_DBG("Locking the UVC stream");
-	k_mutex_lock(&data->mutex, K_FOREVER);
+	k_mutex_lock(&data->vdev.lock, K_FOREVER);
 
-	while ((vbuf = k_fifo_peek_head(&data->fifo_in)) != NULL) {
+	while (true) {
+		struct video_buffer *vbuf;
+
 		/* Pausing the UVC driver will accumulate buffers in the input queue */
 		if (atomic_test_bit(&data->state, UVC_STATE_PAUSED)) {
+			break;
+		}
+
+		vbuf = video_buffer_peek(dev, VIDEO_BUF_TYPE_INPUT);
+		if (vbuf == NULL) {
 			break;
 		}
 
@@ -1954,13 +1949,13 @@ static void uvc_flush_queue(const struct device *dev)
 		}
 		if (ret == UVC_VBUF_DONE) {
 			LOG_DBG("Video buffer %p transferred, removing from the queue", vbuf);
-			k_fifo_get(&data->fifo_in, K_NO_WAIT);
+			video_buffer_next(dev, VIDEO_BUF_TYPE_INPUT, K_NO_WAIT);
 		}
 	}
 
 	/* Now the other contexts calling this function can access the fifo safely. */
 	LOG_DBG("Unlocking the UVC stream");
-	k_mutex_unlock(&data->mutex);
+	k_mutex_unlock(&data->vdev.lock);
 }
 
 static void uvc_enable(struct usbd_class_data *const c_data)
@@ -2003,26 +1998,9 @@ static const struct usbd_class_api uvc_class_api = {
 
 /* UVC video API */
 
-static int uvc_enqueue(const struct device *dev, struct video_buffer *const vbuf)
+static int uvc_trigger(const struct device *dev, enum video_buf_type type)
 {
-	struct uvc_data *data = dev->data;
-
-	k_fifo_put(&data->fifo_in, vbuf);
 	uvc_flush_queue(dev);
-
-	return 0;
-}
-
-static int uvc_dequeue(const struct device *dev, struct video_buffer **const vbuf,
-		       const k_timeout_t timeout)
-{
-	struct uvc_data *data = dev->data;
-
-	*vbuf = k_fifo_get(&data->fifo_out, timeout);
-	if (*vbuf == NULL) {
-		return -EAGAIN;
-	}
-
 	return 0;
 }
 
@@ -2069,26 +2047,11 @@ static int uvc_set_stream(const struct device *dev, const bool enable,
 	return 0;
 }
 
-#ifdef CONFIG_POLL
-static int uvc_set_signal(const struct device *dev, struct k_poll_signal *const sig)
-{
-	struct uvc_data *data = dev->data;
-
-	data->video_sig = sig;
-
-	return 0;
-}
-#endif
-
 static DEVICE_API(video, uvc_video_api) = {
 	.get_format = uvc_get_format,
 	.get_frmival = uvc_get_frmival,
 	.set_stream = uvc_set_stream,
-	.enqueue = uvc_enqueue,
-	.dequeue = uvc_dequeue,
-#if CONFIG_POLL
-	.set_signal = uvc_set_signal,
-#endif
+	.trigger = uvc_trigger,
 };
 
 static int uvc_preinit(const struct device *dev)
@@ -2100,10 +2063,6 @@ static int uvc_preinit(const struct device *dev)
 	data->payload_header.bHeaderLength = 2;
 	data->format_id = 1;
 	data->frame_id = 1;
-
-	k_fifo_init(&data->fifo_in);
-	k_fifo_init(&data->fifo_out);
-	k_mutex_init(&data->mutex);
 
 	return 0;
 }
@@ -2315,13 +2274,12 @@ struct usb_desc_header *uvc_hs_desc_##n[UVC_MAX_HS_DESC] = {			\
 	};									\
 										\
 	struct uvc_data uvc_data_##n = {					\
+		.vdev = VIDEO_DEVICE_INIT(uvc_data_##n, DT_DRV_INST(0), NULL),	\
 		.fs_desc_idx = UVC_FS_DESC_IDX,					\
 		.hs_desc_idx = UVC_HS_DESC_IDX,					\
 	};									\
 										\
 	DEVICE_DT_INST_DEFINE(n, uvc_preinit, NULL, &uvc_data_##n, &uvc_cfg_##n,\
-		POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &uvc_video_api);	\
-										\
-	VIDEO_DEVICE_DEFINE(uvc##n, DEVICE_DT_INST_GET(n), NULL);
+		POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &uvc_video_api);
 
 DT_INST_FOREACH_STATUS_OKAY(USBD_VIDEO_DT_DEVICE_DEFINE)

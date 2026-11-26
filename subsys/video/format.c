@@ -13,20 +13,22 @@ LOG_MODULE_REGISTER(video_format, CONFIG_VIDEO_LOG_LEVEL);
 #define ABS(x) ((x) < 0 ? -(x) : (x))
 #endif
 
+#define CONFIG_VIDEO_MAX_FORMAT_CAPS 30
+
 static int video_check_format_caps(const struct device *dev, struct video_format *fmt)
 {
-	struct video_caps caps = {.type = fmt->type};
+	struct video_format_cap format_caps[CONFIG_VIDEO_MAX_FORMAT_CAPS] = {};
 	size_t idx;
 	int ret;
 
-	ret = video_get_caps(dev, &caps);
+	ret = video_get_format_caps(dev, format_caps, ARRAY_SIZE(format_caps));
 	if (ret < 0) {
 		LOG_ERR("Failed to query %s supported formats (type %u): %d",
 			dev->name, fmt->type, ret);
 		return ret;
 	}
 
-	ret = video_format_caps_index(caps.format_caps, fmt, &idx);
+	ret = video_format_caps_index(format_caps, fmt, &idx);
 	if (ret < 0) {
 		LOG_ERR("Format %s %ux%u not supported by %s (type %u): %d",
 			VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height,
@@ -144,6 +146,7 @@ int video_get_selection(const struct device *dev, struct video_selection *sel)
 
 static int video_apply_format(const struct device *dev, struct video_format *fmt)
 {
+	struct video_format_cap format_caps[CONFIG_VIDEO_MAX_FORMAT_CAPS] = {};
 	struct video_caps caps = {.type = fmt->type};
 	struct video_device *vdev = dev->data;
 	struct video_format *vdev_fmt;
@@ -177,14 +180,14 @@ static int video_apply_format(const struct device *dev, struct video_format *fmt
 		return 0;
 	}
 
-	ret = video_get_caps(dev, &caps);
+	ret = video_get_format_caps(dev, format_caps, ARRAY_SIZE(format_caps));
 	if (ret < 0) {
 		LOG_ERR("Failed to query %s supported formats (type %u): %d",
 			dev->name, fmt->type, ret);
 		return ret;
 	}
 
-	ret = video_format_caps_index(caps.format_caps, fmt, &idx);
+	ret = video_format_caps_index(format_caps, fmt, &idx);
 	if (ret < 0) {
 		LOG_ERR("Format %s %ux%u not supported by %s (type %u): %d",
 			VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height,
@@ -249,7 +252,7 @@ int video_set_format(const struct device *dev, struct video_format *fmt)
 		k_mutex_unlock(&vdev->lock);
 
 		if (ret < 0 && ret != -ENOSYS) {
-			LOG_ERR("Failed to apply format %s %ux%u to %s: %u",
+			LOG_ERR("Failed to apply format %s %ux%u to %s: %d",
 				VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height,
 				vdev->dev->name, ret);
 			return ret;
@@ -264,9 +267,16 @@ int video_set_format(const struct device *dev, struct video_format *fmt)
 		 * A full solution would be to have per-platform strategies to figure out the most
 		 * suited format for every device.
 		 */
-		ret = video_transform_cap(vdev->dev, &src_fcap, &dst_fcap,
-					  VIDEO_BUF_TYPE_OUTPUT, 0);
+		for (size_t i = 0;; i++) {
+			ret = video_transform_cap(vdev->dev, &src_fcap, &dst_fcap,
+						  VIDEO_BUF_TYPE_INPUT, i);
+			if (ret == 0 && ret != -ENOTSUP) {
+				break;
+			}
+		}
 		if (ret < 0) {
+			LOG_ERR("Failed to find a format capability that works for %s",
+				vdev->dev->name);
 			return ret;
 		}
 
@@ -349,35 +359,33 @@ static int video_closest_format_by_size(const struct device *dev,
 					const struct video_format *fmt,
 					struct video_format *match)
 {
-	struct video_caps caps = {.type = fmt->type};
+	struct video_format_cap format_caps[CONFIG_VIDEO_MAX_FORMAT_CAPS] = {};
 	int ret;
-
-	ret = video_get_caps(dev, &caps);
-	if (ret < 0) {
-		LOG_ERR("Failed to query %s formats to apply scaling", dev->name);
-		return ret;
-	}
 
 	match->width = UINT16_MAX;
 	match->height = UINT16_MAX;
 
-	for (size_t i = 0; caps.format_caps[i].pixelformat != 0; i++) {
+	ret = video_get_format_caps(dev, format_caps, ARRAY_SIZE(format_caps));
+	if (ret != 0) {
+		LOG_ERR("Failed to retreive format capabilities");
+		return ret;
+	}
+
+	for (size_t i = 0; format_caps[i].pixelformat != 0; i++) {
 		int32_t width;
 		int32_t height;
 
-		if (fmt->pixelformat != caps.format_caps[i].pixelformat) {
+		if (fmt->pixelformat != format_caps[i].pixelformat) {
 			continue;
 		}
 
-		width = (fmt->width - caps.format_caps[i].width_min)
-			/ caps.format_caps[i].width_step
-			* caps.format_caps[i].width_step
-			+ caps.format_caps[i].width_min;
+		width = (fmt->width - format_caps[i].width_min)
+			/ format_caps[i].width_step * format_caps[i].width_step
+			+ format_caps[i].width_min;
 
-		height = (fmt->height - caps.format_caps[i].height_min)
-			/ caps.format_caps[i].height_step
-			* caps.format_caps[i].height_step
-			+ caps.format_caps[i].height_min;
+		height = (fmt->height - format_caps[i].height_min)
+			/ format_caps[i].height_step * format_caps[i].height_step
+			+ format_caps[i].height_min;
 
 		if (ABS((int32_t)fmt->width - width) *
 		    ABS((int32_t)fmt->height - height) <

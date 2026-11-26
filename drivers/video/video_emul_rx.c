@@ -28,11 +28,75 @@ struct emul_rx_data {
 
 static int emul_rx_get_caps(const struct device *dev, struct video_caps *caps)
 {
-	struct emul_rx_data *data = dev->data;
-
 	caps->min_vbuf_count = 1;
+	return 0;
+}
 
-	return video_get_caps(data->vdev.source_dev, caps);
+/* Assume a 300-pixel wide line buffer internally, requiring to subsample the output in order to
+ * fit if input is larger
+ */
+#define LINE_BUFFER_WIDTH 300
+
+static int emul_rx_transform_cap(const struct device *const dev,
+				 const struct video_format_cap *const cap,
+				 struct video_format_cap *const res_cap,
+				 enum video_buf_type type, uint16_t ind)
+{
+	*res_cap = *cap;
+
+	if (ind >= 2) {
+		return -ERANGE;
+	}
+
+	switch (type) {
+	case VIDEO_BUF_TYPE_INPUT:
+		if (res_cap->width_min > LINE_BUFFER_WIDTH ||
+		    res_cap->width_max > LINE_BUFFER_WIDTH) {
+			/* All possible output formats fit in the line buffer width */
+			return -ENOTSUP;
+		}
+
+		switch (ind) {
+		case 0:
+			res_cap->height_min *= 2;
+			res_cap->width_min *= 2;
+			res_cap->height_step *= 2;
+			res_cap->height_max *= 2;
+			res_cap->width_max *= 2;
+			res_cap->width_step *= 2;
+			break;
+		case 1:
+			/* Unchanged */
+			break;
+		}
+		break;
+	case VIDEO_BUF_TYPE_OUTPUT:
+		switch (ind) {
+		case 0:
+			/* Unchanged */
+			break;
+		case 1:
+			res_cap->height_min /= 2;
+			res_cap->width_min /= 2;
+			res_cap->height_step /= 2;
+			res_cap->height_max /= 2;
+			res_cap->width_max /= 2;
+			res_cap->width_step /= 2;
+			break;
+		}
+
+		if (res_cap->width_min > LINE_BUFFER_WIDTH ||
+		    res_cap->width_max > LINE_BUFFER_WIDTH) {
+			/* All possible output formats fit in the line buffer width */
+			return -ENOTSUP;
+		}
+		break;
+	default:
+		LOG_ERR("Invalid type requested for transform_cap %d", type);
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 static int emul_rx_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
@@ -98,6 +162,7 @@ static int emul_rx_trigger(const struct device *dev, enum video_buf_type type)
 
 static DEVICE_API(video, emul_rx_driver_api) = {
 	.get_caps = emul_rx_get_caps,
+	.transform_cap = emul_rx_transform_cap,
 	.set_stream = emul_rx_set_stream,
 	.trigger = emul_rx_trigger,
 };

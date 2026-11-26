@@ -75,7 +75,7 @@ ZTEST(video_common, test_video_format)
 
 ZTEST(video_common, test_video_frmival)
 {
-	struct video_format fmt;
+	struct video_format fmt = {.type = VIDEO_BUF_TYPE_OUTPUT};
 	struct video_frmival_enum fie = {.format = &fmt};
 
 	/* Pick the current format for testing the frame interval enumeration */
@@ -145,19 +145,24 @@ ZTEST(video_common, test_video_ctrl)
 
 ZTEST(video_common, test_video_vbuf)
 {
-	struct video_caps caps;
+	struct video_format_cap format_caps[10] = {};
 	struct video_format fmt;
 	struct video_buffer *vbuf = NULL;
 	enum video_buf_type type = VIDEO_BUF_TYPE_OUTPUT;
 
-	/* Get a list of supported format */
-	caps.type = type;
-	zexpect_ok(video_get_caps(rx_dev, &caps));
+	/* Get the first supported format */
+	zexpect_ok(video_get_format_caps(rx_dev, format_caps, ARRAY_SIZE(format_caps)));
+	/* Reduced width */
+	zexpect_equal(format_caps[0].width_min, 320 / 2);
+	zexpect_equal(format_caps[0].width_max, 320 / 2);
+	/* Reduced height, which kept the aspect ratio */
+	zexpect_equal(format_caps[0].height_min, 240 / 2);
+	zexpect_equal(format_caps[0].height_max, 240 / 2);
 
 	/* Pick set first format, just to use something supported */
-	fmt.pixelformat = caps.format_caps[0].pixelformat;
-	fmt.width = caps.format_caps[0].width_max;
-	fmt.height = caps.format_caps[0].height_max;
+	fmt.pixelformat = format_caps[0].pixelformat;
+	fmt.width = format_caps[0].width_max;
+	fmt.height = format_caps[0].height_max;
 	fmt.type = type;
 	zexpect_ok(video_set_format(rx_dev, &fmt));
 
@@ -180,9 +185,6 @@ ZTEST(video_common, test_video_vbuf)
 
 	/* Enqueue back the same buffer */
 	zexpect_ok(video_enqueue(rx_dev, vbuf));
-
-	/* Process the remaining buffers */
-	zexpect_ok(video_driver_flush(rx_dev, false));
 
 	/* Expect the buffer to immediately be available */
 	zexpect_ok(video_dequeue(rx_dev, &vbuf, K_FOREVER));

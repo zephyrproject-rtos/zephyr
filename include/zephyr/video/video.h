@@ -547,6 +547,19 @@ int video_get_selection(const struct device *dev, struct video_selection *sel);
 int video_get_caps(const struct device *dev, struct video_caps *caps);
 
 /**
+ * @brief Get the capabilities of a video endpoint.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param caps Pointer to the video_caps struct to fill.
+ * @param num_caps .
+ *
+ * @retval 0 If successful, -ERRNO code otherwise.
+ * @retval -ENOSYS API is not implemented.
+ */
+int video_get_format_caps(const struct device *dev,
+			  struct video_format_cap *caps, size_t num_caps);
+
+/**
  * @brief Transform a video format capability from one end to the other end of a m2m video device.
  *
  * This function transforms a @ref video_format_cap from one end to the other end of an m2m video

@@ -79,7 +79,7 @@ int video_get_frmival(const struct device *dev, struct video_frmival *frmival)
 		}
 
 		if (vdev->source_dev == NULL) {
-			return -ENOSYS;
+			break;
 		}
 		vdev = vdev->source_dev->data;
 	}
