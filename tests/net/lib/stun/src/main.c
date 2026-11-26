@@ -150,7 +150,7 @@ static const uint8_t rfc8489_request[] = {
 
 /* The long-term key of rfc8489_request. With the SHA-256 password algorithm it
  * is SHA-256(username ":" realm ":" password) (RFC 8489 section 18.5.1.2); the
- * codec does not derive long-term keys, so the tests do, with PSA.
+ * tests compute it with PSA, apart from stun_long_term_key_sha256().
  */
 static void rfc8489_long_term_key(uint8_t key[PSA_HASH_LENGTH(PSA_ALG_SHA_256)])
 {
@@ -2106,8 +2106,8 @@ ZTEST(stun, test_rfc5769_long_term_request_byte_exact)
 	static const char nonce[] = "f//499k954d6OL34oL9FSTvy64sA";
 	static const char realm[] = "example.org";
 	/* MD5(username ":" realm ":" password) with the password "TheMatrIX"
-	 * (RFC 8489 section 9.2.2). The codec does not derive long-term keys, so
-	 * the key is given as computed.
+	 * (RFC 8489 section 9.2.2), given as computed; test_long_term_key has
+	 * stun_long_term_key() compute it.
 	 */
 	static const uint8_t key[] = {
 		0xe8, 0xca, 0x7a, 0xd5, 0x9d, 0x5e, 0xb0, 0x51,
@@ -3566,6 +3566,107 @@ ZTEST(stun, test_integrity_sha256_rfc8489_vector)
 	zassert_equal(stun_unknown_attrs(&m, NULL, 0U, unknown, ARRAY_SIZE(unknown)), 2);
 	zassert_equal(unknown[0], TEST_ATTR_USERHASH, "USERHASH");
 	zassert_equal(unknown[1], TEST_ATTR_PASSWORD_ALGORITHM, "PASSWORD-ALGORITHM");
+}
+
+/* stun_long_term_key() computes the key that signs the sample request of
+ * RFC 5769 section 2.4 and refuses a NULL argument, a string that is not UTF-8
+ * and a user name or realm longer than its limit. Without MD5 in the backend it
+ * returns -EIO.
+ */
+ZTEST(stun, test_long_term_key)
+{
+	/* The six katakana characters of the RFC, in UTF-8. */
+	static const char username[] = "\xe3\x83\x9e\xe3\x83\x88\xe3\x83\xaa"
+				       "\xe3\x83\x83\xe3\x82\xaf\xe3\x82\xb9";
+	static const char realm[] = "example.org";
+	static const char password[] = "TheMatrIX";
+	static const char not_utf8[] = "\xff";
+	static const uint8_t expected[STUN_LONG_TERM_KEY_LEN] = {
+		0xe8, 0xca, 0x7a, 0xd5, 0x9d, 0x5e, 0xb0, 0x51,
+		0x8e, 0x31, 0x29, 0x11, 0xd2, 0xda, 0xb2, 0xa9,
+	};
+	static char long_username[STUN_USERNAME_MAX_LEN + 2U];
+	static char long_realm[STUN_TEXT_MAX_LEN + 2U];
+	uint8_t key[STUN_LONG_TERM_KEY_LEN] = {0};
+	struct stun_msg m = {0};
+
+	zassert_equal(stun_long_term_key(NULL, realm, password, key), -EINVAL);
+	zassert_equal(stun_long_term_key(username, NULL, password, key), -EINVAL);
+	zassert_equal(stun_long_term_key(username, realm, NULL, key), -EINVAL);
+	zassert_equal(stun_long_term_key(username, realm, password, NULL), -EINVAL);
+
+	zassert_equal(stun_long_term_key(not_utf8, realm, password, key), -EINVAL);
+	zassert_equal(stun_long_term_key(username, not_utf8, password, key), -EINVAL);
+	zassert_equal(stun_long_term_key(username, realm, not_utf8, key), -EINVAL);
+
+	/* One byte more than the limit is refused. */
+	memset(long_username, 'a', STUN_USERNAME_MAX_LEN + 1U);
+	memset(long_realm, 'a', STUN_TEXT_MAX_LEN + 1U);
+	zassert_equal(stun_long_term_key(long_username, realm, password, key), -EINVAL);
+	zassert_equal(stun_long_term_key(username, long_realm, password, key), -EINVAL);
+
+	if (!IS_ENABLED(CONFIG_PSA_WANT_ALG_MD5)) {
+		zassert_equal(stun_long_term_key(username, realm, password, key), -EIO);
+		return;
+	}
+
+	/* The longest user name and realm are taken, and so are empty strings. */
+	long_username[STUN_USERNAME_MAX_LEN] = '\0';
+	long_realm[STUN_TEXT_MAX_LEN] = '\0';
+	zassert_ok(stun_long_term_key(long_username, long_realm, password, key));
+	zassert_ok(stun_long_term_key("", "", "", key));
+
+	zassert_ok(stun_long_term_key(username, realm, password, key));
+	zassert_mem_equal(key, expected, sizeof(expected));
+
+	/* The sample request passes MESSAGE-INTEGRITY with the key. */
+	zassert_ok(stun_parse(rfc5769_long_term_request, sizeof(rfc5769_long_term_request), &m));
+	zassert_ok(stun_verify_integrity(&m, key, sizeof(key)));
+}
+
+/* stun_long_term_key_sha256() computes the key that signs the sample request of
+ * RFC 8489 Appendix B.1 and refuses what stun_long_term_key() refuses.
+ */
+ZTEST(stun, test_long_term_key_sha256)
+{
+	/* The six katakana characters of the RFC, in UTF-8. */
+	static const char username[] = "\xe3\x83\x9e\xe3\x83\x88\xe3\x83\xaa"
+				       "\xe3\x83\x83\xe3\x82\xaf\xe3\x82\xb9";
+	static const char realm[] = "example.org";
+	static const char password[] = "TheMatrIX";
+	static const char not_utf8[] = "\xff";
+	static char long_username[STUN_USERNAME_MAX_LEN + 2U];
+	static char long_realm[STUN_TEXT_MAX_LEN + 2U];
+	uint8_t expected[STUN_LONG_TERM_KEY_SHA256_LEN] = {0};
+	uint8_t key[STUN_LONG_TERM_KEY_SHA256_LEN] = {0};
+	struct stun_msg m = {0};
+
+	zassert_equal(stun_long_term_key_sha256(NULL, realm, password, key), -EINVAL);
+	zassert_equal(stun_long_term_key_sha256(username, NULL, password, key), -EINVAL);
+	zassert_equal(stun_long_term_key_sha256(username, realm, NULL, key), -EINVAL);
+	zassert_equal(stun_long_term_key_sha256(username, realm, password, NULL), -EINVAL);
+
+	zassert_equal(stun_long_term_key_sha256(not_utf8, realm, password, key), -EINVAL);
+	zassert_equal(stun_long_term_key_sha256(username, not_utf8, password, key), -EINVAL);
+	zassert_equal(stun_long_term_key_sha256(username, realm, not_utf8, key), -EINVAL);
+
+	/* One byte more than the limit is refused, the limit itself is taken. */
+	memset(long_username, 'a', STUN_USERNAME_MAX_LEN + 1U);
+	memset(long_realm, 'a', STUN_TEXT_MAX_LEN + 1U);
+	zassert_equal(stun_long_term_key_sha256(long_username, realm, password, key), -EINVAL);
+	zassert_equal(stun_long_term_key_sha256(username, long_realm, password, key), -EINVAL);
+	long_username[STUN_USERNAME_MAX_LEN] = '\0';
+	long_realm[STUN_TEXT_MAX_LEN] = '\0';
+	zassert_ok(stun_long_term_key_sha256(long_username, long_realm, password, key));
+
+	rfc8489_long_term_key(expected);
+	zassert_ok(stun_long_term_key_sha256(username, realm, password, key));
+	zassert_mem_equal(key, expected, sizeof(expected));
+
+	/* The sample request passes MESSAGE-INTEGRITY-SHA256 with the key. */
+	zassert_ok(stun_parse(rfc8489_request, sizeof(rfc8489_request), &m));
+	zassert_ok(stun_verify_integrity_sha256(&m, key, sizeof(key),
+						STUN_INTEGRITY_SHA256_MAX_LEN));
 }
 
 /*---------------------------------- TEST BINDING TRANSACTION ----------------------------------- */
