@@ -27,6 +27,7 @@
  */
 
 #include <stddef.h>
+#include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/dt-bindings/pcie/pcie.h>
 #include <zephyr/types.h>
@@ -38,14 +39,21 @@ extern "C" {
 #endif
 
 /**
- * @brief A unique PCI(e) endpoint (bus, device, function).
+ * @brief A PCI(e) bus, device, function tuple within one controller.
  *
- * A PCI(e) endpoint is uniquely identified topologically using a
- * (bus, device, function) tuple. The internal structure is documented
+ * Different controllers may expose the same tuple. The internal structure is documented
  * in include/dt-bindings/pcie/pcie.h: see PCIE_BDF() and friends, since
  * these tuples are referenced from devicetree.
  */
 typedef uint32_t pcie_bdf_t;
+
+/** Identity of an endpoint owned by a device-model PCIe controller. */
+struct pcie_endpoint {
+	/** Owning controller; NULL never selects the chosen controller. */
+	const struct device *ctrl;
+	/** Bus, device and function within the controller. */
+	pcie_bdf_t bdf;
+};
 
 /**
  * @brief A unique PCI(e) identifier (vendor ID, device ID).
@@ -71,7 +79,34 @@ struct pcie_dev {
 	pcie_id_t  id;
 	uint32_t   class_rev;
 	uint32_t   class_rev_mask;
+	/** Expected controller, set before enumeration; unused on architecture backends. */
+	const struct device *ctrl;
 };
+
+/**
+ * @brief Construct an endpoint from a static PCIe declaration.
+ * @param dev Non-NULL declaration whose controller and BDF are already assigned.
+ * @return Endpoint value; no ownership is transferred.
+ */
+static inline struct pcie_endpoint pcie_dev_endpoint(const struct pcie_dev *dev)
+{
+	return (struct pcie_endpoint){.ctrl = dev->ctrl, .bdf = dev->bdf};
+}
+
+/**
+ * @brief Get a node's PCIe controller.
+ * @param node_id Endpoint node; indirect children require a pcie-controller phandle.
+ * @return Controller node identifier.
+ */
+#define PCIE_DT_CONTROLLER(node_id) \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, pcie_controller), \
+		    (DT_PHANDLE(node_id, pcie_controller)), (DT_PARENT(node_id)))
+
+#ifdef CONFIG_PCIE_CONTROLLER
+#define Z_PCIE_DT_CTRL(node_id) DEVICE_DT_GET_OR_NULL(PCIE_DT_CONTROLLER(node_id))
+#else
+#define Z_PCIE_DT_CTRL(node_id) NULL
+#endif
 
 #define Z_DEVICE_PCIE_NAME(node_id) _CONCAT(pcie_dev_, DT_DEP_ORD(node_id))
 
@@ -96,26 +131,56 @@ struct pcie_dev {
 #define PCIE_DT_INST_ID(inst) PCIE_DT_ID(DT_DRV_INST(inst))
 
 /**
- * @brief Declare a PCIe context variable for a DTS node
+ * @brief Declare an endpoint-aware PCIe context variable for a DTS node
  *
- * Declares a PCIe context for a DTS node. This must be done before
- * using the DEVICE_PCIE_INIT() macro for the same node.
+ * The driver must use controller-qualified endpoint operations. This must be
+ * done before using DEVICE_PCIE_INIT() for the same node.
  *
  * @param node_id DTS node identifier
  */
-#define DEVICE_PCIE_DECLARE(node_id)                                        \
+#define DEVICE_PCIE_ENDPOINT_DECLARE(node_id)                               \
 	STRUCT_SECTION_ITERABLE(pcie_dev, Z_DEVICE_PCIE_NAME(node_id)) = {  \
 		.bdf = PCIE_BDF_NONE,                                       \
 		.id = PCIE_DT_ID(node_id),                                  \
 		.class_rev = DT_PROP_OR(node_id, class_rev, 0),             \
 		.class_rev_mask = DT_PROP_OR(node_id, class_rev_mask, 0),   \
+		.ctrl = Z_PCIE_DT_CTRL(node_id),                           \
 	}
 
 /**
- * @brief Declare a PCIe context variable for a DTS node
+ * @brief Declare an endpoint-aware PCIe context for a driver instance.
  *
  * This is equivalent to
- * <tt>DEVICE_PCIE_DECLARE(DT_DRV_INST(inst))</tt>
+ * <tt>DEVICE_PCIE_ENDPOINT_DECLARE(DT_DRV_INST(inst))</tt>
+ *
+ * @param inst Devicetree instance number
+ */
+#define DEVICE_PCIE_ENDPOINT_INST_DECLARE(inst) DEVICE_PCIE_ENDPOINT_DECLARE(DT_DRV_INST(inst))
+
+#ifdef CONFIG_PCIE_CONTROLLER
+#define Z_PCIE_ASSERT_LEGACY(node_id) \
+	BUILD_ASSERT(DT_SAME_NODE(PCIE_DT_CONTROLLER(node_id), DT_CHOSEN(zephyr_pcie_controller)), \
+		     "BDF-only PCIe driver requires the chosen controller")
+#else
+#define Z_PCIE_ASSERT_LEGACY(node_id)
+#endif
+
+/**
+ * @brief Declare a PCIe context for a driver using BDF-only host operations.
+ *
+ * Reject non-chosen controller placements at build time. Drivers using endpoint
+ * operations instead use DEVICE_PCIE_ENDPOINT_DECLARE().
+ *
+ * @param node_id DTS node identifier
+ */
+#define DEVICE_PCIE_DECLARE(node_id) \
+	Z_PCIE_ASSERT_LEGACY(node_id); \
+	DEVICE_PCIE_ENDPOINT_DECLARE(node_id)
+
+/**
+ * @brief Declare a legacy PCIe context for a driver instance.
+ *
+ * Equivalent to DEVICE_PCIE_DECLARE(DT_DRV_INST(inst)).
  *
  * @param inst Devicetree instance number
  */
@@ -164,6 +229,76 @@ struct pcie_bar {
 	size_t size;
 };
 
+/**
+ * @brief Read a configuration word through the endpoint's controller.
+ * @param ep Endpoint with a non-NULL controller.
+ * @param reg Configuration word index, less than 1024.
+ * @param value Non-NULL output word. All-ones data is passed through unchanged.
+ * @retval 0 Word read.
+ * @retval -EINVAL Invalid endpoint, BDF encoding, index or output pointer.
+ * @retval -ENOTSUP Configuration reads are unsupported.
+ * @return Negative backend errno from a status-bearing callback on failure.
+ */
+int pcie_endpoint_conf_read(const struct pcie_endpoint *ep, unsigned int reg, uint32_t *value);
+
+/**
+ * @brief Write a configuration word through the endpoint's controller.
+ * @param ep Endpoint with a non-NULL controller.
+ * @param reg Configuration word index, less than 1024.
+ * @param value Word to write.
+ * @retval 0 Word written.
+ * @retval -EINVAL Invalid endpoint, BDF encoding or index.
+ * @retval -ENOTSUP Configuration writes are unsupported.
+ * @return Negative backend errno from a status-bearing callback on failure.
+ */
+int pcie_endpoint_conf_write(const struct pcie_endpoint *ep, unsigned int reg, uint32_t value);
+
+/**
+ * @brief Find a conventional capability through the endpoint's controller.
+ * @param ep Endpoint with a non-NULL controller.
+ * @param cap_id Capability ID to find.
+ * @param cap Non-NULL output word index; zero when absent.
+ * @retval 0 Query completed, including an absent capability.
+ * @retval -EINVAL Invalid endpoint, output pointer or capability chain.
+ * @retval -ENOTSUP Configuration reads are unsupported.
+ * @return Negative backend errno on failure.
+ */
+int pcie_endpoint_get_cap(const struct pcie_endpoint *ep, uint32_t cap_id, uint32_t *cap);
+
+/**
+ * @brief Find an extended capability through the endpoint's controller.
+ * @param ep Endpoint with a non-NULL controller.
+ * @param cap_id Extended capability ID to find.
+ * @param cap Non-NULL output word index; zero when absent.
+ * @retval 0 Query completed, including an absent capability.
+ * @retval -EINVAL Invalid endpoint, output pointer or capability chain.
+ * @retval -ENOTSUP Configuration reads are unsupported.
+ * @return Negative backend errno on failure.
+ */
+int pcie_endpoint_get_ext_cap(const struct pcie_endpoint *ep, uint32_t cap_id, uint32_t *cap);
+
+/**
+ * @brief Probe a memory BAR through the endpoint's controller.
+ *
+ * Configuration access and bus-to-CPU translation use the same controller.
+ * The caller must serialize BAR sizing against accesses to the device.
+ * Type 0 headers have six BAR registers; Type 1 headers have two. A 64-bit BAR
+ * must fit entirely within those registers. Other header types are unsupported.
+ *
+ * @param ep Endpoint with a non-NULL controller.
+ * @param bar_index BAR register index, from 0 to 5.
+ * @param bar Non-NULL output BAR descriptor.
+ * @retval 0 Memory BAR found and translated.
+ * @retval -EINVAL Invalid endpoint, BDF encoding, index above 5 or output pointer.
+ * @retval -ENOENT BAR is absent, unassigned, an I/O BAR or a 64-bit BAR's upper word.
+ *                 Also returned when the BAR index or a 64-bit BAR extends beyond
+ *                 the header's BAR registers.
+ * @retval -ENOTSUP Header type, access, translation or the BAR address/size is unsupported.
+ * @return Negative backend errno on failure.
+ */
+int pcie_endpoint_get_mbar(const struct pcie_endpoint *ep, unsigned int bar_index,
+			   struct pcie_bar *bar);
+
 /*
  * These functions are arch-, board-, or SoC-specific.
  */
@@ -200,8 +335,18 @@ extern void pcie_conf_write(pcie_bdf_t bdf, unsigned int reg, uint32_t data);
  */
 typedef bool (*pcie_scan_cb_t)(pcie_bdf_t bdf, pcie_id_t id, void *cb_data);
 
+/**
+ * @brief Visit an endpoint during a controller-specific scan.
+ * @param ep Endpoint identity, valid only during the callback; copy to retain it.
+ * @param id Vendor/device ID.
+ * @param cb_data Caller data.
+ * @return True to continue, false to stop.
+ */
+typedef bool (*pcie_endpoint_scan_cb_t)(const struct pcie_endpoint *ep, pcie_id_t id,
+				      void *cb_data);
+
 enum {
-	/** Scan all available PCI host controllers and sub-buses */
+	/** Follow bridges and sub-buses within the selected controller. */
 	PCIE_SCAN_RECURSIVE = BIT(0),
 	/** Do the callback for all endpoint types, including bridges */
 	PCIE_SCAN_CB_ALL = BIT(1),
@@ -225,14 +370,41 @@ struct pcie_scan_opt {
 	bool (*scan_masking_fn)(pcie_bdf_t bdf);
 };
 
+/** Options for scanning a device-model PCIe controller. */
+struct pcie_scan_ctrl_opt {
+	/** Initial bus number to scan. */
+	uint8_t bus;
+	/** Callback receiving the owning controller and BDF. */
+	pcie_endpoint_scan_cb_t cb;
+	/** Caller data passed to both callbacks. */
+	void *cb_data;
+	/** PCIE_SCAN_RECURSIVE and/or PCIE_SCAN_CB_ALL flags. */
+	uint32_t flags;
+
+	/** Return true to skip this endpoint and its sub-buses. */
+	bool (*scan_masking_fn)(const struct pcie_endpoint *ep, void *cb_data);
+};
+
 /** Scan for PCIe devices.
  *
- * Scan the PCI bus (or buses) for available endpoints.
+ * Scan the chosen controller on device-model platforms, or the architecture's PCI bus.
+ * This function does not scan other device-model controllers.
  *
  * @param opt Options determining how to perform the scan.
  * @return 0 on success, negative POSIX error number on failure.
  */
 int pcie_scan(const struct pcie_scan_opt *opt);
+
+/**
+ * @brief Scan one controller and, optionally, its sub-buses.
+ * @param ctrl Non-NULL controller. The caller must initialize it before scanning.
+ * @param opt Non-NULL controller-specific options with cb set.
+ * @retval 0 Scan completed or stopped by the callback.
+ * @retval -EINVAL Invalid controller, options or callback.
+ * @retval -ENOTSUP Controller configuration reads are unsupported.
+ * @return Negative backend errno on failure.
+ */
+int pcie_scan_ctrl(const struct device *ctrl, const struct pcie_scan_ctrl_opt *opt);
 
 /**
  * @brief Get the MBAR at a specific BAR index

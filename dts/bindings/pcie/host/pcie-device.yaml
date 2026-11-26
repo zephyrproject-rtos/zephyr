@@ -4,6 +4,12 @@
 # Common fields for PCIe devices
 
 properties:
+  pcie-controller:
+    type: phandle
+    description: |
+      Owning PCIe host controller. Required when the endpoint is not a direct
+      child of its controller, such as below a bridge or a simple-bus node.
+      Direct children use their parent when this property is absent.
   vendor-id:
     type: int
     description: Vendor ID of the device

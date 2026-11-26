@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: Fake PCIe endpoint for controller identity tests
+compatible: "vnd,pcie-endpoint"
+include: [base.yaml, pcie-device.yaml]

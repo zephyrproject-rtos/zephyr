@@ -197,6 +197,16 @@ Libraries / Subsystems
     :kconfig:option:`CONFIG_NET_TCP_MAX_RTO`. The retransmissions, and so the time until an
     unanswered connection fails with ``-ETIMEDOUT``, grow with the RTO of the connection.
 
+* PCIe
+
+  * MSI and MSI-X target addresses above 4 GiB are supported through
+    :c:func:`pcie_msi_map`. Devices limited to 32-bit MSI addresses reject
+    targets they cannot represent.
+  * Controller-qualified host operations distinguish endpoints with the same
+    bus/device/function tuple on different controllers. Configuration access,
+    discovery, static binding and MSI operations use the endpoint's owning
+    controller. See :ref:`pcie_api`.
+
 * PTP Clock
 
   * :c:func:`ptp_clock_adjust_rate` adjusts the clock rate by an offset in scaled parts per

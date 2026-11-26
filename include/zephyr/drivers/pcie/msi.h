@@ -22,6 +22,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
+#include <zephyr/sys/sys_io.h>
 #include <stdbool.h>
 
 #include <zephyr/drivers/pcie/pcie.h>
@@ -61,9 +62,110 @@ struct msi_vector {
 	struct msix_vector *msix_vector;
 	bool msix;
 #endif /* CONFIG_PCIE_MSI_X */
+	/** Owning controller; unused on architecture backends. */
+	const struct device *ctrl;
 };
 
 typedef struct msi_vector msi_vector_t;
+
+/**
+ * @brief Construct an endpoint from an allocated vector.
+ * @param vector Non-NULL allocated vector.
+ * @return Endpoint value; no ownership is transferred.
+ */
+static inline struct pcie_endpoint pcie_msi_vector_endpoint(const msi_vector_t *vector)
+{
+	return (struct pcie_endpoint){.ctrl = vector->ctrl, .bdf = vector->bdf};
+}
+
+/**
+ * @brief Allocate all requested vectors through the endpoint's controller.
+ *
+ * Requires CONFIG_PCIE_CONTROLLER and CONFIG_PCIE_MSI_MULTI_VECTOR. A controller
+ * without transactional setup support is rejected before capability or table access.
+ * Successful allocations remain owned by the caller until reboot; no free API exists.
+ * Each endpoint permits only one successful allocation, even with different arrays.
+ * Storage owned by a successful allocation, including aliases and subarrays, must not
+ * be passed as the output array of another allocation request.
+ * Failed allocations may be retried. A backend violating the count/ownership
+ * contract causes a kernel panic because its resources cannot be recovered safely.
+ *
+ * @param ep Endpoint with a non-NULL controller.
+ * @param priority Interrupt priority.
+ * @param vectors Non-NULL caller-owned array of n_vector entries, valid until reboot.
+ * @param n_vector Nonzero request count; MSI counts must be powers of two.
+ * @param n_allocated Non-NULL output count; zero on failure, n_vector on success.
+ * @retval 0 All vectors allocated.
+ * @retval -EINVAL Invalid endpoint, array, count or output pointer.
+ * @retval -ENOTSUP Capability, transactional setup or required operation is unsupported.
+ * @retval -ENOSPC Endpoint or controller has insufficient vectors.
+ * @retval -EALREADY This endpoint already has vectors in separate storage; they remain unchanged.
+ * @return Other negative backend errno on failure; no allocation remains.
+ */
+int pcie_endpoint_msi_vectors_allocate(const struct pcie_endpoint *ep, unsigned int priority,
+				       msi_vector_t *vectors, uint8_t n_vector,
+				       uint8_t *n_allocated);
+
+/**
+ * @brief Enable vectors allocated for the endpoint.
+ *
+ * Failure leaves the vectors allocated. The device may be partially programmed or
+ * already enabled, so keep interrupt handlers and their state valid while retrying
+ * or stopping boot. Runtime resource reclamation and link recovery are unsupported.
+ *
+ * @param ep Endpoint with a non-NULL controller.
+ * @param vectors Non-NULL array allocated for this endpoint.
+ * @param n_vector Nonzero number of vectors to enable.
+ * @param irq IRQ used by the platform's MSI message composer.
+ * @retval 0 Vectors enabled.
+ * @retval -EINVAL Invalid arguments or a vector's owner/BDF does not match.
+ *                 Also returned when ordinary MSI vectors have different targets
+ *                 or lack consecutive, count-aligned message data.
+ * @retval -ENOTSUP Capability, address width or required operation is unsupported.
+ * @return Negative backend errno on failure.
+ */
+int pcie_endpoint_msi_enable(const struct pcie_endpoint *ep, msi_vector_t *vectors,
+			     uint8_t n_vector, unsigned int irq);
+
+/**
+ * @brief Connect an allocated vector using its endpoint's capabilities.
+ *
+ * Install the handler, then enable its IRQ. Initialize all state used by the handler
+ * before calling this function. Keep that state valid after an enable failure, since
+ * the interrupt source may already be active.
+ *
+ * @param ep Endpoint with a non-NULL controller.
+ * @param vector Non-NULL allocated vector belonging to ep.
+ * @param routine Non-NULL interrupt handler.
+ * @param parameter Handler argument, possibly NULL.
+ * @param flags Architecture-specific IRQ flags.
+ * @retval 0 Vector connected.
+ * @retval -EINVAL Invalid endpoint, vector, handler or mismatched owner/BDF.
+ * @retval -ENOTSUP Capability or vector connection is unsupported.
+ * @return Negative backend errno on failure.
+ */
+int pcie_endpoint_msi_vector_connect(const struct pcie_endpoint *ep, msi_vector_t *vector,
+				     void (*routine)(const void *parameter),
+				     const void *parameter, uint32_t flags);
+
+
+/**
+ * @brief Write one MSI-X table entry.
+ *
+ * Program the message address, message data and vector control of an entry.
+ * The vector is left unmasked. The caller must provide a mapped entry.
+ *
+ * @param entry Mapped MSI-X table entry.
+ * @param address 64-bit message address as seen by the endpoint.
+ * @param data Message data.
+ */
+static inline void pcie_msix_write_entry(struct msix_vector *entry, uint64_t address, uint32_t data)
+{
+	sys_write32((uint32_t)address, (mm_reg_t)&entry->msg_addr);
+	sys_write32((uint32_t)(address >> 32), (mm_reg_t)&entry->msg_up_addr);
+	sys_write32(data, (mm_reg_t)&entry->msg_data);
+	sys_write32(0U, (mm_reg_t)&entry->vector_ctrl);
+}
 
 #ifdef CONFIG_PCIE_MSI_MULTI_VECTOR
 
@@ -133,11 +235,12 @@ extern uint16_t pcie_msi_mdr(unsigned int irq,
  * @param n_vector the size of the vector array
  * @param irq The IRQ we wish to trigger via MSI.
  * @retval true MSI or MSI-X was enabled.
- * @retval false MSI or MSI-X could not be enabled: the endpoint has no
- *                supported MSI or MSI-X capability, or the target address
- *                exceeds 32 bits and the endpoint only supports 32-bit MSI.
- *                On failure, the endpoint's MSI configuration and bus-master
- *                state are left unchanged.
+ * @retval false MSI or MSI-X could not be enabled.
+ *
+ * Missing capabilities and targets above 4 GiB on a 32-bit-only MSI endpoint are
+ * rejected before changing MSI configuration or bus-master state. Other failures
+ * may leave the device partially programmed or enabled; keep interrupt handlers
+ * and their state valid while retrying or stopping boot.
  */
 extern bool pcie_msi_enable(pcie_bdf_t bdf,
 			    msi_vector_t *vectors,
