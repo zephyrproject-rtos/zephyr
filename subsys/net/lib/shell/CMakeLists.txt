@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
+zephyr_library()
+
+add_definitions(-D__ZEPHYR_SUPERVISOR__)
+
 zephyr_library_sources(net_shell.c)
 zephyr_library_include_directories(. ${ZEPHYR_BASE}/subsys/net/l2)
 zephyr_library_include_directories(. ${ZEPHYR_BASE}/subsys/net/lib)
