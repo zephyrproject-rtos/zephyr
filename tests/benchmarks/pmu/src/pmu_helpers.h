@@ -85,9 +85,12 @@ static inline bool pmu_apply_counter_group(struct perf_counter_config *counter_c
 }
 
 /**
- * @brief Calibrated CPU MHz from @ref perf_counter_init (benchmark / diag only).
+ * @brief Query calibrated CPU MHz (benchmark / diag only).
  *
  * Implemented for AArch64 PMU; returns 0 when @c CONFIG_ARM64_PMUV3 is off.
+ * Call after PMU initialization, outside any perf or PMU measurement window,
+ * with exclusive PMU access and CPU affinity maintained. The first query
+ * calibrates the current CPU.
  */
 static inline uint32_t pmu_cpu_freq_mhz(void)
 {

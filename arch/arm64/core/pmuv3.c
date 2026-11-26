@@ -31,6 +31,7 @@ struct pmu_cpu_state {
 	uint32_t idcode;
 	uint32_t cpu_freq_mhz;
 	atomic_t initialized;
+	bool freq_calibration_done;
 };
 
 static struct pmu_cpu_state pmu_state_cpus[CONFIG_MP_MAX_NUM_CPUS];
@@ -288,12 +289,9 @@ int arch_perf_counter_init(void)
 	write_pmuserenr_el0(0x00UL);
 #endif
 
-	/* Calibrate CPU clock frequency from PMU cycle counter vs system timer */
-	pmu_calibrate_cpu_freq();
-
 	/*
 	 * Publish after all per-CPU fields are committed so other code on this
-	 * CPU can safely read counter count and calibration.
+	 * CPU can safely read the PMU capabilities.
 	 */
 	atomic_set(&st->initialized, 1);
 
@@ -312,7 +310,18 @@ uint32_t arch_perf_counter_num_counters(void)
 
 uint32_t arch_perf_counter_cpu_freq_mhz(void)
 {
-	return pmu_curr_state()->cpu_freq_mhz;
+	struct pmu_cpu_state *st = pmu_curr_state();
+
+	if (!atomic_get(&st->initialized) || st->num_counters == 0U) {
+		return 0U;
+	}
+	if (!st->freq_calibration_done) {
+		pmu_calibrate_cpu_freq();
+		/* Cache failed attempts too, since zero MHz is a valid failure result. */
+		st->freq_calibration_done = true;
+	}
+
+	return st->cpu_freq_mhz;
 }
 
 void arch_perf_counter_get_info(perf_counter_info_t *info)

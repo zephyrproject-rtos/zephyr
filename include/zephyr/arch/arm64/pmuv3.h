@@ -171,7 +171,23 @@ void arch_perf_counter_clear_overflow(uint32_t counter);
  * @{
  */
 
-/** @brief Calibrated CPU MHz from @ref perf_counter_init (PMU cycle counter vs system timer). */
+/**
+ * @brief Return the calibrated CPU frequency in MHz for the current CPU.
+ *
+ * Call after successful @ref perf_counter_init on this CPU. The first query
+ * compares the PMU cycle counter against the system timer, busy-waiting for
+ * approximately 1 ms. Each CPU caches its first result, including a failed
+ * calibration. Later queries do not repeat calibration or track clock changes.
+ * This function does not prevent CPU migration or mask interrupts.
+ *
+ * @warning The caller must remain on the intended CPU and provide exclusive
+ * PMU access. Do not call during a perf or other PMU measurement window or
+ * concurrently with other PMU operations. Calibration resets the cycle counter
+ * and temporarily enables the PMU, affecting enabled counters.
+ *
+ * @return Cached CPU frequency in MHz, or zero if this CPU has not initialized
+ * successfully or calibration failed.
+ */
 uint32_t arch_perf_counter_cpu_freq_mhz(void);
 
 /** @brief Human-readable name for @a event, or @c "UNKNOWN". */

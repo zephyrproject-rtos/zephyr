@@ -987,6 +987,10 @@ Architectures
   :file:`include/zephyr/arch/pmu.h` is now :file:`include/zephyr/arch/perf_counter.h`, and its
   ``pmu_*`` functions and types gained a ``perf_counter_`` prefix. (:github:`125939`)
 
+* Arm64 PMUv3 frequency calibration now runs on the first frequency query per CPU. Call
+  :c:func:`arch_perf_counter_cpu_freq_mhz` after PMU initialization and outside any perf or PMU
+  measurement window. (:github:`119863`)
+
 * On Xtensa, the HiFi register sharing code was generalized to any coprocessor, and the fields
   it adds to the architecture structures were renamed: ``hifi_regs`` in ``struct _thread_arch``
   is now ``cp_regs``, and ``hifi_owner`` and ``save_hifi`` in ``struct _cpu_arch`` are now

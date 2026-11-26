@@ -91,6 +91,11 @@ struct perf_counter_event_info {
  * @c k_thread_cpu_mask_enable() / @c k_thread_cpu_mask_disable(), so it does
  * not migrate during a measurement.
  *
+ * @warning Callers must serialize PMU operations and provide exclusive PMU
+ * ownership for measurements. Do not modify the PMU while a perf session or
+ * another PMU user is measuring on the same CPU. Read-only event discovery may
+ * be used during a measurement.
+ *
  * There is no @c SYS_INIT hook; callers choose when to probe
  * (for example at the start of a benchmark).
  *

@@ -30,7 +30,7 @@ events.
 
 Provider listing and lookup use only read-only event discovery, without initializing the PMU or
 modifying counters. On each CPU, initialization is deferred until the first event is prepared;
-it may reset counters and perform backend calibration.
+it may reset counters.
 
 PMU operations run synchronously on the owning CPU, directly with local interrupts locked or through
 IPI work for a remote CPU. Event-list callbacks run in the caller's thread context.
