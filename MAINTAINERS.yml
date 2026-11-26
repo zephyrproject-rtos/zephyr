@@ -414,7 +414,7 @@ Alif Semiconductor Platforms:
   files:
     - boards/alif/
     - drivers/*/*alif*
-    - drivers/*/*/*alif*
+    - drivers/*/*/*/*alif*
     - dts/arm/alif/
     - dts/bindings/*/alif,*
     - include/zephyr/dt-bindings/*/alif*.h
@@ -978,7 +978,9 @@ Bouffalolab Platforms:
     - boards/sipeed/m1s_dock/
     - boards/sipeed/maix_m0s_dock/
     - drivers/**/*bflb*
+    - drivers/*/**/*bflb*
     - drivers/**/*bflb*/
+    - drivers/*/**/*bflb*/
     - dts/riscv/bflb/
     - dts/bindings/*/bflb,*
     - soc/bflb/
@@ -3374,6 +3376,7 @@ Espressif Platforms:
   files:
     - drivers/*/*esp32*
     - drivers/*/*/*esp32*
+    - drivers/*/*/*/*esp32*
     - boards/espressif/
     - cmake/emu/espressif_qemu.cmake
     - cmake/emu/espressif_qemu/
@@ -3382,7 +3385,7 @@ Espressif Platforms:
     - dts/bindings/*/*esp32*
     - samples/boards/espressif/
     - tests/boards/espressif/
-    - drivers/*/*esp32*/
+    - drivers/*/*/*esp32*/
     - drivers/net/wifi/esp_hosted/
     - drivers/net/wifi/esp_hosted_mcu/
     - drivers/net/wifi/esp_at/
@@ -3685,6 +3688,7 @@ Infineon Platforms:
     - drivers/*/*/*infineon*
     - drivers/*/*xmc*
     - drivers/*/*/*xmc*
+    - drivers/*/*/*/*xmc*
     - drivers/sensor/infineon/
     - drivers/net/wifi/infineon/
     - dts/arm/infineon/
@@ -4040,7 +4044,9 @@ LiteX Platforms:
   files:
     - boards/enjoydigital/litex_vexriscv/
     - drivers/*/*litex*
+    - drivers/*/*/*litex*
     - drivers/*/Kconfig.litex
+    - drivers/*/*/Kconfig.litex
     - dts/bindings/*/litex*
     - dts/riscv/riscv32-litex-vexriscv.dtsi
     - include/zephyr/drivers/*/*litex*
@@ -4294,6 +4300,7 @@ Microchip PIC32 Platforms:
     - dts/bindings/*/microchip,sam*
     - dts/bindings/*/microchip,*-g*
     - drivers/*/*mchp*
+    - drivers/*/*/*mchp*
     - include/zephyr/**/mchp*
     - samples/**/boards/sam_*
     - soc/microchip/pic32*/
@@ -4345,6 +4352,7 @@ Microchip SAM MCU Platforms:
     - soc/atmel/
     - soc/microchip/sam/sam_*/
     - drivers/*/*sam*
+    - drivers/*/*/*sam*
     - dts/bindings/*/atmel,*
     - include/zephyr/*/*/*sam*
     - include/zephyr/*/*/*atmel*
@@ -4555,6 +4563,7 @@ NXP Platform Wireless:
     - boards/nxp/*mcxw*/
     - boards/nxp/*rw*/
     - drivers/*/*mcxw*.c
+    - drivers/*/*/*mcxw*.c
     - drivers/bluetooth/hci/*nxp*
     - drivers/net/hdlc_rcp_if/*nxp*
     - drivers/net/ieee802154/ieee802154_kw41z.c
@@ -4795,6 +4804,7 @@ NXP Platforms (S32):
     - boards/common/*nxp_s32*
     - soc/nxp/s32/
     - drivers/*/*nxp_s32*
+    - drivers/*/*/*nxp_s32*
     - drivers/misc/*nxp_s32*/
     - dts/bindings/*/nxp,s32*
     - dts/arm/nxp/s32/nxp_s32*
@@ -4834,6 +4844,7 @@ Native_sim and POSIX arch:
     - drivers/*/*native*
     - drivers/*/*/*posix*
     - drivers/*/*/*native*
+    - drivers/*/*/*/*native*
     - dts/posix/
     - include/zephyr/arch/posix/
     - scripts/native_simulator/
@@ -5328,6 +5339,7 @@ Nuvoton Numicro Numaker Platforms:
     - drivers/*/*numicro*
     - drivers/*/*numaker*
     - drivers/*/*/*numaker*
+    - drivers/*/*/*/*numaker*
   labels:
     - "platform: Nuvoton Numicro Numaker"
 
@@ -5876,6 +5888,7 @@ Renesas RA Platforms:
     - boards/arduino/uno_r4/
     - boards/renesas/*ra*/
     - drivers/**/*renesas_ra*
+    - drivers/*/**/*renesas_ra*
     - drivers/pinctrl/renesas/ra/
     - dts/arm/renesas/ra/
     - dts/bindings/*/*renesas,ra*
@@ -5976,7 +5989,7 @@ Rockchip Platforms:
     - soc/rockchip/
     - drivers/*/*rk35*
     - drivers/*/*rockchip*
-    - drivers/*/*/*rockchip*
+    - drivers/*/*/*/*rockchip*
     - dts/bindings/*/rockchip,*
     - include/zephyr/dt-bindings/*/*rk35*
   labels:
@@ -6053,6 +6066,7 @@ STM32 Platforms:
     - drivers/*/*stm32*.c
     - drivers/*/*stm32*.h
     - drivers/*/*/*stm32*
+    - drivers/*/*/*/*stm32*
     - drivers/*/*stm32*
     - dts/arm/st/
     - dts/bindings/*/*stm32*
@@ -6328,10 +6342,12 @@ Silabs Platforms:
     - dts/arm/silabs/
     - dts/bindings/*/silabs*
     - drivers/*/*gecko*
+    - drivers/*/*/*gecko*
     - drivers/*/*silabs*
     - drivers/*/*siwx91x*
     - drivers/*/*/*silabs*
     - drivers/*/*/*siwx91x*
+    - drivers/*/*/*/*siwx91x*
     - tests/boards/silabs/
     - snippets/*silabs*/
   file-groups:
@@ -6587,9 +6603,11 @@ TI SimpleLink Platforms:
     - boards/ti/cc*/
     - boards/ti/msp*/
     - drivers/*/*cc13*
+    - drivers/*/*/*cc13*
     - drivers/*/*cc23*
-    - drivers/*/*cc25*
+    - drivers/*/*/*cc25*
     - drivers/*/*cc26*
+    - drivers/*/*/*cc26*
     - drivers/*/*cc32*
     - dts/arm/ti/cc*
     - dts/bindings/*/ti,cc*
@@ -6607,6 +6625,7 @@ TI Stellaris Platforms:
     - dts/arm/ti/lm3s6965.dtsi
     - dts/bindings/*/*stellaris*
     - drivers/*/*stellaris*
+    - drivers/*/*/*stellaris*
   labels:
     - "platform: TI Stellaris"
 
@@ -7054,6 +7073,7 @@ WCH Platforms:
     - dts/riscv/wch/
     - soc/wch/
     - drivers/*/*wch*
+    - drivers/*/*/*wch*
     - dts/bindings/*/wch,*
   labels:
     - "platform: WinChipHead"
@@ -8133,7 +8153,9 @@ Xilinx Platforms:
   files:
     - boards/amd/
     - drivers/*/*xilinx*
+    - drivers/*/*/*xilinx*
     - drivers/*/*xlnx*
+    - drivers/*/*/*xlnx*
     - drivers/*/*zynq*
     - dts/*/xilinx/
     - dts/bindings/*/*xlnx*
@@ -8267,7 +8289,8 @@ nRF Platforms:
   files:
     - boards/nordic/
     - drivers/*/*nrf*.c
-    - drivers/*/*nrf*/
+    - drivers/*/*/*nrf*.c
+    - drivers/*/*/*nrf*/
     - drivers/*/*nordic*/
     - soc/nordic/
     - samples/boards/nordic/
