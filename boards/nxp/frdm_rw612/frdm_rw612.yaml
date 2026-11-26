@@ -1,5 +1,5 @@
 #
-# Copyright 2022-2025 NXP
+# Copyright 2022-2026 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -33,4 +33,5 @@ supported:
   - netif:eth
   - netif:openthread
   - comparator
+  - wuc
 vendor: nxp

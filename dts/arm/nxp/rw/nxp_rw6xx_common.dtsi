@@ -13,6 +13,7 @@
 #include <zephyr/dt-bindings/adc/nxp,gau-adc.h>
 #include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/wuc/wuc_nxp_rw_pmu.h>
 
 / {
 	chosen {
@@ -155,6 +156,7 @@
 
 	imu: nxp_wifi {
 		compatible = "nxp,wifi";
+		wakeup-ctrls = <&wuc NXP_RW_PMU_WLAN_WAKEUP0>;
 		/* first index is the imu interrupt, the second is the wakeup done interrupt */
 		interrupts = <72 2>, <64 2>;
 		power-domains = <&peripheral_domain>;
@@ -211,6 +213,7 @@
 
 	nbu: nbu {
 		compatible = "nxp,nbu";
+		wakeup-ctrls = <&wuc NXP_RW_PMU_BLE_WAKEUP0>;
 		interrupts = <90 2>, <82 2>;
 		interrupt-names = "nbu_rx_int", "wakeup_int";
 	};
@@ -444,6 +447,8 @@
 		compatible = "nxp,lpc-rtc";
 		reg = <0x30000 0x1000>;
 		interrupts = <32 0>;
+		wakeup-ctrls = <&wuc NXP_RW_PMU_RTC>;
+		wakeup-source;
 		status = "disabled";
 
 		rtc_highres: rtc_highres {
@@ -456,6 +461,11 @@
 		compatible = "nxp,rw-pmu";
 		reg = <0x31000 0x130>;
 
+		wuc: wakeup-controller {
+			compatible = "nxp,rw-pmu-wuc";
+			#wakeup-ctrl-cells = <1>;
+		};
+
 		pin0: pin0 {
 			compatible = "nxp,aon-wakeup-pin";
 			interrupts = <100 0>;
@@ -464,6 +474,7 @@
 
 		pin1: pin1 {
 			compatible = "nxp,aon-wakeup-pin";
+			wakeup-ctrls = <&wuc NXP_RW_PMU_PIN1>;
 			interrupts = <101 0>;
 			status = "disabled";
 		};
@@ -714,6 +725,7 @@
 	os_timer: ostimer0: timers@13b000 {
 		compatible = "nxp,os-timer";
 		reg = <0x13b000 0x1000>;
+		wakeup-ctrls = <&wuc NXP_RW_PMU_OS_EVENT_TIMER>;
 		interrupts = <41 0>;
 		resets = <&rstctl1 NXP_SYSCON_RESET(0, 27)>;
 		status = "disabled";

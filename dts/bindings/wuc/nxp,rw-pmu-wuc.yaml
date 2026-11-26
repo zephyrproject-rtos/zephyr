@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP RW6xx Power Management Unit wakeup controller.
+
+  The wakeup controller is part of the nxp,rw-pmu Power Management Unit.
+  Wakeup source specifiers use the NXP_RW_PMU_* identifiers defined in
+  zephyr/dt-bindings/wuc/wuc_nxp_rw_pmu.h. Their values are peripheral
+  interrupt numbers, without the Cortex-M exception offset of 16.
+  They are not bit positions in WAKEUP_MASK.
+
+  The PMU routes peripheral wakeup requests independently of the NVIC
+  interrupt enable and peripheral configuration. Source availability
+  depends on the power mode and powered domains. PM1 can wake on any
+  enabled interrupt without PMU routing. PM3/PM4 support fewer sources
+  than PM2; WLAN/BLE routes cannot wake a powered-off radio.
+
+compatible: "nxp,rw-pmu-wuc"
+
+include: [base.yaml, wuc-controller.yaml]
+
+properties:
+  '#wakeup-ctrl-cells':
+    const: 1
+
+wakeup-ctrl-cells:
+  - id
