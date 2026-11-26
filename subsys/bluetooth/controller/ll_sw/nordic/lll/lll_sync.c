@@ -1183,8 +1183,17 @@ static void isr_rx_done_cleanup(struct lll_sync *lll, uint8_t crc_ok, bool sync_
 	 * By code inspection there should not be a race that ULL execution context assigns lll_aux
 	 * that would be reset here, because either we are here not receiving a chain PDU or the
 	 * lll_aux has been set in the node rx type NODE_RX_TYPE_EXT_AUX_RELEASE before we are here.
+	 *
+	 * With CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS the association must survive the event: chain
+	 * PDUs already enqueued with ftr->param = sync_lll are demuxed in ull_scan_aux_setup()
+	 * after this cleanup and look up lll_aux via sync_lll->lll_aux, so clearing it here makes
+	 * that lookup NULL and asserts. The chains design releases the association itself in
+	 * aux_chain_release(); clearing it here would also strand the chain and make
+	 * ll_sync_terminate() skip ull_scan_aux_stop() (called only when sync->lll.lll_aux is set).
 	 */
-	lll->lll_aux = NULL;
+	if (!IS_ENABLED(CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS)) {
+		lll->lll_aux = NULL;
+	}
 
 	/* Calculate and place the drift information in done event */
 	e = ull_event_done_extra_get();
