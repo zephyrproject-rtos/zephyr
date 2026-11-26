@@ -1876,6 +1876,124 @@ ZTEST(coap_client, test_echo_option_kept_over_response)
 			  "Incorrect echo data");
 }
 
+/* Send short_request to an endpoint and wait for its response */
+static void echo_request(const struct net_sockaddr *addr)
+{
+	zassert_ok(coap_client_req(&client, 0, addr, &short_request, NULL));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zexpect_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT, "Unexpected response");
+	wait_callbacks_done();
+}
+
+/* The Echo option value of a response is for the endpoint it came from
+ * (RFC 9175 section 2.3): a request to another one does not carry it, the
+ * next request to that endpoint does.
+ */
+ZTEST(coap_client, test_echo_option_next_req_other_endpoint)
+{
+	static const struct echo_response responses[] = {
+		{COAP_TYPE_ACK, COAP_RESPONSE_CODE_CONTENT, "echo_value", false},
+		{COAP_TYPE_ACK, COAP_RESPONSE_CODE_CONTENT, NULL, true},
+		{COAP_TYPE_ACK, COAP_RESPONSE_CODE_CONTENT, NULL, false},
+	};
+
+	echo_responses = responses;
+	echo_response_idx = 0;
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_note_echo;
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_echo_responses;
+
+	echo_request(net_sad(&dst_address));
+
+	echo_request((const struct net_sockaddr *)&recv_wrong_src_address);
+	zexpect_true(echo_sent_len < 0, "Echo option sent to another endpoint");
+
+	echo_request(net_sad(&dst_address));
+	zexpect_equal(echo_sent_len, strlen("echo_value"), "Echo option not sent to its endpoint");
+	zexpect_mem_equal(echo_sent_value, "echo_value", strlen("echo_value"),
+			  "Incorrect echo data");
+}
+
+/* On a connected socket a request without address goes to the peer, and a
+ * value that came in on such a request is for the next one alike. A request
+ * with an address in between is not taken for that endpoint.
+ */
+ZTEST(coap_client, test_echo_option_next_req_connected)
+{
+	static const struct echo_response responses[] = {
+		{COAP_TYPE_ACK, COAP_RESPONSE_CODE_CONTENT, "echo_value", false},
+		{COAP_TYPE_ACK, COAP_RESPONSE_CODE_CONTENT, NULL, false},
+		{COAP_TYPE_ACK, COAP_RESPONSE_CODE_CONTENT, NULL, false},
+	};
+
+	echo_responses = responses;
+	echo_response_idx = 0;
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_note_echo;
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_echo_responses;
+
+	echo_request(NULL);
+
+	echo_request(net_sad(&dst_address));
+	zexpect_true(echo_sent_len < 0, "Echo option sent to a request with an address");
+
+	echo_request(NULL);
+	zexpect_equal(echo_sent_len, strlen("echo_value"), "Echo option not sent to the peer");
+	zexpect_mem_equal(echo_sent_value, "echo_value", strlen("echo_value"),
+			  "Incorrect echo data");
+}
+
+/* An application that cancels its requests may close its socket, and a new
+ * one connected to another server may get the same descriptor: the value kept
+ * for the old peer does not go out on it.
+ */
+ZTEST(coap_client, test_echo_option_dropped_on_cancel)
+{
+	static const struct echo_response responses[] = {
+		{COAP_TYPE_ACK, COAP_RESPONSE_CODE_CONTENT, "echo_value", false},
+		{COAP_TYPE_ACK, COAP_RESPONSE_CODE_CONTENT, NULL, false},
+	};
+
+	echo_responses = responses;
+	echo_response_idx = 0;
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_note_echo;
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_echo_responses;
+
+	echo_request(NULL);
+
+	coap_client_cancel_requests(&client);
+
+	echo_request(NULL);
+	zexpect_true(echo_sent_len < 0, "Echo option sent after the requests were cancelled");
+}
+
+/* The value another endpoint challenges a request with goes to that endpoint
+ * in the retry, and does not take the place of the one kept for the first.
+ */
+ZTEST(coap_client, test_echo_option_challenge_other_endpoint)
+{
+	static const struct echo_response responses[] = {
+		{COAP_TYPE_ACK, COAP_RESPONSE_CODE_CONTENT, "echo_value", false},
+		{COAP_TYPE_ACK, COAP_RESPONSE_CODE_UNAUTHORIZED, "other", true},
+		{COAP_TYPE_ACK, COAP_RESPONSE_CODE_CONTENT, NULL, true},
+		{COAP_TYPE_ACK, COAP_RESPONSE_CODE_CONTENT, NULL, false},
+	};
+
+	echo_responses = responses;
+	echo_response_idx = 0;
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_note_echo;
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_echo_responses;
+
+	echo_request(net_sad(&dst_address));
+
+	echo_request((const struct net_sockaddr *)&recv_wrong_src_address);
+	zexpect_equal(echo_sent_len, strlen("other"), "Challenge not answered");
+	zexpect_mem_equal(echo_sent_value, "other", strlen("other"), "Incorrect echo data");
+
+	echo_request(net_sad(&dst_address));
+	zexpect_equal(echo_sent_len, strlen("echo_value"), "Echo option not sent to its endpoint");
+	zexpect_mem_equal(echo_sent_value, "echo_value", strlen("echo_value"),
+			  "Incorrect echo data");
+}
+
 ZTEST(coap_client, test_get_no_path)
 {
 	struct coap_client_request req = short_request;
