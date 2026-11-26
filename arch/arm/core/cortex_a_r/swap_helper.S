@@ -321,8 +321,21 @@ demux:
     cmp r1, #_SVC_CALL_RUNTIME_EXCEPT
     beq _oops
 
-#if CONFIG_IRQ_OFFLOAD
-    blx z_irq_do_offload  /* call C routine which executes the offload */
+#if defined(CONFIG_IRQ_OFFLOAD)
+    cmp r1, #_SVC_CALL_IRQ_OFFLOAD
+    bne _context_switch
+
+#if defined(CONFIG_USERSPACE)
+    /* irq_offload() is for kernel code: from user mode, it is an oops */
+    and r0, #MODE_MASK
+    cmp r0, #MODE_USR
+    beq _oops
+#endif
+
+    /* The routine and its parameter are the saved r0 and r1 */
+    ldr r0, [ip, #(FPU_SF_SIZE + 4)]
+    ldr r1, [ip, #FPU_SF_SIZE]
+    blx r1
 
     /* exception return is done in z_arm_int_exit() */
     b z_arm_int_exit
