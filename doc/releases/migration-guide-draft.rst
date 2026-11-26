@@ -874,6 +874,9 @@ Tools
 * The stm32flash runner now defaults to 115200 baud instead of 57600 when no ``--baud-rate`` is
   given. Pass ``--baud-rate=57600`` to keep the previous speed.
 
+* The deprecated ``twister()`` function of the ``twisterlib.twister_main`` module has been removed.
+  Use the ``Twister`` class instead: ``Twister(options, default_options).run()``.
+
 
 IPC
 ===
