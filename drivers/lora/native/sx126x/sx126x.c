@@ -441,6 +441,11 @@ static int sx126x_set_rx_duty_cycle(const struct device *dev,
 	uint8_t buf[6];
 	int ret;
 
+	if (rx_ms > SX126X_TIMEOUT_MAX_MS || sleep_ms > SX126X_TIMEOUT_MAX_MS) {
+		LOG_ERR("Duty-cycle period too long: %u ms, %u ms", rx_ms, sleep_ms);
+		return -EINVAL;
+	}
+
 	sys_put_be24(SX126X_MS_TO_TIMEOUT(rx_ms), &buf[0]);
 	sys_put_be24(SX126X_MS_TO_TIMEOUT(sleep_ms), &buf[3]);
 
