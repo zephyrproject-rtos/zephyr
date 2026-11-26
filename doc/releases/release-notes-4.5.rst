@@ -2879,6 +2879,13 @@ Other notable changes
     behind the failure. The supplicant fills these in, and the Wi-Fi shell prints
     them with the connection and disconnection results. (:github:`116704`)
 
+  * Added support for requesting WNM-Sleep Mode from the access point, through
+    :c:macro:`NET_REQUEST_WIFI_WNM_SLEEP` and the ``wifi wnm_sleep`` shell command, which
+    needs :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM`. The outcome, with the WNM Sleep
+    Interval granted by the access point, is reported with
+    :c:macro:`NET_EVENT_WIFI_WNM_SLEEP`. Requests to an access point that does not advertise
+    WNM-Sleep Mode fail with ``-ENOTSUP``.
+
   * The ESP32 Wi-Fi driver gained 802.11k/v/r and MBO support, all off by
     default. :kconfig:option:`CONFIG_ESP32_WIFI_11KV_SUPPORT` turns on 802.11k
     and 802.11v, :kconfig:option:`CONFIG_ESP32_WIFI_MBO_SUPPORT` turns on MBO

@@ -1264,6 +1264,16 @@ void wifi_mgmt_raise_twt_sleep_state(struct net_if *iface,
 					sizeof(twt_sleep_state));
 }
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
+void wifi_mgmt_raise_wnm_sleep_event(struct net_if *iface,
+				     struct wifi_wnm_sleep_info *info)
+{
+	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_WNM_SLEEP,
+					iface, info,
+					sizeof(*info));
+}
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM */
+
 static int wifi_mode(uint64_t mgmt_request, struct net_if *iface,
 				void *data, size_t len)
 {
@@ -1602,6 +1612,37 @@ static int wifi_set_bss_max_idle_period(uint64_t mgmt_request, struct net_if *if
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_BSS_MAX_IDLE_PERIOD,
 				  wifi_set_bss_max_idle_period);
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
+static int wifi_wnm_sleep(uint64_t mgmt_request, struct net_if *iface,
+			  void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	struct wifi_wnm_sleep_params *params = data;
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->wnm_sleep == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
+	if (!data || len != sizeof(*params)) {
+		return -EINVAL;
+	}
+
+	if (params->oper != WIFI_WNM_SLEEP_OPER_ENTER &&
+	    params->oper != WIFI_WNM_SLEEP_OPER_EXIT) {
+		return -EINVAL;
+	}
+
+	return wifi_mgmt_api->wnm_sleep(dev, iface, params);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_WNM_SLEEP, wifi_wnm_sleep);
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM */
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN
 static int wifi_set_bgscan(uint64_t mgmt_request, struct net_if *iface, void *data, size_t len)
