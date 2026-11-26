@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2026 Dotcom IoT LLP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/sensor/sths34pf80.h>
+
+/ {
+	aliases {
+		presence-sensor = &sths34pf80;
+	};
+};
+
+&arduino_i2c {
+	status = "okay";
+
+	sths34pf80: sths34pf80@5a {
+		compatible = "st,sths34pf80";
+		reg = <0x5a>;
+		odr = <STHS34PF80_DT_ODR_1HZ>;
+		/* Optional: wire the sensor INT pin to read on data-ready */
+		/* int-gpios = <&arduino_header 8 GPIO_ACTIVE_HIGH>; */
+	};
+};

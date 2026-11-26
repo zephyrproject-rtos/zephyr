@@ -1,0 +1,16 @@
+sample:
+  name: Presence sensor
+  description: Read presence, motion and temperature using the Sensor Read & Decode API
+tests:
+  sample.sensor.presence_sensor:
+    harness: console
+    tags: sensors
+    depends_on:
+      - arduino_i2c
+    filter: dt_alias_exists("presence-sensor")
+    integration_platforms:
+      - nrf9151dk/nrf9151/ns
+    harness_config:
+      type: one_line
+      regex:
+        - "Presence sensor sample"
