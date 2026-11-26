@@ -5,3 +5,8 @@
  */
 
 #include <nxp/mcx/mcxa/nxp_mcxaxx6_common.dtsi>
+
+&flash {
+	reg = <0 DT_SIZE_K(960)>;
+	ranges = <0x0 0x0 DT_SIZE_K(960)>;
+};
