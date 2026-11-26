@@ -1,0 +1,11 @@
+tests:
+  arch.xtensa.mpu_reset_table:
+    arch_allow: xtensa
+    filter: CONFIG_XTENSA_MPU
+    platform_allow:
+      - qemu_xtensa/sample_controller32/mpu
+    integration_platforms:
+      - qemu_xtensa/sample_controller32/mpu
+    tags:
+      - kernel
+      - mpu

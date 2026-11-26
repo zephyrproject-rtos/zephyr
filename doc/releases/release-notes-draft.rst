@@ -49,6 +49,10 @@ Libraries / Subsystems
     architecture block, version 3, when
     :kconfig:option:`CONFIG_EXTRA_EXCEPTION_INFO` is enabled. The gdbstub
     coredump decoder was updated accordingly.
+  * xtensa: on cores with an MPU, the reset vector programs the MPU from an
+    ``__xt_mpu_init_table`` / ``__xt_mpu_init_table_size`` table when the SoC or
+    application provides one, as the Cadence XTOS reset vector does, instead of
+    always setting up the default map.
 
 * Bluetooth
 
