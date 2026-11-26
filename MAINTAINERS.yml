@@ -2731,7 +2731,7 @@ Documentation Infrastructure:
   maintainers:
     - yangbolu1991
   files:
-    - drivers/ptp_clock/
+    - drivers/net/ptp_clock/
     - dts/bindings/ptp_clock/
     - include/zephyr/drivers/ptp_clock.h
     - tests/drivers/ptp_clock/
@@ -4885,6 +4885,7 @@ Networking:
     - drivers/net/ieee802154/
     - drivers/net/mdio/
     - drivers/net/phy/
+    - drivers/net/ptp_clock/
     - drivers/net/wifi/
     - include/zephyr/net/gptp.h
     - include/zephyr/net/ieee802154*.h
