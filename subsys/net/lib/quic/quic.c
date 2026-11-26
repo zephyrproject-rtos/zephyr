@@ -5487,9 +5487,12 @@ static void quic_pto_work_handler(struct k_work *work)
 	}
 }
 
-static void quic_endpoint_init_idle_timeout(struct quic_endpoint *ep,
-					    uint64_t local_timeout_ms)
+/* Our own idle timeout is the max_idle_timeout that the transport
+ * parameters advertise, so that we enforce what the peer was told.
+ */
+ZTESTABLE_STATIC void quic_endpoint_init_idle_timeout(struct quic_endpoint *ep)
 {
+	uint64_t local_timeout_ms = CONFIG_QUIC_MAX_IDLE_TIMEOUT;
 	int64_t now = k_uptime_get();
 	k_spinlock_key_t key = k_spin_lock(&ep->idle.lock);
 
@@ -5522,7 +5525,6 @@ static void quic_endpoint_handshake_complete(struct quic_endpoint *ep)
 		quic_get_by_ep(ep), duration);
 }
 
-#define QUIC_DEFAULT_IDLE_TIMEOUT_MS (30 * MSEC_PER_SEC)  /* Default 30s idle timeout */
 #define QUIC_DEFAULT_HANDSHAKE_TIMEOUT_MS (30 * MSEC_PER_SEC)  /* Default 30s handshake timeout */
 
 static uint16_t quic_clamp_udp_payload_size(uint64_t value)
@@ -5685,7 +5687,7 @@ static void quic_endpoint_init(struct quic_endpoint *ep)
 
 	ep->dplpmtud.path.in_use = false;
 
-	quic_endpoint_init_idle_timeout(ep, QUIC_DEFAULT_IDLE_TIMEOUT_MS);
+	quic_endpoint_init_idle_timeout(ep);
 	quic_endpoint_init_handshake_timeout(ep, QUIC_DEFAULT_HANDSHAKE_TIMEOUT_MS);
 	quic_recovery_init(ep);
 

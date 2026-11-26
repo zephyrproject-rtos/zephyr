@@ -1746,6 +1746,7 @@ void quic_test_check_idle_timeouts(void);
 bool stream_seq_was_opened(const struct quic_stream_seq_set *set, uint64_t seq);
 bool stream_seq_gaps_fit(const struct quic_stream_seq_set *set, uint64_t seq);
 void stream_seq_mark_opened(struct quic_stream_seq_set *set, uint64_t seq);
+void quic_endpoint_init_idle_timeout(struct quic_endpoint *ep);
 void quic_endpoint_negotiate_idle_timeout(struct quic_endpoint *ep);
 int64_t quic_endpoint_idle_timeout_ms(const struct quic_endpoint *ep);
 
