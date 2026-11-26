@@ -12,6 +12,19 @@ tests:
     extra_configs:
       - arch:posix:CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
       - platform:iotdk/arc_iot:CONFIG_ARC_IOT_CUSTOM_CPU_IDLE=y
+  sample.shell.shell_module.uart_rpmsg_interrupt:
+    build_only: true
+    platform_allow:
+      - beagley_ai/j722s/mcu_r5f0_0
+    integration_platforms:
+      - beagley_ai/j722s/mcu_r5f0_0
+    tags:
+      - shell
+      - uart
+      - rpmsg
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-rpmsg-uart.conf"
+      - DTC_OVERLAY_FILE="rpmsg-uart.overlay"
   sample.shell.shell_module.usb:
     depends_on: usbd
     tags:

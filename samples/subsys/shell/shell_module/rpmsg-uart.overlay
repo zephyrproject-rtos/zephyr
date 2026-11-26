@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2026 Dhruv Menon <dhruvmenon1104@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Send console and shell over rpmsg-uart so this sample builds the same
+ * path used with a Linux /dev/ttyRPMSG* host console.
+ */
+
+/ {
+	chosen {
+		zephyr,console = &rpmsg0;
+		zephyr,shell-uart = &rpmsg0;
+	};
+
+	rpmsg0: rpmsg0 {
+		compatible = "rpmsg-uart";
+		status = "okay";
+	};
+};
