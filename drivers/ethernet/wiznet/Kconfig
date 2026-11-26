@@ -57,8 +57,8 @@ config ETH_WIZNET_POLL_PERIOD
 endif # ETH_WIZNET
 
 # zephyr-keep-sorted-start
-source "drivers/ethernet/wiznet/Kconfig.w5100s"
-source "drivers/ethernet/wiznet/Kconfig.w5500"
-source "drivers/ethernet/wiznet/Kconfig.w6100"
-source "drivers/ethernet/wiznet/Kconfig.w6300"
+rsource "Kconfig.w5100s"
+rsource "Kconfig.w5500"
+rsource "Kconfig.w6100"
+rsource "Kconfig.w6300"
 # zephyr-keep-sorted-stop
