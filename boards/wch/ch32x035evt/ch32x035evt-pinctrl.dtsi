@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2026 Chen Ren
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/ch32x035-pinctrl.h>
+
+&pinctrl {
+	/*
+	 * USART1 in the default mapping (USART1_RM = 00):
+	 * TX on PB10, RX on PB11.
+	 */
+	usart1_default: usart1_default {
+		group1 {
+			pinmux = <USART1_TX_PB10_0>;
+			output-high;
+			drive-push-pull;
+			slew-rate = "max-speed";
+		};
+
+		group2 {
+			pinmux = <USART1_RX_PB11_0>;
+			bias-pull-up;
+		};
+	};
+};

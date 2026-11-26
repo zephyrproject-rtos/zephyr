@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Chen Ren
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CH32X035EVT
+	select SOC_CH32X035
