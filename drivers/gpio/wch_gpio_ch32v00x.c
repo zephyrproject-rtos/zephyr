@@ -19,6 +19,37 @@
 
 #define GPIO_CH32V00X_CFGLR_MASK 0x0FU
 
+#if defined(CONFIG_SOC_CH32X035)
+/*
+ * The CH32X035 GPIO ports have 24 pins. CFGLR/CFGHR cover pins 0-15, CFGXR
+ * covers pins 16-23, and the mode field shift is 4 * (pin % 8) in all three
+ * registers. BSHR and BCR cover pins 0-15 while BSXR covers pins 16-23 with
+ * the set field in bits 7:0 and the reset field in bits 23:16.
+ */
+static void gpio_ch32v00x_set_mode(GPIO_TypeDef *regs, gpio_pin_t pin, uint32_t cnf_mode)
+{
+	volatile uint32_t *reg;
+	uint32_t shift = 4 * (pin % 8);
+
+	if (pin < 8) {
+		reg = &regs->CFGLR;
+	} else if (pin < 16) {
+		reg = &regs->CFGHR;
+	} else {
+		reg = &regs->CFGXR;
+	}
+
+	*reg = (*reg & ~(GPIO_CH32V00X_CFGLR_MASK << shift)) | (cnf_mode << shift);
+}
+
+static void gpio_ch32v00x_write_pins(GPIO_TypeDef *regs, uint32_t set, uint32_t reset)
+{
+	/* BSHR sets pins 0-15 in bits 15:0 and resets them in bits 31:16. */
+	regs->BSHR = set | (reset << 16);
+	/* BSXR sets pins 16-23 in bits 7:0 and resets them in bits 23:16. */
+	regs->BSXR = (set >> 16) | ((reset >> 16) << 16);
+}
+#else
 static void gpio_ch32v00x_set_mode(GPIO_TypeDef *regs, gpio_pin_t pin, uint32_t cnf_mode)
 {
 	if (pin < 8) {
@@ -34,6 +65,7 @@ static void gpio_ch32v00x_write_pins(GPIO_TypeDef *regs, uint32_t set, uint32_t 
 {
 	regs->BSHR = set | (reset << 16);
 }
+#endif
 
 #if defined(CONFIG_SOC_SERIES_CH32H41X)
 #define GPIO_CH32V00X_OUT_PP GPIO_CFGLR_OUT_PP
@@ -207,12 +239,16 @@ static int gpio_ch32v00x_configure_exti(const struct device *dev, gpio_pin_t pin
 		port_id = 1;
 		break;
 #endif
+#if DT_NODE_EXISTS(DT_NODELABEL(gpioc))
 	case DT_REG_ADDR(DT_NODELABEL(gpioc)):
 		port_id = 2;
 		break;
+#endif
+#if DT_NODE_EXISTS(DT_NODELABEL(gpiod))
 	case DT_REG_ADDR(DT_NODELABEL(gpiod)):
 		port_id = 3;
 		break;
+#endif
 #if DT_NODE_EXISTS(DT_NODELABEL(gpioe))
 	case DT_REG_ADDR(DT_NODELABEL(gpioe)):
 		port_id = 4;
@@ -222,7 +258,23 @@ static int gpio_ch32v00x_configure_exti(const struct device *dev, gpio_pin_t pin
 		return -EINVAL;
 	}
 
-#if defined(AFIO_EXTICR_EXTI0)
+#if defined(AFIO_EXTICR2_EXTI16)
+	/*
+	 * CH32X035 style with two registers, 2 bits per line, and lines 0-15 in
+	 * EXTICR1 and 16-23 in EXTICR2.
+	 */
+	BUILD_ASSERT(AFIO_EXTICR1_EXTI0 == 0x03);
+	BUILD_ASSERT(AFIO_EXTICR2_EXTI16 == 0x03);
+
+	(void)cr_id;
+	if (pin < 16) {
+		bit0 = pin << 1;
+		afio->EXTICR1 = (afio->EXTICR1 & ~(AFIO_EXTICR1_EXTI0 << bit0)) | (port_id << bit0);
+	} else {
+		bit0 = (pin - 16) << 1;
+		afio->EXTICR2 = (afio->EXTICR2 & ~(AFIO_EXTICR2_EXTI16 << bit0)) | (port_id << bit0);
+	}
+#elif defined(AFIO_EXTICR_EXTI0)
 	/* CH32V003 style with one register with 2 bits per map. */
 	BUILD_ASSERT(AFIO_EXTICR_EXTI0 == 0x03);
 
