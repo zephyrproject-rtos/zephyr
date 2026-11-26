@@ -1413,9 +1413,9 @@ rdflib==7.6.0 \
     --hash=sha256:30c0a3ebf4c0e09215f066be7246794b6492e054e782d7ac2a34c9f70a15e0dd \
     --hash=sha256:6c831288d5e4a5a7ece85d0ccde9877d512a3d0f02d7c06455d00d6d0ea379df
     # via spdx-tools
-reqif==0.1.0 \
-    --hash=sha256:419e8fb838fdb1c0cd6b79ae8c0fb06c9c01dca78690e7e6bae80bf8878d3ca5 \
-    --hash=sha256:c3af000d745e107c3d409535acc54274f469522385e6bb3923f5d3918219a189
+reqif==0.1.1 \
+    --hash=sha256:37901f7b82645094f643512be5e3fb25f992eca408435bbf8945322161ba6b46 \
+    --hash=sha256:e0f016f012a16207a53d36c1c11c5502158f3247c16474629986b1ceb0099e2e
     # via strictdoc
 requests==2.34.2 \
     --hash=sha256:2a0d60c172f83ac6ab31e4554906c0f3b3588d37b5cb939b1c061f4907e278e0 \
@@ -1594,9 +1594,9 @@ starlette==1.10.0 \
     # via
     #   fastapi
     #   sphinx-autobuild
-strictdoc==0.30.4 \
-    --hash=sha256:2609782294dc2a85f91bef6877f2c1ee54b3502f98846dee8704e5507c1c3410 \
-    --hash=sha256:b229a941ba312d257a02f5e41c756f93cdb1f2061e8870a372f583da1c278daa
+strictdoc==0.31.0 \
+    --hash=sha256:eacc3ee28dafae9d55d22002b57ebb328e76811d7e3d5a1eb3a61fd1814b7f71 \
+    --hash=sha256:f5bdc3c421352cfb3de535af9587b74db5d273c15cb0a780f5e426072b060a20
     # via -r requirements.in
 textx==4.4.0 \
     --hash=sha256:a7b15a4698b503edde631d5227c0d0f6024898a86a7924b5fc741973305f9286 \
@@ -1647,6 +1647,17 @@ tree-sitter==0.25.2 \
     --hash=sha256:f5ddcd3e291a749b62521f71fc953f66f5fd9743973fd6dd962b092773569601 \
     --hash=sha256:fbb1706407c0e451c4f8cc016fec27d72d4b211fdd3173320b1ada7a6c74c3ac \
     --hash=sha256:fe43c158555da46723b28b52e058ad444195afd1db3ca7720c59a254544e9c20
+    # via strictdoc
+tree-sitter-ada==0.9.1 \
+    --hash=sha256:444d9378a2ecf3a8ee4c9f03b90f280b42fafe8ce888c2133390f59fca2b2eb5 \
+    --hash=sha256:4d03b5903583c2f5f2b74c3fbba111fbd9ea45b75a2e485ac47ae72e4a1d646a \
+    --hash=sha256:54dd3ce8c64eddb41a46a9b6eabeb32dd9a022ff2fde96a60d87eeae6b824e9e \
+    --hash=sha256:56bcec618e60462fb55594a9f1ef6b72a32fa7f5824fa82114c834c3ae7d3ba5 \
+    --hash=sha256:5d315186b963e557cf1494cb09708ab9a7a822b1b0c23bd76ecf2d09bbf7393a \
+    --hash=sha256:5f992466326723495f052d544b0bf06925768ee192c57f4b038ebc550ae45c7c \
+    --hash=sha256:7df7827fb93a94c43055da3ca2cadf37c2e2ff3ce49c9423fc5e53bb52b73312 \
+    --hash=sha256:cf1e8d98bda5785a526af74a2e0fba755af1f97bf1ec785d0f739e2c281f4948 \
+    --hash=sha256:e406d78968a1aaaa8b71e7efd841c5ea69b1d9a8fb626b154babc09b816b26ec
     # via strictdoc
 tree-sitter-c==0.24.2 \
     --hash=sha256:1628584df0299b5a340aa63f8e67b6c97c91517f52fa7e7a4c557e40adb330a9 \
