@@ -39,6 +39,7 @@
 
 &timer2 {
 	compatible = "nordic,nrf-timer";
+	#counter-alarm-cells = <1>;
 	prescaler = <4>;
 	status = "okay";
 };

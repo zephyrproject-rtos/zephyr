@@ -17,7 +17,7 @@
  */
 
 &mikroe_dali2_click {
-	counter = <&counter2>;
+	counter-alarms = <&counter2 0>, <&counter2 1>;
 	pwms = <&pwm3 3 PWM_USEC(41) PWM_POLARITY_NORMAL>;
 	tx-rx-propagation-max-us = <2400>;
 	tx-prog-delay-us = <(-200)>;
@@ -33,6 +33,7 @@
 
 	counter2: counter {
 		compatible = "st,stm32-counter";
+		#counter-alarm-cells = <1>;
 		status = "okay";
 	};
 };
