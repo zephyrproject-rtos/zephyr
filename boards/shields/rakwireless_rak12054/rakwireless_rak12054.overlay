@@ -1,0 +1,24 @@
+/*
+ * SPDX-FileCopyrightText: Copyright RAKwireless Technology Limited
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		rotation-sensor = &as5600_rak12054;
+	};
+};
+
+&wisblock_3v3_s {
+	status = "okay";
+};
+
+&wisblock_i2c1 {
+	status = "okay";
+
+	as5600_rak12054: as5600@36 {
+		compatible = "ams,as5600";
+		reg = <0x36>;
+		power-domains = <&wisblock_3v3_s>;
+	};
+};
