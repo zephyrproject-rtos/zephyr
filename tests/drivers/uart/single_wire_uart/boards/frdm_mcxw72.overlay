@@ -1,0 +1,54 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Connect the loopback wire between J4 pin 2 and J1 pin 2. */
+
+/ {
+	aliases {
+		single-line-uart1 = &lpuart0;
+		single-line-uart2 = &lpuart1;
+	};
+
+	chosen {
+		/* Both UARTs are used by the test, so neither is the console. */
+		/delete-property/ zephyr,console;
+		/delete-property/ zephyr,shell-uart;
+	};
+};
+
+&pinctrl {
+	pinmux_lpuart0_sw: pinmux_lpuart0_sw {
+		group0 {
+			pinmux = <LPUART0_TX_PTA17>;
+			drive-strength = "low";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_lpuart1_sw: pinmux_lpuart1_sw {
+		group0 {
+			pinmux = <LPUART1_TX_PTC3>;
+			drive-strength = "low";
+			slew-rate = "fast";
+		};
+	};
+};
+
+&lpuart0 {
+	current-speed = <115200>;
+	single-wire;
+	pinctrl-0 = <&pinmux_lpuart0_sw>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&lpuart1 {
+	current-speed = <115200>;
+	single-wire;
+	pinctrl-0 = <&pinmux_lpuart1_sw>;
+	pinctrl-names = "default";
+	status = "okay";
+};
