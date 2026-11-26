@@ -1058,9 +1058,14 @@ static void tcp_conn_release(struct k_work *work)
 	if (net_context_get_state(conn->context) == NET_CONTEXT_LISTENING) {
 		/* If listening context, loop over active connections and clear
 		 * any `accepted_conn` backpointer if set to current context.
+		 * The context stops referring to the listener under the same
+		 * lock, so that tcp_recv() cannot set such a pointer after
+		 * the loop.
 		 */
-
+		k_mutex_lock(&tcp_lock, K_FOREVER);
+		conn->context->tcp = NULL;
 		tcp_conn_clear_accepted(conn);
+		k_mutex_unlock(&tcp_lock);
 	}
 
 	k_mutex_lock(&conn->lock, K_FOREVER);
@@ -2735,6 +2740,21 @@ static void tcp_conn_ref(struct tcp *conn)
 	NET_DBG("[%p] ref_count: %d", conn, ref_count);
 }
 
+/* Take a reference to a connection, unless it is already about to be released */
+static bool tcp_conn_ref_unless_released(struct tcp *conn)
+{
+	atomic_val_t ref_count;
+
+	do {
+		ref_count = atomic_get(&conn->ref_count);
+		if (ref_count == 0) {
+			return false;
+		}
+	} while (!atomic_cas(&conn->ref_count, ref_count, ref_count + 1));
+
+	return true;
+}
+
 static struct tcp *tcp_conn_alloc(void)
 {
 	struct tcp *conn = NULL;
@@ -2894,22 +2914,41 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 
 
 	if (th_flags(th) & SYN && !(th_flags(th) & ACK)) {
-		struct tcp *conn_old = ((struct net_context *)user_data)->tcp;
+		struct net_context *listen_ctx = user_data;
+		struct tcp *conn_old;
+
+		/* A listening connection is released under tcp_lock. The
+		 * reference keeps it and its context from being released,
+		 * and used for another listener, until the new connection
+		 * points to it.
+		 */
+		k_mutex_lock(&tcp_lock, K_FOREVER);
+		conn_old = listen_ctx->tcp;
+		if (conn_old != NULL && !tcp_conn_ref_unless_released(conn_old)) {
+			conn_old = NULL;
+		}
+		k_mutex_unlock(&tcp_lock);
 
 		if (conn_old == NULL || tcp_backlog_is_full(conn_old)) {
 			/* If the connection backlog is full, ignore the SYN
 			 * packet (same behavior as on Linux). Retransmitted SYN
 			 * attempts may be successful later.
 			 */
+			if (conn_old != NULL) {
+				(void)tcp_conn_unref(conn_old);
+			}
+
 			goto out;
 		}
 
 		conn = tcp_conn_new(pkt, th);
 		if (!conn) {
 			NET_ERR("Cannot allocate a new TCP connection");
+			(void)tcp_conn_unref(conn_old);
 			goto in;
 		}
 
+		k_mutex_lock(&tcp_lock, K_FOREVER);
 		conn->accepted_conn = conn_old;
 
 		/* The buffer sizes set on the listener apply to the
@@ -2922,6 +2961,9 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 #if defined(CONFIG_NET_CONTEXT_SNDBUF)
 		conn->context->options.sndbuf = conn_old->context->options.sndbuf;
 #endif
+		k_mutex_unlock(&tcp_lock);
+
+		(void)tcp_conn_unref(conn_old);
 	}
 in:
 	if (conn) {
