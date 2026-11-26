@@ -1,0 +1,14 @@
+common:
+  min_ram: 64
+  depends_on: netif
+  tags:
+    - mgmt
+    - mcumgr
+    - transport
+    - net
+  integration_platforms:
+    - native_sim
+    - native_sim/native/64
+
+tests:
+  mgmt.mcumgr.transport.udp: {}
