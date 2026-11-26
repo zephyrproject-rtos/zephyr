@@ -701,6 +701,190 @@ static void test_past_recv_main_default_param(void)
 	PASS("PAST recv test Passed\n");
 }
 
+static void conn_get(struct bt_conn *conn, void *data)
+{
+	struct bt_conn **found = data;
+
+	if (*found == NULL) {
+		*found = bt_conn_ref(conn);
+	}
+}
+
+static void test_past_send_peripheral_main(void)
+{
+	struct bt_le_scan_param scan_param = {
+		.type = BT_LE_SCAN_TYPE_ACTIVE,
+		.options = BT_LE_SCAN_OPT_NONE,
+		.interval = 0x0004,
+		.window = 0x0004,
+	};
+	struct bt_le_per_adv_sync_param sync_create_param;
+	struct bt_le_per_adv_sync *sync = NULL;
+	int err;
+
+	printk("\n*Send PAST as Peripheral test*\n");
+
+	bt_conn_cb_register(&conn_callbacks);
+
+	printk("Bluetooth initializing...\n");
+	err = bt_enable(NULL);
+	if (err != 0) {
+		FAIL("Could not init BT: %d\n", err);
+		return;
+	}
+	printk("success.\n");
+
+	bt_le_scan_cb_register(&scan_callbacks);
+	bt_le_per_adv_sync_cb_register(&sync_cb);
+
+	printk("Start scanning...\n");
+	is_periodic = false;
+	err = bt_le_scan_start(&scan_param, NULL);
+	if (err != 0) {
+		FAIL("Could not start scan: %d\n", err);
+		return;
+	}
+	printk("success.\n");
+
+	while (!is_periodic) {
+		k_sleep(K_MSEC(100));
+	}
+	printk("Periodic Advertising found (SID: %u)\n", per_sid);
+
+	printk("Creating Periodic Advertising Sync...\n");
+	bt_addr_le_copy(&sync_create_param.addr, &per_addr);
+	sync_create_param.options = BT_LE_PER_ADV_SYNC_OPT_REPORTING_INITIALLY_DISABLED;
+	sync_create_param.sid = per_sid;
+	sync_create_param.skip = 0;
+	sync_create_param.timeout = 0xa;
+
+	err = bt_le_per_adv_sync_create(&sync_create_param, &sync);
+	if (err != 0) {
+		FAIL("Could not create sync: %d\n", err);
+		return;
+	}
+	printk("success.\n");
+
+	printk("Waiting for sync...\n");
+	err = k_sem_take(&sem_is_sync, K_SEM_TIMEOUT);
+	if (err != 0) {
+		FAIL("failed (err %d)\n", err);
+		return;
+	}
+	printk("success.\n");
+
+	/* Advertise so that the PAST recipient connects as Central */
+	bt_ready();
+
+	printk("Waiting for connection...\n");
+	err = k_sem_take(&sem_is_conn, K_SEM_TIMEOUT);
+	if (err != 0) {
+		FAIL("Failed to connect (err %d)\n", err);
+		return;
+	}
+	printk("success.\n");
+
+	/* As Peripheral the connection is not created through bt_conn_le_create() */
+	bt_conn_foreach(BT_CONN_TYPE_LE, conn_get, &default_conn);
+	if (default_conn == NULL) {
+		FAIL("No connection found\n");
+		return;
+	}
+
+	k_sleep(K_MSEC(1000));
+
+	printk("Connection established - sending PAST\n");
+	err = bt_le_per_adv_sync_transfer(sync, default_conn, 0);
+	if (err != 0) {
+		FAIL("Could not transfer periodic adv sync: %d", err);
+		return;
+	}
+	printk("success.\n");
+
+	printk("Wait 20s for PAST to be sent\n");
+	k_sleep(K_SEM_TIMEOUT);
+
+	printk("Deleting Periodic Advertising Sync...\n");
+	err = bt_le_per_adv_sync_delete(sync);
+	if (err != 0) {
+		FAIL("Failed to delete periodic advertising sync (err %d)\n", err);
+		return;
+	}
+	printk("success.\n");
+
+	PASS("PAST send as Peripheral test Passed\n");
+}
+
+static void test_past_recv_central_main(void)
+{
+	struct bt_le_per_adv_sync_transfer_param past_param;
+	int err;
+
+	printk("\n*Receive PAST as Central test*\n");
+
+	bt_conn_cb_register(&conn_callbacks);
+
+	printk("Bluetooth initializing...\n");
+	err = bt_enable(NULL);
+	if (err != 0) {
+		FAIL("Could not init BT: %d\n", err);
+		return;
+	}
+	printk("success.\n");
+
+	bt_le_per_adv_sync_cb_register(&sync_cb);
+
+	past_param.skip = 1;
+	past_param.timeout = 1000; /* 10 seconds */
+	past_param.options = BT_LE_PER_ADV_SYNC_TRANSFER_OPT_FILTER_DUPLICATES;
+
+	err = bt_le_per_adv_sync_transfer_subscribe(NULL, &past_param);
+	if (err != 0) {
+		FAIL("Failed to set default past parameters (err %d)\n", err);
+		return;
+	}
+
+	printk("Scanning for peripheral\n");
+	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, device_found);
+	if (err != 0) {
+		FAIL("Scanning failed to start (err %d)\n", err);
+		return;
+	}
+	printk("success.\n");
+
+	printk("Waiting for connection...\n");
+	err = k_sem_take(&sem_is_conn, K_SEM_TIMEOUT);
+	if (err != 0) {
+		FAIL("Failed to connect (err %d)\n", err);
+		return;
+	}
+	printk("success.\n");
+
+	err = bt_le_per_adv_sync_transfer_subscribe(default_conn, &past_param);
+	if (err != 0) {
+		FAIL("Failed to set past parameters for connection (err %d)\n", err);
+		return;
+	}
+
+	printk("Wait 20s for Periodic advertisement sync to be established\n");
+	err = k_sem_take(&sem_is_sync, K_SEM_TIMEOUT);
+	if (err != 0) {
+		FAIL("failed (err %d)\n", err);
+		return;
+	}
+	printk("success.\n");
+
+	printk("Deleting Periodic Advertising Sync...\n");
+	err = bt_le_per_adv_sync_delete(default_sync);
+	if (err != 0) {
+		FAIL("Failed to delete periodic advertising sync (err %d)\n", err);
+		return;
+	}
+	printk("success.\n");
+
+	PASS("PAST recv as Central test Passed\n");
+}
+
 static void test_past_init(void)
 {
 	bst_ticker_set_next_tick_absolute(60e6);
@@ -753,6 +937,22 @@ static const struct bst_test_instance test_def[] = {
 		.test_pre_init_f = test_past_init,
 		.test_tick_f = test_past_tick,
 		.test_main_f = test_broadcast_past_sender_main
+	},
+	{
+		.test_id = "send_past_peripheral",
+		.test_descr = "Peripheral that syncs to PA from broadcaster, "
+		"advertises and sends PAST to the Central it is connected to",
+		.test_pre_init_f = test_past_init,
+		.test_tick_f = test_past_tick,
+		.test_main_f = test_past_send_peripheral_main
+	},
+	{
+		.test_id = "receive_past_central",
+		.test_descr = "Central that connects to peripheral and then waits for "
+		"receiving PAST, then syncs to PA",
+		.test_pre_init_f = test_past_init,
+		.test_tick_f = test_past_tick,
+		.test_main_f = test_past_recv_central_main
 	},
 	BSTEST_END_MARKER
 };
