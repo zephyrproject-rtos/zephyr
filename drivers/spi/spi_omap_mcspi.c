@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(omap_mcspi);
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/util.h>
 #include "spi_context.h"
+#include "spi_rtio.h"
 
 #define OMAP_MCSPI_INTERRUPTS DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts)
 
@@ -1084,6 +1085,9 @@ static DEVICE_API(spi, omap_mcspi_api) = {
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = omap_mcspi_transceive_async,
 #endif /* CONFIG_SPI_ASYNC */
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif
 	.release = omap_mcspi_release,
 };
 
