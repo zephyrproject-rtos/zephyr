@@ -24,7 +24,7 @@ extern void CC1352R1_LAUNCHXL_shutDownExtFlash(void);
 
 int main(void)
 {
-	uint32_t config, status;
+	uint32_t config;
 
 	printk("\n%s system off demo\n", CONFIG_BOARD);
 
@@ -54,10 +54,6 @@ int main(void)
 	k_sleep(K_SECONDS(SLEEP_S));
 
 	printk("Powering off; press BUTTON1 to restart\n");
-
-	/* Clear GPIO interrupt */
-	status = GPIO_getEventMultiDio(GPIO_DIO_ALL_MASK);
-	GPIO_clearEventMultiDio(status);
 
 	sys_poweroff();
 
