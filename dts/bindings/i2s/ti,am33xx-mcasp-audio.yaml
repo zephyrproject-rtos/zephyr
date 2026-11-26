@@ -1,0 +1,52 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TI Multichannel Audio Serial Port (McASP)
+
+  The audio serial port of the TI AM62L SoC in I2S/TDM mode. The
+  compatible and the property names follow the Linux binding.
+
+  Each serializer (AXRn pin) is a transmitter or a receiver, selected by
+  serial-dir. Transmit and receive run synchronously from the transmit
+  clock and frame sync generators (ACLKX, AFSX); the receive clock pins are
+  not used.
+
+compatible: "ti,am33xx-mcasp-audio"
+
+include: [i2s-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Configuration port ("mpu") first, then data port ("dat"). The audio
+      FIFO and the DMA requests are served through the data port.
+
+  reg-names:
+    required: true
+
+  interrupts:
+    required: true
+    description: Transmit and receive interrupts.
+
+  interrupt-names:
+    required: true
+    description: Must be "tx", "rx".
+
+  clocks:
+    required: true
+    description: |
+      Auxiliary clock (AUXCLK) the bit clock is divided down from in
+      controller mode. A single clock, with a one-cell specifier.
+
+  clock-names:
+    description: Should be "fck".
+
+  serial-dir:
+    type: array
+    required: true
+    max-len: 16
+    description: |
+      Mode of each serializer, indexed by serializer number: 0 inactive,
+      1 transmit, 2 receive. Entries beyond the array are inactive.
