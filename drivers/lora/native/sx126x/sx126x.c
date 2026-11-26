@@ -447,19 +447,11 @@ static int sx126x_set_rx_duty_cycle(const struct device *dev,
 	return sx126x_hal_write_cmd(dev, SX126X_CMD_SET_RX_DUTY_CYCLE, buf, 6);
 }
 
-static int sx126x_set_rx(const struct device *dev, uint32_t timeout_ms)
+static int sx126x_set_rx(const struct device *dev, bool continuous)
 {
-	uint32_t timeout;
-
-	if (timeout_ms == 0) {
-		timeout = SX126X_RX_TIMEOUT_CONTINUOUS;
-	} else {
-		timeout = SX126X_MS_TO_TIMEOUT(timeout_ms);
-	}
-
 	uint8_t buf[3];
 
-	sys_put_be24(timeout, buf);
+	sys_put_be24(continuous ? SX126X_RX_TIMEOUT_CONTINUOUS : SX126X_RX_TIMEOUT_SINGLE, buf);
 	return sx126x_hal_write_cmd(dev, SX126X_CMD_SET_RX, buf, 3);
 }
 

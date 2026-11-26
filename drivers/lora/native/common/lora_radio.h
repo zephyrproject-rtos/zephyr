@@ -64,8 +64,8 @@ struct lora_radio_ops {
 
 	/* Set the radio up for the receptions that follow */
 	int (*rx_prepare)(const struct device *dev);
-	/* Listen for timeout_ms, without limit when 0 */
-	int (*rx_start)(const struct device *dev, uint32_t timeout_ms);
+	/* Listen for one packet, or until stopped when continuous. No timeout either way. */
+	int (*rx_start)(const struct device *dev, bool continuous);
 	/* Listen for rx_ms, sleep for sleep_ms, and over again */
 	int (*rx_duty_cycle_start)(const struct device *dev, uint32_t rx_ms, uint32_t sleep_ms);
 	/* Read the packet behind an RX done interrupt. Returns its length. */

@@ -132,7 +132,7 @@ static int lora_radio_wait(const struct device *dev, struct lora_radio_waiter *w
 }
 
 /* (Re)start listening the way the operation in flight wants it */
-static int lora_radio_rx_arm(const struct device *dev, uint32_t timeout_ms)
+static int lora_radio_rx_arm(const struct device *dev, bool continuous)
 {
 	const struct lora_radio_config *config = dev->config;
 	struct lora_radio_data *data = dev->data;
@@ -142,14 +142,14 @@ static int lora_radio_rx_arm(const struct device *dev, uint32_t timeout_ms)
 							data->duty_cycle.sleep_ms);
 	}
 
-	return config->ops->rx_start(dev, timeout_ms);
+	return config->ops->rx_start(dev, continuous);
 }
 
 static void lora_radio_rx_restart(const struct device *dev)
 {
 	int ret;
 
-	ret = lora_radio_rx_arm(dev, 0);
+	ret = lora_radio_rx_arm(dev, true);
 	if (ret < 0) {
 		LOG_ERR("Failed to restart reception: %d", ret);
 		/* A continuous reception is still running */
@@ -393,10 +393,7 @@ int lora_radio_send(const struct device *dev,
 	return ret;
 }
 
-/*
- * rx_ms is how long the radio listens: until it gives up on a plain
- * reception, 0 for no limit, or in each window of a duty-cycled one.
- */
+/* rx_ms and sleep_ms are the windows of a duty-cycled reception */
 static int lora_radio_rx_start(const struct device *dev, enum lora_radio_op op,
 			       uint32_t rx_ms, uint32_t sleep_ms,
 			       lora_recv_cb cb, void *user_data,
@@ -429,7 +426,8 @@ static int lora_radio_rx_start(const struct device *dev, enum lora_radio_op op,
 
 	ret = config->ops->rx_prepare(dev);
 	if (ret == 0) {
-		ret = lora_radio_rx_arm(dev, rx_ms);
+		/* A caller with a timeout waits for one packet */
+		ret = lora_radio_rx_arm(dev, waiter == NULL || waiter->continuous);
 	}
 
 	if (ret < 0) {
@@ -471,15 +469,11 @@ int lora_radio_recv(const struct device *dev, uint8_t *data_buf,
 		.size = size,
 		.rssi = rssi,
 		.snr = snr,
+		.continuous = K_TIMEOUT_EQ(timeout, K_FOREVER),
 	};
-	uint32_t timeout_ms;
 	int ret;
 
-	/* 0 = continuous for K_FOREVER */
-	timeout_ms = K_TIMEOUT_EQ(timeout, K_FOREVER)
-		     ? 0 : k_ticks_to_ms_ceil32(timeout.ticks);
-	waiter.continuous = (timeout_ms == 0);
-	ret = lora_radio_rx_start(dev, LORA_RADIO_OP_RX, timeout_ms, 0, NULL, NULL, &waiter);
+	ret = lora_radio_rx_start(dev, LORA_RADIO_OP_RX, 0, 0, NULL, NULL, &waiter);
 	if (ret < 0) {
 		return ret;
 	}
