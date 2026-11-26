@@ -46,24 +46,24 @@ extern "C" {
 	__asm__ volatile ("dc " op ", %0" :: "r" (val) : "memory");	\
 })
 
-static size_t dcache_line_size;
+static size_t arm64_dcache_line_size;
 
 static ALWAYS_INLINE size_t arch_dcache_line_size_get(void)
 {
 	uint64_t ctr_el0;
 	uint32_t dminline;
 
-	if (dcache_line_size) {
-		return dcache_line_size;
+	if (arm64_dcache_line_size) {
+		return arm64_dcache_line_size;
 	}
 
 	ctr_el0 = read_sysreg(CTR_EL0);
 
 	dminline = (ctr_el0 >> CTR_EL0_DMINLINE_SHIFT) & CTR_EL0_DMINLINE_MASK;
 
-	dcache_line_size = 4 << dminline;
+	arm64_dcache_line_size = 4 << dminline;
 
-	return dcache_line_size;
+	return arm64_dcache_line_size;
 }
 
 /*
@@ -281,24 +281,24 @@ static ALWAYS_INLINE void arch_dcache_disable(void)
 	__asm__ volatile ("ic " op ", %0" :: "r" (val) : "memory");	\
 })
 
-static size_t icache_line_size;
+static size_t arm64_icache_line_size;
 
 static ALWAYS_INLINE size_t arch_icache_line_size_get(void)
 {
 	uint64_t ctr_el0;
 	uint32_t iminline;
 
-	if (icache_line_size) {
-		return icache_line_size;
+	if (arm64_icache_line_size) {
+		return arm64_icache_line_size;
 	}
 
 	ctr_el0 = read_sysreg(CTR_EL0);
 
 	iminline = ctr_el0 & CTR_EL0_IMINLINE_MASK;
 
-	icache_line_size = 4 << iminline;
+	arm64_icache_line_size = 4 << iminline;
 
-	return icache_line_size;
+	return arm64_icache_line_size;
 }
 
 /* An I-cache holds no dirty data: "flush" is meaningless, so only the
