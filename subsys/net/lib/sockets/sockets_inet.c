@@ -253,6 +253,109 @@ static void zsock_accepted_cb(struct net_context *new_ctx,
 	}
 }
 
+/* Buffers a queued packet has to hold for the receive queue to use the RX
+ * packets no faster than the RX buffers.
+ */
+#define STREAM_MERGE_BUF_COUNT DIV_ROUND_UP(CONFIG_NET_BUF_RX_COUNT, CONFIG_NET_PKT_RX_COUNT)
+
+/* Give a buffer its whole data area back: the packet allocator shrinks the
+ * size of a fixed size buffer to what was asked for.
+ */
+static void zsock_stream_buf_unshrink(struct net_buf *buf)
+{
+	size_t max_size = net_buf_pool_get(buf->pool_id)->alloc->max_alloc_size;
+
+	if ((buf->flags & NET_BUF_EXTERNAL_DATA) == 0U && max_size > buf->size) {
+		buf->size = max_size;
+	}
+}
+
+/* Move the payload of a TCP segment of a few buffers into the last packet of
+ * the receive queue, so that segments the application does not read take
+ * buffers by the amount of data, and not a packet each.
+ * Returns true if the packet was consumed.
+ */
+static bool zsock_stream_merge(struct net_context *ctx, struct net_pkt *pkt)
+{
+	struct net_buf *buf = pkt->cursor.buf;
+	struct net_pkt *tail;
+	struct net_buf *last;
+	struct net_buf *frag;
+	size_t tail_count = 1U;
+	size_t seg_count = 0U;
+	size_t hdr_len;
+	size_t len = 0U;
+
+	/* Larger segments use their buffers well enough, leave them alone */
+	for (frag = buf; frag != NULL; frag = frag->frags) {
+		seg_count++;
+		if (seg_count > STREAM_MERGE_BUF_COUNT || frag->ref != 1U) {
+			return false;
+		}
+
+		len += frag->len;
+	}
+
+	if (buf == NULL) {
+		return false;
+	}
+
+	hdr_len = pkt->cursor.pos - buf->data;
+	len -= hdr_len;
+	if (len == 0U) {
+		return false;
+	}
+
+	tail = k_fifo_peek_tail(&ctx->recv_q);
+	if (tail == NULL || net_pkt_eof(tail) || tail->buffer == NULL) {
+		return false;
+	}
+
+	for (last = tail->buffer; last->frags != NULL; last = last->frags) {
+		tail_count++;
+	}
+
+	if (last->ref != 1U) {
+		return false;
+	}
+
+	zsock_stream_buf_unshrink(last);
+
+	if (len <= net_buf_tailroom(last)) {
+		net_buf_add_mem(last, pkt->cursor.pos, buf->len - hdr_len);
+
+		for (frag = buf->frags; frag != NULL; frag = frag->frags) {
+			net_buf_add_mem(last, frag->data, frag->len);
+		}
+	} else if (tail_count + seg_count <= STREAM_MERGE_BUF_COUNT) {
+		/* Buffers that hold nothing but headers */
+		while (pkt->buffer != buf) {
+			(void)net_pkt_frag_del(pkt, NULL, pkt->buffer);
+		}
+
+		net_buf_pull(buf, hdr_len);
+
+		/* Let the following segments use the room of the headers */
+		if (seg_count == 1U) {
+			zsock_stream_buf_unshrink(buf);
+
+			if (len < buf->size / 2U) {
+				memmove(buf->__buf, buf->data, len);
+				buf->data = buf->__buf;
+			}
+		}
+
+		pkt->buffer = NULL;
+		net_buf_frag_insert(last, buf);
+	} else {
+		return false;
+	}
+
+	net_pkt_unref(pkt);
+
+	return true;
+}
+
 static void zsock_received_cb(struct net_context *ctx,
 			      struct net_pkt *pkt,
 			      union net_ip_header *ip_hdr,
@@ -313,6 +416,12 @@ static void zsock_received_cb(struct net_context *ctx,
 
 	/* Normal packet */
 	net_pkt_set_eof(pkt, false);
+
+	if (net_context_get_type(ctx) == NET_SOCK_STREAM) {
+		if (zsock_stream_merge(ctx, pkt)) {
+			goto unlock;
+		}
+	}
 
 	net_pkt_set_rx_stats_tick(pkt, k_cycle_get_32());
 
@@ -1682,7 +1791,7 @@ static ssize_t zsock_recv_stream_timed(struct net_context *ctx, struct net_msghd
 
 	for (end = sys_timepoint_calc(timeout); max_len > 0; timeout = sys_timepoint_timeout(end)) {
 
-		/* Peeked data stays queued, so only a new packet can add to it */
+		/* Peeked data stays queued, so only newly received data can add to it */
 		if (peek && waitall && recv_len > 0 && zsock_peeked_all(ctx, recv_len)) {
 			struct net_pkt *last = k_fifo_peek_tail(&ctx->recv_q);
 
