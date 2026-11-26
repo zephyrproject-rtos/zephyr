@@ -17,6 +17,7 @@
 	lptim3_pwm: pwm {
 		pinctrl-0 = <&lptim3_ch1_pc8>;
 		pinctrl-names = "default";
+		channel-gpios = <&gpioc 8 GPIO_ACTIVE_HIGH>;
 		status = "okay";
 	};
 };
