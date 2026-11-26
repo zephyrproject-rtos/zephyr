@@ -1,0 +1,22 @@
+# Copyright (c) 2026 Igalia
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_CYW43_RPI_PICO
+	bool "Infineon CYW43 GPIO driver based on hal_rpi_pico cyw43 wifi driver"
+	default y
+	depends on DT_HAS_INFINEON_CYW43_GPIO_ENABLED
+	depends on !WIFI_AIROC
+	help
+	  Enable GPIO driver for the Infineon CYW43 WiFi chip, based on
+	  the hal_rpi_pico cyw43 driver.
+
+if GPIO_CYW43_RPI_PICO
+
+config GPIO_CYW43_RPI_PICO_INIT_PRIORITY
+	int "CYW43 GPIO initialization priority"
+	default 82
+	help
+	  CYW43 GPIO initialization priority. Must be higher than
+	  the WiFi driver initialization priority.
+
+endif

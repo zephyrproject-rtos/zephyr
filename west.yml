@@ -240,9 +240,11 @@ manifest:
         - hal
     - name: hal_rpi_pico
       path: modules/hal/rpi_pico
-      revision: 2e9dbf14fa56e5907aefb07e8e75010ec5210946
+      revision: f99d69e965d3d76c41647de4722dde2a48a8d529
       groups:
         - hal
+      submodules:
+        - path: lib/cyw43-driver
     - name: hal_sifli
       revision: 86fa0e9433fda1a760e0077c19b8407ecceea2f9
       path: modules/hal/sifli
