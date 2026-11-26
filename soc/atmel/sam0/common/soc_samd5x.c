@@ -22,6 +22,7 @@
  * GCLK Gen 4 -> RTC @ xtal 32768 Hz
  */
 
+#include <zephyr/cache.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
@@ -150,11 +151,8 @@ void soc_reset_hook(void)
 	}
 
 	/*
-	 * Force Cortex M Cache Controller disabled
-	 *
-	 * It is not clear if regular Cortex-M instructions can be used to
-	 * perform cache maintenance or this is a proprietary cache controller
-	 * that require special SoC support.
+	 * A bootloader may have left the Cortex M Cache Controller on with stale lines:
+	 * keep it off until the cache driver invalidates and enables it.
 	 */
 	CMCC->CTRL.bit.CEN = 0;
 
@@ -181,3 +179,9 @@ void soc_reset_hook(void)
 }
 
 /* clang-format on */
+
+void soc_early_init_hook(void)
+{
+	/* Without CONFIG_CACHE_MANAGEMENT or CONFIG_ICACHE, this is a no-op: the cache stays off */
+	sys_cache_instr_enable();
+}
