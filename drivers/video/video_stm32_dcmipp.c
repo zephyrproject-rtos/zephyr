@@ -600,7 +600,9 @@ static int stm32_dcmipp_set_fmt(const struct device *dev, struct video_format *f
 		    !IN_RANGE(fmt->height,
 			      post_isp_decimate_height / STM32_DCMIPP_MAX_PIPE_SCALE_FACTOR,
 			      post_isp_decimate_height)) {
-			LOG_ERR("Requested resolution cannot be achieved");
+			LOG_ERR("Requested resolution %ux%u cannot be achieved out of %ux%u",
+				fmt->width, fmt->height,
+				post_isp_decimate_width, post_isp_decimate_height);
 			ret = -EINVAL;
 			goto out;
 		}
