@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Philipp Steiner
+#
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - timing
+    - precision_timing
+    - shell
+tests:
+  subsys.precision_timing.shell: &native_shell
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim/native/64
+  subsys.precision_timing.shell.no_output:
+    <<: *native_shell
+    extra_configs:
+      - CONFIG_PRECISION_CLOCK_OUTPUT=n
+  subsys.precision_timing.shell.disabled:
+    # Unconditional registrations must link without a registry section.
+    build_only: true
+    platform_allow: qemu_cortex_m3
+    integration_platforms:
+      - qemu_cortex_m3
+    extra_configs:
+      - CONFIG_PRECISION_TIMING_SHELL=n
+      - CONFIG_LINKER_ORPHAN_SECTION_ERROR=y
+  subsys.precision_timing.shell.linker_generator:
+    build_only: true
+    platform_allow: qemu_cortex_m3
+    integration_platforms:
+      - qemu_cortex_m3
+    tags: linker_generator
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y
