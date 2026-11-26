@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config CACHE_SAM0_CMCC
+	bool "Atmel SAM0 Cortex M Cache Controller (CMCC) driver"
+	default y
+	depends on SOC_ATMEL_SAM0_HAS_CMCC
+	select CACHE_HAS_DRIVER
+	help
+	  Driver for the CMCC of the Atmel SAM D5x/E5x, which caches the code
+	  region on the Cortex-M4F code bus. It is managed as the i-cache.
