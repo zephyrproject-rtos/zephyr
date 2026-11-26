@@ -228,7 +228,7 @@ static DEVICE_API(ptp_clock, ptp_clock_renesas_ra_gptp_api) = {
 	.adjust_rate = ptp_clock_renesas_ra_gptp_adjust_rate,
 };
 
-/* Timer node -> renesas,ra-gptp block node -> renesas,ra-eswm node */
+/* Timer node -> renesas,ra-gptp block node -> ESWM node */
 #define GPTP_BLOCK_NODE(n) DT_INST_PARENT(n)
 #define GPTP_ESWM_NODE(n)  DT_PARENT(GPTP_BLOCK_NODE(n))
 
@@ -237,8 +237,6 @@ static DEVICE_API(ptp_clock, ptp_clock_renesas_ra_gptp_api) = {
 		     "renesas,ra-gptp-timer node must be a child of the renesas,ra-gptp node");    \
 	BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(GPTP_BLOCK_NODE(n)),                                  \
 		     "renesas,ra-gptp node must be enabled");                                      \
-	BUILD_ASSERT(DT_NODE_HAS_COMPAT(GPTP_ESWM_NODE(n), renesas_ra_eswm),                       \
-		     "renesas,ra-gptp node must be a child of the renesas,ra-eswm node");          \
 	BUILD_ASSERT(DT_INST_REG_ADDR(n) < BSP_FEATURE_ESWM_GPTP_TIMER_NUM,                        \
 		     "Invalid gPTP timer number");                                                 \
                                                                                                    \

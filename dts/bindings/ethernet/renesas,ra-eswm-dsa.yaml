@@ -1,0 +1,46 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Renesas RA Ethernet Switch Module (ESWM) used as a DSA switch.
+
+  The node is the switch core and the conduit network device. The switch
+  ports are described in a renesas,ra-eswm-switch child node.
+
+compatible: "renesas,ra-eswm-dsa"
+
+include:
+  - name: base.yaml
+  - name: pinctrl-device.yaml
+  - name: ethernet-controller.yaml
+    property-allowlist:
+      - local-mac-address
+      - zephyr,random-mac-address
+
+properties:
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+    enum:
+      - "gwcaclk"
+      - "pclk"
+      - "eswclk"
+      - "eswphyclk"
+      - "ethphyclk"
+    description: |
+      "gwcaclk": operating clock for gateway CPU agent
+      "pclk": peripheral clock for COMA and PTP timer
+      "eswclk": operating clock for ethernet switch module
+      "eswphyclk": operating clock for xMII interface
+      "ethphyclk": operating clock for ETHPHYCLK pin output
+
+  renesas,ethphyclk-output:
+    type: boolean
+    description: |
+      Output the PHY reference clock on the ETHPHYCLK pin. Set this when a
+      PHY uses ETHPHYCLK as its clock source.

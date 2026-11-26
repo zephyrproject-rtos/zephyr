@@ -1,0 +1,85 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/ethernet/dsa_tag_proto.h>
+
+&eth0 {
+	status = "disabled";
+};
+
+&eth1 {
+	status = "disabled";
+};
+
+&eswm {
+	compatible = "renesas,ra-eswm-dsa";
+	reg = <0x403c8000 0x19424>;
+	interrupts = <24 1>;
+	interrupt-names = "gwdi";
+	clocks = <&iclk 0 0>,
+		 <&pclka MSTPC 30>,
+		 <&eswclk 0 0>,
+		 <&eswphyclk 0 0>,
+		 <&ethphyclk MSTPC 28>;
+	clock-names = "gwcaclk", "pclk", "eswclk", "eswphyclk", "ethphyclk";
+	zephyr,random-mac-address;
+	status = "okay";
+
+	eswm_switch: ethernet-switch {
+		compatible = "renesas,ra-eswm-switch";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		switch_port1: switch_port@1 {
+			compatible = "zephyr,dsa-port";
+			reg = <1>;
+			phy-handle = <&phy0>;
+			phy-connection-type = "rgmii";
+			local-mac-address = [74 90 50 01 02 03];
+			pinctrl-0 = <&eth1_default>;
+			pinctrl-names = "default";
+			ptp-clock = <&gptp_timer0>;
+		};
+
+		/* CPU port */
+		switch_port2: switch_port@2 {
+			compatible = "zephyr,dsa-port";
+			reg = <2>;
+			ethernet = <&eswm>;
+			phy-connection-type = "internal";
+			zephyr,random-mac-address;
+			dsa-tag-protocol = <DSA_TAG_PROTO_NOTAG>;
+		};
+	};
+};
+
+&mdio1 {
+	pinctrl-0 = <&mdio1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&phy0 {
+	compatible = "maxlinear,gpy111";
+	reg = <0>;
+	int-gpios = <&ioport1 7 GPIO_ACTIVE_LOW>;
+	reset-gpios = <&ioport7 8 GPIO_ACTIVE_LOW>;
+	maxlinear,interface-type = "rgmii";
+	maxlinear,rx-internal-delay = "1.5";
+	status = "okay";
+};
+
+&gptp {
+	compatible = "renesas,ra-gptp";
+	reg = <0x403e0000 0x10c4>;
+	status = "okay";
+};
+
+&gptp_timer0 {
+	compatible = "renesas,ra-gptp-timer";
+	reg = <0>;
+	status = "okay";
+};

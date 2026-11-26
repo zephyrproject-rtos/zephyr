@@ -5,7 +5,7 @@ config PTP_CLOCK_RENESAS_RA_GPTP
 	bool "Renesas RA ESWM gPTP timer PTP clock driver"
 	default y
 	depends on DT_HAS_RENESAS_RA_GPTP_TIMER_ENABLED
-	depends on ETH_RENESAS_RA_RMAC
+	depends on USE_RA_FSP_LAYER3_SWITCH
 	select USE_RA_FSP_GPTP
 	help
 	  Enable the PTP clock driver for the gPTP timer of the Renesas RA

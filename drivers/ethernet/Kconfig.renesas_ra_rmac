@@ -5,6 +5,7 @@ config ETH_RENESAS_RA_RMAC
 	bool "Renesas RA ethernet RMAC driver"
 	default y
 	depends on DT_HAS_RENESAS_RA_ETHERNET_RMAC_ENABLED
+	depends on DT_HAS_RENESAS_RA_ESWM_ENABLED
 	select ETH_PHY_DRIVER
 	select USE_RA_FSP_RMAC
 	select USE_RA_FSP_LAYER3_SWITCH
@@ -33,6 +34,8 @@ config ETH_RENESAS_RA_USE_HW_WRITEBACK
 	  that the TX frame is written successfully. Note that enabling this option
 	  may cause ethernet write operations to take slightly longer.
 
+endif
+
 config ETH_RENESAS_RA_PTP
 	bool
 	default y
@@ -41,5 +44,3 @@ config ETH_RENESAS_RA_PTP
 	help
 	  Timestamp frames with the ESWM gPTP timer selected by the ptp-clock
 	  property of the Ethernet port.
-
-endif
