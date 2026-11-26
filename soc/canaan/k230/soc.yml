@@ -1,0 +1,4 @@
+socs:
+  - name: k230
+    cpuclusters:
+      - name: c908

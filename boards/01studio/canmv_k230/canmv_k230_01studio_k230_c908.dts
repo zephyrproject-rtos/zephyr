@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2026 Process Mission
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <canaan/k230_c908.dtsi>
+
+/ {
+	model = "01Studio CanMV-K230";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &ddr0;
+	};
+
+	aliases {
+		uart-0 = &uart0;
+	};
+
+	/*
+	 * Place the little-core RAM region at 0x08000000 with size 0x07fff000
+	 * (reserving the trailing 4 KiB guard page), matching the K230 SDK
+	 * little-core memory layout.
+	 */
+	ddr0: memory@8000000 {
+		reg = <0x0 0x08000000 0x0 0x07fff000>;
+		device_type = "memory";
+	};
+};
+
+&uart0 {
+	current-speed = <115200>;
+	status = "okay";
+};

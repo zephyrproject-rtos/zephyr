@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: canmv_k230_01studio/k230/c908
+name: 01Studio CanMV-K230 (C908 little core)
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+ram: 131068
+supported:
+  - uart
+vendor: 01studio

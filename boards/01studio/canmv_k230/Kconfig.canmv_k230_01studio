@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CANMV_K230_01STUDIO
+	select SOC_K230_C908 if BOARD_CANMV_K230_01STUDIO_K230_C908

@@ -1,0 +1,24 @@
+# Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_K230_C908
+
+configdefault RISCV_SOC_INTERRUPT_INIT
+	default y
+
+configdefault 2ND_LVL_ISR_TBL_OFFSET
+	default 12
+
+configdefault 2ND_LVL_INTR_00_OFFSET
+	default 11
+
+configdefault MAX_IRQ_PER_AGGREGATOR
+	default 209
+
+configdefault NUM_IRQS
+	default 221
+
+configdefault UART_NS16550_ACCESS_WORD_ONLY
+	default y
+
+endif # SOC_K230_C908

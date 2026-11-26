@@ -17,3 +17,10 @@ properties:
   clock-frequency:
     type: int
     description: Clock frequency in Hz
+  no-64bit-mmio:
+    type: boolean
+    description: |
+      Set when the machine timer MMIO registers do not support 64-bit accesses
+      (for example, T-Head C9xx CLINT implementations). On 64-bit targets,
+      mtimecmp is written using 32-bit accesses and mtime is read via the time
+      CSR when Zicntr is available, or via 32-bit MMIO reads otherwise.

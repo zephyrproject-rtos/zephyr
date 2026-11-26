@@ -10,6 +10,7 @@
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys/clock.h>
 #include <zephyr/irq.h>
+#include <zephyr/arch/riscv/csr.h>
 
 #define DT_DRV_COMPAT riscv_machine_timer
 
@@ -28,10 +29,10 @@ static uintptr_t get_hart_mtimecmp(void)
 
 static void set_mtimecmp(uint64_t time)
 {
-#ifdef CONFIG_64BIT
+#if defined(CONFIG_64BIT) && !DT_INST_PROP(0, no_64bit_mmio)
 	*(volatile uint64_t *)get_hart_mtimecmp() = time;
 #else
-	volatile uint32_t *r = (uint32_t *)get_hart_mtimecmp();
+	volatile uint32_t *r = (volatile uint32_t *)get_hart_mtimecmp();
 
 	/* Per spec, the RISC-V MTIME/MTIMECMP registers are 64 bit,
 	 * but are NOT internally latched for multiword transfers.  So
@@ -47,10 +48,12 @@ static void set_mtimecmp(uint64_t time)
 
 static uint64_t mtime(void)
 {
-#ifdef CONFIG_64BIT
+#if defined(CONFIG_64BIT) && !DT_INST_PROP(0, no_64bit_mmio)
 	return *(volatile uint64_t *)MTIME_REG;
+#elif defined(CONFIG_64BIT) && defined(CONFIG_RISCV_ISA_EXT_ZICNTR)
+	return csr_read(time);
 #else
-	volatile uint32_t *r = (uint32_t *)MTIME_REG;
+	volatile uint32_t *r = (volatile uint32_t *)MTIME_REG;
 	uint32_t lo, hi;
 
 	/* Likewise, must guard against rollover when reading */
