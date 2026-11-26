@@ -245,6 +245,52 @@ testing:
     This prevents serial port disconnection issues during flashing on some boards (e.g., those
     with USB CDC that reset during flash operations).
 
+  post_connect_reset:
+    .. _twister_board_post_connect_reset:
+
+    For hardware testing, start the device only after Twister has flashed it and attached its
+    console, so no output is lost. When this is set, Twister passes ``--no-reset`` to
+    ``west flash``, which only keeps the device stopped with runners that support it. Other
+    runners, a custom ``--flash-command`` or ``west debug`` still let the device run after
+    flashing, and it then boots a second time. ``method`` selects how the device is started:
+
+    ``serial``
+      Drive the DTR/RTS lines of the console port. ``open_state`` sets the lines before Twister
+      opens the port. ``sequence`` is a list of steps, each setting ``dtr``, ``rts`` or both,
+      and optionally waiting ``delay_ms`` milliseconds.
+
+    ``west``
+      Run ``west reset`` with the runner and probe arguments of the hardware map entry or
+      ``--west-runner``. Arguments given with ``--west-flash`` are not passed. Without a runner,
+      ``west reset`` uses the board's debug runner without probe selection. The runner must
+      support the ``reset`` command.
+
+    ``none``
+      Do nothing. A hardware map entry uses it to turn off the board value.
+
+    ``timeout`` limits the ``west`` method, in seconds (default 30). A
+    ``post_connect_reset`` entry in the hardware map overrides the board value. The ``serial``
+    method is skipped when the console is a ``serial_pty``, which has no DTR/RTS lines. In a
+    multi-device pytest test, the board value applies to the devices of the test platform, and
+    other devices only use their hardware map entry.
+
+    For example, a board whose reset and boot pins are wired to the RTS and DTR lines of its
+    USB-serial bridge:
+
+    .. code-block:: yaml
+
+       testing:
+         post_connect_reset:
+           method: serial
+           open_state:
+             dtr: true
+             rts: false
+           sequence:
+             - dtr: false
+               rts: true
+             - delay_ms: 100
+             - rts: false
+
   renode:
     Configuration for the Renode simulator. Supports two keys: ``uart``, the
     UART peripheral the harness connects to (e.g. ``sysbus.uart0``), and
@@ -1754,6 +1800,34 @@ example:
       product: J-Link
       runner: jlink
       serial: null
+
+Post-connect reset
+------------------
+
+A board can start running as soon as it is flashed, before Twister has opened its console, and
+the first lines of output are then lost. This happens when flashing and console share one serial
+port, so ``flash_before`` is needed, or when several images are flashed one after the other. The
+``post_connect_reset`` keyword makes Twister flash the device without resetting it, attach the
+console, and only then start the device. A board declares a default in its
+:ref:`testing section <twister_board_post_connect_reset>`, and a hardware map entry overrides
+it, for example to start the device through its debug probe:
+
+.. code-block:: yaml
+
+    - connected: true
+      id: "000683290670"
+      platform: nrf52840dk/nrf52840
+      product: J-Link
+      runner: jlink
+      serial: /dev/ttyACM3
+      post_connect_reset:
+        method: west
+
+The jlink runner starts the core after flashing even with ``--no-reset``, so this board boots
+once while it is flashed and again when ``west reset`` runs with the console attached.
+
+Use ``method: none`` to turn off the board value. Lab specific actions, such as a script driving
+a reset relay, belong in the hardware map scripts.
 
 Overriding Board Identifier
 ---------------------------
