@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2026 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* One timer from each power-down control group (ITIM1-3 and ITIM4-6) */
+&timer2 {
+	status = "okay";
+};
+
+&timer4 {
+	status = "okay";
+};
