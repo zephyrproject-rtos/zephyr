@@ -148,7 +148,7 @@ static void omap_mcspi_cs_control(const struct device *dev, bool enabled)
 
 	if (spi_cs_is_gpio(ctx->config)) {
 		spi_context_cs_control(ctx, enabled);
-	} else {
+	} else if (enabled || (ctx->config->operation & SPI_HOLD_ON_CS) == 0U) {
 		omap_mcspi_hw_cs_control(dev, enabled);
 	}
 }
@@ -234,10 +234,6 @@ static int omap_mcspi_configure(const struct device *dev, const struct spi_confi
 		return 0;
 	}
 
-	if (config->operation & SPI_HOLD_ON_CS) {
-		return -ENOTSUP;
-	}
-
 	if (is_peripheral && !IS_ENABLED(CONFIG_SPI_PERIPHERAL)) {
 		LOG_ERR("Kconfig for SPI peripheral mode is not enabled");
 		return -ENOTSUP;
@@ -271,6 +267,7 @@ static int omap_mcspi_configure(const struct device *dev, const struct spi_confi
 		if (ch != chan) {
 			/* only when MODULCTRL_SINGLE is set */
 			regs->CHAN[ch].CHCTRL &= ~OMAP_MCSPI_CHCTRL_EN;
+			regs->CHAN[ch].CHCONF &= ~OMAP_MCSPI_CHCONF_FORCE;
 		}
 
 		/* disable FIFO for all channels */
@@ -694,6 +691,11 @@ static int omap_mcspi_init(const struct device *dev)
 static int omap_mcspi_release(const struct device *dev, const struct spi_config *spi_cfg)
 {
 	struct omap_mcspi_data *data = DEV_DATA(dev);
+	struct omap_mcspi_regs *regs = DEV_REGS(dev);
+
+	if (data->ctx.config != NULL && !spi_cs_is_gpio(data->ctx.config)) {
+		regs->CHAN[data->ctx.config->peripheral].CHCONF &= ~OMAP_MCSPI_CHCONF_FORCE;
+	}
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
