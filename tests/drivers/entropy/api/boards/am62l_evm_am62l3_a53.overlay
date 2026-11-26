@@ -1,0 +1,14 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,entropy = &main_rng;
+	};
+};
+
+&main_rng {
+	status = "okay";
+};
