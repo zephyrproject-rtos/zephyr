@@ -148,6 +148,7 @@ static void test_peer_send(struct net_if *iface, uint8_t type, const struct gptp
 	zassert_not_null(pkt);
 	zassert_ok(net_pkt_write(pkt, &frame, sizeof(frame)));
 	net_pkt_set_timestamp(pkt, tm);
+	net_pkt_set_rx_timestamping(pkt, true);
 
 	if (net_recv_data(iface, pkt) < 0) {
 		net_pkt_unref(pkt);
