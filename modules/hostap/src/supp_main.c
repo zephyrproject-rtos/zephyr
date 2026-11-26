@@ -10,6 +10,7 @@ LOG_MODULE_REGISTER(wifi_supplicant, CONFIG_WIFI_NM_WPA_SUPPLICANT_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
+#include <zephyr/sys/atomic.h>
 #include <poll.h>
 #include <zephyr/zvfs/eventfd.h>
 
@@ -63,6 +64,16 @@ static K_KERNEL_STACK_DEFINE(iface_wq_stack, CONFIG_WIFI_NM_WPA_SUPPLICANT_WQ_ST
 #include "hostapd.h"
 #include "hapd_main.h"
 #endif
+
+/* Backing store for struct wpa_supplicant_event_msg::done. Heap-allocated
+ * with a 2-reference refcount (sender + event_socket_handler()): whichever
+ * side drops the last reference frees it, so a sender that times out can
+ * never free memory the other side is still about to touch.
+ */
+struct iface_notify_done {
+	struct k_sem sem;
+	atomic_t refcount;
+};
 
 static const struct wifi_mgmt_ops mgmt_ops = {
 	.get_version = supplicant_get_version,
@@ -531,7 +542,8 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 	struct wpa_supplicant_event_msg msg;
 	struct wpa_supplicant *wpa_s;
 	union wpa_event_data *event = NULL;
-	int ret, retry = 0, count = IFACE_NOTIFY_TIMEOUT_MS / IFACE_NOTIFY_RETRY_MS;
+	struct iface_notify_done *done;
+	int ret;
 	char ifname[IFNAMSIZ + 1] = { 0 };
 
 	ret = net_if_get_name(iface, ifname, sizeof(ifname) - 1);
@@ -556,6 +568,12 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 		goto free;
 	}
 
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+#if defined(CONFIG_WIFI_MGMT_PMKSA_IMPORT) && defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_PMKSA_CACHE)
+	supplicant_pmksa_flush_external_locked(wpa_s, NULL);
+#endif
+	zephyr_wpa_ctrl_deinit(wpa_s);
+	k_mutex_unlock(&wpa_supplicant_mutex);
 	supplicant_generate_state_event(ifname, NET_EVENT_SUPPLICANT_CMD_IFACE_REMOVING, 0);
 
 	if (sizeof(event->interface_status.ifname) < strlen(ifname)) {
@@ -567,37 +585,50 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 	os_memcpy(event->interface_status.ifname, ifname, strlen(ifname));
 	event->interface_status.ievent = EVENT_INTERFACE_REMOVED;
 
+	done = os_zalloc(sizeof(*done));
+	if (done == NULL) {
+		ret = -ENOMEM;
+		LOG_ERR("Failed to allocate interface notify done");
+		goto free;
+	}
+	k_sem_init(&done->sem, 0, 1);
+	/* One reference for us, one for event_socket_handler(). */
+	atomic_set(&done->refcount, 2);
+
 	msg.global = true;
 	msg.ctx = ctx->supplicant;
 	msg.event = EVENT_INTERFACE_STATUS;
 	msg.data = event;
+	msg.done = done;
 
 	ret = send_event(&msg);
 	if (ret) {
 		/* We failed notify WPA supplicant about interface removal.
 		 * There is not much we can do, interface is still registered
 		 * with WPA supplicant so we cannot unregister NM etc.
+		 * The message was never handed off, so event_socket_handler()
+		 * will never see it or drop its reference - free outright.
 		 */
 		wpa_printf(MSG_ERROR, "Failed to send event: %d", ret);
+		os_free(done);
 		goto free;
 	}
 
-	while (retry++ < count && wpa_s->wpa_state != WPA_INTERFACE_DISABLED) {
-		k_sleep(K_MSEC(IFACE_NOTIFY_RETRY_MS));
+	ret = k_sem_take(&done->sem, K_MSEC(IFACE_NOTIFY_TIMEOUT_MS));
+	/* Drop our reference now, whether or not the wait succeeded. If
+	 * event_socket_handler() already dropped its own reference (ran
+	 * to completion before us), this is the one that frees done. If it
+	 * hasn't yet (e.g. we timed out), it still holds a reference, so
+	 * done stays alive until it drops its own - no use-after-free.
+	 */
+	if (atomic_dec(&done->refcount) == 1) {
+		os_free(done);
 	}
-
-	if (wpa_s->wpa_state != WPA_INTERFACE_DISABLED) {
+	if (ret != 0) {
 		LOG_ERR("Failed to notify remove interface %s", ifname);
 		supplicant_generate_state_event(ifname, NET_EVENT_SUPPLICANT_CMD_IFACE_REMOVED, -1);
 		goto out;
 	}
-
-	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
-#if defined(CONFIG_WIFI_MGMT_PMKSA_IMPORT) && defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_PMKSA_CACHE)
-	supplicant_pmksa_flush_external_locked(wpa_s, NULL);
-#endif
-	zephyr_wpa_ctrl_deinit(wpa_s);
-	k_mutex_unlock(&wpa_supplicant_mutex);
 
 	ret = zephyr_wpa_cli_global_cmd_v("interface_remove %s", ifname);
 	if (ret) {
@@ -794,6 +825,15 @@ static void event_socket_handler(int sock, void *eloop_ctx, void *user_data)
 			wpa_supplicant_event(event_msg.ctx, event_msg.event, event_msg.data);
 		}
 
+		if (event_msg.done != NULL) {
+			k_sem_give(&event_msg.done->sem);
+			/* Drop our reference; free if the sender already
+			 * dropped its own (e.g. it timed out waiting).
+			 */
+			if (atomic_dec(&event_msg.done->refcount) == 1) {
+				os_free(event_msg.done);
+			}
+		}
 		if (event_msg.data) {
 			union wpa_event_data *data = event_msg.data;
 
