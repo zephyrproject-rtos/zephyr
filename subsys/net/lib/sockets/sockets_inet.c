@@ -1568,6 +1568,13 @@ static size_t zsock_recv_stream_immediate(struct net_context *ctx, uint8_t **buf
 				}
 
 				net_pkt_unref(pkt);
+			} else {
+				/* The receive window was opened by the data
+				 * read, so give its buffers back as well.
+				 */
+				while (pkt->buffer != pkt->cursor.buf) {
+					(void)net_pkt_frag_del(pkt, NULL, pkt->buffer);
+				}
 			}
 		} else if ((!do_recv || peek) && _max_len > 0) {
 			/* requeue packets when observing, do not requeue if it is the last packet
