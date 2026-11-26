@@ -22,6 +22,9 @@ menuconfig WIFI_NRF70
 
 if WIFI_NRF70
 
+config SYSTEM_WORKQUEUE_MIN_STACK_SIZE_NRF70
+	int
+	default 4096
 # Hidden symbols for internal use
 config WIFI_NRF7002
 	bool
