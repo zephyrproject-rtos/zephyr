@@ -4294,7 +4294,7 @@
  *   in the devicetree is treated as if it were `okay` instead)
  *
  * @param node_id a node identifier
- * @param status a status as one of the tokens okay or disabled, not a string
+ * @param status a status as one of the tokens okay, disabled or reserved, not a string
  * @return 1 if the node has the given status, 0 otherwise.
  */
 #define DT_NODE_HAS_STATUS(node_id, status) \
