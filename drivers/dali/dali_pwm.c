@@ -133,11 +133,10 @@ struct dali_pwm_data {
 };
 
 struct dali_pwm_config {
-	const struct device *rx_counter;
+	const struct counter_alarm_dt_spec rx_alarm;
+	const struct counter_alarm_dt_spec tx_alarm;
 	const struct pwm_dt_spec tx_pwm;
 	const struct gpio_dt_spec rx_pin;
-	uint8_t chan_id_rx;
-	uint8_t chan_id_tx;
 	int32_t tx_prog_delay_us;
 	int32_t tx_shift_us;
 	int32_t rx_shift_us;
@@ -208,7 +207,7 @@ static int dali_pwm_restart_receive_alarm(struct dali_pwm_data *data,
 					  const struct dali_pwm_config *config,
 					  uint32_t absolute_ticks)
 {
-	int ret = counter_cancel_channel_alarm(config->rx_counter, config->chan_id_rx);
+	int ret = counter_cancel_channel_alarm_dt(&config->rx_alarm);
 
 	if (ret < 0) {
 		LOG_ERR("Error %d could not cancel receive alarm for %s", ret, data->dev->name);
@@ -222,7 +221,7 @@ static int dali_pwm_restart_receive_alarm(struct dali_pwm_data *data,
 		.user_data = data,
 	};
 
-	ret = counter_set_channel_alarm(config->rx_counter, config->chan_id_rx, &cfg);
+	ret = counter_set_channel_alarm_dt(&config->rx_alarm, &cfg);
 	if (ret < 0) {
 		LOG_ERR("Error %d setting the receive alarm for %s to %u ticks", ret,
 			data->dev->name, cfg.ticks);
@@ -491,7 +490,7 @@ static int dali_pwm_set_tx_alarm(struct dali_pwm_data *data, const struct dali_p
 		.user_data = data,
 	};
 
-	ret = counter_set_channel_alarm(config->rx_counter, config->chan_id_tx, &cfg);
+	ret = counter_set_channel_alarm_dt(&config->tx_alarm, &cfg);
 	if (ret < 0) {
 		LOG_ERR("Error %d setting the tx next alarm for %s to %u ticks", ret,
 			data->dev->name, cfg.ticks);
@@ -545,7 +544,7 @@ static void dali_pwm_receive_irq_handler(const struct device *port, struct gpio_
 	const struct dali_pwm_config *config = data->dev->config;
 
 	data->rx.last_edge_ticks = data->rx.edge_ticks;
-	counter_get_value(config->rx_counter, &data->rx.edge_ticks);
+	counter_get_value(config->rx_alarm.dev, &data->rx.edge_ticks);
 	dali_pwm_process_capture_event(data, config);
 
 	if (data->tx.status == DALI_PWM_TX_SYNC) {
@@ -554,7 +553,7 @@ static void dali_pwm_receive_irq_handler(const struct device *port, struct gpio_
 		data->tx.pwm_frame.pwm_counter_ticks =
 			dali_pwm_counter_add(data->rx.edge_ticks, target_spot, data->rx.ticks.top);
 		data->tx.status = DALI_PWM_TX_TRANSMIT;
-		counter_cancel_channel_alarm(config->rx_counter, config->chan_id_tx);
+		counter_cancel_channel_alarm_dt(&config->tx_alarm);
 		dali_pwm_set_tx_alarm(data, config);
 	}
 }
@@ -726,7 +725,7 @@ static int dali_pwm_transmit(const struct device *dev, const struct dali_frame *
 		if (ret < 0) {
 			break;
 		}
-		counter_get_value(config->rx_counter, &data->tx.pwm_frame.pwm_counter_ticks);
+		counter_get_value(config->rx_alarm.dev, &data->tx.pwm_frame.pwm_counter_ticks);
 		data->tx.pwm_frame.pwm_counter_ticks = dali_pwm_counter_add(
 			data->tx.pwm_frame.pwm_counter_ticks, (3 * data->tx.counter_ticks.half_bit),
 			data->rx.ticks.top);
@@ -749,13 +748,13 @@ static int dali_pwm_receive_init(const struct device *dev)
 	k_work_init(&data->rx.work, dali_pwm_handle_work_queue);
 
 	/* configure the counter */
-	if (!device_is_ready(config->rx_counter)) {
-		LOG_ERR("Counter %s for device %s is not ready", config->rx_counter->name,
+	if (!device_is_ready(config->rx_alarm.dev)) {
+		LOG_ERR("Counter %s for device %s is not ready", config->rx_alarm.dev->name,
 			dev->name);
 		return -ENODEV;
 	}
 
-	uint32_t receive_cycles = counter_get_frequency(config->rx_counter);
+	uint32_t receive_cycles = counter_get_frequency(config->rx_alarm.dev);
 
 	if (receive_cycles < USEC_PER_SEC) {
 		LOG_ERR("Counter frequency too low (%" PRIu32 "Hz), need at least 1 MHz",
@@ -789,9 +788,9 @@ static int dali_pwm_receive_init(const struct device *dev)
 	data->rx.ticks.flank_shift = dali_pwm_us_to_pwm_cycles(config->rx_shift_us, receive_cycles);
 	data->rx.ticks.tx_rx_propagation =
 		dali_pwm_us_to_pwm_cycles(config->tx_rx_propagation_max_us, receive_cycles);
-	data->rx.ticks.top = counter_get_top_value(config->rx_counter);
+	data->rx.ticks.top = counter_get_top_value(config->rx_alarm.dev);
 
-	ret = counter_start(config->rx_counter);
+	ret = counter_start(config->rx_alarm.dev);
 	if (ret < 0) {
 		LOG_ERR("Can not start counter for device %s", dev->name);
 		return ret;
@@ -858,7 +857,7 @@ static int dali_pwm_transmit_init(const struct device *dev)
 		dali_pwm_us_to_pwm_cycles(config->tx_shift_us, transmit_cycles);
 
 	/* convert micro-second timings into counter ticks */
-	uint64_t receive_cycles = counter_get_frequency(config->rx_counter);
+	uint64_t receive_cycles = counter_get_frequency(config->rx_alarm.dev);
 
 	data->tx.counter_ticks.half_bit =
 		dali_pwm_us_to_pwm_cycles(DALI_TX_HALF_BIT_US, receive_cycles);
@@ -889,7 +888,7 @@ static int dali_pwm_init_status(const struct device *dev)
 		uint32_t counter_now;
 		uint32_t absolute_ticks;
 
-		counter_get_value(config->rx_counter, &counter_now);
+		counter_get_value(config->rx_alarm.dev, &counter_now);
 		absolute_ticks = dali_pwm_counter_add(counter_now, data->rx.ticks.failure,
 						      data->rx.ticks.top);
 		dali_pwm_restart_receive_alarm(data, config, absolute_ticks);
@@ -940,12 +939,33 @@ static DEVICE_API(dali, dali_pwm_driver_api) = {
 	.transmit = dali_pwm_transmit,
 };
 
+/* Alarm described by the deprecated counter and chan-id-rx/tx properties. */
+#define DALI_PWM_LEGACY_ALARM(idx, chan_prop, chan_default)                                        \
+	{                                                                                          \
+		.dev = DEVICE_DT_GET(DT_INST_PHANDLE(idx, counter)),                               \
+		.chan_id = DT_INST_PROP_OR(idx, chan_prop, chan_default),                          \
+	}
+
+#define DALI_PWM_ALARM(idx, name, chan_prop, chan_default)                                         \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, counter_alarms),                                    \
+		    (COUNTER_ALARM_DT_SPEC_INST_GET_BY_NAME(idx, counter_alarms, name)),           \
+		    (DALI_PWM_LEGACY_ALARM(idx, chan_prop, chan_default)))
+
+#define DALI_PWM_ALARMS_ON_SAME_COUNTER(idx)                                                       \
+	DT_SAME_NODE(DT_INST_COUNTER_ALARMS_CTLR_BY_NAME(idx, counter_alarms, rx),                 \
+		     DT_INST_COUNTER_ALARMS_CTLR_BY_NAME(idx, counter_alarms, tx))
+
 #define DALI_PWM_INIT(idx)                                                                         \
+	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(idx, counter_alarms) ||                                 \
+		     DT_INST_NODE_HAS_PROP(idx, counter),                                          \
+		     "counter-alarms property is missing");                                        \
+	BUILD_ASSERT(COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, counter_alarms),                       \
+				 (DALI_PWM_ALARMS_ON_SAME_COUNTER(idx)), (true)),                  \
+		     "rx and tx alarms must be on the same counter");                              \
 	static struct dali_pwm_data dali_pwm_data_##idx = {0};                                     \
 	static const struct dali_pwm_config dali_pwm_config_##idx = {                              \
-		.rx_counter = DEVICE_DT_GET(DT_INST_PHANDLE(idx, counter)),                        \
-		.chan_id_rx = DT_INST_PROP_OR(idx, chan_id_rx, 0),                                 \
-		.chan_id_tx = DT_INST_PROP_OR(idx, chan_id_tx, 1),                                 \
+		.rx_alarm = DALI_PWM_ALARM(idx, rx, chan_id_rx, 0),                                \
+		.tx_alarm = DALI_PWM_ALARM(idx, tx, chan_id_tx, 1),                                \
 		.tx_prog_delay_us = DT_INST_PROP_OR(idx, tx_prog_delay_us, 0),                     \
 		.rx_pin = GPIO_DT_SPEC_INST_GET_BY_IDX(idx, rx_gpios, 0),                          \
 		.tx_pwm = PWM_DT_SPEC_GET_BY_IDX(DT_DRV_INST(idx), 0),                             \

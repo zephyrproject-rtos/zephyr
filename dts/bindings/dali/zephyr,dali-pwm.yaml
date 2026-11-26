@@ -13,24 +13,47 @@ properties:
       Recommended clock rate is 1 MHz. The minimum clock rate is 200 kHz to
       meet the requirements set by the DALI standard.
 
+  counter-alarms:
+    type: phandle-array
+    description: |
+      Counter alarms that control all the time critical actions for DALI transmitting and
+      receiving. Two alarms of the same counter are needed, named "rx" and "tx" in
+      counter-alarm-names. The minimum clock rate of the counter is 1 MHz to meet the
+      requirements set by the DALI standard.
+
+      This property is required unless the deprecated counter property is used.
+
+  counter-alarm-names:
+    type: string-array
+    description: |
+      Names of the counter alarms:
+        - "rx": Rx-stopbit and collision timeout
+        - "tx": Tx re-programming
+
   counter:
     type: phandle
-    required: true
+    deprecated: true
     description: |
       This counter controls all the time critical actions for DALI transmitting and receiving.
       The minimum clock rate is 1 MHz to meet the requirements set by the DALI standard.
 
+      Use counter-alarms instead.
+
   chan-id-rx:
     type: int
-    required: true
+    deprecated: true
     description: |
-      Counter channel for Rx-stopbit and collision timeout.
+      Counter channel for Rx-stopbit and collision timeout, 0 if not set.
+
+      Use the "rx" element of counter-alarms instead.
 
   chan-id-tx:
     type: int
-    required: true
+    deprecated: true
     description: |
-      Counter channel for Tx re-programming.
+      Counter channel for Tx re-programming, 1 if not set.
+
+      Use the "tx" element of counter-alarms instead.
 
   tx-prog-delay-us:
     type: int
