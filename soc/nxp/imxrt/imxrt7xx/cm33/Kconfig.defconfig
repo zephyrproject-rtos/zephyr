@@ -65,6 +65,25 @@ config POWER_DOMAIN
 
 endif # PM_DEVICE
 
+if HAS_MCUX_ELS_PKC && MBEDTLS_PSA_CRYPTO_C
+
+# The ELS PKC builds its CPU and PKC "workareas" in the stack frame of the calling thread.
+# These are defaults only, so an application remains free to lower or raise them.
+configdefault MAIN_STACK_SIZE
+	default 4096
+
+configdefault SYSTEM_WORKQUEUE_STACK_SIZE
+	default 2048
+
+endif # HAS_MCUX_ELS_PKC && MBEDTLS_PSA_CRYPTO_C
+
+# The ELS reads its input and writes its output through its own bus master, and neither
+# els_pkc nor its PSA crypto driver performs data cache maintenance. With the data cache
+# enabled the ELS reads stale input and the CPU reads stale results, so keep the data
+# cache disabled by default when els_pkc is built.
+configdefault DCACHE
+	default n if MCUX_ELS_PKC
+
 endif # SOC_MIMXRT798S_CM33_CPU0 || SOC_MIMXRT758S_CM33_CPU0 || SOC_MIMXRT735S_CM33_CPU0
 
 

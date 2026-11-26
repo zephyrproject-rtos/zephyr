@@ -249,6 +249,14 @@ Boards
   connect a higher IRQ with :c:macro:`IRQ_CONNECT()` or :c:func:`irq_connect_dynamic` must set
   :kconfig:option:`CONFIG_NUM_IRQS` explicitly.
 
+* On the i.MX RT7xx CM33 CPU0 core (:zephyr:board:`mimxrt700_evk`, :zephyr:board:`frdm_imxrt700`),
+  :kconfig:option:`CONFIG_DCACHE` now defaults to ``n`` when :kconfig:option:`CONFIG_MCUX_ELS_PKC`
+  is enabled, which is the default when :kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_C` is enabled.
+  The ELS accesses memory through its own bus master and no data cache maintenance is done around
+  its operations, so with the data cache enabled its results are corrupted. Applications that need
+  the data cache must disable :kconfig:option:`CONFIG_MCUX_ELS_PKC`, which makes PSA crypto use
+  the software implementation.
+
 Device Drivers and Devicetree
 *****************************
 
