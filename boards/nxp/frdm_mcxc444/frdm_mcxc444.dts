@@ -243,3 +243,7 @@ zephyr_udc0: &usb {
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&vref {
+	status = "okay";
+};
