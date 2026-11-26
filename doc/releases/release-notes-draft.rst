@@ -265,6 +265,11 @@ Other notable changes
   * :kconfig:option:`CONFIG_BT_PRIVACY` can now be enabled in Broadcaster- and Observer-only builds,
     without :kconfig:option:`CONFIG_BT_SMP`.
 
+* Build system
+
+  * The :ref:`hardening tool <hardening>` report resolves the CWE references of the
+    recommendations to their names, using the ``cwe2`` package.
+
 * Hardware information
 
   * NXP RW61x hwinfo reports PM4 wakeup resets as :c:macro:`RESET_LOW_POWER_WAKE`.
