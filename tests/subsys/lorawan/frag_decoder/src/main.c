@@ -28,6 +28,8 @@
 #define CMD_DATA_FRAGMENT       (0x08)
 #define FRAG_TRANSPORT_PORT     (201)
 #define FRAG_SESSION_INDEX      (1)
+/* never set up by any test */
+#define UNUSED_SESSION_INDEX    (2)
 
 enum frag_transport_setup_ans_status {
 	SETUP_ANS_ENCODING_UNSUPPORTED = BIT(0),
@@ -222,6 +224,84 @@ ZTEST(frag_decoder, test_frag_multi_packet)
 
 	/* Wait for the response (validation done in callback) */
 	zassert_equal(0, k_sem_take(&response_rx_sem, K_SECONDS(1)));
+}
+
+/* First answer (command and status) of each uplink */
+struct uplink_ans {
+	uint8_t cmd;
+	uint8_t status;
+};
+
+K_MSGQ_DEFINE(uplink_ans_msgq, sizeof(struct uplink_ans), 4, 1);
+
+static void uplink_ans_cb(uint8_t port, uint8_t len, const uint8_t *data)
+{
+	struct uplink_ans ans = {
+		.cmd = data[0],
+		.status = len > 1 ? data[1] : 0,
+	};
+
+	zassert_equal(port, FRAG_TRANSPORT_PORT);
+	zassert_ok(k_msgq_put(&uplink_ans_msgq, &ans, K_NO_WAIT));
+}
+
+static void start_uplink_capture(void)
+{
+	/* Let answers still queued by previous tests go out uncaptured. */
+	lorawan_emul_register_uplink_callback(NULL);
+	k_msleep(100);
+
+	k_msgq_purge(&uplink_ans_msgq);
+	lorawan_emul_register_uplink_callback(uplink_ans_cb);
+}
+
+static void expect_no_uplink(const char *what)
+{
+	struct uplink_ans ans = {0};
+	int ret = k_msgq_get(&uplink_ans_msgq, &ans, K_MSEC(100));
+
+	zassert_not_equal(ret, 0, "%s answered with command 0x%02x", what, ans.cmd);
+}
+
+ZTEST(frag_decoder, test_discarded_fragment_payload_not_parsed)
+{
+	/* The zero payload bytes would be PackageVersionReq commands if parsed. */
+	uint8_t buf[FRAG_SIZE + 3] = {
+		CMD_DATA_FRAGMENT,
+		0x01,
+		UNUSED_SESSION_INDEX << 6,
+	};
+
+	start_uplink_capture();
+
+	lorawan_emul_send_downlink(FRAG_TRANSPORT_PORT, false, 0, 0, sizeof(buf), buf);
+	expect_no_uplink("DataFragment for an unknown session");
+}
+
+ZTEST(frag_decoder, test_truncated_delete_req)
+{
+	/* Only the command byte is part of the downlink, the index byte is not. */
+	uint8_t truncated_delete_req[] = {CMD_FRAG_SESSION_DELETE, FRAG_SESSION_INDEX};
+	struct uplink_ans ans;
+
+	start_uplink_capture();
+
+	lorawan_emul_send_downlink(FRAG_TRANSPORT_PORT, false, 0, 0, sizeof(frag_session_setup_req),
+				   frag_session_setup_req);
+	zassert_ok(k_msgq_get(&uplink_ans_msgq, &ans, K_MSEC(100)), "no FragSessionSetupAns");
+	zassert_equal(ans.cmd, CMD_FRAG_SESSION_SETUP);
+	zassert_equal(ans.status & 0x1f, 0, "session setup failed: 0x%02x", ans.status);
+
+	lorawan_emul_send_downlink(FRAG_TRANSPORT_PORT, false, 0, 0, 1, truncated_delete_req);
+	expect_no_uplink("truncated FragSessionDeleteReq");
+
+	/* The session must still exist. */
+	lorawan_emul_send_downlink(FRAG_TRANSPORT_PORT, false, 0, 0,
+				   sizeof(frag_session_delete_req), frag_session_delete_req);
+	zassert_ok(k_msgq_get(&uplink_ans_msgq, &ans, K_MSEC(100)), "no FragSessionDeleteAns");
+	zassert_equal(ans.cmd, CMD_FRAG_SESSION_DELETE);
+	zassert_false(ans.status & DELETE_ANS_INDEX_NOT_SUPPORTED,
+		      "session was deleted by the truncated request");
 }
 
 static void *frag_decoder_setup(void)
