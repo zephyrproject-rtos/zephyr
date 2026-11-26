@@ -729,34 +729,64 @@ static void fal_filter_update(bool fal_needed)
 	}
 }
 
+/* Whether an advertising set, scan set or initiator is enabled. A scan set that is not enabled but
+ * holds a pending periodic sync create does not count: it does not scan until it is enabled, which
+ * is when the filter must be populated.
+ */
+static bool adv_scan_enabled(void)
+{
+	uint8_t handle;
+
+	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
+		for (handle = 0U; handle < BT_CTLR_ADV_SET; handle++) {
+			if (ull_adv_is_enabled(handle) != 0) {
+				return true;
+			}
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_OBSERVER)) {
+		for (handle = 0U; handle < BT_CTLR_SCAN_SET; handle++) {
+			if (ull_scan_is_enabled_get(handle) != NULL) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+/* The resolving list filter is shared by all advertising sets, the scan sets and the initiator.
+ * Besides finding the resolving list entry of an identity address, it is how a scanner applies
+ * Network Privacy mode to the identity address of a peer, so it must not be emptied while one of
+ * them is enabled. The Host may not modify the resolving list while address resolution is enabled
+ * and one of them is, so the filter is left as is then.
+ */
+static void rl_filter_update(void)
+{
+	if (adv_scan_enabled()) {
+		return;
+	}
+
+	filter_clear(&rl_filter);
+
+	if (rl_enable != 0U) {
+		rl_update();
+	}
+}
+
 void ull_filter_adv_update(uint8_t adv_fp)
 {
 	/* enabling advertising */
 	fal_filter_update(adv_fp != 0U);
-
-	/* Clear before populating rl filter */
-	filter_clear(&rl_filter);
-
-	if (rl_enable &&
-	    (!IS_ENABLED(CONFIG_BT_OBSERVER) || !ull_scan_is_enabled(0))) {
-		/* rl not in use, update resolving list LUT */
-		rl_update();
-	}
+	rl_filter_update();
 }
 
 void ull_filter_scan_update(uint8_t scan_fp)
 {
 	/* enabling scanning */
 	fal_filter_update((scan_fp & 0x1U) != 0U);
-
-	/* Clear before populating rl filter */
-	filter_clear(&rl_filter);
-
-	if (rl_enable &&
-	    (!IS_ENABLED(CONFIG_BT_BROADCASTER) || !ull_adv_is_enabled(0))) {
-		/* rl not in use, update resolving list LUT */
-		rl_update();
-	}
+	rl_filter_update();
 }
 
 void ull_filter_rpa_update(bool timeout)
