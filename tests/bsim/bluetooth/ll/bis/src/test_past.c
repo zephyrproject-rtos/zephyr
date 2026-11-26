@@ -429,6 +429,95 @@ static void test_broadcast_past_sender_main(void)
 	PASS("Broadcast PA Passed\n");
 }
 
+/* PAST Set Info Transfer while periodic advertising is enabled but
+ * extended advertising (and so the periodic train) has not been started.
+ */
+static void test_broadcast_past_sender_no_ext_adv_main(void)
+{
+	struct bt_le_ext_adv *adv;
+	int err;
+
+	printk("\n*Broadcaster, PAST before extended advertising*\n");
+
+	bt_conn_cb_register(&conn_callbacks);
+
+	err = bt_enable(NULL);
+	if (err != 0) {
+		FAIL("Could not init BT: %d\n", err);
+		return;
+	}
+
+	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, device_found);
+	if (err != 0) {
+		FAIL("Scanning failed to start (err %d)\n", err);
+		return;
+	}
+
+	err = k_sem_take(&sem_is_conn, K_SEM_TIMEOUT);
+	if (err != 0) {
+		FAIL("Failed to connect (err %d)\n", err);
+		return;
+	}
+
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN, NULL, &adv);
+	if (err != 0) {
+		FAIL("Failed to create advertising set (err %d)\n", err);
+		return;
+	}
+
+	err = bt_le_per_adv_set_param(adv, BT_LE_PER_ADV_DEFAULT);
+	if (err != 0) {
+		FAIL("Failed to set periodic advertising parameters (err %d)\n", err);
+		return;
+	}
+
+	err = bt_le_per_adv_start(adv);
+	if (err != 0) {
+		FAIL("Failed to enable periodic advertising (err %d)\n", err);
+		return;
+	}
+
+	k_sleep(K_MSEC(500));
+
+	printk("PA enabled, extended advertising not started - sending PAST\n");
+	err = bt_le_per_adv_set_info_transfer(adv, default_conn, 0);
+	if (err == 0) {
+		FAIL("Set Info Transfer accepted without extended advertising\n");
+		return;
+	}
+	printk("Set Info Transfer without extended advertising rejected: %d\n", err);
+
+	/* A normal transfer must still work once the train is on air */
+	k_sleep(K_MSEC(500));
+
+	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
+	if (err != 0) {
+		FAIL("Failed to start extended advertising (err %d)\n", err);
+		return;
+	}
+
+	k_sleep(K_MSEC(500));
+
+	err = bt_le_per_adv_set_info_transfer(adv, default_conn, 0);
+	if (err != 0) {
+		FAIL("Could not transfer periodic adv sync: %d\n", err);
+		return;
+	}
+	printk("Set Info Transfer with extended advertising: success\n");
+
+	k_sleep(K_SEM_TIMEOUT);
+
+	err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	if (err != 0) {
+		FAIL("Disconnection failed (err %d)\n", err);
+		return;
+	}
+
+	teardown_ext_adv(adv);
+
+	PASS("Broadcast PAST without extended advertising Passed\n");
+}
+
 static void test_past_send_main(void)
 {
 	struct bt_le_scan_param scan_param = {
@@ -753,6 +842,13 @@ static const struct bst_test_instance test_def[] = {
 		.test_pre_init_f = test_past_init,
 		.test_tick_f = test_past_tick,
 		.test_main_f = test_broadcast_past_sender_main
+	},
+	{
+		.test_id = "broadcast_past_sender_no_ext_adv",
+		.test_descr = "PA broadcaster sends PAST before starting extended advertising",
+		.test_pre_init_f = test_past_init,
+		.test_tick_f = test_past_tick,
+		.test_main_f = test_broadcast_past_sender_no_ext_adv_main
 	},
 	BSTEST_END_MARKER
 };

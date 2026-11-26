@@ -103,6 +103,7 @@ tests:
         - tests_scripts/past.sh
         - tests_scripts/past_default_past_params.sh
         - tests_scripts/past_send_from_broadcaster.sh
+        - tests_scripts/past_send_no_ext_adv.sh
   bluetooth.controller.bis.past_dle_min:
     platform_allow:
       - nrf52_bsim/native
