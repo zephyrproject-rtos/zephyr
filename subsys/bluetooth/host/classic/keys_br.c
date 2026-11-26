@@ -110,6 +110,30 @@ void bt_keys_link_key_clear(struct bt_keys_link_key *link_key)
 	(void)memset(link_key, 0, sizeof(*link_key));
 }
 
+void bt_keys_link_key_clear_keep_entry(struct bt_keys_link_key *link_key)
+{
+	LOG_DBG("%s", bt_addr_str(&link_key->addr));
+
+	/* The key and what describes it. The address, the encryption key size
+	 * and the age stay.
+	 */
+	link_key->flags = 0U;
+	(void)memset(link_key->val, 0, sizeof(link_key->val));
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		bt_addr_le_t le_addr;
+		int err;
+
+		le_addr.type = BT_ADDR_LE_PUBLIC;
+		bt_addr_copy(&le_addr.a, &link_key->addr);
+
+		err = bt_settings_delete_link_key(&le_addr);
+		if (err != 0) {
+			LOG_ERR("Failed to delete link key (err %d)", err);
+		}
+	}
+}
+
 void bt_keys_link_key_clear_addr(const bt_addr_t *addr)
 {
 	int i;

@@ -379,6 +379,41 @@ void bt_keys_clear(struct bt_keys *keys)
 	(void)memset(keys, 0, sizeof(*keys));
 }
 
+void bt_keys_clear_keep_entry(struct bt_keys *keys)
+{
+	__ASSERT_NO_MSG(keys != NULL);
+
+	LOG_DBG("%s (keys 0x%04x)", bt_addr_le_str(&keys->addr), keys->keys);
+
+	if ((keys->state & BT_KEYS_ID_ADDED) != 0U) {
+		bt_id_del(keys);
+	}
+
+	/* Everything that makes up the bond. The identity, the key size, the
+	 * flags and the age stay.
+	 */
+	keys->state &= ~BT_KEYS_ID_PENDING_ADD;
+	keys->keys = 0U;
+	(void)memset(&keys->ltk, 0, sizeof(keys->ltk));
+	(void)memset(&keys->irk, 0, sizeof(keys->irk));
+#if defined(CONFIG_BT_SIGNING)
+	(void)memset(&keys->local_csrk, 0, sizeof(keys->local_csrk));
+	(void)memset(&keys->remote_csrk, 0, sizeof(keys->remote_csrk));
+#endif /* CONFIG_BT_SIGNING */
+#if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
+	(void)memset(&keys->periph_ltk, 0, sizeof(keys->periph_ltk));
+#endif /* !CONFIG_BT_SMP_SC_PAIR_ONLY */
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		int err;
+
+		err = bt_settings_delete_keys(keys->id, &keys->addr);
+		if (err != 0) {
+			LOG_ERR("Failed to delete keys (err %d)", err);
+		}
+	}
+}
+
 #if defined(CONFIG_BT_SETTINGS)
 int bt_keys_store(struct bt_keys *keys)
 {

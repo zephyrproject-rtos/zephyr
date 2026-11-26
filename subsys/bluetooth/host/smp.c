@@ -868,7 +868,7 @@ static void sc_derive_link_key(struct bt_smp *smp)
 	/* Remove the bonding information */
 	link_key = bt_keys_find_link_key(&conn->le.dst.a);
 	if (link_key != NULL) {
-		smp_link_key_clear(link_key);
+		bt_keys_link_key_clear_keep_entry(link_key);
 	}
 
 	/*
@@ -1133,7 +1133,7 @@ static void smp_br_derive_ltk(struct bt_smp_br *smp)
 	keys = bt_keys_find_addr(conn->id, &addr);
 	if (keys != NULL) {
 		LOG_DBG("Clear the current keys for %s", bt_addr_le_str(&addr));
-		smp_br_keys_clear(keys);
+		bt_keys_clear_keep_entry(keys);
 	}
 
 	keys = bt_keys_get_type(BT_KEYS_LTK_P256, conn->id, &addr);
@@ -1171,6 +1171,9 @@ static void smp_br_derive_ltk(struct bt_smp_br *smp)
 	(void)memset(keys->ltk.ediv, 0, sizeof(keys->ltk.ediv));
 	(void)memset(keys->ltk.rand, 0, sizeof(keys->ltk.rand));
 	keys->enc_size = smp->enc_key_size;
+
+	/* What the entry kept of an earlier bond's flags */
+	keys->flags &= ~(BT_KEYS_DEBUG | BT_KEYS_OOB);
 
 	if (link_key->flags & BT_LINK_KEY_AUTHENTICATED) {
 		keys->flags |= BT_KEYS_AUTHENTICATED;

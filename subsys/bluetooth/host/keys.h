@@ -211,6 +211,19 @@ void bt_keys_add_type(struct bt_keys *keys, enum bt_keys_type type);
  */
 void bt_keys_clear(struct bt_keys *keys);
 
+/**
+ * @brief Clear the keys of a bond but keep its entry
+ *
+ * Like bt_keys_clear(), except that the entry stays allocated to its identity
+ * and address, with its key size and flags: a connection that references it
+ * keeps a valid reference and still finds those of its encryption there.
+ *
+ * A member added to struct bt_keys has to be handled here as well.
+ *
+ * @param keys Key reference to be cleared.
+ */
+void bt_keys_clear_keep_entry(struct bt_keys *keys);
+
 #if defined(CONFIG_BT_SETTINGS)
 
 /**
@@ -249,6 +262,13 @@ struct bt_keys_link_key {
 struct bt_keys_link_key *bt_keys_get_link_key(const bt_addr_t *addr);
 struct bt_keys_link_key *bt_keys_find_link_key(const bt_addr_t *addr);
 void bt_keys_link_key_clear(struct bt_keys_link_key *link_key);
+
+/* Like bt_keys_link_key_clear(), except that the entry stays allocated to its
+ * address, with its encryption key size: a connection that references it keeps
+ * a valid reference and still finds the key size of its encryption there. A
+ * member added to struct bt_keys_link_key has to be handled here as well.
+ */
+void bt_keys_link_key_clear_keep_entry(struct bt_keys_link_key *link_key);
 void bt_keys_link_key_clear_addr(const bt_addr_t *addr);
 void bt_keys_link_key_store(struct bt_keys_link_key *link_key);
 
