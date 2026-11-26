@@ -11,6 +11,8 @@ elseif(CONFIG_SOC_MIMX9596)
   add_subdirectory(imx95)
 elseif(CONFIG_SOC_MIMX9529)
   add_subdirectory(imx952)
+elseif(CONFIG_SOC_MIMX9375)
+  add_subdirectory(imx937)
 endif()
 
 if(CONFIG_CPU_CORTEX_A55 AND CONFIG_PM)

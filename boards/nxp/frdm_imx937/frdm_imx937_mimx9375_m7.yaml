@@ -1,0 +1,21 @@
+#
+# Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: frdm_imx937/mimx9375/m7
+name: NXP FRDM-IMX937
+type: mcu
+arch: arm
+ram: 256
+flash: 256
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - uart
+testing:
+  binaries:
+    - flash.bin
+vendor: nxp
