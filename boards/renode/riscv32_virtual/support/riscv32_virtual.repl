@@ -11,7 +11,7 @@ uart0: UART.NS16550 @ sysbus 0x10000000
     IRQ -> plic0@10
 
 uart1: UART.NS16550 @ sysbus 0x10000100
-    IRQ -> plic1@10
+    IRQ -> plic0@11
 
 cpu: CPU.RiscV32 @ sysbus
     cpuType: "rv32imac_zicsr_zifencei"
@@ -20,11 +20,6 @@ cpu: CPU.RiscV32 @ sysbus
 
 plic0: IRQControllers.PlatformLevelInterruptController @ sysbus 0x0C000000
     0 -> cpu@11
-    numberOfSources: 1023
-    numberOfContexts: 1
-
-plic1: IRQControllers.PlatformLevelInterruptController @ sysbus 0x08000000
-    0 -> cpu@4
     numberOfSources: 1023
     numberOfContexts: 1
 
