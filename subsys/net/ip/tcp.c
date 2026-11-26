@@ -3781,13 +3781,19 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 		break;
 	case TCP_SYN_RECEIVED:
 		if (th_ack(th) == conn->seq && th_seq(th) == conn->ack) {
+			struct tcp *listener = conn->accepted_conn;
 			net_tcp_accept_cb_t accept_cb = NULL;
 			struct net_context *context = NULL;
 
-			if (conn->accepted_conn != NULL) {
-				accept_cb = conn->accepted_conn->accept_cb;
-				context = conn->accepted_conn->context;
-				keep_alive_param_copy(conn, conn->accepted_conn);
+			if (listener != NULL) {
+				/* Held until the callback has returned, so that
+				 * net_tcp_accept() cannot take the callback
+				 * away while it is being called.
+				 */
+				k_mutex_lock(&listener->lock, K_FOREVER);
+				accept_cb = listener->accept_cb;
+				context = listener->context;
+				keep_alive_param_copy(conn, listener);
 			}
 
 			k_work_cancel_delayable(&conn->establish_timer);
@@ -3804,6 +3810,10 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 				 * the TCP context and put the connection into
 				 * active close (TCP_FIN_WAIT_1).
 				 */
+				if (listener != NULL) {
+					k_mutex_unlock(&listener->lock);
+				}
+
 				net_tcp_put(conn->context, false);
 				break;
 			}
@@ -3857,6 +3867,8 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 				  net_context_get_family(context) == NET_AF_INET6 ?
 				  sizeof(struct net_sockaddr_in6) : sizeof(struct net_sockaddr_in),
 				  0, context->user_data);
+
+			k_mutex_unlock(&listener->lock);
 
 			next = TCP_ESTABLISHED;
 			conn->send_max = conn->seq;
@@ -4876,7 +4888,12 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 		return -EINVAL;
 	}
 
+	/* tcp_in() calls the callback with the lock held */
+	k_mutex_lock(&conn->lock, K_FOREVER);
 	conn->accept_cb = cb;
+	context->user_data = user_data;
+	k_mutex_unlock(&conn->lock);
+
 	local_addr->sa_family = net_context_get_family(context);
 
 	switch (local_addr->sa_family) {
@@ -4924,8 +4941,6 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 	default:
 		return -EINVAL;
 	}
-
-	context->user_data = user_data;
 
 	/* Remove the temporary connection handler and register
 	 * a proper now as we have an established connection.
