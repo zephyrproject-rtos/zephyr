@@ -12,7 +12,7 @@
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr/net/ethernet.h>
-#include "../net/slip/slip.h"
+#include "../slip/slip.h"
 
 static struct slip_context slip_context_data;
 

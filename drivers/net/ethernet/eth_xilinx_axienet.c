@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(eth_xilinx_axienet, CONFIG_ETHERNET_LOG_LEVEL);
 #include <zephyr/sys/barrier.h>
 #include "eth.h"
 
-#include "../dma/dma_xilinx_axi_dma.h"
+#include "../../dma/dma_xilinx_axi_dma.h"
 
 /* register offsets and masks */
 #define XILINX_AXIENET_INTERRUPT_STATUS_OFFSET         0x0000000C

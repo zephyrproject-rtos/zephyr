@@ -14,7 +14,7 @@
 
 LOG_MODULE_DECLARE(wifi_native_sim, CONFIG_WIFI_LOG_LEVEL);
 
-#include "../../ethernet/eth.h"
+#include "../../net/ethernet/eth.h"
 
 #include "internal.h"
 #include "iface_api.h"

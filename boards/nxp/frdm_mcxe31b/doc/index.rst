@@ -98,7 +98,7 @@ Ethernet
 The board carries a Microchip LAN8741 10/100 Mbit/s PHY on MDIO address 0,
 connected to the MCXE31B EMAC over RMII. The EMAC is a Synopsys DesignWare
 Ethernet QoS core and is driven by the generic
-:zephyr_file:`drivers/ethernet/dwc_mac` driver, not by the NXP HAL based
+:zephyr_file:`drivers/net/ethernet/dwc_mac` driver, not by the NXP HAL based
 ``eth_nxp_enet_qos`` driver.
 
 The PHY sources the 50 MHz RMII reference clock, which the SoC takes in on

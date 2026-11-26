@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(dwmac_plat, CONFIG_ETHERNET_LOG_LEVEL);
 #include <zephyr/kernel.h>
 #include <zephyr/kernel/mm.h>
 #include <zephyr/net/ethernet.h>
-#include <ethernet/eth.h>
+#include "../eth.h"
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
