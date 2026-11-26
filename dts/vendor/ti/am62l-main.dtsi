@@ -84,6 +84,7 @@
 		reg = <0x00600010 0x28>;
 		gpio-controller;
 		#gpio-cells = <2>;
+		power-domains = <&main_gpio0_pd>;
 		ngpios = <32>;
 		status = "disabled";
 	};
@@ -93,6 +94,7 @@
 		reg = <0x00600038 0x28>;
 		gpio-controller;
 		#gpio-cells = <2>;
+		power-domains = <&main_gpio0_pd>;
 		ngpios = <32>;
 		status = "disabled";
 	};
@@ -102,6 +104,7 @@
 		reg = <0x00600060 0x28>;
 		gpio-controller;
 		#gpio-cells = <2>;
+		power-domains = <&main_gpio0_pd>;
 		ngpios = <32>;
 		status = "disabled";
 	};
@@ -111,6 +114,7 @@
 		reg = <0x00600088 0x28>;
 		gpio-controller;
 		#gpio-cells = <2>;
+		power-domains = <&main_gpio0_pd>;
 		ngpios = <30>;
 		status = "disabled";
 	};

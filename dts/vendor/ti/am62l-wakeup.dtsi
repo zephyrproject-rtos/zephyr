@@ -19,7 +19,7 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		ngpios = <7>;
-		power-domains = <&scmi_pds 36>;
+		power-domains = <&wkup_gpio0_pd>;
 		clocks = <&scmi_clk 146>;
 		clock-names = "gpio";
 		status = "disabled";
@@ -30,7 +30,7 @@
 		reg = <0x2b100000 DT_SIZE_K(1)>;
 		clocks = <&scmi_clk 93>;
 		clock-names = "fck";
-		power-domains = <&scmi_pds 19>;
+		power-domains = <&wkup_timer0_pd>;
 		status = "disabled";
 	};
 
@@ -39,7 +39,7 @@
 		reg = <0x2b110000 DT_SIZE_K(1)>;
 		clocks = <&scmi_clk 98>;
 		clock-names = "fck";
-		power-domains = <&scmi_pds 20>;
+		power-domains = <&wkup_timer1_pd>;
 		status = "disabled";
 	};
 
@@ -63,7 +63,7 @@
 		reg = <0x2b200000 0x100>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		power-domains = <&scmi_pds 57>;
+		power-domains = <&wkup_i2c0_pd>;
 		clocks = <&scmi_clk 262>;
 		clock-names = "fck";
 		status = "disabled";
