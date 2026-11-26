@@ -164,6 +164,7 @@
 
 	counter0: counter {
 		compatible = "zephyr,native-sim-counter";
+		#counter-alarm-cells = <1>;
 		#counter-capture-cells = <2>;
 		status = "okay";
 	};
