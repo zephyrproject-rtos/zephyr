@@ -103,8 +103,8 @@ static int test_cyclic(void)
 
 	dma_block_cfgs.block_size = CONFIG_DMA_CYCLIC_XFER_SIZE;
 
-	dma_block_cfgs.source_address = (uint32_t)(tx_data);
-	dma_block_cfgs.dest_address = (uint32_t)(rx_data);
+	dma_block_cfgs.source_address = (uintptr_t)tx_data;
+	dma_block_cfgs.dest_address = (uintptr_t)rx_data;
 
 	TC_PRINT("Configuring cyclic transfer on channel %d\n", chan_id);
 
