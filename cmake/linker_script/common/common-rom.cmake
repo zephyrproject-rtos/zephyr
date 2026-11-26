@@ -189,6 +189,10 @@ zephyr_iterable_section(NAME shell_subcmds KVMA RAM_REGION GROUP RODATA_REGION)
 
 zephyr_iterable_section(NAME shell_dynamic_subcmds KVMA RAM_REGION GROUP RODATA_REGION)
 
+if(CONFIG_PRECISION_TIMING_SHELL)
+  zephyr_iterable_section(NAME precision_timing_shell_entry GROUP RODATA_REGION)
+endif()
+
 zephyr_iterable_section(NAME cfb_font KVMA RAM_REGION GROUP RODATA_REGION)
 
 zephyr_iterable_section(NAME tracing_backend KVMA RAM_REGION GROUP RODATA_REGION)

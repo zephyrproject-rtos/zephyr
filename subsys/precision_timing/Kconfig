@@ -184,4 +184,17 @@ config PRECISION_CLOCK_PPS_POLL_INTERVAL_MS
 	  at the cost of more work. This does not set the hardware pulse period.
 
 endif # PRECISION_CLOCK_PPS
+
+config PRECISION_TIMING_SHELL
+	bool "Precision timing shell"
+	depends on SHELL
+	depends on CBPRINTF_FULL_INTEGRAL
+	help
+	  Enable shell commands for inspecting precision clocks and controlling
+	  scheduled clock outputs. Clocks are registered statically at build time
+	  with PRECISION_TIMING_SHELL_REGISTER().
+
+	  Full integral formatting is needed to print 64-bit clock and waveform
+	  values.
+
 endif # PRECISION_TIMING
