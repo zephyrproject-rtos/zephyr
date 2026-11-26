@@ -144,4 +144,8 @@ endif # NXP_FLEXSPI_BOOT_HEADER
 
 rsource "../../common/Kconfig.flexspi_xip"
 
+config SYSTEM_WORKQUEUE_MIN_STACK_SIZE_MCUX_ELS_PKC
+	int
+	default 2048 if HAS_MCUX_ELS_PKC && MBEDTLS_PSA_CRYPTO_C
+
 endif # SOC_FAMILY_MCXN
