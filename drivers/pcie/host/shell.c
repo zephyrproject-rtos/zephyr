@@ -131,29 +131,29 @@ static const struct pcie_cap_id_to_str pcie_ext_cap_list[] = {
 	{ PCIE_EXT_CAP_ID_NULL,    NULL },
 };
 
-static void show_msi(const struct shell *sh, pcie_bdf_t bdf)
+static void show_msi(const struct shell *sh, const struct pcie_endpoint *ep)
 {
 #ifdef CONFIG_PCIE_MSI
 	uint32_t msi;
 	uint32_t data;
 
-	msi = pcie_get_cap(bdf, PCI_CAP_ID_MSI);
+	msi = pcie_get_cap(ep, PCI_CAP_ID_MSI);
 
 	if (msi) {
-		data = pcie_conf_read(bdf, msi + PCIE_MSI_MCR);
+		data = pcie_conf_read(ep, msi + PCIE_MSI_MCR);
 		shell_fprintf(sh, SHELL_NORMAL, "    MSI support%s%s\n",
 			      (data & PCIE_MSI_MCR_64) ? ", 64-bit" : "",
 			      (data & PCIE_MSI_MCR_EN) ?
 			      ", enabled" : ", disabled");
 	}
 
-	msi = pcie_get_cap(bdf, PCI_CAP_ID_MSIX);
+	msi = pcie_get_cap(ep, PCI_CAP_ID_MSIX);
 
 	if (msi) {
 		uint32_t offset, table_size;
 		uint8_t bir;
 
-		data = pcie_conf_read(bdf, msi + PCIE_MSIX_MCR);
+		data = pcie_conf_read(ep, msi + PCIE_MSIX_MCR);
 
 		table_size = ((data & PCIE_MSIX_MCR_TSIZE) >>
 			      PCIE_MSIX_MCR_TSIZE_SHIFT) + 1;
@@ -164,7 +164,7 @@ static void show_msi(const struct shell *sh, pcie_bdf_t bdf)
 			      ", enabled" : ", disabled",
 			      table_size);
 
-		offset = pcie_conf_read(bdf, msi + PCIE_MSIX_TR);
+		offset = pcie_conf_read(ep, msi + PCIE_MSIX_TR);
 		bir = offset & PCIE_MSIX_TR_BIR;
 		offset &= PCIE_MSIX_TR_OFFSET;
 
@@ -172,7 +172,7 @@ static void show_msi(const struct shell *sh, pcie_bdf_t bdf)
 			      "\tTable offset 0x%x BAR %d\n",
 			      offset, bir);
 
-		offset = pcie_conf_read(bdf, msi + PCIE_MSIX_PBA);
+		offset = pcie_conf_read(ep, msi + PCIE_MSIX_PBA);
 		bir = offset & PCIE_MSIX_PBA_BIR;
 		offset &= PCIE_MSIX_PBA_OFFSET;
 
@@ -183,19 +183,18 @@ static void show_msi(const struct shell *sh, pcie_bdf_t bdf)
 #endif
 }
 
-static void show_bars(const struct shell *sh, pcie_bdf_t bdf)
+static void show_bars(const struct shell *sh, const struct pcie_endpoint *ep)
 {
 	uint32_t data;
-	int bar;
+	uint32_t bar;
 
 	for (bar = PCIE_CONF_BAR0; bar <= PCIE_CONF_BAR5; ++bar) {
-		data = pcie_conf_read(bdf, bar);
+		data = pcie_conf_read(ep, bar);
 		if (data == PCIE_CONF_BAR_NONE) {
 			continue;
 		}
 
-		shell_fprintf(sh, SHELL_NORMAL, "    bar %d: %s%s",
-			      bar - PCIE_CONF_BAR0,
+		shell_fprintf(sh, SHELL_NORMAL, "    bar %u: %s%s", bar - PCIE_CONF_BAR0,
 			      PCIE_CONF_BAR_IO(data) ? "I/O" : "MEM",
 			      PCIE_CONF_BAR_64(data) ? ", 64-bit" : "");
 
@@ -203,8 +202,7 @@ static void show_bars(const struct shell *sh, pcie_bdf_t bdf)
 
 		if (PCIE_CONF_BAR_64(data)) {
 			++bar;
-			shell_fprintf(sh, SHELL_NORMAL, "%08x",
-				      pcie_conf_read(bdf, bar));
+			shell_fprintf(sh, SHELL_NORMAL, "%08x", pcie_conf_read(ep, bar));
 		}
 
 		shell_fprintf(sh, SHELL_NORMAL, "%08x\n",
@@ -212,7 +210,7 @@ static void show_bars(const struct shell *sh, pcie_bdf_t bdf)
 	}
 }
 
-static void show_capabilities(const struct shell *sh, pcie_bdf_t bdf)
+static void show_capabilities(const struct shell *sh, const struct pcie_endpoint *ep)
 {
 	const struct pcie_cap_id_to_str *cap_id2str;
 	uint32_t base;
@@ -221,7 +219,7 @@ static void show_capabilities(const struct shell *sh, pcie_bdf_t bdf)
 
 	cap_id2str = pcie_cap_list;
 	while (cap_id2str->str != NULL) {
-		base = pcie_get_cap(bdf, cap_id2str->id);
+		base = pcie_get_cap(ep, cap_id2str->id);
 		if (base != 0) {
 			shell_fprintf(sh, SHELL_NORMAL,
 				      "        %s\n", cap_id2str->str);
@@ -234,7 +232,7 @@ static void show_capabilities(const struct shell *sh, pcie_bdf_t bdf)
 
 	cap_id2str = pcie_ext_cap_list;
 	while (cap_id2str->str != NULL) {
-		base = pcie_get_ext_cap(bdf, cap_id2str->id);
+		base = pcie_get_ext_cap(ep, cap_id2str->id);
 		if (base != 0) {
 			shell_fprintf(sh, SHELL_NORMAL,
 				      "        %s\n", cap_id2str->str);
@@ -244,14 +242,14 @@ static void show_capabilities(const struct shell *sh, pcie_bdf_t bdf)
 	}
 }
 
-static void show_vc(const struct shell *sh, pcie_bdf_t bdf)
+static void show_vc(const struct shell *sh, const struct pcie_endpoint *ep)
 {
 	uint32_t base;
 	struct pcie_vc_regs regs;
 	struct pcie_vc_resource_regs res_regs[PCIE_VC_MAX_COUNT];
 	int idx;
 
-	base = pcie_vc_cap_lookup(bdf, &regs);
+	base = pcie_vc_cap_lookup(ep, &regs);
 	if (base == 0) {
 		return;
 	}
@@ -266,8 +264,7 @@ static void show_vc(const struct shell *sh, pcie_bdf_t bdf)
 		      regs.cap_reg_2.vca_cap,
 		      regs.cap_reg_2.vca_table_offset);
 
-	pcie_vc_load_resources_regs(bdf, base, res_regs,
-				    regs.cap_reg_1.vc_count + 1);
+	pcie_vc_load_resources_regs(ep, base, res_regs, regs.cap_reg_1.vc_count + 1);
 
 	for (idx = 0; idx < regs.cap_reg_1.vc_count + 1; idx++) {
 		shell_fprintf(sh, SHELL_NORMAL,
@@ -280,10 +277,10 @@ static void show_vc(const struct shell *sh, pcie_bdf_t bdf)
 	}
 }
 
-static void pcie_dump(const struct shell *sh, pcie_bdf_t bdf)
+static void pcie_dump(const struct shell *sh, const struct pcie_endpoint *ep)
 {
-	for (int i = 0; i < 16; i++) {
-		uint32_t val = pcie_conf_read(bdf, i);
+	for (uint32_t i = 0U; i < 16U; i++) {
+		uint32_t val = pcie_conf_read(ep, i);
 
 		for (int j = 0; j < 4; j++) {
 			shell_fprintf(sh, SHELL_NORMAL, "%02x ",
@@ -291,7 +288,7 @@ static void pcie_dump(const struct shell *sh, pcie_bdf_t bdf)
 			val >>= 8;
 		}
 
-		if (((i + 1) % 4) == 0) {
+		if (((i + 1U) % 4U) == 0U) {
 			shell_fprintf(sh, SHELL_NORMAL, "\n");
 		}
 	}
@@ -326,25 +323,22 @@ static pcie_bdf_t get_bdf(char *str)
 	return PCIE_BDF(bus, dev, func);
 }
 
-static void show(const struct shell *sh, pcie_bdf_t bdf, bool details, bool dump)
+static void show(const struct shell *sh, const struct pcie_endpoint *ep, bool details, bool dump)
 {
 	uint32_t data;
 	unsigned int irq;
 
-	data = pcie_conf_read(bdf, PCIE_CONF_ID);
+	data = pcie_conf_read(ep, PCIE_CONF_ID);
 
 	if (!PCIE_ID_IS_VALID(data)) {
 		return;
 	}
 
-	shell_fprintf(sh, SHELL_NORMAL, "%d:%x.%d ID %x:%x ",
-		     PCIE_BDF_TO_BUS(bdf),
-		     PCIE_BDF_TO_DEV(bdf),
-		     PCIE_BDF_TO_FUNC(bdf),
-		     PCIE_ID_TO_VEND(data),
-		     PCIE_ID_TO_DEV(data));
+	shell_fprintf(sh, SHELL_NORMAL, "%d:%x.%d ID %x:%x ", PCIE_BDF_TO_BUS(ep->bdf),
+		      PCIE_BDF_TO_DEV(ep->bdf), PCIE_BDF_TO_FUNC(ep->bdf), PCIE_ID_TO_VEND(data),
+		      PCIE_ID_TO_DEV(data));
 
-	data = pcie_conf_read(bdf, PCIE_CONF_CLASSREV);
+	data = pcie_conf_read(ep, PCIE_CONF_CLASSREV);
 	shell_fprintf(sh, SHELL_NORMAL,
 		     "class %x subclass %x prog i/f %x rev %x",
 		     PCIE_CONF_CLASSREV_CLASS(data),
@@ -352,15 +346,15 @@ static void show(const struct shell *sh, pcie_bdf_t bdf, bool details, bool dump
 		     PCIE_CONF_CLASSREV_PROGIF(data),
 		     PCIE_CONF_CLASSREV_REV(data));
 
-	data = pcie_conf_read(bdf, PCIE_CONF_TYPE);
+	data = pcie_conf_read(ep, PCIE_CONF_TYPE);
 
 	if (PCIE_CONF_TYPE_BRIDGE(data)) {
 		shell_fprintf(sh, SHELL_NORMAL, " [bridge]\n");
 	} else {
 		shell_fprintf(sh, SHELL_NORMAL, "\n");
-		show_bars(sh, bdf);
-		show_msi(sh, bdf);
-		irq = pcie_get_irq(bdf);
+		show_bars(sh, ep);
+		show_msi(sh, ep);
+		irq = pcie_get_irq(ep);
 		if (irq != PCIE_CONF_INTR_IRQ_NONE) {
 			shell_fprintf(sh, SHELL_NORMAL,
 				      "    wired interrupt on IRQ %d\n", irq);
@@ -368,12 +362,12 @@ static void show(const struct shell *sh, pcie_bdf_t bdf, bool details, bool dump
 	}
 
 	if (details) {
-		show_capabilities(sh, bdf);
-		show_vc(sh, bdf);
+		show_capabilities(sh, ep);
+		show_vc(sh, ep);
 	}
 
 	if (dump) {
-		pcie_dump(sh, bdf);
+		pcie_dump(sh, ep);
 	}
 }
 
@@ -382,11 +376,11 @@ struct scan_cb_data {
 	bool dump;
 };
 
-static bool scan_cb(pcie_bdf_t bdf, pcie_id_t id, void *cb_data)
+static bool scan_cb(const struct pcie_endpoint *ep, pcie_id_t id, void *cb_data)
 {
 	struct scan_cb_data *data = cb_data;
 
-	show(data->sh, bdf, false, data->dump);
+	show(data->sh, ep, false, data->dump);
 
 	return true;
 }
@@ -395,10 +389,10 @@ static bool scan_cb(pcie_bdf_t bdf, pcie_id_t id, void *cb_data)
 static pcie_bdf_t masked_bdfs[MAX_MASKED_DEVICES];
 static uint32_t masked_count;
 
-static bool is_bdf_masked(pcie_bdf_t bdf)
+static bool is_bdf_masked(const struct pcie_endpoint *ep)
 {
 	for (uint32_t i = 0; i < masked_count; i++) {
-		if (masked_bdfs[i] == bdf) {
+		if (masked_bdfs[i] == ep->bdf) {
 			return true;
 		}
 	}
@@ -439,11 +433,18 @@ static int cmd_pcie_ls(const struct shell *sh, size_t argc, char **argv)
 
 	/* Show only specified device */
 	if (bdf != PCIE_BDF_NONE) {
-		show(sh, bdf, true, data.dump);
+		const struct pcie_endpoint ep0 = {.ctrl = NULL, .bdf = bdf};
+
+		show(sh, &ep0, true, data.dump);
 		return 0;
 	}
 
-	pcie_scan(&scan_opt);
+	int ret = pcie_scan(&scan_opt);
+
+	if (ret < 0) {
+		shell_error(sh, "PCIe scan failed (%d)", ret);
+		return ret;
+	}
 
 	return 0;
 }
@@ -492,22 +493,24 @@ static int cmd_pcie_write(const struct shell *sh, size_t argc, char **argv)
 	}
 	uint32_t data = (uint32_t)data_arg;
 
-	uint32_t id = pcie_conf_read(bdf, PCIE_CONF_ID);
+	const struct pcie_endpoint ep0 = {.ctrl = NULL, .bdf = bdf};
+
+	uint32_t id = pcie_conf_read(&ep0, PCIE_CONF_ID);
 
 	if (id == 0xFFFFFFFFU || !PCIE_ID_IS_VALID(id)) {
 		shell_error(sh, "No responsive endpoint found at target BDF.");
 		return -ENODEV;
 	}
 
-	uint32_t current_val = pcie_conf_read(bdf, reg);
+	uint32_t current_val = pcie_conf_read(&ep0, reg);
 
 	shell_print(sh, "Writing 0x%08x to %u:%x.%u reg %u (prev: 0x%08x)...", data,
 		    PCIE_BDF_TO_BUS(bdf), PCIE_BDF_TO_DEV(bdf), PCIE_BDF_TO_FUNC(bdf), reg,
 		    current_val);
 
-	pcie_conf_write(bdf, reg, data);
+	pcie_conf_write(&ep0, reg, data);
 
-	uint32_t read_back = pcie_conf_read(bdf, reg);
+	uint32_t read_back = pcie_conf_read(&ep0, reg);
 
 	shell_print(sh, "Read-back Verification Value: 0x%08X", read_back);
 
@@ -536,7 +539,9 @@ static int cmd_pcie_mask_ignore(const struct shell *sh, size_t argc, char **argv
 
 	bdf = PCIE_BDF(PCIE_BDF_TO_BUS(bdf), PCIE_BDF_TO_DEV(bdf), PCIE_BDF_TO_FUNC(bdf));
 
-	if (is_bdf_masked(bdf)) {
+	const struct pcie_endpoint ep0 = {.ctrl = NULL, .bdf = bdf};
+
+	if (is_bdf_masked(&ep0)) {
 		shell_warn(sh, "Target BDF is already registered in the mask array.");
 		return 0;
 	}
@@ -570,7 +575,9 @@ static void show_mem_bar_info(const struct shell *sh, pcie_bdf_t bdf, unsigned i
 		    (unsigned long long)(mem_size / 1024U), (unsigned long long)size_mask64);
 
 	if (is_64bit && *bar_idx < 5) {
-		uint32_t raw_bar_hi = pcie_conf_read(bdf, reg + 1);
+		const struct pcie_endpoint ep0 = {.ctrl = NULL, .bdf = bdf};
+
+		uint32_t raw_bar_hi = pcie_conf_read(&ep0, reg + 1);
 		uint64_t base_addr64 = ((uint64_t)raw_bar_hi << 32) | base_addr;
 		uint64_t end_addr64 = base_addr64 + (mem_size - 1ULL);
 
@@ -603,31 +610,33 @@ static void show_io_bar_info(const struct shell *sh, uint64_t size_mask64, uint3
 static uint64_t probe_bar_size_mask(pcie_bdf_t bdf, unsigned int reg, unsigned int bar_idx,
 				    bool is_64bit, uint32_t raw_bar)
 {
-	uint32_t cmd_backup = pcie_conf_read(bdf, PCIE_CONF_CMDSTAT);
+	const struct pcie_endpoint ep0 = {.ctrl = NULL, .bdf = bdf};
+
+	uint32_t cmd_backup = pcie_conf_read(&ep0, PCIE_CONF_CMDSTAT);
 	uint32_t size_mask_lo;
 	uint64_t mask;
 
-	pcie_conf_write(bdf, PCIE_CONF_CMDSTAT,
+	pcie_conf_write(&ep0, PCIE_CONF_CMDSTAT,
 			cmd_backup & (~(PCIE_CONF_CMDSTAT_IO | PCIE_CONF_CMDSTAT_MEM)));
 
-	pcie_conf_write(bdf, reg, 0xFFFFFFFFU);
-	size_mask_lo = pcie_conf_read(bdf, reg);
-	pcie_conf_write(bdf, reg, raw_bar);
+	pcie_conf_write(&ep0, reg, 0xFFFFFFFFU);
+	size_mask_lo = pcie_conf_read(&ep0, reg);
+	pcie_conf_write(&ep0, reg, raw_bar);
 
 	if (is_64bit && bar_idx < 5) {
-		uint32_t raw_bar_hi = pcie_conf_read(bdf, reg + 1);
+		uint32_t raw_bar_hi = pcie_conf_read(&ep0, reg + 1);
 		uint32_t size_mask_hi;
 
-		pcie_conf_write(bdf, reg + 1, 0xFFFFFFFFU);
-		size_mask_hi = pcie_conf_read(bdf, reg + 1);
-		pcie_conf_write(bdf, reg + 1, raw_bar_hi);
+		pcie_conf_write(&ep0, reg + 1, 0xFFFFFFFFU);
+		size_mask_hi = pcie_conf_read(&ep0, reg + 1);
+		pcie_conf_write(&ep0, reg + 1, raw_bar_hi);
 
 		mask = ((uint64_t)size_mask_hi << 32) | (uint64_t)size_mask_lo;
 	} else {
 		mask = (uint64_t)(uint32_t)size_mask_lo;
 	}
 
-	pcie_conf_write(bdf, PCIE_CONF_CMDSTAT, cmd_backup);
+	pcie_conf_write(&ep0, PCIE_CONF_CMDSTAT, cmd_backup);
 	return mask;
 }
 
@@ -647,7 +656,9 @@ static int cmd_pcie_resource_show(const struct shell *sh, size_t argc, char **ar
 		shell_error(sh, "Invalid BDF layout format specification.");
 		return -EINVAL;
 	}
-	id = pcie_conf_read(bdf, PCIE_CONF_ID);
+	const struct pcie_endpoint ep0 = {.ctrl = NULL, .bdf = bdf};
+
+	id = pcie_conf_read(&ep0, PCIE_CONF_ID);
 	if (id == 0xFFFFFFFFU || !PCIE_ID_IS_VALID(id)) {
 		shell_error(sh, "No responsive endpoint found at target BDF.");
 		return -ENODEV;
@@ -658,7 +669,7 @@ static int cmd_pcie_resource_show(const struct shell *sh, size_t argc, char **ar
 		    PCIE_BDF_TO_BUS(bdf), PCIE_BDF_TO_DEV(bdf), PCIE_BDF_TO_FUNC(bdf));
 	shell_print(sh, "====================================================================");
 
-	uint32_t header_type = PCIE_CONF_TYPE_GET(pcie_conf_read(bdf, PCIE_CONF_TYPE));
+	uint32_t header_type = PCIE_CONF_TYPE_GET(pcie_conf_read(&ep0, PCIE_CONF_TYPE));
 	unsigned int bar_count = 0U;
 
 	if (header_type == PCIE_CONF_TYPE_STANDARD) {
@@ -671,7 +682,7 @@ static int cmd_pcie_resource_show(const struct shell *sh, size_t argc, char **ar
 	bar_idx = 0U;
 	while (bar_idx < bar_count) {
 		unsigned int reg = PCIE_CONF_BAR0 + bar_idx;
-		uint32_t raw_bar = pcie_conf_read(bdf, reg);
+		uint32_t raw_bar = pcie_conf_read(&ep0, reg);
 		uint64_t size_mask64;
 		bool is_mem;
 		bool is_64bit;
@@ -769,13 +780,15 @@ static int cmd_pcie_link_set_speed(const struct shell *sh, size_t argc, char **a
 		return -EINVAL;
 	}
 
-	id = pcie_conf_read(bdf, PCIE_CONF_ID);
+	const struct pcie_endpoint ep0 = {.ctrl = NULL, .bdf = bdf};
+
+	id = pcie_conf_read(&ep0, PCIE_CONF_ID);
 	if (id == 0xFFFFFFFFU || !PCIE_ID_IS_VALID(id)) {
 		shell_error(sh, "No responsive endpoint found at target BDF.");
 		return -ENODEV;
 	}
 
-	pcie_cap_offset = pcie_get_cap(bdf, PCI_CAP_ID_EXP);
+	pcie_cap_offset = pcie_get_cap(&ep0, PCI_CAP_ID_EXP);
 	if (pcie_cap_offset == 0) {
 		shell_error(sh, "Target device does not support native "
 				"PCIe Capability structures.");
@@ -796,7 +809,7 @@ static int cmd_pcie_link_set_speed(const struct shell *sh, size_t argc, char **a
 		return -EINVAL;
 	}
 
-	pcie_cap = pcie_conf_read(bdf, pcie_cap_offset);
+	pcie_cap = pcie_conf_read(&ep0, pcie_cap_offset);
 	pcie_cap_ver = (pcie_cap >> 16) & 0xFU;
 
 	if (pcie_cap_ver < 2U) {
@@ -805,7 +818,7 @@ static int cmd_pcie_link_set_speed(const struct shell *sh, size_t argc, char **a
 	}
 
 	lnkcap2_reg = pcie_cap_offset + (0x2CU / 4U);
-	lnkcap2 = pcie_conf_read(bdf, lnkcap2_reg);
+	lnkcap2 = pcie_conf_read(&ep0, lnkcap2_reg);
 	supported_speeds = lnkcap2 & 0x0FU;
 
 	if ((supported_speeds & (1U << (target_speed - 1U))) == 0U) {
@@ -814,11 +827,11 @@ static int cmd_pcie_link_set_speed(const struct shell *sh, size_t argc, char **a
 	}
 
 	link_ctrl2_reg = pcie_cap_offset + (0x30U / 4U);
-	link_ctrl2 = pcie_conf_read(bdf, link_ctrl2_reg);
+	link_ctrl2 = pcie_conf_read(&ep0, link_ctrl2_reg);
 
 	link_ctrl2 &= ~0x0FU; /* Clear Target Link Speed bitfield (Bits 3:0) */
 	link_ctrl2 |= target_speed;
-	pcie_conf_write(bdf, link_ctrl2_reg, link_ctrl2);
+	pcie_conf_write(&ep0, link_ctrl2_reg, link_ctrl2);
 
 	shell_print(sh,
 		    "Target speed configured to %s (Value: 0x%X) inside "
@@ -826,16 +839,16 @@ static int cmd_pcie_link_set_speed(const struct shell *sh, size_t argc, char **a
 		    argv[2], target_speed);
 
 	link_ctrl_reg = pcie_cap_offset + (0x10U / 4U);
-	link_ctrl = pcie_conf_read(bdf, link_ctrl_reg);
+	link_ctrl = pcie_conf_read(&ep0, link_ctrl_reg);
 
 	shell_print(sh, "Issuing Retrain Link command (Setting Bit 5)...");
 	link_ctrl |= (1U << 5);
-	pcie_conf_write(bdf, link_ctrl_reg, link_ctrl);
+	pcie_conf_write(&ep0, link_ctrl_reg, link_ctrl);
 
 	/* Poll Link Status until retraining completes (Link Training bit clears) */
 	link_status = 0U;
 	for (int i = 0; i < 1000; i++) {
-		link_status = pcie_conf_read(bdf, link_ctrl_reg);
+		link_status = pcie_conf_read(&ep0, link_ctrl_reg);
 		if (((link_status >> 27) & 0x1U) == 0U) {
 			break;
 		}
@@ -871,7 +884,9 @@ static int cmd_pcie_irq_status(const struct shell *sh, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	id = pcie_conf_read(bdf, PCIE_CONF_ID);
+	const struct pcie_endpoint ep0 = {.ctrl = NULL, .bdf = bdf};
+
+	id = pcie_conf_read(&ep0, PCIE_CONF_ID);
 	if (!PCIE_ID_IS_VALID(id)) {
 		shell_error(sh, "No responsive endpoint found at target BDF.");
 		return -ENODEV;
@@ -882,7 +897,7 @@ static int cmd_pcie_irq_status(const struct shell *sh, size_t argc, char **argv)
 		    PCIE_BDF_TO_DEV(bdf), PCIE_BDF_TO_FUNC(bdf));
 	shell_print(sh, "====================================================================");
 
-	intr = pcie_conf_read(bdf, PCIE_CONF_INTR);
+	intr = pcie_conf_read(&ep0, PCIE_CONF_INTR);
 	int_pin = (intr >> 8) & 0xFFU;
 	int_line = intr & 0xFFU;
 
@@ -897,14 +912,14 @@ static int cmd_pcie_irq_status(const struct shell *sh, size_t argc, char **argv)
 
 	shell_print(sh, "----------------------------------------------------");
 
-	msi_offset = pcie_get_cap(bdf, PCI_CAP_ID_MSI);
+	msi_offset = pcie_get_cap(&ep0, PCI_CAP_ID_MSI);
 	if (msi_offset != 0) {
-		uint32_t msg_ctrl = pcie_conf_read(bdf, msi_offset);
+		uint32_t msg_ctrl = pcie_conf_read(&ep0, msi_offset);
 		bool msi_en = (msg_ctrl & (1U << 16)) != 0;
 		uint32_t multi_msg = (msg_ctrl >> 17) & 0x07U;
 		uint32_t multi_en = (msg_ctrl >> 20) & 0x07U;
 		bool is_64bit = (msg_ctrl & (1U << 23)) != 0;
-		uint32_t addr_lo = pcie_conf_read(bdf, msi_offset + 1);
+		uint32_t addr_lo = pcie_conf_read(&ep0, msi_offset + 1);
 
 		shell_print(sh, "Message Signaled Interrupts (MSI) Capability [Offset 0x%02X]:",
 			    msi_offset * 4);
@@ -915,13 +930,13 @@ static int cmd_pcie_irq_status(const struct shell *sh, size_t argc, char **argv)
 			    1U << multi_en);
 
 		if (is_64bit) {
-			uint32_t addr_hi = pcie_conf_read(bdf, msi_offset + 2);
-			uint32_t msg_data = pcie_conf_read(bdf, msi_offset + 3) & 0xFFFFU;
+			uint32_t addr_hi = pcie_conf_read(&ep0, msi_offset + 2);
+			uint32_t msg_data = pcie_conf_read(&ep0, msi_offset + 3) & 0xFFFFU;
 
 			shell_print(sh, "   -> Target Address : 0x%08X%08X", addr_hi, addr_lo);
 			shell_print(sh, "   -> Message Data   : 0x%04X", msg_data);
 		} else {
-			uint32_t msg_data = pcie_conf_read(bdf, msi_offset + 2) & 0xFFFFU;
+			uint32_t msg_data = pcie_conf_read(&ep0, msi_offset + 2) & 0xFFFFU;
 
 			shell_print(sh, "   -> Target Address : 0x%08X", addr_lo);
 			shell_print(sh, "   -> Message Data   : 0x%04X", msg_data);
@@ -931,13 +946,13 @@ static int cmd_pcie_irq_status(const struct shell *sh, size_t argc, char **argv)
 	}
 	shell_print(sh, "----------------------------------------------------");
 
-	msix_offset = pcie_get_cap(bdf, PCI_CAP_ID_MSIX);
+	msix_offset = pcie_get_cap(&ep0, PCI_CAP_ID_MSIX);
 	if (msix_offset != 0) {
-		uint32_t msg_ctrl = pcie_conf_read(bdf, msix_offset);
+		uint32_t msg_ctrl = pcie_conf_read(&ep0, msix_offset);
 		bool msix_en = (msg_ctrl & (1U << 31)) != 0;
 		bool msix_mask = (msg_ctrl & (1U << 30)) != 0;
 		uint32_t table_size = ((msg_ctrl >> 16) & 0x07FFU) + 1;
-		uint32_t table_bir = pcie_conf_read(bdf, msix_offset + 1);
+		uint32_t table_bir = pcie_conf_read(&ep0, msix_offset + 1);
 		uint8_t bir = table_bir & 0x07U;
 		uint32_t offset = table_bir & ~0x07U;
 
@@ -1028,23 +1043,25 @@ static int cmd_pcie_aer_status(const struct shell *sh, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	id = pcie_conf_read(bdf, PCIE_CONF_ID);
+	const struct pcie_endpoint ep0 = {.ctrl = NULL, .bdf = bdf};
+
+	id = pcie_conf_read(&ep0, PCIE_CONF_ID);
 	if (id == 0xFFFFFFFFU || !PCIE_ID_IS_VALID(id)) {
 		shell_error(sh, "No responsive endpoint found at target BDF.");
 		return -ENODEV;
 	}
 
-	aer_offset = pcie_get_ext_cap(bdf, PCIE_EXT_CAP_AER_ID);
+	aer_offset = pcie_get_ext_cap(&ep0, PCIE_EXT_CAP_AER_ID);
 	if (aer_offset == 0) {
 		shell_error(sh, "Target device does not support native "
 				"Advanced Error Reporting (AER).");
 		return -EOPNOTSUPP;
 	}
 
-	uncorr_status = pcie_conf_read(bdf, aer_offset + PCIE_AER_UNCORR_STATUS_REG);
-	uncorr_mask = pcie_conf_read(bdf, aer_offset + PCIE_AER_UNCORR_MASK_REG);
-	corr_status = pcie_conf_read(bdf, aer_offset + PCIE_AER_CORR_STATUS_REG);
-	corr_mask = pcie_conf_read(bdf, aer_offset + PCIE_AER_CORR_MASK_REG);
+	uncorr_status = pcie_conf_read(&ep0, aer_offset + PCIE_AER_UNCORR_STATUS_REG);
+	uncorr_mask = pcie_conf_read(&ep0, aer_offset + PCIE_AER_UNCORR_MASK_REG);
+	corr_status = pcie_conf_read(&ep0, aer_offset + PCIE_AER_CORR_STATUS_REG);
+	corr_mask = pcie_conf_read(&ep0, aer_offset + PCIE_AER_CORR_MASK_REG);
 
 	shell_print(sh, "====================================================================");
 	shell_print(sh, "   PCIe ADVANCED ERROR REPORTING (AER) STATUS MATRIX: %u:%x.%u",
@@ -1065,7 +1082,7 @@ static int cmd_pcie_aer_status(const struct shell *sh, size_t argc, char **argv)
 
 	shell_print(sh, "Transaction Layer Packet (TLP) Header Log Matrix:");
 	for (uint32_t i = 0U; i < 4U; i++) {
-		header_log[i] = pcie_conf_read(bdf, aer_offset + PCIE_AER_HEADER_LOG_REG + i);
+		header_log[i] = pcie_conf_read(&ep0, aer_offset + PCIE_AER_HEADER_LOG_REG + i);
 	}
 	shell_print(sh, "   [DW0-DW1] : 0x%08X 0x%08X", header_log[0], header_log[1]);
 	shell_print(sh, "   [DW2-DW3] : 0x%08X 0x%08X", header_log[2], header_log[3]);
@@ -1138,24 +1155,26 @@ static int cmd_pcie_link_margin(const struct shell *sh, size_t argc, char **argv
 		return -EINVAL;
 	}
 
-	id = pcie_conf_read(bdf, PCIE_CONF_ID);
+	const struct pcie_endpoint ep0 = {.ctrl = NULL, .bdf = bdf};
+
+	id = pcie_conf_read(&ep0, PCIE_CONF_ID);
 	if (id == 0xFFFFFFFFU || !PCIE_ID_IS_VALID(id)) {
 		shell_error(sh, "No responsive endpoint found at target BDF.");
 		return -ENODEV;
 	}
 
-	margin_offset = pcie_get_ext_cap(bdf, PCIE_EXT_CAP_ID_LMR);
+	margin_offset = pcie_get_ext_cap(&ep0, PCIE_EXT_CAP_ID_LMR);
 	if (margin_offset == 0) {
 		shell_error(sh, "Target device does not implement native "
 				"Lane Margining at Receiver (Cap ID 0x0027).");
 		return -EOPNOTSUPP;
 	}
 
-	port_caps_ctl = pcie_conf_read(bdf, margin_offset + 1U);
+	port_caps_ctl = pcie_conf_read(&ep0, margin_offset + 1U);
 	port_caps = port_caps_ctl;
 	port_ctls = (port_caps_ctl >> 16) & 0xFFFFU;
 
-	lane_status = pcie_conf_read(bdf, margin_offset + 2U);
+	lane_status = pcie_conf_read(&ep0, margin_offset + 2U);
 
 	shell_print(sh, "====================================================");
 	shell_print(sh, "   PCIe SerDes LANE MARGINING METRICS MATRIX: %u:%x.%u",
@@ -1193,13 +1212,15 @@ static int cmd_pcie_device_state(const struct shell *sh, size_t argc, char **arg
 		return -EINVAL;
 	}
 
-	id = pcie_conf_read(bdf, PCIE_CONF_ID);
+	const struct pcie_endpoint ep0 = {.ctrl = NULL, .bdf = bdf};
+
+	id = pcie_conf_read(&ep0, PCIE_CONF_ID);
 	if (id == 0xFFFFFFFFU || !PCIE_ID_IS_VALID(id)) {
 		shell_error(sh, "No responsive endpoint found at target BDF.");
 		return -ENODEV;
 	}
 
-	pm_offset = pcie_get_cap(bdf, PCI_CAP_ID_PM);
+	pm_offset = pcie_get_cap(&ep0, PCI_CAP_ID_PM);
 	if (pm_offset == 0) {
 		shell_error(sh, "Target device does not support PCI Power Management.");
 		return -EOPNOTSUPP;
@@ -1214,12 +1235,12 @@ static int cmd_pcie_device_state(const struct shell *sh, size_t argc, char **arg
 		return -EINVAL;
 	}
 
-	pmcsr = pcie_conf_read(bdf, pm_offset + PCI_PM_CTRL_STATUS_REG);
+	pmcsr = pcie_conf_read(&ep0, pm_offset + PCI_PM_CTRL_STATUS_REG);
 	pmcsr &= ~PCI_PM_STATE_MASK;
 	pmcsr |= target_state;
-	pcie_conf_write(bdf, pm_offset + PCI_PM_CTRL_STATUS_REG, pmcsr);
+	pcie_conf_write(&ep0, pm_offset + PCI_PM_CTRL_STATUS_REG, pmcsr);
 
-	pmcsr = pcie_conf_read(bdf, pm_offset + PCI_PM_CTRL_STATUS_REG);
+	pmcsr = pcie_conf_read(&ep0, pm_offset + PCI_PM_CTRL_STATUS_REG);
 
 	shell_print(sh, "====================================================================");
 	shell_print(sh, "   PCI HARDWARE TRANSCEIVER ENERGY REGISTRY STATUS: %u:%x.%u",
@@ -1260,25 +1281,27 @@ static int cmd_pcie_link_speed(const struct shell *sh, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	id = pcie_conf_read(bdf, PCIE_CONF_ID);
+	const struct pcie_endpoint ep0 = {.ctrl = NULL, .bdf = bdf};
+
+	id = pcie_conf_read(&ep0, PCIE_CONF_ID);
 	if (id == 0xFFFFFFFFU || !PCIE_ID_IS_VALID(id)) {
 		shell_error(sh, "No responsive endpoint found at target BDF.");
 		return -ENODEV;
 	}
 
-	exp_offset = pcie_get_cap(bdf, PCI_CAP_ID_EXP);
+	exp_offset = pcie_get_cap(&ep0, PCI_CAP_ID_EXP);
 	if (exp_offset == 0) {
 		shell_error(sh, "Target device does not support native PCIe Capabilities.");
 		return -EOPNOTSUPP;
 	}
 
-	lnkcap_val = pcie_conf_read(bdf, exp_offset + 3U);
+	lnkcap_val = pcie_conf_read(&ep0, exp_offset + 3U);
 	max_speed = (uint8_t)(lnkcap_val & 0x0FU);
 
 	raw_max_width = (uint8_t)((lnkcap_val >> 4) & 0x3FU);
 	max_width = (raw_max_width != 0U) ? raw_max_width : 1U;
 
-	lnksta_val = pcie_conf_read(bdf, exp_offset + 4U) >> 16;
+	lnksta_val = pcie_conf_read(&ep0, exp_offset + 4U) >> 16;
 	curr_speed = (uint8_t)(lnksta_val & 0x0FU);
 
 	raw_curr_width = (uint8_t)((lnksta_val >> 4) & 0x3FU);
@@ -1329,20 +1352,22 @@ static int cmd_pcie_offload_capabilities(const struct shell *sh, size_t argc, ch
 		return -EINVAL;
 	}
 
-	id = pcie_conf_read(bdf, PCIE_CONF_ID);
+	const struct pcie_endpoint ep0 = {.ctrl = NULL, .bdf = bdf};
+
+	id = pcie_conf_read(&ep0, PCIE_CONF_ID);
 	if (id == 0xFFFFFFFFU || !PCIE_ID_IS_VALID(id)) {
 		shell_error(sh, "No responsive endpoint found at target BDF.");
 		return -ENODEV;
 	}
 
-	exp_offset = pcie_get_cap(bdf, PCI_CAP_ID_EXP);
+	exp_offset = pcie_get_cap(&ep0, PCI_CAP_ID_EXP);
 	if (exp_offset == 0U) {
 		shell_error(sh, "Target device does not support native PCIe Capabilities.");
 		return -EOPNOTSUPP;
 	}
 
-	devcap2 = pcie_conf_read(bdf, (exp_offset + 0x24U) >> 2);
-	ext_sriov_offset = pcie_get_ext_cap(bdf, PCIE_EXT_CAP_ID_SRIOV);
+	devcap2 = pcie_conf_read(&ep0, (exp_offset + 0x24U) >> 2);
+	ext_sriov_offset = pcie_get_ext_cap(&ep0, PCIE_EXT_CAP_ID_SRIOV);
 
 	shell_print(sh, "====================================================================");
 	shell_print(sh, "   SILICON HARDWARE TRANSPORT OVERLAY DECODER MATRIX: %u:%x.%u",
@@ -1378,22 +1403,24 @@ static int cmd_pcie_irq_affinity(const struct shell *sh, size_t argc, char **arg
 		return -EINVAL;
 	}
 
-	id = pcie_conf_read(bdf, PCIE_CONF_ID);
+	const struct pcie_endpoint ep0 = {.ctrl = NULL, .bdf = bdf};
+
+	id = pcie_conf_read(&ep0, PCIE_CONF_ID);
 	if (id == 0xFFFFFFFFU || !PCIE_ID_IS_VALID(id)) {
 		shell_error(sh, "No responsive endpoint found at target BDF.");
 		return -ENODEV;
 	}
 
-	msix_offset = pcie_get_cap(bdf, PCI_CAP_ID_MSIX);
+	msix_offset = pcie_get_cap(&ep0, PCI_CAP_ID_MSIX);
 	if (msix_offset == 0U) {
 		shell_error(sh, "Target device does not support MSI-X affinity mapping.");
 		return -EOPNOTSUPP;
 	}
 
-	msg_ctrl = pcie_conf_read(bdf, msix_offset) >> 16;
+	msg_ctrl = pcie_conf_read(&ep0, msix_offset) >> 16;
 	vector_count = (uint16_t)((msg_ctrl & 0x07FFU) + 1U);
 
-	table_val = pcie_conf_read(bdf, msix_offset + 1U);
+	table_val = pcie_conf_read(&ep0, msix_offset + 1U);
 	table_offset = table_val & PCI_MSIX_TABLE_OFFSET_MASK;
 	table_bir = table_val & PCI_MSIX_TABLE_BIR_MASK;
 

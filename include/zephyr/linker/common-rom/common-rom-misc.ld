@@ -6,6 +6,10 @@
 
 #include <zephyr/linker/iterable_sections.h>
 
+#if defined(CONFIG_PCIE_CONTROLLER)
+	ITERABLE_SECTION_ROM(pcie_scan_buses, Z_LINK_ITERABLE_SUBALIGN)
+#endif
+
 #if defined(CONFIG_EC_HOST_CMD)
 	ITERABLE_SECTION_ROM(ec_host_cmd_handler, Z_LINK_ITERABLE_SUBALIGN)
 #endif

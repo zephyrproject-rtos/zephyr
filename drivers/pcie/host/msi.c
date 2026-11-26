@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Intel Corporation
+ * Copyright (c) 2026 Process Mission
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,10 +8,21 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/pcie/msi.h>
 #include <zephyr/drivers/pcie/cap.h>
+#ifdef CONFIG_PCIE_CONTROLLER
+#include <zephyr/drivers/pcie/controller.h>
+#endif
+
+#include "pcie_priv.h"
 
 /* functions documented in include/drivers/pcie/msi.h */
 
-static uint32_t pcie_msi_base(pcie_bdf_t bdf, bool *msi)
+static bool msi_vector_matches_ep(const msi_vector_t *vector, const struct pcie_endpoint *ep)
+{
+	return (vector->ep.bdf == ep->bdf) &&
+	       (z_pcie_resolve_ctrl(vector->ep.ctrl) == z_pcie_resolve_ctrl(ep->ctrl));
+}
+
+static uint32_t pcie_msi_base(const struct pcie_endpoint *ep, bool *msi)
 {
 	uint32_t base;
 
@@ -18,12 +30,12 @@ static uint32_t pcie_msi_base(pcie_bdf_t bdf, bool *msi)
 		*msi = true;
 	}
 
-	base = pcie_get_cap(bdf, PCI_CAP_ID_MSI);
+	base = pcie_get_cap(ep, PCI_CAP_ID_MSI);
 
 	if (IS_ENABLED(CONFIG_PCIE_MSI_X)) {
 		uint32_t base_msix;
 
-		base_msix = pcie_get_cap(bdf, PCI_CAP_ID_MSIX);
+		base_msix = pcie_get_cap(ep, PCI_CAP_ID_MSIX);
 		if (base_msix != 0U) {
 			base = base_msix;
 
@@ -67,43 +79,42 @@ __weak bool arch_pcie_msi_vector_connect(msi_vector_t *vector,
 
 #ifdef CONFIG_PCIE_MSI_X
 
-static uint32_t get_msix_table_size(pcie_bdf_t bdf,
-				    uint32_t base)
+static uint32_t get_msix_table_size(const struct pcie_endpoint *ep, uint32_t base)
 {
 	uint32_t mcr;
 
-	mcr = pcie_conf_read(bdf, base + PCIE_MSIX_MCR);
+	mcr = pcie_conf_read(ep, base + PCIE_MSIX_MCR);
 
-	return ((mcr & PCIE_MSIX_MCR_TSIZE) >> PCIE_MSIX_MCR_TSIZE_SHIFT) + 1;
+	return ((mcr & PCIE_MSIX_MCR_TSIZE) >> PCIE_MSIX_MCR_TSIZE_SHIFT) + 1U;
 }
 
-static bool map_msix_table_entries(pcie_bdf_t bdf,
-				   uint32_t base,
-				   msi_vector_t *vectors,
-				   uint8_t n_vector)
+static bool map_msix_table_entries(const struct pcie_endpoint *ep, uint32_t base,
+				   msi_vector_t *vectors, uint8_t n_vector)
 {
 	uint32_t table_offset;
 	uint8_t table_bir;
 	struct pcie_bar bar;
-	uintptr_t mapped_table;
-	int i;
+	uint8_t *mapped_table;
+	size_t map_size = (size_t)n_vector * PCIE_MSIR_TABLE_ENTRY_SIZE;
 
-	table_offset = pcie_conf_read(bdf, base + PCIE_MSIX_TR);
-	table_bir = table_offset & PCIE_MSIX_TR_BIR;
+	table_offset = pcie_conf_read(ep, base + PCIE_MSIX_TR);
+	table_bir = (uint8_t)(table_offset & PCIE_MSIX_TR_BIR);
 	table_offset &= PCIE_MSIX_TR_OFFSET;
 
-	if (!pcie_get_mbar(bdf, table_bir, &bar)) {
+	if (!pcie_get_mbar(ep, table_bir, &bar)) {
 		return false;
 	}
 
-	k_mem_map_phys_bare((uint8_t **)&mapped_table,
-			    bar.phys_addr + table_offset,
-			    n_vector * PCIE_MSIR_TABLE_ENTRY_SIZE,
+	if ((table_offset > bar.size) || (map_size > (bar.size - table_offset))) {
+		return false;
+	}
+
+	k_mem_map_phys_bare(&mapped_table, bar.phys_addr + table_offset, map_size,
 			    K_MEM_CACHE_NONE | K_MEM_PERM_RW);
 
-	for (i = 0; i < n_vector; i++) {
-		vectors[i].msix_vector = (struct msix_vector *)
-			(mapped_table + (i * PCIE_MSIR_TABLE_ENTRY_SIZE));
+	for (uint8_t i = 0U; i < n_vector; i++) {
+		vectors[i].msix_vector =
+			(struct msix_vector *)&mapped_table[(size_t)i * PCIE_MSIR_TABLE_ENTRY_SIZE];
 	}
 
 	return true;
@@ -121,59 +132,74 @@ static void set_msix(msi_vector_t *vectors,
 }
 
 #else
-#define get_msix_table_size(...) 0
+#define get_msix_table_size(...)    0U
 #define map_msix_table_entries(...) true
 #define set_msix(...)
 #endif /* CONFIG_PCIE_MSI_X */
 
-static uint32_t get_msi_mmc(pcie_bdf_t bdf,
-			    uint32_t base)
+static uint32_t get_msi_mmc(const struct pcie_endpoint *ep, uint32_t base)
 {
 	uint32_t mcr;
 
-	mcr = pcie_conf_read(bdf, base + PCIE_MSI_MCR);
+	mcr = pcie_conf_read(ep, base + PCIE_MSI_MCR);
 
 	/* Getting MMC true count: 2^(MMC field) */
-	return 1 << ((mcr & PCIE_MSI_MCR_MMC) >> PCIE_MSI_MCR_MMC_SHIFT);
+	return ((uint32_t)1U << ((mcr & PCIE_MSI_MCR_MMC) >> PCIE_MSI_MCR_MMC_SHIFT));
 }
 
-uint8_t pcie_msi_vectors_allocate(pcie_bdf_t bdf,
-				  unsigned int priority,
-				  msi_vector_t *vectors,
-				  uint8_t n_vector)
+uint8_t pcie_msi_vectors_allocate(const struct pcie_endpoint *ep, unsigned int priority,
+				  msi_vector_t *vectors, uint8_t n_vector)
 {
 	uint32_t req_vectors;
 	uint32_t base;
 	bool msi;
 	uint8_t allocated;
 
-	base = pcie_msi_base(bdf, &msi);
+	if (ep == NULL || vectors == NULL || n_vector == 0U) {
+		return 0U;
+	}
+
+#if defined(CONFIG_PCIE_CONTROLLER) && defined(CONFIG_PCIE_MSI)
+	{
+		const struct device *ctrl = z_pcie_resolve_ctrl(ep->ctrl);
+
+		if (ctrl == NULL || !device_is_ready(ctrl) || !DEVICE_API_IS(pcie_ctrl, ctrl) ||
+		    DEVICE_API_GET(pcie_ctrl, ctrl)->msi_device_setup == NULL) {
+			return 0U;
+		}
+	}
+#endif
+
+	base = pcie_msi_base(ep, &msi);
+	if (base == 0U) {
+		return 0U;
+	}
 
 	if (IS_ENABLED(CONFIG_PCIE_MSI_X)) {
 		set_msix(vectors, n_vector, !msi);
-
-		if (!msi) {
-			req_vectors = get_msix_table_size(bdf, base);
-			if (!map_msix_table_entries(bdf, base,
-						    vectors, n_vector)) {
-				return 0;
-			}
-		}
 	}
 
 	if (msi) {
-		req_vectors = get_msi_mmc(bdf, base);
+		req_vectors = get_msi_mmc(ep, base);
+	} else {
+		req_vectors = get_msix_table_size(ep, base);
 	}
 
 	if (n_vector > req_vectors) {
-		n_vector = req_vectors;
+		n_vector = (uint8_t)req_vectors;
 	}
 	if (msi && (n_vector > 0U)) {
 		n_vector = (uint8_t)BIT(find_msb_set(n_vector) - 1U);
 	}
 
-	for (req_vectors = 0; req_vectors < n_vector; req_vectors++) {
-		vectors[req_vectors].bdf = bdf;
+	if (!msi) {
+		if (!map_msix_table_entries(ep, base, vectors, n_vector)) {
+			return 0U;
+		}
+	}
+
+	for (uint8_t i = 0U; i < n_vector; i++) {
+		vectors[i].ep = *ep;
 	}
 
 	allocated = arch_pcie_msi_vectors_allocate(priority, vectors, n_vector);
@@ -184,15 +210,17 @@ uint8_t pcie_msi_vectors_allocate(pcie_bdf_t bdf,
 	return allocated;
 }
 
-bool pcie_msi_vector_connect(pcie_bdf_t bdf,
-			     msi_vector_t *vector,
-			     void (*routine)(const void *parameter),
-			     const void *parameter,
+bool pcie_msi_vector_connect(const struct pcie_endpoint *ep, msi_vector_t *vector,
+			     void (*routine)(const void *parameter), const void *parameter,
 			     uint32_t flags)
 {
 	uint32_t base;
 
-	base = pcie_msi_base(bdf, NULL);
+	if (ep == NULL || vector == NULL || !msi_vector_matches_ep(vector, ep)) {
+		return false;
+	}
+
+	base = pcie_msi_base(ep, NULL);
 	if (base == 0U) {
 		return false;
 	}
@@ -204,11 +232,8 @@ bool pcie_msi_vector_connect(pcie_bdf_t bdf,
 
 #ifdef CONFIG_PCIE_MSI_X
 
-static void enable_msix(pcie_bdf_t bdf,
-			msi_vector_t *vectors,
-			uint8_t n_vector,
-			uint32_t base,
-			unsigned int irq)
+static void enable_msix(const struct pcie_endpoint *ep, msi_vector_t *vectors, uint8_t n_vector,
+			uint32_t base, unsigned int irq)
 {
 	uint32_t mcr;
 	int i;
@@ -223,87 +248,108 @@ static void enable_msix(pcie_bdf_t bdf,
 		sys_write32(0, (mm_reg_t) &vectors[i].msix_vector->vector_ctrl);
 	}
 
-	mcr = pcie_conf_read(bdf, base + PCIE_MSIX_MCR);
+	mcr = pcie_conf_read(ep, base + PCIE_MSIX_MCR);
 	mcr |= PCIE_MSIX_MCR_EN;
-	pcie_conf_write(bdf, base + PCIE_MSIX_MCR, mcr);
+	pcie_conf_write(ep, base + PCIE_MSIX_MCR, mcr);
 }
 
 #else
 #define enable_msix(...)
 #endif /* CONFIG_PCIE_MSI_X */
 
-static void disable_msi(pcie_bdf_t bdf,
-			uint32_t base)
+static void disable_msi(const struct pcie_endpoint *ep, uint32_t base)
 {
 	uint32_t mcr;
 
-	mcr = pcie_conf_read(bdf, base + PCIE_MSI_MCR);
+	mcr = pcie_conf_read(ep, base + PCIE_MSI_MCR);
 	mcr &= ~PCIE_MSI_MCR_EN;
-	pcie_conf_write(bdf, base + PCIE_MSI_MCR, mcr);
+	pcie_conf_write(ep, base + PCIE_MSI_MCR, mcr);
 }
 
-static bool enable_msi(pcie_bdf_t bdf, msi_vector_t *vectors, uint8_t n_vector, uint32_t base,
-		       unsigned int irq)
+static bool enable_msi(const struct pcie_endpoint *ep, msi_vector_t *vectors, uint8_t n_vector,
+		       uint32_t base, unsigned int irq)
 {
 	uint32_t mcr;
 	uint64_t map;
 	uint32_t mdr;
 	uint32_t mme;
 
-	mcr = pcie_conf_read(bdf, base + PCIE_MSI_MCR);
+	mcr = pcie_conf_read(ep, base + PCIE_MSI_MCR);
 	map = pcie_msi_map(irq, vectors, n_vector);
 	if ((mcr & PCIE_MSI_MCR_64) == 0U && (map >> 32) != 0U) {
 		return false;
 	}
 
 	mdr = pcie_msi_mdr(irq, vectors);
-	pcie_conf_write(bdf, base + PCIE_MSI_MAP0, (uint32_t)map);
+	pcie_conf_write(ep, base + PCIE_MSI_MAP0, (uint32_t)map);
 	if ((mcr & PCIE_MSI_MCR_64) != 0U) {
-		pcie_conf_write(bdf, base + PCIE_MSI_MAP1_64, (uint32_t)(map >> 32));
-		pcie_conf_write(bdf, base + PCIE_MSI_MDR_64, mdr);
+		pcie_conf_write(ep, base + PCIE_MSI_MAP1_64, (uint32_t)(map >> 32));
+		pcie_conf_write(ep, base + PCIE_MSI_MDR_64, mdr);
 	} else {
-		pcie_conf_write(bdf, base + PCIE_MSI_MDR_32, mdr);
+		pcie_conf_write(ep, base + PCIE_MSI_MDR_32, mdr);
 	}
 
 	/* Generating MME field (1 counts as a power of 2) */
-	for (mme = 0; n_vector > 1; mme++) {
-		n_vector >>= 1;
+	mme = 0U;
+	while (n_vector > 1U) {
+		n_vector >>= 1U;
+		mme++;
 	}
 
 	mcr |= mme << PCIE_MSI_MCR_MME_SHIFT;
 
 	mcr |= PCIE_MSI_MCR_EN;
-	pcie_conf_write(bdf, base + PCIE_MSI_MCR, mcr);
+	pcie_conf_write(ep, base + PCIE_MSI_MCR, mcr);
 
 	return true;
 }
 
-bool pcie_msi_enable(pcie_bdf_t bdf,
-		     msi_vector_t *vectors,
-		     uint8_t n_vector,
+bool pcie_msi_enable(const struct pcie_endpoint *ep, msi_vector_t *vectors, uint8_t n_vector,
 		     unsigned int irq)
 {
 	uint32_t base;
 	bool msi;
 
-	base = pcie_msi_base(bdf, &msi);
+	if (ep == NULL || n_vector == 0U) {
+		return false;
+	}
+
+	if (vectors != NULL) {
+		for (uint8_t i = 0U; i < n_vector; i++) {
+			if (!msi_vector_matches_ep(&vectors[i], ep)) {
+				return false;
+			}
+		}
+	}
+
+	base = pcie_msi_base(ep, &msi);
 	if (base == 0U) {
 		return false;
 	}
 
-	if (!msi && IS_ENABLED(CONFIG_PCIE_MSI_X)) {
-		disable_msi(bdf, base);
-		enable_msix(bdf, vectors, n_vector, base, irq);
-	} else if (!enable_msi(bdf, vectors, n_vector, base, irq)) {
+	if ((vectors == NULL) && (!msi || IS_ENABLED(CONFIG_PCIE_CONTROLLER))) {
 		return false;
 	}
 
-	pcie_set_cmd(bdf, PCIE_CONF_CMDSTAT_MASTER, true);
+	if (!msi && IS_ENABLED(CONFIG_PCIE_MSI_X)) {
+		disable_msi(ep, base);
+		enable_msix(ep, vectors, n_vector, base, irq);
+	} else {
+		if (!enable_msi(ep, vectors, n_vector, base, irq)) {
+			return false;
+		}
+	}
+
+	pcie_set_cmd(ep, PCIE_CONF_CMDSTAT_MASTER, true);
 
 	return true;
 }
 
-bool pcie_is_msi(pcie_bdf_t bdf)
+bool pcie_is_msi(const struct pcie_endpoint *ep)
 {
-	return (pcie_msi_base(bdf, NULL) != 0);
+	if (ep == NULL) {
+		return false;
+	}
+
+	return (pcie_msi_base(ep, NULL) != 0U);
 }

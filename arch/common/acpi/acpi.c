@@ -376,7 +376,9 @@ uint32_t acpi_legacy_irq_get(pcie_bdf_t bdf)
 		return UINT_MAX;
 	}
 
-	pin = (pcie_conf_read(bdf, PCIE_CONF_INTR) >> 8) & 0x3;
+	const struct pcie_endpoint ep = {.ctrl = NULL, .bdf = bdf};
+
+	pin = (pcie_conf_read(&ep, PCIE_CONF_INTR) >> 8) & 0x3;
 
 	LOG_DBG("Device irq info: slot:%d pin:%d", slot, pin);
 

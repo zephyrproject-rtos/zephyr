@@ -93,8 +93,10 @@ void z_x86_early_serial_init(void)
 #if defined(DEVICE_MMIO_IS_IN_RAM) && !defined(UART_IS_IOPORT_ACCESS)
 #ifdef X86_SOC_EARLY_SERIAL_PCIDEV
 	struct pcie_bar mbar;
-	pcie_get_mbar(X86_SOC_EARLY_SERIAL_PCIDEV, 0, &mbar);
-	pcie_set_cmd(X86_SOC_EARLY_SERIAL_PCIDEV, PCIE_CONF_CMDSTAT_MEM, true);
+	const struct pcie_endpoint ep = {.ctrl = NULL, .bdf = X86_SOC_EARLY_SERIAL_PCIDEV};
+
+	pcie_get_mbar(&ep, 0, &mbar);
+	pcie_set_cmd(&ep, PCIE_CONF_CMDSTAT_MEM, true);
 	device_map(&mmio, mbar.phys_addr, mbar.size, K_MEM_CACHE_NONE);
 #else
 	device_map(&mmio, X86_SOC_EARLY_SERIAL_MMIO8_ADDR, 0x1000, K_MEM_CACHE_NONE);

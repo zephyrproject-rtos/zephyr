@@ -4,6 +4,12 @@
 # Common fields for PCIe devices
 
 properties:
+  pcie-controller:
+    type: phandle
+    description: |
+      Owning PCIe host controller. Nodes on a pcie bus use their bus controller
+      when this property is absent; other nodes default to the
+      zephyr,pcie-controller chosen node unless this property is specified.
   vendor-id:
     type: int
     description: Vendor ID of the device

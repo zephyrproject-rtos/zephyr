@@ -59,27 +59,34 @@ struct pcie_vctc_map {
 
 /**
  * @brief Enable PCIe Virtual Channel handling
- * @param bdf the target PCI endpoint
- * @return 0 on success, a negative error code otherwise
+ * @param ep Non-NULL target PCI endpoint (see @ref pcie_endpoint)
+ * @retval 0 Success
+ * @retval -EINVAL Invalid endpoint pointer
+ * @retval -ENOTSUP Virtual Channel capability unsupported
+ * @retval -EALREADY Virtual Channel already enabled
  *
  * Note: Not being able to enable such feature is a non-fatal error
  * and any code using it should behave accordingly (displaying some info,
  * and ignoring it for instance).
  */
-int pcie_vc_enable(pcie_bdf_t bdf);
+int pcie_vc_enable(const struct pcie_endpoint *ep);
 
 /**
  * @brief Disable PCIe Virtual Channel handling
- * @param bdf the target PCI endpoint
- * @return 0 on success, a negative error code otherwise
+ * @param ep Non-NULL target PCI endpoint (see @ref pcie_endpoint)
+ * @retval 0 Success
+ * @retval -EINVAL Invalid endpoint pointer
+ * @retval -ENOTSUP Virtual Channel capability unsupported
  */
-int pcie_vc_disable(pcie_bdf_t bdf);
+int pcie_vc_disable(const struct pcie_endpoint *ep);
 
 /**
  * @brief Map PCIe TC/VC
- * @param bdf the target PCI endpoint
+ * @param ep Non-NULL target PCI endpoint (see @ref pcie_endpoint)
  * @param map the tc/vc map to apply
- * @return 0 on success, a negative error code otherwise
+ * @retval 0 Success
+ * @retval -EINVAL Invalid endpoint pointer or TC/VC map
+ * @retval -ENOTSUP Virtual Channel capability unsupported
  *
  * Note: VC must be disabled prior to call this function and
  * enabled afterward in order for the endpoint to take advandage of the map.
@@ -88,8 +95,7 @@ int pcie_vc_disable(pcie_bdf_t bdf);
  * and any code using it should behave accordingly (displaying some info,
  * and ignoring it for instance).
  */
-int pcie_vc_map_tc(pcie_bdf_t bdf, struct pcie_vctc_map *map);
-
+int pcie_vc_map_tc(const struct pcie_endpoint *ep, struct pcie_vctc_map *map);
 
 #ifdef __cplusplus
 }

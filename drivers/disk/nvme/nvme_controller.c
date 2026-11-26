@@ -325,20 +325,18 @@ static int nvme_controller_pcie_configure(const struct device *dev)
 	const struct nvme_controller_config *nvme_ctrlr_cfg = dev->config;
 	struct pcie_bar mbar_regs;
 
-	if (nvme_ctrlr_cfg->pcie->bdf == PCIE_BDF_NONE) {
+	if (nvme_ctrlr_cfg->pcie->ep.bdf == PCIE_BDF_NONE) {
 		LOG_ERR("Controller not found");
 		return -ENODEV;
 	}
 
 	LOG_DBG("Configuring NVME controller ID %x:%x at %d:%x.%d",
-		PCIE_ID_TO_VEND(nvme_ctrlr_cfg->pcie->id),
-		PCIE_ID_TO_DEV(nvme_ctrlr_cfg->pcie->id),
-		PCIE_BDF_TO_BUS(nvme_ctrlr_cfg->pcie->bdf),
-		PCIE_BDF_TO_DEV(nvme_ctrlr_cfg->pcie->bdf),
-		PCIE_BDF_TO_FUNC(nvme_ctrlr_cfg->pcie->bdf));
+		PCIE_ID_TO_VEND(nvme_ctrlr_cfg->pcie->id), PCIE_ID_TO_DEV(nvme_ctrlr_cfg->pcie->id),
+		PCIE_BDF_TO_BUS(nvme_ctrlr_cfg->pcie->ep.bdf),
+		PCIE_BDF_TO_DEV(nvme_ctrlr_cfg->pcie->ep.bdf),
+		PCIE_BDF_TO_FUNC(nvme_ctrlr_cfg->pcie->ep.bdf));
 
-	if (!pcie_get_mbar(nvme_ctrlr_cfg->pcie->bdf,
-			   NVME_PCIE_BAR_IDX, &mbar_regs)) {
+	if (!pcie_get_mbar(&nvme_ctrlr_cfg->pcie->ep, NVME_PCIE_BAR_IDX, &mbar_regs)) {
 		LOG_ERR("Could not get NVME registers");
 		return -EIO;
 	}
@@ -357,7 +355,7 @@ static int nvme_controller_setup_vectors(const struct device *dev)
 	/* A failed initialization may leave vectors mapped and their ISRs connected. */
 	if (ctrlr->num_vectors == 0U) {
 		ctrlr->num_vectors =
-			pcie_msi_vectors_allocate(cfg->pcie->bdf, CONFIG_NVME_INT_PRIORITY,
+			pcie_msi_vectors_allocate(&cfg->pcie->ep, CONFIG_NVME_INT_PRIORITY,
 						  ctrlr->vectors, NVME_PCIE_MSIX_VECTORS);
 		if (ctrlr->num_vectors == 0U) {
 			LOG_ERR("Could not allocate %u MSI-X vectors", NVME_PCIE_MSIX_VECTORS);
@@ -365,7 +363,7 @@ static int nvme_controller_setup_vectors(const struct device *dev)
 		}
 	}
 
-	if (!pcie_msi_enable(cfg->pcie->bdf, ctrlr->vectors, ctrlr->num_vectors, 0)) {
+	if (!pcie_msi_enable(&cfg->pcie->ep, ctrlr->vectors, ctrlr->num_vectors, 0)) {
 		LOG_ERR("Could not enable MSI-X");
 		return -EIO;
 	}

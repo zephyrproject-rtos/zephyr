@@ -56,9 +56,9 @@ struct pcie_vc_regs {
 	} ctrl_reg;
 };
 
-#define PCIE_VC_RES_CAP_REG_OFFSET(_vc)		(0x10U + _vc * 0X0CU)
-#define PCIE_VC_RES_CTRL_REG_OFFSET(_vc)	(0x14U + _vc * 0X0CU)
-#define PCIE_VC_RES_STATUS_REG_OFFSET(_vc)	(0x18U + _vc * 0X0CU)
+#define PCIE_VC_RES_CAP_REG_OFFSET(vc)    (0x10U + ((vc) * 0x0cU))
+#define PCIE_VC_RES_CTRL_REG_OFFSET(vc)   (0x14U + ((vc) * 0x0cU))
+#define PCIE_VC_RES_STATUS_REG_OFFSET(vc) (0x18U + ((vc) * 0x0cU))
 
 #define PCIE_VC_PA_RR		BIT(0)
 #define PCIE_VC_PA_WRR		BIT(1)
@@ -118,11 +118,9 @@ struct pcie_vc_resource_regs {
 	} status_reg;
 };
 
-uint32_t pcie_vc_cap_lookup(pcie_bdf_t bdf, struct pcie_vc_regs *regs);
+uint32_t pcie_vc_cap_lookup(const struct pcie_endpoint *ep, struct pcie_vc_regs *regs);
 
-void pcie_vc_load_resources_regs(pcie_bdf_t bdf,
-				 uint32_t base,
-				 struct pcie_vc_resource_regs *regs,
-				 int nb_regs);
+void pcie_vc_load_resources_regs(const struct pcie_endpoint *ep, uint32_t base,
+				 struct pcie_vc_resource_regs *regs, int nb_regs);
 
 #endif /* ZEPHYR_DRIVERS_PCIE_HOST_VC_H_ */

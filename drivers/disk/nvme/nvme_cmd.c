@@ -547,7 +547,7 @@ int nvme_cmd_qpair_setup(struct nvme_cmd_qpair *qpair,
 		(qpair->id << (ctrlr->dstrd + 1)) + (1 << ctrlr->dstrd);
 
 	if (!atomic_test_bit(ctrlr->connected_vectors, qpair->vector)) {
-		if (!pcie_msi_vector_connect(nvme_ctrlr_cfg->pcie->bdf,
+		if (!pcie_msi_vector_connect(&nvme_ctrlr_cfg->pcie->ep,
 					     &ctrlr->vectors[qpair->vector],
 					     nvme_cmd_qpair_msi_handler, qpair, 0)) {
 			LOG_ERR("Failed to connect MSI-X vector %u", qpair->vector);
