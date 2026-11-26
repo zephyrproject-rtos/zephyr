@@ -57,6 +57,11 @@
 		remote-mac-address = "00005E005301";
 	};
 
+	cdc_ncm_eth0: cdc_ncm_eth0 {
+		compatible = "zephyr,cdc-ncm-ethernet";
+		remote-mac-address = "00005E005302";
+	};
+
 	zephyr_uhc0: uhc_vrt0 {
 		compatible = "zephyr,uhc-virtual";
 

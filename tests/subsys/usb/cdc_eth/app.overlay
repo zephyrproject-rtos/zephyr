@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2026 Tolt Technologies
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr_uhc0: uhc_vrt0 {
+		compatible = "zephyr,uhc-virtual";
+
+		zephyr_udc0: udc_vrt0 {
+			compatible = "zephyr,udc-virtual";
+			num-bidir-endpoints = <8>;
+			maximum-speed = "high-speed";
+		};
+	};
+
+	cdc_ecm_eth0: cdc_ecm_eth0 {
+		compatible = "zephyr,cdc-ecm-ethernet";
+		remote-mac-address = "00005E005301";
+	};
+
+	cdc_ncm_eth0: cdc_ncm_eth0 {
+		compatible = "zephyr,cdc-ncm-ethernet";
+		remote-mac-address = "00005E005302";
+	};
+};
