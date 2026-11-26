@@ -87,6 +87,7 @@ struct omap_mcspi_regs {
 
 /*  FIFO transfer level register */
 #define OMAP_MCSPI_XFERLEVEL_WCNT GENMASK(31, 16) /* Word counter for transfer */
+#define OMAP_MCSPI_XFERLEVEL_WCNT_MAX FIELD_GET(OMAP_MCSPI_XFERLEVEL_WCNT, UINT32_MAX)
 
 #define DEV_CFG(dev)  ((const struct omap_mcspi_cfg *)(dev)->config)
 #define DEV_DATA(dev) ((struct omap_mcspi_data *)(dev)->data)
@@ -503,7 +504,7 @@ static int omap_mcspi_transceive_one(const struct device *dev)
 	const uint8_t chan = ctx->config->peripheral;
 	const uint8_t *tx_buf = ctx->tx_buf;
 	uint8_t *rx_buf = ctx->rx_buf;
-	size_t count = spi_context_max_continuous_chunk(ctx);
+	size_t count = MIN(spi_context_max_continuous_chunk(ctx), OMAP_MCSPI_XFERLEVEL_WCNT_MAX);
 	int rv;
 
 	if (!tx_buf && !rx_buf) {
