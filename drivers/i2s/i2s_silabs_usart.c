@@ -53,7 +53,12 @@
  * I2S slot needs USARTn_TXDOUBLE (see RM 22.3.2.6 / 22.3.2.19). Stereo
  * and mono TX both target TXDOUBLE; mono moves one slot per DMA trigger.
  *
- * i2s_config.word_size must be 16 (W16D16): BCLK = 32 x frame clock.
+ * i2s_config.word_size must be 16. The slot width comes from silabs,slot-width:
+ *   16: FORMAT = W16D16, BCLK = 32 x frame clock.
+ *   32: FORMAT = W32D16, BCLK = 64 x frame clock. RX reads the 16 MSBs of each
+ *       slot (e.g. the top of a 24-bit MEMS microphone sample) and TX sends
+ *       zeros after the sample. Memory and LDMA still move one 16-bit word
+ *       per slot.
  */
 
 #include <errno.h>
@@ -88,6 +93,9 @@
 
 /* The only supported i2s_config.word_size. */
 #define I2S_SILABS_WORD_SIZE 16U
+
+/* silabs,slot-width value that selects W32D16. */
+#define I2S_SILABS_SLOT_WIDTH_32 32U
 
 /* Bytes of one slot in memory, also the LDMA beat size. */
 #define I2S_SILABS_SLOT_BYTES 2U
@@ -222,6 +230,7 @@ struct i2s_silabs_usart_cfg {
 	bool has_tx_split;
 	bool has_rx;
 	uint8_t mono_tx_default;
+	uint8_t slot_width; /* silabs,slot-width: bit clocks per slot */
 };
 
 /*
@@ -549,7 +558,7 @@ static int i2s_silabs_usart_validate_config(const struct device *dev,
 	ic = data->tx.cfg_valid ? &data->tx.cfg : &data->rx.cfg;
 
 	/* RM: minimum CLKDIV is 0, so max SCLK is ref_hz / 2. */
-	bit_hz = (uint64_t)ic->frame_clk_freq * I2S_STEREO_SLOTS_PER_FRAME * I2S_SILABS_WORD_SIZE;
+	bit_hz = (uint64_t)ic->frame_clk_freq * I2S_STEREO_SLOTS_PER_FRAME * pcfg->slot_width;
 	if (bit_hz > (uint64_t)*ref_hz / 2U) {
 		return -EINVAL;
 	}
@@ -579,9 +588,10 @@ static int i2s_silabs_usart_hw_apply(const struct device *dev)
 
 	/*
 	 * Physical SCLK (bit clock); the wire always carries two slots per frame.
-	 * Example: frame_clk=16 kHz -> bit_hz = 512 kHz.
+	 * Example: frame_clk=16 kHz -> bit_hz = 512 kHz (16-bit slots)
+	 *          or 1.024 MHz (32-bit slots).
 	 */
-	bit_hz = ic->frame_clk_freq * I2S_STEREO_SLOTS_PER_FRAME * I2S_SILABS_WORD_SIZE;
+	bit_hz = ic->frame_clk_freq * I2S_STEREO_SLOTS_PER_FRAME * pcfg->slot_width;
 
 	data->dma_split = i2s_silabs_usart_tx_path_is_mono(dev);
 	i2s_silabs_usart_tx_dma_apply(dev);
@@ -594,7 +604,9 @@ static int i2s_silabs_usart_hw_apply(const struct device *dev)
 	init.sync.clock_mode = (clk_fmt == I2S_FMT_CLK_NF_IB || clk_fmt == I2S_FMT_CLK_IF_IB)
 					? SL_HAL_USART_CLOCK_MODE_1
 					: SL_HAL_USART_CLOCK_MODE_0;
-	init.format = SL_HAL_USART_I2S_FORMAT_W16D16;
+	init.format = (pcfg->slot_width == I2S_SILABS_SLOT_WIDTH_32)
+			      ? SL_HAL_USART_I2S_FORMAT_W32D16
+			      : SL_HAL_USART_I2S_FORMAT_W16D16;
 	init.justify = SL_HAL_USART_JUSTIFY_LEFT;
 	/*
 	 * Wire format stays stereo (MONO=0): LRCLK toggles L/R. Mono TX uses
@@ -1899,6 +1911,7 @@ static DEVICE_API(i2s, i2s_silabs_usart_driver_api) = {
 		.clock_cfg = SILABS_DT_INST_CLOCK_CFG(idx),                                        \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                       \
 		.mono_tx_default = DT_INST_ENUM_IDX(idx, silabs_mono_tx_slot),                     \
+		.slot_width = DT_INST_PROP(idx, silabs_slot_width),                                \
 		I2S_SILABS_USART_DMA_INIT(idx)                                                     \
 		I2S_SILABS_USART_MCLK_INIT(idx)                                                    \
 	};                                                                                         \

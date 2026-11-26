@@ -15,7 +15,9 @@ menuconfig I2S_SILABS_USART
 	  similar). Audio data is transferred using the SoC LDMA controller
 	  (requires ``dmas`` / ``dma-names`` on the USART I2S devicetree node).
 	  TX (stereo and mono) and stereo RX are supported with a
-	  ``word_size`` of 16 (W16D16). On this USART master, BCLK/LRCLK run
+	  ``word_size`` of 16, in 16-bit slots (W16D16) or, with the
+	  ``silabs,slot-width`` devicetree property set to 32, in 32-bit
+	  slots (W32D16). On this USART master, BCLK/LRCLK run
 	  only while TX is shifting; while RX is running without TX data the
 	  driver shifts silence to keep the bus clocked.
 	  ``i2s_configure()`` must set ``I2S_OPT_BIT_CLK_GATED``

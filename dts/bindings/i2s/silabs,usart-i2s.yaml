@@ -9,9 +9,9 @@ description: |
   in a board or application overlay (not the shared SoC DTSI), since SPI and
   I2S cannot share the same USART.
 
-  Supports stereo/mono TX and stereo RX with 16-bit words (W16D16), as I2S
-  controller only. Mono TX can be combined with stereo RX; frame clock, word
-  size and format must match between the two streams.
+  Supports stereo/mono TX and stereo RX with 16-bit words, as I2S controller
+  only. Mono TX can be combined with stereo RX; frame clock, word size and
+  format must match between the two streams.
 
 compatible: "silabs,usart-i2s"
 
@@ -54,6 +54,20 @@ properties:
     description: |
       Which mono TX slot carries audio when ``channels = 1`` (the other is
       silence).
+
+  silabs,slot-width:
+    type: int
+    enum:
+      - 16
+      - 32
+    default: 16
+    description: |
+      Bit clocks per channel slot, for both TX and RX. 16 selects W16D16
+      (BCLK = 32 x frame clock). 32 selects W32D16 (BCLK = 64 x frame clock)
+      for devices that need 64 bit clocks per frame, such as most I2S MEMS
+      microphones. ``i2s_config.word_size`` stays 16 either way: RX returns
+      the 16 most significant bits of each slot and TX sends zeros after the
+      16-bit sample.
 
 examples:
   - |
