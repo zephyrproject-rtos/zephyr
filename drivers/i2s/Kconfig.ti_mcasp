@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig I2S_TI_MCASP
+	bool "TI McASP I2S driver"
+	default y
+	depends on DT_HAS_TI_AM33XX_MCASP_AUDIO_ENABLED
+	select CLOCK_CONTROL
+	select PINCTRL
+	help
+	  Enable the I2S driver for the TI Multichannel Audio Serial Port
+	  (McASP) of the TI AM62L, whose clock is an SCMI clock with one cell.
+	  The CPU moves the data from interrupts; no DMA is used.
+
+if I2S_TI_MCASP
+
+config I2S_TI_MCASP_AFIFO
+	bool "Move data through the McASP audio FIFO"
+	default y
+	help
+	  Feed the 64-word write and read FIFOs through the DATA port from a
+	  start-of-frame interrupt. A stream then survives interrupts masked
+	  for up to 64 words per direction (about 0.6 ms at 48 kHz stereo on
+	  one serializer). A frame may hold at most 32 words. Without it, the
+	  data-ready interrupt of every slot moves one word, and a delay of one
+	  slot is an underrun or overrun.
+
+config I2S_TI_MCASP_TX_BLOCK_COUNT
+	int "TX queue length"
+	default 8
+	help
+	  Number of memory blocks the TX queue holds.
+
+config I2S_TI_MCASP_RX_BLOCK_COUNT
+	int "RX queue length"
+	default 8
+	help
+	  Number of received memory blocks the RX queue holds until they are
+	  read.
+
+endif # I2S_TI_MCASP
