@@ -58,11 +58,12 @@ void usbh_device_disconnect(struct usbh_context *ctx, struct usb_device *udev);
 static inline struct uhc_transfer *usbh_xfer_alloc(struct usb_device *udev,
 						   const uint8_t ep,
 						   usbh_udev_cb_t cb,
-						   void *const cb_priv)
+						   void *const cb_priv,
+						   const k_timeout_t timeout)
 {
 	struct usbh_context *const ctx = udev->ctx;
 
-	return uhc_xfer_alloc(ctx->dev, ep, udev, cb, cb_priv);
+	return uhc_xfer_alloc(ctx->dev, ep, udev, cb, cb_priv, timeout);
 }
 
 static inline int usbh_xfer_buf_add(const struct usb_device *udev,
