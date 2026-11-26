@@ -408,7 +408,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: 4e46beb1511b8dad77cd4b95aca3428ae25a7b44
+      revision: pull/246/head
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
