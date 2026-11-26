@@ -665,6 +665,20 @@ ZTEST(sh, test_cmd_dict)
 	test_shell_execute_cmd("dict2 two", 4);
 }
 
+ZTEST(sh, test_root_without_help_unknown)
+{
+	zassert_ok(shell_set_root_cmd("dict1"));
+	test_shell_execute_cmd("unknown", -ENOEXEC);
+	zassert_ok(shell_set_root_cmd(NULL));
+}
+
+ZTEST(sh, test_root_without_help_request)
+{
+	zassert_ok(shell_set_root_cmd("dict1"));
+	test_shell_execute_cmd("-h", -ENOEXEC);
+	zassert_ok(shell_set_root_cmd(NULL));
+}
+
 SHELL_SUBCMD_SET_CREATE(sub_section_cmd, (section_cmd));
 
 static int cmd1_handler(const struct shell *sh, size_t argc, char **argv)
