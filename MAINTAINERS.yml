@@ -235,8 +235,8 @@ ADI Platforms:
     - drivers/*/*max*/
     - drivers/dac/dac_ltc*
     - drivers/net/ethernet/eth_adin*
-    - drivers/net/ethernet/phy/phy_adin*
-    - drivers/net/ethernet/mdio/mdio_adin*
+    - drivers/net/phy/phy_adin*
+    - drivers/net/mdio/mdio_adin*
     - drivers/misc/tmc6460/
     - drivers/sensor/adi/
     - drivers/stepper/adi_tmc/
@@ -2079,7 +2079,10 @@ Documentation Infrastructure:
     - ClaCodes
     - tpambor
   files:
+    - drivers/net/dsa/
     - drivers/net/ethernet/
+    - drivers/net/mdio/
+    - drivers/net/phy/
     - include/zephyr/dt-bindings/ethernet/
     - tests/drivers/build_all/ethernet/
     - dts/bindings/ethernet/
@@ -4388,7 +4391,7 @@ Microchip Standalone Devices:
     - NhMchp
   files:
     - drivers/bbram/*microchip*
-    - drivers/net/ethernet/phy/*microchip*
+    - drivers/net/phy/*microchip*
     - drivers/sensor/microchip/mcp9600/
     - drivers/sensor/microchip/mcp970x/
     - drivers/sensor/microchip/mtch9010/
@@ -4877,7 +4880,10 @@ Networking:
     - doc/services/connectivity/networking/api/vlan.rst
     - doc/services/connectivity/networking/dsa*
     - doc/services/connectivity/networking/eth_*.rst
+    - drivers/net/dsa/
     - drivers/net/ethernet/
+    - drivers/net/mdio/
+    - drivers/net/phy/
     - include/zephyr/net/gptp.h
     - include/zephyr/net/ieee802154*.h
     - include/zephyr/net/mcp/
@@ -5018,7 +5024,7 @@ Networking:
     - JiafeiPan
   files:
     - subsys/net/l2/ethernet/dsa/
-    - drivers/net/ethernet/dsa/
+    - drivers/net/dsa/
     - dts/bindings/dsa/
     - doc/services/connectivity/networking/dsa*
     - include/zephyr/net/dsa*.h

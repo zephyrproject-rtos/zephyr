@@ -21,7 +21,7 @@
 
 LOG_MODULE_REGISTER(mdio_esp32, CONFIG_MDIO_LOG_LEVEL);
 
-#include "../eth_esp32_priv.h"
+#include "../ethernet/eth_esp32_priv.h"
 
 #define PHY_OPERATION_TIMEOUT_US 1000
 

@@ -11,7 +11,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/mdio.h>
 #include <zephyr/net/ethernet.h>
-#include "../eth_renesas_ra_rmac.h"
+#include "../ethernet/eth_renesas_ra_rmac.h"
 #include <zephyr/net/mdio.h>
 #include <zephyr/drivers/gpio.h>
 

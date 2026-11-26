@@ -330,3 +330,5 @@ endif # NET_NATIVE_OFFLOADED_SOCKETS
 endif # NET_DRIVERS
 
 rsource "ethernet/Kconfig"
+rsource "mdio/Kconfig"
+rsource "phy/Kconfig"

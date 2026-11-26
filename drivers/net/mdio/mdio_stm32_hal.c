@@ -19,7 +19,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #endif
 
-#include "../eth_stm32_hal_priv.h"
+#include "../ethernet/eth_stm32_hal_priv.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mdio_stm32_hal, CONFIG_MDIO_LOG_LEVEL);

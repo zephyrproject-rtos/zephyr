@@ -19,7 +19,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #endif
 
-#include "../dwc_mac/eth_dwmac_priv.h"
+#include "../ethernet/dwc_mac/eth_dwmac_priv.h"
 
 LOG_MODULE_REGISTER(snps_dwmac_mdio, CONFIG_MDIO_LOG_LEVEL);
 

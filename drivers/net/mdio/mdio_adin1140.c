@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(mdio_adin1140, CONFIG_MDIO_LOG_LEVEL);
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/mdio.h>
-#include "../eth_adin1140_priv.h"
+#include "../ethernet/eth_adin1140_priv.h"
 
 /**
  * Read a PHY register using MDIO Clause 45.

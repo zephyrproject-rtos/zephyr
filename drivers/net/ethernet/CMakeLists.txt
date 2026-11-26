@@ -3,8 +3,6 @@
 zephyr_library()
 zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/l2)
 
-add_subdirectory_ifdef(CONFIG_MDIO mdio)
-
 if(CONFIG_ETH_NXP_S32_NETC)
   zephyr_library_sources(eth_nxp_s32_netc.c)
   zephyr_library_sources_ifdef(CONFIG_DT_HAS_NXP_S32_NETC_PSI_ENABLED eth_nxp_s32_netc_psi.c)
@@ -31,8 +29,7 @@ if(CONFIG_ETH_NATIVE_TAP)
   target_sources(native_simulator INTERFACE eth_native_tap_adapt.c)
 endif()
 
-add_subdirectory(dsa)
-add_subdirectory(phy)
+add_subdirectory(../dsa dsa)
 add_subdirectory(eth_nxp_enet_qos)
 add_subdirectory(nxp_imx_netc)
 add_subdirectory(dwc_mac)
