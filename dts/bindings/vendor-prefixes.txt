@@ -136,6 +136,7 @@ canis	Canis Automotive Labs
 canmodule	CAN-module, FOP
 capella	Capella Microsystems, Inc
 cascoda	Cascoda, Ltd.
+cast	CAST, Inc.
 catalyst	Catalyst Semiconductor, Inc.
 cavium	Cavium, Inc.
 cdac	Centre for Development of Advanced Computing (C-DAC)

@@ -1,0 +1,51 @@
+# Copyright (C) 2024 Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: Cast CAN
+
+include: [can-controller.yaml, can-fd-controller.yaml, pinctrl-device.yaml]
+
+compatible: "cast,can"
+
+properties:
+  reg:
+    required: true
+
+  reg-names:
+    required: true
+
+  interrupt-parent:
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+
+  clocks:
+    required: true
+    description: Includes Clock Controller module
+
+  clock-frequency:
+    type: int
+    required: true
+    description:  Clock frequency the CAN controller is being driven at, in Hz.
+
+  can-fd:
+    type: boolean
+    description: |
+     Enable CAN FD support.
+     When enabled, can-fd-ctrl-reg and can-fd-bit must be specified.
+
+  can-fd-ctrl-reg:
+    type: int
+    description: |
+      Address of the CAN FD control register.
+      Required when can-fd is true.
+
+  can-fd-bit:
+    type: int
+    description: |
+      Bit position within can-fd-ctrl-reg that enables CAN FD mode.
+      Required when can-fd is true.

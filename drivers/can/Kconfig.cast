@@ -1,0 +1,25 @@
+# Copyright (C) 2025 Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config CAN_CAST
+	bool "CAST CAN driver for Alif Boards"
+	default y
+	depends on DT_HAS_CAST_CAN_ENABLED
+	help
+	  Enable CAN module for Alif Board
+
+if CAN_CAST
+config CAN_MAX_FILTER
+	int "Set Maximum number of Acceptance filters supported"
+	default 3
+	range 1 16
+	help
+	  Set Maximum number of Acceptance filters supported by hardware
+
+config CAN_RBUF_AFWL
+	int "Set CAN Rx buf almost full warning limit"
+	default 8
+	range 1 15
+	help
+	  Set Rx buffer almost full warning
+endif # CAN_CAST
