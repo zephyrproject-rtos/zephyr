@@ -1035,6 +1035,20 @@ static void modem_cellular_begin_shutdown(struct modem_cellular_data *data)
 	modem_cellular_begin_power_off_pulse(data);
 }
 
+static uint32_t modem_cellular_get_baudrate(struct modem_cellular_data *data)
+{
+	const struct modem_cellular_config *config = data->dev->config;
+	struct uart_config cfg = {0};
+	int ret;
+
+	ret = uart_config_get(config->uart, &cfg);
+	if (ret < 0) {
+		LOG_ERR("Failed to get UART configuration (%d)", ret);
+		return 0;
+	}
+	return cfg.baudrate;
+}
+
 static uint32_t modem_cellular_baudrate_update(struct modem_cellular_data *data,
 					       uint32_t desired_baudrate)
 {
@@ -1321,7 +1335,8 @@ static void modem_cellular_await_power_on_event_handler(struct modem_cellular_da
 		modem_cellular_stop_timer(data);
 		__fallthrough;
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
-		if (config->vendor->scripts.set_baudrate != NULL) {
+		if (modem_cellular_get_baudrate(data) != CONFIG_MODEM_CELLULAR_NEW_BAUDRATE &&
+		    config->vendor->scripts.set_baudrate != NULL) {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_SET_BAUDRATE);
 		} else {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_INIT_SCRIPT);
