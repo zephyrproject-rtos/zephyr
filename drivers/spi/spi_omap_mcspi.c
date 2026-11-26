@@ -11,7 +11,12 @@ LOG_MODULE_REGISTER(omap_mcspi);
 
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/irq.h>
+#include <zephyr/spinlock.h>
+#include <zephyr/sys/util.h>
 #include "spi_context.h"
+
+#define OMAP_MCSPI_INTERRUPTS DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts)
 
 /* Max clock divisor for granularity of 1 (12-bit) */
 #define OMAP_MCSPI_CLK_1_MAX_DIV   (4096)
@@ -30,7 +35,9 @@ struct omap_mcspi_regs {
 	uint8_t RESERVED_2[0x108];   /**< Reserved, offset: 0x08 - 0x110 */
 	volatile uint32_t SYSCONFIG; /**< Configuration register, offset: 0x110 */
 	volatile uint32_t SYSSTATUS; /**< Status information register, offset: 0x114 */
-	uint8_t RESERVED_3[0x10];    /**< Reserved, offset: 0x118 - 0x128 */
+	volatile uint32_t IRQSTATUS;
+	volatile uint32_t IRQENABLE;
+	uint8_t RESERVED_3[0x08];    /**< Reserved, offset: 0x120 - 0x128 */
 	volatile uint32_t MODULCTRL; /**< MCSPI configuration register, offset: 0x128 */
 	volatile struct {
 		volatile uint32_t CHCONF; /**< Configuration register, offset: 0x12C + (0x14 * i) */
@@ -87,7 +94,18 @@ struct omap_mcspi_regs {
 
 /*  FIFO transfer level register */
 #define OMAP_MCSPI_XFERLEVEL_WCNT GENMASK(31, 16) /* Word counter for transfer */
+#define OMAP_MCSPI_XFERLEVEL_AFL      GENMASK(15, 8)  /* Almost full level, in bytes minus 1 */
+#define OMAP_MCSPI_XFERLEVEL_AEL      GENMASK(7, 0)   /* Almost empty level, in bytes minus 1 */
 #define OMAP_MCSPI_XFERLEVEL_WCNT_MAX FIELD_GET(OMAP_MCSPI_XFERLEVEL_WCNT, UINT32_MAX)
+
+#define OMAP_MCSPI_IRQ_TX_EMPTY(i)     BIT(4U * (i)) /* TX FIFO has room for AEL + 1 bytes */
+#define OMAP_MCSPI_IRQ_TX_UNDERFLOW(i) BIT(4U * (i) + 1U)
+#define OMAP_MCSPI_IRQ_RX_FULL(i)      BIT(4U * (i) + 2U) /* RX FIFO holds AFL + 1 bytes */
+#define OMAP_MCSPI_IRQ_RX0_OVERFLOW    BIT(3)             /* RX overflow, peripheral mode */
+#define OMAP_MCSPI_IRQ_EOW             BIT(17)            /* WCNT words transferred */
+
+#define OMAP_MCSPI_WAIT_WORD_TIMES 2U
+#define OMAP_MCSPI_WAIT_MARGIN_US  10U
 
 #define DEV_CFG(dev)  ((const struct omap_mcspi_cfg *)(dev)->config)
 #define DEV_DATA(dev) ((struct omap_mcspi_data *)(dev)->data)
@@ -99,6 +117,9 @@ struct omap_mcspi_cfg {
 	uint32_t clock_frequency;
 	bool d1_miso_d0_mosi;
 	uint8_t num_cs;
+#if OMAP_MCSPI_INTERRUPTS
+	void (*irq_config)(const struct device *dev);
+#endif
 };
 
 struct omap_mcspi_data {
@@ -108,6 +129,21 @@ struct omap_mcspi_data {
 	uint32_t chconf;
 	uint32_t chctrl;
 	uint8_t dfs; /* data frame size - word length in bytes */
+#if OMAP_MCSPI_INTERRUPTS
+	const uint8_t *irq_tx_buf;
+	uint8_t *irq_rx_buf;
+	size_t irq_count;
+	size_t irq_tx_left;
+	size_t irq_rx_left;
+	size_t irq_level;
+	/*
+	 * Serialises the ISR, which may run on another core, against the
+	 * thread starting, aborting or releasing a transfer.
+	 */
+	struct k_spinlock isr_lock;
+	bool irq_active; /* the ISR owns the transfer */
+	int irq_status;
+#endif
 };
 
 static void omap_mcspi_channel_enable(const struct device *dev, bool enable)
@@ -493,7 +529,12 @@ static int omap_mcspi_transceive_pio(const struct device *dev, size_t count)
 	return count;
 }
 
-static int omap_mcspi_transceive_one(const struct device *dev)
+static size_t omap_mcspi_chunk_len(struct spi_context *ctx)
+{
+	return MIN(spi_context_max_continuous_chunk(ctx), OMAP_MCSPI_XFERLEVEL_WCNT_MAX);
+}
+
+static void omap_mcspi_chunk_setup(const struct device *dev, size_t count, uint32_t xferlevel)
 {
 	struct omap_mcspi_data *data = DEV_DATA(dev);
 	struct omap_mcspi_regs *regs = DEV_REGS(dev);
@@ -501,12 +542,6 @@ static int omap_mcspi_transceive_one(const struct device *dev)
 	const uint8_t chan = ctx->config->peripheral;
 	const uint8_t *tx_buf = ctx->tx_buf;
 	uint8_t *rx_buf = ctx->rx_buf;
-	size_t count = MIN(spi_context_max_continuous_chunk(ctx), OMAP_MCSPI_XFERLEVEL_WCNT_MAX);
-	int rv;
-
-	if (!tx_buf && !rx_buf) {
-		goto exit;
-	}
 
 	/* disable channel */
 	omap_mcspi_channel_enable(dev, false);
@@ -545,8 +580,22 @@ static int omap_mcspi_transceive_one(const struct device *dev)
 	regs->CHAN[chan].CHCONF = data->chconf;
 	regs->CHAN[chan].CHCTRL = data->chctrl;
 
-	/* write WCNT */
-	regs->XFERLEVEL = FIELD_PREP(OMAP_MCSPI_XFERLEVEL_WCNT, count);
+	/* write WCNT and the FIFO levels */
+	regs->XFERLEVEL = FIELD_PREP(OMAP_MCSPI_XFERLEVEL_WCNT, count) | xferlevel;
+}
+
+static int omap_mcspi_transceive_one(const struct device *dev)
+{
+	struct omap_mcspi_data *data = DEV_DATA(dev);
+	struct spi_context *ctx = &data->ctx;
+	size_t count = omap_mcspi_chunk_len(ctx);
+	int rv;
+
+	if (ctx->tx_buf == NULL && ctx->rx_buf == NULL) {
+		goto exit;
+	}
+
+	omap_mcspi_chunk_setup(dev, count, 0U);
 
 	/* enable channel */
 	omap_mcspi_channel_enable(dev, true);
@@ -568,6 +617,258 @@ exit:
 
 	return 0;
 }
+
+#if OMAP_MCSPI_INTERRUPTS
+static void omap_mcspi_irq_stop(const struct device *dev)
+{
+	struct omap_mcspi_regs *regs = DEV_REGS(dev);
+
+	regs->IRQENABLE = 0U;
+	omap_mcspi_channel_enable(dev, false);
+	regs->IRQSTATUS = UINT32_MAX;
+}
+
+static void omap_mcspi_irq_finish(const struct device *dev, int status)
+{
+	struct omap_mcspi_data *data = DEV_DATA(dev);
+
+	omap_mcspi_irq_stop(dev);
+	data->irq_active = false;
+	data->irq_status = status;
+	omap_mcspi_cs_control(dev, false);
+	spi_context_complete(&data->ctx, dev, status);
+}
+
+static uint32_t omap_mcspi_word_us(const struct spi_config *config)
+{
+	if (config->frequency == 0U) {
+		return 0U;
+	}
+
+	return DIV_ROUND_UP(SPI_WORD_SIZE_GET(config->operation) * USEC_PER_SEC, config->frequency);
+}
+
+static void omap_mcspi_irq_write(const struct device *dev, size_t words)
+{
+	struct omap_mcspi_data *data = DEV_DATA(dev);
+	struct omap_mcspi_regs *regs = DEV_REGS(dev);
+	volatile uint32_t *tx_reg = &regs->CHAN[data->ctx.config->peripheral].TX;
+
+	words = MIN(words, data->irq_tx_left);
+	for (size_t i = 0U; i < words; i++) {
+		write_tx(data->irq_tx_buf, tx_reg, data->dfs);
+		data->irq_tx_buf += data->dfs;
+	}
+	data->irq_tx_left -= words;
+}
+
+static void omap_mcspi_irq_read(const struct device *dev, size_t words)
+{
+	struct omap_mcspi_data *data = DEV_DATA(dev);
+	struct omap_mcspi_regs *regs = DEV_REGS(dev);
+	struct spi_context *ctx = &data->ctx;
+	const uint32_t word_mask = (1ULL << SPI_WORD_SIZE_GET(ctx->config->operation)) - 1U;
+	volatile uint32_t *rx_reg = &regs->CHAN[ctx->config->peripheral].RX;
+
+	words = MIN(words, data->irq_rx_left);
+	for (size_t i = 0U; i < words; i++) {
+		read_rx(data->irq_rx_buf, rx_reg, data->dfs, word_mask);
+		data->irq_rx_buf += data->dfs;
+	}
+	data->irq_rx_left -= words;
+}
+
+static void omap_mcspi_irq_start(const struct device *dev)
+{
+	struct omap_mcspi_data *data = DEV_DATA(dev);
+	struct omap_mcspi_regs *regs = DEV_REGS(dev);
+	struct spi_context *ctx = &data->ctx;
+	const uint8_t chan = ctx->config->peripheral;
+	uint32_t irqs = OMAP_MCSPI_IRQ_EOW;
+	size_t level_bytes;
+	size_t count;
+
+	while ((spi_context_tx_on(ctx) || spi_context_rx_on(ctx)) && ctx->tx_buf == NULL &&
+	       ctx->rx_buf == NULL) {
+		count = omap_mcspi_chunk_len(ctx);
+		spi_context_update_rx(ctx, data->dfs, count);
+		spi_context_update_tx(ctx, data->dfs, count);
+	}
+
+	if (!spi_context_tx_on(ctx) && !spi_context_rx_on(ctx)) {
+		omap_mcspi_irq_finish(dev, 0);
+		return;
+	}
+
+	count = omap_mcspi_chunk_len(ctx);
+
+	level_bytes = data->fifo_depth;
+	if (ctx->tx_buf != NULL && ctx->rx_buf != NULL) {
+		level_bytes /= 2U;
+	}
+	if (IS_ENABLED(CONFIG_SPI_PERIPHERAL) && spi_context_is_peripheral(ctx)) {
+		level_bytes /= 2U;
+	}
+	level_bytes = ROUND_DOWN(level_bytes, data->dfs);
+	/*
+	 * With WCNT set, TX_EMPTY comes only on the edge to a free level while
+	 * a whole level of words is still to be written. A tail shorter than
+	 * the level never gets one, and the transfer stalls with that tail
+	 * unsent. Seen on the AM62L EVM: 36 words at 32 per level left 4.
+	 * Send whole levels as one chunk and the tail as the next, which the
+	 * first fill below then writes in full.
+	 */
+	if (count * data->dfs > level_bytes) {
+		count = ROUND_DOWN(count, level_bytes / data->dfs);
+	} else {
+		level_bytes = count * data->dfs;
+	}
+
+	data->irq_tx_buf = ctx->tx_buf;
+	data->irq_rx_buf = ctx->rx_buf;
+	data->irq_count = count;
+	data->irq_tx_left = (ctx->tx_buf != NULL) ? count : 0U;
+	data->irq_rx_left = (ctx->rx_buf != NULL) ? count : 0U;
+	data->irq_level = level_bytes / data->dfs;
+
+	omap_mcspi_chunk_setup(dev, count,
+			       FIELD_PREP(OMAP_MCSPI_XFERLEVEL_AFL, level_bytes - 1U) |
+				       FIELD_PREP(OMAP_MCSPI_XFERLEVEL_AEL, level_bytes - 1U));
+
+	omap_mcspi_channel_enable(dev, true);
+
+	/* Status is reset after the channel is enabled and before the events. */
+	regs->IRQSTATUS = UINT32_MAX;
+
+	if (ctx->tx_buf != NULL) {
+		/*
+		 * Enabling the channel raises TX_EMPTY, and the reset above may
+		 * have cleared it: fill the first level here. The next TX_EMPTY
+		 * then comes once that level has room again.
+		 */
+		omap_mcspi_irq_write(dev, data->irq_level);
+		/*
+		 * Drop a TX_EMPTY from the enable that came after the reset:
+		 * the FIFO now holds a whole level, so a genuine request needs
+		 * that level to drain first.
+		 */
+		regs->IRQSTATUS = OMAP_MCSPI_IRQ_TX_EMPTY(chan);
+		if (data->irq_tx_left > 0U) {
+			irqs |= OMAP_MCSPI_IRQ_TX_EMPTY(chan);
+		}
+	} else {
+		regs->CHAN[chan].TX = 0U;
+	}
+
+	if (ctx->rx_buf != NULL) {
+		irqs |= OMAP_MCSPI_IRQ_RX_FULL(chan);
+	}
+
+	if (IS_ENABLED(CONFIG_SPI_PERIPHERAL) && spi_context_is_peripheral(ctx)) {
+		irqs |= OMAP_MCSPI_IRQ_RX0_OVERFLOW;
+		if (ctx->tx_buf != NULL) {
+			irqs |= OMAP_MCSPI_IRQ_TX_UNDERFLOW(chan);
+		}
+	}
+
+	regs->IRQENABLE = irqs;
+}
+
+static void omap_mcspi_irq_chunk_done(const struct device *dev)
+{
+	struct omap_mcspi_data *data = DEV_DATA(dev);
+	struct omap_mcspi_regs *regs = DEV_REGS(dev);
+	struct spi_context *ctx = &data->ctx;
+	volatile uint32_t *chstat = &regs->CHAN[ctx->config->peripheral].CHSTAT;
+	const size_t count = data->irq_count;
+	const uint32_t word_us = omap_mcspi_word_us(ctx->config);
+	const uint32_t wait_us = OMAP_MCSPI_WAIT_WORD_TIMES * word_us + OMAP_MCSPI_WAIT_MARGIN_US;
+
+	regs->IRQENABLE = 0U;
+
+	/*
+	 * Words of the last level that did not fill an RX_FULL event. EOW may
+	 * come as the last word is still being shifted in, so give each word
+	 * up to two word times to land.
+	 */
+	while (data->irq_rx_left > 0U &&
+	       WAIT_FOR((*chstat & OMAP_MCSPI_CHSTAT_RXFFE) == 0U, wait_us, NULL)) {
+		omap_mcspi_irq_read(dev, 1U);
+	}
+
+	if (data->irq_rx_left > 0U || data->irq_tx_left > 0U) {
+		omap_mcspi_irq_finish(dev, -EIO);
+		return;
+	}
+
+	if (ctx->rx_buf == NULL) {
+		/*
+		 * Transmit only: the last word may still be in the shift
+		 * register. It leaves within one word time; this spins in the
+		 * ISR for up to two, which is about 42 ms for a 32-bit word at
+		 * 1.5 kHz, the slowest clock a 50 MHz input divides down to.
+		 */
+		if (!WAIT_FOR((*chstat & OMAP_MCSPI_CHSTAT_EOT) != 0U, wait_us, NULL)) {
+			omap_mcspi_irq_finish(dev, -EIO);
+			return;
+		}
+	}
+
+	omap_mcspi_irq_stop(dev);
+
+	spi_context_update_rx(ctx, data->dfs, count);
+	spi_context_update_tx(ctx, data->dfs, count);
+
+	omap_mcspi_irq_start(dev);
+}
+
+static void omap_mcspi_isr_locked(const struct device *dev)
+{
+	struct omap_mcspi_data *data = DEV_DATA(dev);
+	struct omap_mcspi_regs *regs = DEV_REGS(dev);
+	const uint8_t chan = data->ctx.config->peripheral;
+	const uint32_t status = regs->IRQSTATUS & regs->IRQENABLE;
+
+	if ((status & (OMAP_MCSPI_IRQ_TX_UNDERFLOW(chan) | OMAP_MCSPI_IRQ_RX0_OVERFLOW)) != 0U) {
+		omap_mcspi_irq_finish(dev, -EIO);
+		return;
+	}
+
+	if ((status & OMAP_MCSPI_IRQ_RX_FULL(chan)) != 0U) {
+		regs->IRQSTATUS = OMAP_MCSPI_IRQ_RX_FULL(chan);
+		omap_mcspi_irq_read(dev, data->irq_level);
+	}
+
+	if ((status & OMAP_MCSPI_IRQ_TX_EMPTY(chan)) != 0U) {
+		regs->IRQSTATUS = OMAP_MCSPI_IRQ_TX_EMPTY(chan);
+		omap_mcspi_irq_write(dev, data->irq_level);
+		if (data->irq_tx_left == 0U) {
+			regs->IRQENABLE &= ~OMAP_MCSPI_IRQ_TX_EMPTY(chan);
+		}
+	}
+
+	if ((status & OMAP_MCSPI_IRQ_EOW) != 0U) {
+		regs->IRQSTATUS = OMAP_MCSPI_IRQ_EOW;
+		omap_mcspi_irq_chunk_done(dev);
+	}
+}
+
+static void omap_mcspi_isr(const struct device *dev)
+{
+	struct omap_mcspi_data *data = DEV_DATA(dev);
+	struct omap_mcspi_regs *regs = DEV_REGS(dev);
+	k_spinlock_key_t key = k_spin_lock(&data->isr_lock);
+
+	if (data->irq_active) {
+		omap_mcspi_isr_locked(dev);
+	} else {
+		regs->IRQENABLE = 0U;
+		regs->IRQSTATUS = UINT32_MAX;
+	}
+
+	k_spin_unlock(&data->isr_lock, key);
+}
+#endif
 
 static int omap_mcspi_transceive_all(const struct device *dev, const struct spi_config *config,
 				     const struct spi_buf_set *tx_bufs,
@@ -593,6 +894,56 @@ static int omap_mcspi_transceive_all(const struct device *dev, const struct spi_
 	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, data->dfs);
 
 	omap_mcspi_cs_control(dev, true);
+
+#if OMAP_MCSPI_INTERRUPTS
+	if (DEV_CFG(dev)->irq_config != NULL) {
+		k_spinlock_key_t key = k_spin_lock(&data->isr_lock);
+
+		data->irq_active = true;
+		omap_mcspi_irq_start(dev);
+		k_spin_unlock(&data->isr_lock, key);
+
+		/*
+		 * spi_context_complete() releases an asynchronous transfer, which
+		 * may already have happened: do not touch ctx after this.
+		 */
+		if (asynchronous) {
+			return 0;
+		}
+
+		ret = spi_context_wait_for_completion(ctx);
+		if (ret == -EIO) {
+			LOG_ERR("Transfer failed, TX/RX left %zu/%zu of %zu", data->irq_tx_left,
+				data->irq_rx_left, data->irq_count);
+		}
+		if (ret == -ETIMEDOUT) {
+			key = k_spin_lock(&data->isr_lock);
+			if (data->irq_active) {
+				struct omap_mcspi_regs *regs = DEV_REGS(dev);
+				const uint8_t chan = config->peripheral;
+
+				LOG_ERR("Timed out, IRQSTATUS 0x%08x IRQENABLE 0x%08x "
+					"CHSTAT 0x%08x, TX/RX left %zu/%zu of %zu",
+					regs->IRQSTATUS, regs->IRQENABLE, regs->CHAN[chan].CHSTAT,
+					data->irq_tx_left, data->irq_rx_left, data->irq_count);
+				omap_mcspi_irq_stop(dev);
+				data->irq_active = false;
+				omap_mcspi_cs_control(dev, false);
+			} else {
+				/* the ISR completed between the timeout and the lock */
+				ret = data->irq_status;
+			}
+			spi_context_clear_completion(ctx);
+			k_spin_unlock(&data->isr_lock, key);
+		}
+
+		if (!asynchronous && (config->operation & SPI_LOCK_ON) == 0U) {
+			spi_context_release(ctx, ret);
+		}
+
+		return ret;
+	}
+#endif
 
 	while (spi_context_tx_on(ctx) || spi_context_rx_on(ctx)) {
 		ret = omap_mcspi_transceive_one(dev);
@@ -627,7 +978,14 @@ static int omap_mcspi_transceive_async(const struct device *dev, const struct sp
 				       const struct spi_buf_set *rx_bufs, spi_callback_t callback,
 				       void *userdata)
 {
-	/* wait for DMA to be implemented to use IRQ and ASYNC */
+#if OMAP_MCSPI_INTERRUPTS
+	if (DEV_CFG(dev)->irq_config != NULL) {
+		return omap_mcspi_transceive_all(dev, config, tx_bufs, rx_bufs, true, callback,
+						 userdata);
+	}
+#endif
+
+	/* Without an interrupt, transfers can only complete in the caller. */
 	return -ENOTSUP;
 }
 #endif /* CONFIG_SPI_ASYNC */
@@ -685,6 +1043,14 @@ static int omap_mcspi_init(const struct device *dev)
 	}
 	spi_context_unlock_unconditionally(&data->ctx);
 
+#if OMAP_MCSPI_INTERRUPTS
+	if (cfg->irq_config != NULL) {
+		regs->IRQENABLE = 0U;
+		regs->IRQSTATUS = UINT32_MAX;
+		cfg->irq_config(dev);
+	}
+#endif
+
 	return 0;
 }
 
@@ -692,6 +1058,17 @@ static int omap_mcspi_release(const struct device *dev, const struct spi_config 
 {
 	struct omap_mcspi_data *data = DEV_DATA(dev);
 	struct omap_mcspi_regs *regs = DEV_REGS(dev);
+
+#if OMAP_MCSPI_INTERRUPTS
+	if (DEV_CFG(dev)->irq_config != NULL) {
+		k_spinlock_key_t key = k_spin_lock(&data->isr_lock);
+
+		if (data->irq_active) {
+			omap_mcspi_irq_finish(dev, -ECANCELED);
+		}
+		k_spin_unlock(&data->isr_lock, key);
+	}
+#endif
 
 	if (data->ctx.config != NULL && !spi_cs_is_gpio(data->ctx.config)) {
 		regs->CHAN[data->ctx.config->peripheral].CHCONF &= ~OMAP_MCSPI_CHCONF_FORCE;
@@ -710,14 +1087,33 @@ static DEVICE_API(spi, omap_mcspi_api) = {
 	.release = omap_mcspi_release,
 };
 
+#if OMAP_MCSPI_INTERRUPTS
+#define OMAP_MCSPI_IRQ_FUNC(n)                                                                     \
+	static void omap_mcspi_irq_config_##n(const struct device *dev)                            \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), omap_mcspi_isr,             \
+			    DEVICE_DT_INST_GET(n), DT_INST_IRQ(n, flags));                         \
+		irq_enable(DT_INST_IRQN(n));                                                       \
+	}
+#define OMAP_MCSPI_IRQ_DEFINE(n)                                                                   \
+	COND_CODE_1(DT_INST_IRQ_HAS_IDX(n, 0), (OMAP_MCSPI_IRQ_FUNC(n)), ())
+#define OMAP_MCSPI_IRQ_INIT(n)                                                                     \
+	.irq_config = COND_CODE_1(DT_INST_IRQ_HAS_IDX(n, 0), (omap_mcspi_irq_config_##n), (NULL)),
+#else
+#define OMAP_MCSPI_IRQ_DEFINE(n)
+#define OMAP_MCSPI_IRQ_INIT(n)
+#endif
+
 #define OMAP_MCSPI_INIT(n)                                                                         \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	OMAP_MCSPI_IRQ_DEFINE(n)                                                                   \
 	static struct omap_mcspi_cfg omap_mcspi_config_##n = {                                     \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
 		.pinctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                      \
 		.clock_frequency = DT_INST_PROP(n, clock_frequency),                               \
 		.d1_miso_d0_mosi = DT_INST_PROP(n, ti_d1_miso_d0_mosi),                            \
 		.num_cs = DT_INST_PROP(n, ti_spi_num_cs),                                          \
+		OMAP_MCSPI_IRQ_INIT(n)                                                             \
 	};                                                                                         \
                                                                                                    \
 	static struct omap_mcspi_data omap_mcspi_data_##n = {                                      \
