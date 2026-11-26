@@ -262,6 +262,25 @@ Device Drivers and Devicetree
 ..
 .. ...
 
+* The network drivers have been moved under :zephyr_file:`drivers/net`:
+
+  * ``drivers/ethernet/`` to :zephyr_file:`drivers/net/ethernet/`, with the PHY, MDIO and DSA
+    drivers in :zephyr_file:`drivers/net/phy/`, :zephyr_file:`drivers/net/mdio/` and
+    :zephyr_file:`drivers/net/dsa/`
+  * ``drivers/hdlc_rcp_if/`` to :zephyr_file:`drivers/net/hdlc_rcp_if/`
+  * ``drivers/ieee802154/`` to :zephyr_file:`drivers/net/ieee802154/`
+  * ``drivers/ptp_clock/`` to :zephyr_file:`drivers/net/ptp_clock/`
+  * ``drivers/wifi/`` to :zephyr_file:`drivers/net/wifi/`
+  * ``drivers/net/ppp.c`` and ``drivers/net/slip.c`` to :zephyr_file:`drivers/net/ppp/` and
+    :zephyr_file:`drivers/net/slip/`
+
+  Their libraries are renamed accordingly, for example ``drivers__ethernet`` to
+  ``drivers__net__ethernet`` and ``drivers__wifi`` to ``drivers__net__wifi``. The PHY and MDIO
+  drivers are no longer part of the Ethernet library and are built as the ``drivers__net__phy`` and
+  ``drivers__net__mdio`` libraries. Out-of-tree linker scripts and ``zephyr_code_relocate()`` calls
+  using these library names, and code including driver private headers from these directories, must
+  be updated. Kconfig symbols, devicetree bindings and public headers are unchanged.
+
 .. zephyr-keep-sorted-start re(^\w) ignorecase
 
 ADC
