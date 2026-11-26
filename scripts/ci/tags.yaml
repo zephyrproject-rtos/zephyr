@@ -71,7 +71,6 @@ net:
     - subsys/net/
     - include/zephyr/net/
     - drivers/net/
-    - drivers/ieee802154/
     - drivers/ptp_clock/
 
 posix:

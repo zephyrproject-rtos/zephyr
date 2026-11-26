@@ -28,5 +28,6 @@ endif()
 
 add_subdirectory_ifdef(CONFIG_ETH_DRIVER ethernet)
 add_subdirectory_ifdef(CONFIG_ETH_PHY_DRIVER phy)
+add_subdirectory_ifdef(CONFIG_IEEE802154 ieee802154)
 add_subdirectory_ifdef(CONFIG_MDIO mdio)
 add_subdirectory_ifdef(CONFIG_WIFI wifi)

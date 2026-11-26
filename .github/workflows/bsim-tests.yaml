@@ -24,7 +24,7 @@ on:
       - "subsys/net/l2/openthread/**"
       - "include/zephyr/net/openthread.h"
       - "drivers/**nrfx**"
-      - "drivers/ieee802154/**"
+      - "drivers/net/ieee802154/**"
       - "include/zephyr/net/ieee802154*"
       - "tests/drivers/uart/**"
       - '!**.rst'
@@ -141,7 +141,7 @@ jobs:
             modules/openthread/
             subsys/net/l2/openthread/
             include/zephyr/net/openthread.h
-            drivers/ieee802154/
+            drivers/net/ieee802154/
             include/zephyr/net/ieee802154*
 
       - name: Check if UART files changed

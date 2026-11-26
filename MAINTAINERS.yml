@@ -2368,7 +2368,7 @@ Documentation Infrastructure:
     - cfriedt
     - jukkar
   files:
-    - drivers/ieee802154/
+    - drivers/net/ieee802154/
     - include/zephyr/drivers/ieee802154/
     - include/zephyr/net/ieee802154_radio.h
     - tests/drivers/build_all/ieee802154/
@@ -4557,7 +4557,7 @@ NXP Platform Wireless:
     - drivers/*/*mcxw*.c
     - drivers/bluetooth/hci/*nxp*
     - drivers/hdlc_rcp_if/*nxp*
-    - drivers/ieee802154/ieee802154_kw41z.c
+    - drivers/net/ieee802154/ieee802154_kw41z.c
     - drivers/net/wifi/nxp/
     - samples/bluetooth/**/*rw*
     - samples/net/**/*mcxw*
@@ -4584,7 +4584,7 @@ NXP Platform Wireless:
         - George-Stefan
       files:
         - drivers/hdlc_rcp_if/
-        - drivers/ieee802154/
+        - drivers/net/ieee802154/
         - soc/
     - name: MCXW platform
       collaborators:
@@ -4882,6 +4882,7 @@ Networking:
     - doc/services/connectivity/networking/eth_*.rst
     - drivers/net/dsa/
     - drivers/net/ethernet/
+    - drivers/net/ieee802154/
     - drivers/net/mdio/
     - drivers/net/phy/
     - drivers/net/wifi/
@@ -5502,7 +5503,7 @@ Peregrine Platforms:
   files:
     - boards/peregrine/
     - boards/shields/atmel_rf2xx/
-    - drivers/ieee802154/*rf2xx*
+    - drivers/net/ieee802154/*rf2xx*
   labels:
     - "platform: Peregrine"
 
@@ -6060,7 +6061,7 @@ STM32 Platforms:
     - boards/st/stm32mp*/
     - drivers/bluetooth/hci/*stm32*.c
     - drivers/clock_control/clock_stm32_ll_mp*.c
-    - drivers/ieee802154/*stm32*.c
+    - drivers/net/ieee802154/*stm32*.c
     - soc/st/stm32/stm32mp*/
     - soc/st/stm32/stm32wb*/
   labels:
@@ -6107,7 +6108,7 @@ STM32 Platforms (Wireless):
     - boards/st/*wb*/
     - drivers/bluetooth/hci/*stm32*.c
     - drivers/bluetooth/hci/hci_spi_st.c
-    - drivers/ieee802154/*stm32*.c
+    - drivers/net/ieee802154/*stm32*.c
     - soc/st/stm32/stm32wb*/
   labels:
     - "platform: STM32"
@@ -6336,7 +6337,7 @@ Silabs Platforms:
       collaborators:
         - db00lean
       files:
-        - drivers/ieee802154/
+        - drivers/net/ieee802154/
   labels:
     - "platform: Silabs"
   tests:
