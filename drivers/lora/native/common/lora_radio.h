@@ -60,7 +60,9 @@ struct lora_radio_ops {
 
 	/* Optional. Whether the radio can send len bytes as it is configured. */
 	int (*tx_check)(const struct device *dev, uint32_t len);
-	int (*tx_start)(const struct device *dev, const uint8_t *buf, uint32_t len);
+	/* Send len bytes, giving up on them after timeout_ms */
+	int (*tx_start)(const struct device *dev, const uint8_t *buf, uint32_t len,
+			uint32_t timeout_ms);
 
 	/* Set the radio up for the receptions that follow */
 	int (*rx_prepare)(const struct device *dev);
@@ -119,6 +121,10 @@ struct lora_radio_data {
 
 	/* Async TX signal */
 	struct k_poll_signal *tx_async_signal;
+	/* Ends an async TX the radio does not report on in time */
+	struct k_work_delayable tx_watchdog;
+	/* When that is, in ticks of uptime */
+	int64_t tx_deadline;
 
 	/* Deferred work for interrupt handling */
 	struct k_work irq_work;

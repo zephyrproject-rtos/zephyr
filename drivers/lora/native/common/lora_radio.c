@@ -15,6 +15,11 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(lora_radio, CONFIG_LORA_LOG_LEVEL);
 
+/* What the radio gets on top of twice the airtime to start up and send a frame */
+#define LORA_RADIO_TX_MARGIN_MS 100U
+/* How much longer than the radio the host waits for the interrupt of a transmission */
+#define LORA_RADIO_TX_GRACE_MS  5000U
+
 /* A caller blocked on an operation, and where its result goes */
 struct lora_radio_waiter {
 	struct k_sem done;
@@ -25,6 +30,8 @@ struct lora_radio_waiter {
 	int8_t *snr;
 	/* Waiting on a reception without limit, which a packet does not end */
 	bool continuous;
+	/* How long the radio was given for a transmission */
+	uint32_t tx_timeout_ms;
 };
 
 /* Claim the radio for an operation and wake it up */
@@ -72,6 +79,7 @@ static void lora_radio_op_end(const struct device *dev, int status)
 	data->tx_async_signal = NULL;
 	data->rx_cb = NULL;
 	data->rx_cb_user_data = NULL;
+	(void)k_work_cancel_delayable(&data->tx_watchdog);
 
 	config->ops->sleep(dev);
 	data->op = LORA_RADIO_OP_NONE;
@@ -273,6 +281,23 @@ unlock:
 	k_mutex_unlock(&data->lock);
 }
 
+static void lora_radio_tx_watchdog_handler(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct lora_radio_data *data = CONTAINER_OF(dwork, struct lora_radio_data, tx_watchdog);
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+
+	/* Only the transmission it was started for, which no caller waits on */
+	if (data->op == LORA_RADIO_OP_TX && data->waiter == NULL &&
+	    k_uptime_ticks() >= data->tx_deadline) {
+		LOG_ERR("TX timeout");
+		lora_radio_op_abort(data->dev, -ETIMEDOUT);
+	}
+
+	k_mutex_unlock(&data->lock);
+}
+
 void lora_radio_irq(const struct device *dev)
 {
 	struct lora_radio_data *data = dev->data;
@@ -286,6 +311,7 @@ void lora_radio_init(const struct device *dev)
 
 	k_mutex_init(&data->lock);
 	k_work_init(&data->irq_work, lora_radio_irq_work_handler);
+	k_work_init_delayable(&data->tx_watchdog, lora_radio_tx_watchdog_handler);
 	data->dev = dev;
 	data->op = LORA_RADIO_OP_NONE;
 	data->configured = false;
@@ -321,6 +347,7 @@ static int lora_radio_tx_start(const struct device *dev,
 {
 	const struct lora_radio_config *config = dev->config;
 	struct lora_radio_data *data = dev->data;
+	uint32_t timeout_ms;
 	int ret;
 
 	k_mutex_lock(&data->lock, K_FOREVER);
@@ -353,7 +380,8 @@ static int lora_radio_tx_start(const struct device *dev,
 		goto unlock;
 	}
 
-	ret = config->ops->tx_start(dev, data_buf, data_len);
+	timeout_ms = 2U * config->ops->airtime(dev, data_len) + LORA_RADIO_TX_MARGIN_MS;
+	ret = config->ops->tx_start(dev, data_buf, data_len, timeout_ms);
 	if (ret < 0) {
 		lora_radio_op_end(dev, ret);
 		goto unlock;
@@ -361,6 +389,15 @@ static int lora_radio_tx_start(const struct device *dev,
 
 	data->tx_async_signal = async;
 	lora_radio_register_waiter(data, waiter);
+	if (waiter != NULL) {
+		waiter->tx_timeout_ms = timeout_ms;
+	} else {
+		/* Nobody waits to give up on it */
+		k_ticks_t ticks = k_ms_to_ticks_ceil64(timeout_ms + LORA_RADIO_TX_GRACE_MS);
+
+		data->tx_deadline = k_uptime_ticks() + ticks;
+		(void)k_work_reschedule(&data->tx_watchdog, K_TICKS(ticks));
+	}
 
 unlock:
 	k_mutex_unlock(&data->lock);
@@ -385,7 +422,7 @@ int lora_radio_send(const struct device *dev,
 		return ret;
 	}
 
-	ret = lora_radio_wait(dev, &waiter, K_SECONDS(15));
+	ret = lora_radio_wait(dev, &waiter, K_MSEC(waiter.tx_timeout_ms + LORA_RADIO_TX_GRACE_MS));
 	if (ret == -ETIMEDOUT) {
 		LOG_ERR("TX timeout");
 	}

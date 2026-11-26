@@ -376,8 +376,13 @@ int sx126x_set_rx_gain(const struct device *dev, bool boosted)
 
 static int sx126x_set_tx(const struct device *dev, uint32_t timeout_ms)
 {
-	uint32_t timeout = SX126X_MS_TO_TIMEOUT(timeout_ms);
+	uint32_t timeout = SX126X_TX_TIMEOUT_NONE;
 	uint8_t buf[3];
+
+	/* A timeout the radio cannot count is left out */
+	if (timeout_ms <= SX126X_TIMEOUT_MAX_MS) {
+		timeout = SX126X_MS_TO_TIMEOUT(timeout_ms);
+	}
 
 	sys_put_be24(timeout, buf);
 	return sx126x_hal_write_cmd(dev, SX126X_CMD_SET_TX, buf, 3);
@@ -984,7 +989,7 @@ static int sx126x_tx_check(const struct device *dev, uint32_t data_len)
 }
 
 static int sx126x_send_packet(const struct device *dev, const uint8_t *data_buf,
-			      uint32_t data_len)
+			      uint32_t data_len, uint32_t timeout_ms)
 {
 	struct sx126x_data *data = dev->data;
 	int ret;
@@ -1010,8 +1015,8 @@ static int sx126x_send_packet(const struct device *dev, const uint8_t *data_buf,
 	/* Enable antenna and set TX path */
 	sx126x_set_rf_path(dev, true, true);
 
-	/* Start transmission with 10 second timeout */
-	return sx126x_set_tx(dev, 10000);
+	/* Start transmission */
+	return sx126x_set_tx(dev, timeout_ms);
 }
 
 /* Set the radio up for the receptions that follow */
