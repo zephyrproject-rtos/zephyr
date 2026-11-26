@@ -407,15 +407,14 @@ static int uc_open(const struct device *dev)
 static int uc_close(const struct device *dev)
 {
 	struct uc_data *uc = dev->data;
-	int rc;
 
 	if (uc->fd < 0) {
 		return -ENETDOWN;
 	}
 
-	rc = nsi_host_close(uc->fd);
-	if (rc < 0) {
-		return -nsi_errno_from_mid(-rc);
+	/* The descriptor is released even when closing it fails. */
+	if (nsi_host_close(uc->fd) < 0) {
+		LOG_WRN("Closing the socket failed, errno %d", nsi_host_get_errno());
 	}
 
 	uc->fd = -1;
