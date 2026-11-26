@@ -687,6 +687,37 @@
 			clock-div = <1>;
 			nxp,root-id = <IMX_CCM_ROOT_CGU_PERI_ROOTCLK5>;
 		};
+
+		/*
+		 * SAI MCLK roots sourced from the audio PLL (49.152 MHz):
+		 *   div=2 -> 24.576 MHz, suits 48/96 kHz sample rates.
+		 */
+		/* CLOCK_ROOT194 */
+		sai0_mclk0_rootclk: clock-root@c20 {
+			compatible = "nxp,imx-ccm-rev3-root";
+			reg = <0xc20 0x10>;
+			clock-mux = <IMX_CCM_MUX_SAI0_MCLK0_AUDIOPLL>;
+			clock-div = <2>;
+			nxp,root-id = <IMX_CCM_ROOT_AUDIO_SAI0_MCLK0>;
+		};
+
+		/* CLOCK_ROOT196 */
+		sai1_mclk0_rootclk: clock-root@c40 {
+			compatible = "nxp,imx-ccm-rev3-root";
+			reg = <0xc40 0x10>;
+			clock-mux = <IMX_CCM_MUX_SAI1_MCLK0_AUDIOPLL>;
+			clock-div = <2>;
+			nxp,root-id = <IMX_CCM_ROOT_AUDIO_SAI1_MCLK0>;
+		};
+
+		/* CLOCK_ROOT198 */
+		sai2_mclk0_rootclk: clock-root@c60 {
+			compatible = "nxp,imx-ccm-rev3-root";
+			reg = <0xc60 0x10>;
+			clock-mux = <IMX_CCM_MUX_SAI2_MCLK0_AUDIOPLL>;
+			clock-div = <2>;
+			nxp,root-id = <IMX_CCM_ROOT_AUDIO_SAI2_MCLK0>;
+		};
 	};
 
 	/* Reset cause is available without pins or a peripheral clock. */
@@ -1964,6 +1995,12 @@
 		};
 	};
 
+	audio_modcon: modcon@48000000 {
+		compatible = "nxp,imx-modcon";
+		reg = <0x48000000 0x9000>;
+		#pinmux-cells = <2>;
+	};
+
 	trdc_audio: trdc@48040000 {
 		compatible = "nxp,trdc";
 		reg = <0x48040000 0x1000>;
@@ -2001,7 +2038,10 @@
 		#size-cells = <1>;
 	};
 
-	/* SAI (AUDIO domain), IRQ 256..258 */
+	/*
+	 * SAI (AUDIO domain), IRQ 256..258. pinmuxes is the MCLK pad gate,
+	 * IP[n].CFG[0] in the AUDIO MODCON.
+	 */
 	sai0: audio_sai_0: sai@480c0000 {
 		compatible = "nxp,mcux-i2s";
 		reg = <0x480c0000 0x10000>;
@@ -2009,8 +2049,13 @@
 		#size-cells = <0>;
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_AUDIO_SAI0,
 					   IMX_CCM_ROOT_AUDIO_SAI0_MCLK0)>;
+		pinmuxes = <&audio_modcon 0x810 0x1>;
 		interrupts = <256 0>;
+		dmas = <&edma3 0 4>, <&edma3 0 3>;
+		dma-names = "rx", "tx";
 		nxp,tx-channel = <1>;
+		nxp,tx-dma-channel = <0>;
+		nxp,rx-dma-channel = <1>;
 		status = "disabled";
 	};
 
@@ -2021,8 +2066,13 @@
 		#size-cells = <0>;
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_AUDIO_SAI1,
 					   IMX_CCM_ROOT_AUDIO_SAI1_MCLK0)>;
+		pinmuxes = <&audio_modcon 0xa10 0x1>;
 		interrupts = <257 0>;
+		dmas = <&edma3 0 6>, <&edma3 0 5>;
+		dma-names = "rx", "tx";
 		nxp,tx-channel = <1>;
+		nxp,tx-dma-channel = <2>;
+		nxp,rx-dma-channel = <3>;
 		status = "disabled";
 	};
 
@@ -2033,8 +2083,13 @@
 		#size-cells = <0>;
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_AUDIO_SAI2,
 					   IMX_CCM_ROOT_AUDIO_SAI2_MCLK0)>;
+		pinmuxes = <&audio_modcon 0xc10 0x1>;
 		interrupts = <258 0>;
+		dmas = <&edma3 0 8>, <&edma3 0 7>;
+		dma-names = "rx", "tx";
 		nxp,tx-channel = <1>;
+		nxp,tx-dma-channel = <4>;
+		nxp,rx-dma-channel = <5>;
 		status = "disabled";
 	};
 
@@ -2046,6 +2101,7 @@
 		/* The AUDIO eDMA takes the Mux2 request set, highest source 22. */
 		dma-requests = <23>;
 		no-error-irq;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_AUDIO_EDMA, IMX_CCM_ROOT_NONE)>;
 		interrupts = <271 0>, <272 0>, <273 0>, <274 0>,
 			     <275 0>, <276 0>, <277 0>, <278 0>;
 		nxp,version = <4>;

@@ -10,6 +10,7 @@ tests:
       - mimxrt1060_evk/mimxrt1062/qspi
       - mimxrt1180_evk/mimxrt1189/cm33
       - mimxrt1180_evk/mimxrt1189/cm7
+      - mimxrt2660_evk/mimxrt2663/cm85
 
   drivers.i2s.speed.gpio_loopback:
     depends_on:
@@ -65,6 +66,7 @@ tests:
       - mimxrt1060_evk/mimxrt1062/qspi
       - mimxrt1180_evk/mimxrt1189/cm33
       - mimxrt1180_evk/mimxrt1189/cm7
+      - mimxrt2660_evk/mimxrt2663/cm85
 
   drivers.i2s.speed.gpio_loopback.legacy:
     depends_on:
