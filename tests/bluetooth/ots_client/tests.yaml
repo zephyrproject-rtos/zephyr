@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  bluetooth.ots_client.dir_list_decode:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="test.overlay"
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+    tags:
+      - bluetooth
