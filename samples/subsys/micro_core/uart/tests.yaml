@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: Micro Core UART
+  description: Exchange complete payloads over UART with caller-owned storage
+
+tests:
+  sample.micro_core.uart.sender:
+    build_only: true
+    extra_args: CONF_FILE=prj_sender.conf
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+  sample.micro_core.uart.receiver:
+    build_only: true
+    extra_args: CONF_FILE=prj_receiver.conf
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
