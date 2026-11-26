@@ -3,7 +3,23 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-description: GPIO Controller for Davinci and Keystone devices.
+description: |
+  GPIO Controller for Davinci and Keystone devices.
+
+  Each node covers one 32-line register set of a GPIO module, which holds
+  two 16-line banks. The module raises one interrupt per bank and enables
+  banks in its GPIO_BINTEN register. To use pin interrupts, give the node
+  one interrupt per bank it covers and a second reg entry for GPIO_BINTEN:
+
+    reg = <0x00600038 0x28>, <0x00600008 0x4>;
+    reg-names = "port", "binten";
+    interrupts = <GIC_SPI 262 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+                 <GIC_SPI 263 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+
+  Only edge triggers exist in hardware; level interrupts return -ENOTSUP.
+  With GPIO_INT_MODE_DISABLE_ONLY, edges that arrive while a pin is disabled
+  are lost. Pulls and open-drain are pad settings: set them in pinctrl, not
+  in GPIO specifier flags.
 
 compatible: "ti,davinci-gpio"
 
@@ -12,6 +28,11 @@ include: [base.yaml, gpio-controller.yaml, pinctrl-device.yaml]
 properties:
   reg:
     required: true
+
+  reg-names:
+    description: |
+      "port" for the register set, then "binten" for the module's
+      GPIO_BINTEN register. Required when the node has interrupts.
 
   "#gpio-cells":
     const: 2
