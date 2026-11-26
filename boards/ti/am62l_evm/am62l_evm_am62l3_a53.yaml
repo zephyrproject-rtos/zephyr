@@ -9,6 +9,7 @@ ram: 2048
 supported:
   - adc
   - dma
+  - i2s
   - uart
   - shdc
   - pwm
