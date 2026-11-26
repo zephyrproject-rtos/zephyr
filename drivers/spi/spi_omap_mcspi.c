@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT ti_omap_mcspi
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(omap_mcspi);
+LOG_MODULE_REGISTER(omap_mcspi, CONFIG_SPI_LOG_LEVEL);
 
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/pinctrl.h>
