@@ -1,0 +1,10 @@
+common:
+  tags:
+    - http
+    - net
+  depends_on: netif
+  integration_platforms:
+    - native_sim
+tests:
+  net.url:
+    min_ram: 16
