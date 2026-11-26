@@ -3240,13 +3240,17 @@ Documentation Infrastructure:
   files:
     - drivers/wifi/nrf_wifi/
     - dts/bindings/wifi/nordic,nrf70.yaml
+    - dts/bindings/wifi/nordic,nrf70-mspi.yaml
     - dts/bindings/wifi/nordic,nrf70-qspi.yaml
     - dts/bindings/wifi/nordic,nrf70-spi.yaml
     - dts/bindings/wifi/nordic,nrf70-coex.yaml
+    - dts/bindings/wifi/nordic,nrf7002-mspi.yaml
     - dts/bindings/wifi/nordic,nrf7002-qspi.yaml
     - dts/bindings/wifi/nordic,nrf7002-spi.yaml
+    - dts/bindings/wifi/nordic,nrf7000-mspi.yaml
     - dts/bindings/wifi/nordic,nrf7000-qspi.yaml
     - dts/bindings/wifi/nordic,nrf7000-spi.yaml
+    - dts/bindings/wifi/nordic,nrf7001-mspi.yaml
     - dts/bindings/wifi/nordic,nrf7001-qspi.yaml
     - dts/bindings/wifi/nordic,nrf7001-spi.yaml
     - dts/bindings/wifi/nordic,nrf7120-wifi.yaml
