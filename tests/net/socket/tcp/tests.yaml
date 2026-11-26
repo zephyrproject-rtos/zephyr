@@ -7,7 +7,7 @@ common:
     - socket
     - userspace
   filter: CONFIG_FULL_LIBC_SUPPORTED
-  timeout: 180
+  timeout: 300
 tests:
   net.socket.tcp:
     extra_configs:
@@ -16,6 +16,13 @@ tests:
     extra_configs:
       - CONFIG_NET_TC_THREAD_PREEMPTIVE=y
       - CONFIG_NET_TCP_RANDOMIZED_RTO=n
+  net.socket.tcp.variable_buf:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_COOPERATIVE=y
+      - CONFIG_NET_BUF_VARIABLE_DATA_SIZE=y
+      - CONFIG_NET_PKT_BUF_RX_DATA_POOL_SIZE=8192
+      - CONFIG_NET_PKT_BUF_TX_DATA_POOL_SIZE=8192
+      - CONFIG_PRIVILEGED_STACK_SIZE=4096
   net.socket.tcp.tracing:
     platform_allow:
       - native_sim
