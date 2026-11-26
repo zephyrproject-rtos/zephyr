@@ -35,6 +35,19 @@ static int gpio_cc23x0_config(const struct device *port, gpio_pin_t pin, gpio_fl
 	uint32_t config = 0;
 	gpio_flags_t direction = flags & GPIO_DIR_MASK;
 
+	/*
+	 * Set the output value and enable the output before writing the IOC
+	 * configuration, so that enabling a pull does not glitch the pin.
+	 */
+	if (flags & GPIO_OUTPUT) {
+		if (flags & GPIO_OUTPUT_INIT_HIGH) {
+			GPIOSetDio(pin);
+		} else if (flags & GPIO_OUTPUT_INIT_LOW) {
+			GPIOClearDio(pin);
+		}
+		GPIOSetOutputEnableDio(pin, GPIO_OUTPUT_ENABLE);
+	}
+
 	if (flags & GPIO_PULL_UP) {
 		config |= IOC_IOC0_PULLCTL_PULL_UP;
 	} else if (flags & GPIO_PULL_DOWN) {
@@ -62,14 +75,7 @@ static int gpio_cc23x0_config(const struct device *port, gpio_pin_t pin, gpio_fl
 
 	IOCSetConfigAndMux(pin, config, IOC_MUX_GPIO);
 
-	if (flags & GPIO_OUTPUT) {
-		if (flags & GPIO_OUTPUT_INIT_HIGH) {
-			GPIOSetDio(pin);
-		} else if (flags & GPIO_OUTPUT_INIT_LOW) {
-			GPIOClearDio(pin);
-		}
-		GPIOSetOutputEnableDio(pin, GPIO_OUTPUT_ENABLE);
-	} else {
+	if (!(flags & GPIO_OUTPUT)) {
 		GPIOSetOutputEnableDio(pin, GPIO_OUTPUT_DISABLE);
 	}
 	return 0;
@@ -89,7 +95,7 @@ static int gpio_cc23x0_get_config(const struct device *port, gpio_pin_t pin, gpi
 	if (GPIOGetOutputEnableDio(pin)) {
 		out_flag |= GPIO_OUTPUT;
 
-		if (GPIOReadDio(pin)) {
+		if (GPIOReadDioOutputBuffer(pin)) {
 			out_flag |= GPIO_OUTPUT_INIT_HIGH;
 		} else {
 			/* This is the default value. If not explicitly set,
@@ -108,20 +114,18 @@ static int gpio_cc23x0_get_config(const struct device *port, gpio_pin_t pin, gpi
 		if (config & IOC_IOC0_EDGEDET_EDGE_NEG) {
 			out_flag |= GPIO_INT_EDGE_FALLING;
 		}
-	} else {
-		/* This is the default value. If not explicitly set,
-		 * the returned config will not be symmetric
-		 */
-		out_flag |= GPIO_INT_DISABLE;
 	}
 
 	/* GPIO pin drive flags */
-	if (config & IOC_IOC0_IOMODE_OPENS) {
+	switch (config & IOC_IOC0_IOMODE_M) {
+	case IOC_IOC0_IOMODE_OPEND:
+		out_flag |= GPIO_OPEN_DRAIN;
+		break;
+	case IOC_IOC0_IOMODE_OPENS:
 		out_flag |= GPIO_OPEN_SOURCE;
-	}
-
-	if (config & IOC_IOC0_IOMODE_OPEND) {
-		out_flag |= IOC_IOC0_IOMODE_OPEND;
+		break;
+	default:
+		break;
 	}
 
 	if (config & IOC_IOC0_PULLCTL_PULL_UP) {
