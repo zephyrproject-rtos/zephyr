@@ -10,11 +10,9 @@ if(CONFIG_BUILD_ONLY_NO_BLOBS)
   ---------------------------------------------------------------------------
   ")
 else()
-
-if(CONFIG_DT_HAS_ESPRESSIF_ESP32_WIFI_ENABLED)
-  zephyr_blobs_verify(MODULE hal_espressif REQUIRED)
-endif()
-
+  if(CONFIG_DT_HAS_ESPRESSIF_ESP32_WIFI_ENABLED)
+    zephyr_blobs_verify(MODULE hal_espressif REQUIRED)
+  endif()
 endif() # CONFIG_BUILD_ONLY_NO_BLOBS
 
 # zephyr-keep-sorted-start
