@@ -12,6 +12,8 @@ config ILI9806E_DSI
 	depends on DT_HAS_ILITEK_ILI9806E_ENABLED
 	select MIPI_DSI
 	select ILI98XX_DSI
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ILITEK_ILI9806E),reset-gpios) || \
+		$(dt_compat_any_has_prop,$(DT_COMPAT_ILITEK_ILI9806E),bl-gpios)
 	help
 	  Enable driver for ILI9806E_DSI display driver.
 
