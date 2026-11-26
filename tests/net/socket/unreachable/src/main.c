@@ -300,7 +300,7 @@ ZTEST(net_socket_unreachable, test_udp_sendto_through_route)
 }
 
 #if defined(CONFIG_NET_VLAN)
-#define VLAN_TAG 100
+#define VLAN_TEST_TAG 100
 
 static const struct net_in_addr vlan_my_addr = { { { 203, 0, 113, 2 } } };
 static const struct net_in_addr vlan_neighbor_addr = { { { 203, 0, 113, 1 } } };
@@ -320,8 +320,8 @@ static struct net_if *vlan_iface_get(void)
 		return vlan_iface;
 	}
 
-	zassert_equal(net_eth_vlan_enable(eth_iface, VLAN_TAG), 0, "Cannot enable VLAN");
-	vlan_iface = net_eth_get_vlan_iface(eth_iface, VLAN_TAG);
+	zassert_equal(net_eth_vlan_enable(eth_iface, VLAN_TEST_TAG), 0, "Cannot enable VLAN");
+	vlan_iface = net_eth_get_vlan_iface(eth_iface, VLAN_TEST_TAG);
 	zassert_not_null(vlan_iface, "No VLAN interface");
 
 	zassert_not_null(net_if_ipv4_addr_add(vlan_iface, &vlan_my_addr, NET_ADDR_MANUAL, 0),
