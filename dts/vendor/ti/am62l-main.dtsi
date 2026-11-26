@@ -228,6 +228,39 @@
 		status = "disabled";
 	};
 
+	mcasp0: audio-controller@2b00000 {
+		compatible = "ti,am33xx-mcasp-audio";
+		reg = <0x02b00000 0x2000>,
+		      <0x02b08000 0x400>;
+		reg-names = "mpu", "dat";
+		clocks = <&scmi_clk 194>;
+		clock-names = "fck";
+		power-domains = <&main_mcasp0_pd>;
+		status = "disabled";
+	};
+
+	mcasp1: audio-controller@2b10000 {
+		compatible = "ti,am33xx-mcasp-audio";
+		reg = <0x02b10000 0x2000>,
+		      <0x02b18000 0x400>;
+		reg-names = "mpu", "dat";
+		clocks = <&scmi_clk 216>;
+		clock-names = "fck";
+		power-domains = <&main_mcasp1_pd>;
+		status = "disabled";
+	};
+
+	mcasp2: audio-controller@2b20000 {
+		compatible = "ti,am33xx-mcasp-audio";
+		reg = <0x02b20000 0x2000>,
+		      <0x02b28000 0x400>;
+		reg-names = "mpu", "dat";
+		clocks = <&scmi_clk 230>;
+		clock-names = "fck";
+		power-domains = <&main_mcasp2_pd>;
+		status = "disabled";
+	};
+
 	main_mmr_cfg3: syscon@9180000 {
 		compatible = "ti,control-module", "syscon";
 		reg = <0x9180000 DT_SIZE_K(512)>;

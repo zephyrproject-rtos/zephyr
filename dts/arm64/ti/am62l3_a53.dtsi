@@ -153,6 +153,27 @@
 	interrupt-parent = <&gic>;
 };
 
+&mcasp0 {
+	interrupts = <GIC_SPI 246 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+		     <GIC_SPI 245 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-names = "tx", "rx";
+	interrupt-parent = <&gic>;
+};
+
+&mcasp1 {
+	interrupts = <GIC_SPI 248 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+		     <GIC_SPI 247 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-names = "tx", "rx";
+	interrupt-parent = <&gic>;
+};
+
+&mcasp2 {
+	interrupts = <GIC_SPI 250 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+		     <GIC_SPI 249 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-names = "tx", "rx";
+	interrupt-parent = <&gic>;
+};
+
 &main_i2c0 {
 	interrupts = <GIC_SPI 64 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&gic>;
