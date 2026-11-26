@@ -228,12 +228,6 @@ struct zbus_channel_observation {
 	const struct zbus_observer *obs;
 };
 
-#ifdef __cplusplus
-#define _ZBUS_CPP_EXTERN extern
-#else
-#define _ZBUS_CPP_EXTERN
-#endif /* __cplusplus */
-
 #define ZBUS_MIN_THREAD_PRIORITY (CONFIG_NUM_PREEMPT_PRIORITIES - 1)
 
 #if defined(CONFIG_ZBUS_ASSERT_MOCK)
@@ -274,6 +268,11 @@ struct zbus_channel_observation {
 #define ZBUS_RUNTIME_OBSERVERS_LIST_INIT(_slist_name) /* No runtime observers */
 #endif
 
+/* The channel and observer definitions below declare the object with these
+ * macros first. The declaration gives the const object external linkage in C++,
+ * where repeating 'extern' on a definition that has a section attribute is
+ * reported by Clang with -Wsection if the object was already declared.
+ */
 #define _ZBUS_OBS_EXTERN(_name) extern const struct zbus_observer _name
 
 #define _ZBUS_CHAN_EXTERN(_name) extern const struct zbus_channel _name
@@ -329,7 +328,8 @@ struct zbus_channel_observation {
 		IF_ENABLED(CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION,                      \
 			   (.msg_subscriber_pool = NULL,))                                         \
 	};                                                                                         \
-	_ZBUS_CPP_EXTERN const STRUCT_SECTION_ITERABLE(zbus_channel, _name) = {                    \
+	_ZBUS_CHAN_EXTERN(_name);                                                                  \
+	const STRUCT_SECTION_ITERABLE(zbus_channel, _name) = {                                     \
 		ZBUS_CHANNEL_NAME_INIT(_name) /* Maybe removed */                                  \
 		IF_ENABLED(CONFIG_ZBUS_CHANNEL_ID, (.id = _id,))                                   \
 		.message = &_ZBUS_MESSAGE_NAME(_name),                                             \
@@ -492,7 +492,8 @@ struct zbus_channel_observation {
 			.priority = ZBUS_MIN_THREAD_PRIORITY,                 \
 		))                                                            \
 	};                                                                    \
-	_ZBUS_CPP_EXTERN const STRUCT_SECTION_ITERABLE(zbus_observer, _name) = {  \
+	_ZBUS_OBS_EXTERN(_name);                                              \
+	const STRUCT_SECTION_ITERABLE(zbus_observer, _name) = {               \
 		ZBUS_OBSERVER_NAME_INIT(_name) /* Name field */               \
 		.type = ZBUS_OBSERVER_SUBSCRIBER_TYPE,                        \
 		.data = &_CONCAT(_zbus_obs_data_, _name),                     \
@@ -534,7 +535,8 @@ struct zbus_channel_observation {
 			.priority = ZBUS_MIN_THREAD_PRIORITY,                                      \
 		))                                                                                 \
 	};                                                                                         \
-	_ZBUS_CPP_EXTERN const STRUCT_SECTION_ITERABLE(zbus_observer, _name) = {                   \
+	_ZBUS_OBS_EXTERN(_name);                                                                   \
+	const STRUCT_SECTION_ITERABLE(zbus_observer, _name) = {                                    \
 		ZBUS_OBSERVER_NAME_INIT(_name) /* Name field */                                    \
 		.type = ZBUS_OBSERVER_LISTENER_TYPE,                                               \
 		.data = &_CONCAT(_zbus_obs_data_, _name),                                          \
@@ -574,7 +576,8 @@ struct zbus_channel_observation {
 			.priority = ZBUS_MIN_THREAD_PRIORITY,                 \
 		))                                                            \
 	};                                                                    \
-	_ZBUS_CPP_EXTERN const STRUCT_SECTION_ITERABLE(zbus_observer, _name) = {  \
+	_ZBUS_OBS_EXTERN(_name);                                              \
+	const STRUCT_SECTION_ITERABLE(zbus_observer, _name) = {               \
 		ZBUS_OBSERVER_NAME_INIT(_name) /* Name field */               \
 		.type = ZBUS_OBSERVER_MSG_SUBSCRIBER_TYPE,                    \
 		.data = &_CONCAT(_zbus_obs_data_, _name),                     \
@@ -635,7 +638,8 @@ void async_listener_work_handler(struct k_work *item);
 			.priority = ZBUS_MIN_THREAD_PRIORITY,                     \
 		))                                                                \
 	};                                                                        \
-	_ZBUS_CPP_EXTERN const STRUCT_SECTION_ITERABLE(zbus_observer, _name) = {  \
+	_ZBUS_OBS_EXTERN(_name);                                                  \
+	const STRUCT_SECTION_ITERABLE(zbus_observer, _name) = {                   \
 		ZBUS_OBSERVER_NAME_INIT(_name) /* Name field */                   \
 		.type = ZBUS_OBSERVER_ASYNC_LISTENER_TYPE,                        \
 		.data = &_CONCAT(_zbus_obs_data_, _name),                         \
