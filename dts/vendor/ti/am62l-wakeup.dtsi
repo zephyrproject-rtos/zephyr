@@ -15,7 +15,8 @@
 
 	wkup_gpio0: gpio@4201010 {
 		compatible = "ti,davinci-gpio";
-		reg = <0x04201010 0x28>;
+		reg = <0x04201010 0x28>, <0x04201008 0x4>;
+		reg-names = "port", "binten";
 		gpio-controller;
 		#gpio-cells = <2>;
 		ngpios = <7>;

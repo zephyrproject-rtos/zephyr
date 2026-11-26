@@ -81,7 +81,8 @@
 
 	main_gpio0_0: gpio@600010 {
 		compatible = "ti,davinci-gpio";
-		reg = <0x00600010 0x28>;
+		reg = <0x00600010 0x28>, <0x00600008 0x4>;
+		reg-names = "port", "binten";
 		gpio-controller;
 		#gpio-cells = <2>;
 		ngpios = <32>;
@@ -90,7 +91,8 @@
 
 	main_gpio0_1: gpio@600038 {
 		compatible = "ti,davinci-gpio";
-		reg = <0x00600038 0x28>;
+		reg = <0x00600038 0x28>, <0x00600008 0x4>;
+		reg-names = "port", "binten";
 		gpio-controller;
 		#gpio-cells = <2>;
 		ngpios = <32>;
@@ -99,7 +101,8 @@
 
 	main_gpio0_2: gpio@600060 {
 		compatible = "ti,davinci-gpio";
-		reg = <0x00600060 0x28>;
+		reg = <0x00600060 0x28>, <0x00600008 0x4>;
+		reg-names = "port", "binten";
 		gpio-controller;
 		#gpio-cells = <2>;
 		ngpios = <32>;
@@ -108,7 +111,8 @@
 
 	main_gpio0_3: gpio@600088 {
 		compatible = "ti,davinci-gpio";
-		reg = <0x00600088 0x28>;
+		reg = <0x00600088 0x28>, <0x00600008 0x4>;
+		reg-names = "port", "binten";
 		gpio-controller;
 		#gpio-cells = <2>;
 		ngpios = <30>;
