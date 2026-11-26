@@ -10,8 +10,13 @@ description: |
   I2S cannot share the same USART.
 
   Supports stereo/mono TX and stereo RX with 16-bit words, as I2S controller
-  only. Mono TX can be combined with stereo RX; frame clock, word size and
-  format must match between the two streams.
+  only (clock target options are rejected by the driver).
+
+  ``i2s_configure(I2S_DIR_RX)`` must set ``channels`` to 2; mono RX
+  (``channels = 1``) returns ``-EINVAL``. TX may use ``channels = 1`` on the
+  same instance together with stereo RX (wire format stays stereo; see the
+  driver documentation). Frame clock, word size, and format must match between
+  the two streams.
 
 compatible: "silabs,usart-i2s"
 
