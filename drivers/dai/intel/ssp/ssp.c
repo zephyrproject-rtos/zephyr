@@ -2197,7 +2197,21 @@ static int dai_ssp_set_config_blob(struct dai_intel_ssp *dp, const struct dai_co
 	int err;
 
 #if SSP_IP_VER > SSP_IP_VER_2_0
+	if (cfg->tdm_slot_group >= MIN(I2SIPCMC, I2SOPCMC)) {
+		LOG_ERR("invalid tdm_slot_group %u", cfg->tdm_slot_group);
+		return -EINVAL;
+	}
+
 	dp->tdm_slot_group = cfg->tdm_slot_group;
+
+	/* slot masks differ per FIFO, the shared plat_data only keeps the first group's */
+	if (blob30->version == SSP_BLOB_VER_3_0) {
+		dp->tx_slots = blob30->i2s_ssp_config.ssmodytsa[dp->tdm_slot_group];
+		dp->rx_slots = blob30->i2s_ssp_config.ssmidytsa[dp->tdm_slot_group];
+	} else {
+		dp->tx_slots = blob->i2s_driver_config.i2s_config.ssmodytsa[dp->tdm_slot_group];
+		dp->rx_slots = blob->i2s_driver_config.i2s_config.ssmidytsa[dp->tdm_slot_group];
+	}
 #endif
 
 	/* set config only once for playback or capture */
@@ -2493,11 +2507,17 @@ static int dai_ssp_config_get(const struct device *dev, struct dai_config *cfg, 
 
 	params->rate = ssp_plat_data->params.fsync_rate;
 
+#if SSP_IP_VER > SSP_IP_VER_2_0
+	uint64_t slots = dir == DAI_DIR_PLAYBACK ? dp->tx_slots : dp->rx_slots;
+
+	params->channels = POPCOUNT(slots >> 32) + POPCOUNT(slots & 0xFFFFFFFF);
+#else
 	if (dir == DAI_DIR_PLAYBACK) {
 		params->channels = POPCOUNT(ssp_plat_data->params.tx_slots);
 	} else {
 		params->channels = POPCOUNT(ssp_plat_data->params.rx_slots);
 	}
+#endif
 
 	params->word_size = ssp_plat_data->params.sample_valid_bits;
 
