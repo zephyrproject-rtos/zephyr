@@ -21,6 +21,7 @@ testing:
   only_tags:
     - cbprintf
     - cmsis_rtos
+    - coredump
     - heap
     - introduction
     - log_api
