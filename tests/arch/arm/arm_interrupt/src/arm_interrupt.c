@@ -64,6 +64,57 @@ static inline void irq_controller_clear_pending(unsigned int irq)
 static volatile int test_flag;
 static volatile int expected_reason = -1;
 
+#if defined(CONFIG_ARMV7_R) && defined(CONFIG_EXTRA_EXCEPTION_INFO)
+/* Used to validate the callee-saved registers collected during a fault */
+static volatile int run_callee_validation;
+static volatile int callee_validation_rv;
+static K_THREAD_STACK_DEFINE(callee_collection_stack, 1024 + CONFIG_TEST_EXTRA_STACK_SIZE);
+static struct k_thread callee_collection_thread;
+
+/* Loads r4-r11 with their register numbers and r12 with SP, then faults */
+static void set_callee_regs_with_known_pattern(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	__asm__ volatile("mov r4, #4\n"
+			 "mov r5, #5\n"
+			 "mov r6, #6\n"
+			 "mov r7, #7\n"
+			 "mov r8, #8\n"
+			 "mov r9, #9\n"
+			 "mov r10, #10\n"
+			 "mov r11, #11\n"
+			 "mov r12, sp\n"
+			 "udf #90\n");
+}
+
+static int check_callee_regs_match_expectations(const struct arch_esf *pEsf)
+{
+	const struct _callee_saved *callee_regs = pEsf->extra_info.callee;
+
+	if (callee_regs == NULL) {
+		printk("No _callee_saved_t in ESF\n");
+		return -1;
+	}
+
+	if ((callee_regs->v1 != 4U) || (callee_regs->v2 != 5U) || (callee_regs->v3 != 6U) ||
+	    (callee_regs->v4 != 7U) || (callee_regs->v5 != 8U) || (callee_regs->v6 != 9U) ||
+	    (callee_regs->v7 != 10U) || (callee_regs->v8 != 11U)) {
+		printk("_callee_saved_t member of ESF is incorrect\n");
+		return -1;
+	}
+
+	if (callee_regs->psp != pEsf->basic.r12) {
+		printk("SP is 0x%08x but should be 0x%08x\n", callee_regs->psp, pEsf->basic.r12);
+		return -1;
+	}
+
+	return 0;
+}
+#endif
+
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) || defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 /* Used to validate ESF collection during a fault */
 static volatile int run_esf_validation;
@@ -341,6 +392,15 @@ void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 	}
 #endif
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE || CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
+
+#if defined(CONFIG_ARMV7_R) && defined(CONFIG_EXTRA_EXCEPTION_INFO)
+	if (run_callee_validation) {
+		if (check_callee_regs_match_expectations(pEsf) == 0) {
+			callee_validation_rv = TC_PASS;
+		}
+		run_callee_validation = 0;
+	}
+#endif
 
 	expected_reason = -1;
 }
@@ -641,17 +701,49 @@ void arm_isr_handler(const void *args)
 	}
 }
 
+#if defined(CONFIG_ARMV7_R) && defined(CONFIG_EXTRA_EXCEPTION_INFO)
+static void run_callee_collection(uint32_t options)
+{
+	callee_validation_rv = TC_FAIL;
+	run_callee_validation = 1;
+	expected_reason = K_ERR_CPU_EXCEPTION;
+
+	k_thread_create(&callee_collection_thread, callee_collection_stack,
+			K_THREAD_STACK_SIZEOF(callee_collection_stack),
+			set_callee_regs_with_known_pattern, NULL, NULL, NULL, K_PRIO_PREEMPT(0),
+			options, K_NO_WAIT);
+	k_thread_join(&callee_collection_thread, K_FOREVER);
+
+	zassert_equal(callee_validation_rv, TC_PASS, "callee-saved register collection failed");
+}
+
+/**
+ * @brief Test the callee-saved registers collected on a fault
+ * @ingroup kernel_fatal_tests
+ */
+ZTEST(arm_interrupt, test_arm_callee_collection)
+{
+	run_callee_collection(0);
+}
+
+#if defined(CONFIG_USERSPACE)
+/**
+ * @brief Test the callee-saved registers collected on a fault in user mode
+ * @ingroup kernel_fatal_tests
+ */
+ZTEST(arm_interrupt, test_arm_user_callee_collection)
+{
+	run_callee_collection(K_USER);
+}
+#endif
+#endif
+
 /**
  * @brief Test ARM Interrupt handling
  * @ingroup kernel_arch_interrupt_tests
  */
 ZTEST(arm_interrupt, test_arm_interrupt)
 {
-#if defined(CONFIG_EXTRA_EXCEPTION_INFO) && defined(CONFIG_ARMV7_R)
-	/* EXTRA_EXCEPTION_INFO is not fully implemented for Cortex-R */
-	ztest_test_skip();
-#endif
-
 	/* Determine an NVIC IRQ line that is not currently in use. */
 	int i;
 
@@ -863,6 +955,12 @@ static inline void z_vrfy_test_arm_user_interrupt_syscall(void)
  */
 ZTEST_USER(arm_interrupt, test_arm_user_interrupt)
 {
+	/*
+	 * With SMP, irq_lock() takes the global lock, which lives in kernel
+	 * data that user mode cannot access.
+	 */
+	Z_TEST_SKIP_IFDEF(CONFIG_SMP);
+
 	/* Test thread executing in user mode */
 	zassert_true(arch_is_user_context(), "Test thread not running in user mode\n");
 
@@ -933,4 +1031,104 @@ ZTEST(arm_interrupt, test_arm_null_pointer_exception)
 }
 #if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC pop_options
+#endif
+
+#if defined(CONFIG_ARMV7_R) && (defined(CONFIG_GIC_V1) || defined(CONFIG_GIC_V2))
+#include <zephyr/drivers/interrupt_controller/gic.h>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+
+/* The inner SGI has a higher priority and preempts the ISR of the outer one */
+#define NESTED_OUTER_SGI 2
+#define NESTED_INNER_SGI 3
+
+static volatile bool nested_outer_active;
+static volatile uint32_t nested_inner_count;
+static volatile uint32_t nested_outer_sp;
+static volatile uint32_t nested_inner_sp;
+
+/*
+ * Raise an SGI through GICD_SGIR at addr, then return through lr, which a
+ * leaf function does not save. The SGI is taken in the nops, before the
+ * return, with SP 4 modulo 8 as a leaf function may leave it.
+ */
+__attribute__((naked, noinline)) static void raise_sgi_in_leaf(uint32_t sgir, uint32_t addr)
+{
+	__asm__ volatile("sub sp, sp, #4\n"
+			 "str r0, [r1]\n"
+			 "dsb\n"
+			 "isb\n"
+			 "nop\n"
+			 "nop\n"
+			 "nop\n"
+			 "nop\n"
+			 "nop\n"
+			 "nop\n"
+			 "nop\n"
+			 "nop\n"
+			 "add sp, sp, #4\n"
+			 "bx lr\n");
+}
+
+static __noinline void nested_inner_count_inc(void)
+{
+	nested_inner_count++;
+}
+
+/* Not a leaf function: GCC keeps SP 8-byte aligned in its body */
+static void nested_inner_isr(const void *arg)
+{
+	ARG_UNUSED(arg);
+
+	if (nested_outer_active) {
+		uint32_t sp;
+
+		__asm__ volatile("mov %0, sp" : "=r"(sp));
+		nested_inner_sp = sp;
+		nested_inner_count_inc();
+	}
+}
+
+static void nested_outer_isr(const void *arg)
+{
+	uint32_t sp;
+
+	ARG_UNUSED(arg);
+
+	__asm__ volatile("mov %0, sp" : "=r"(sp));
+	nested_outer_sp = sp;
+	nested_outer_active = true;
+	raise_sgi_in_leaf(GICD_SGIR_TGTFILT_REQONLY | GICD_SGIR_SGIINTID(NESTED_INNER_SGI),
+			  GICD_SGIR);
+	nested_outer_active = false;
+}
+
+/**
+ * @brief Test an interrupt nested in a leaf function of an ISR
+ * @ingroup kernel_arch_interrupt_tests
+ */
+ZTEST(arm_interrupt, test_arm_nested_interrupt_in_leaf)
+{
+	nested_inner_count = 0U;
+	nested_outer_sp = 0U;
+	nested_inner_sp = 0U;
+
+	arch_irq_connect_dynamic(NESTED_OUTER_SGI, IRQ_DEFAULT_PRIORITY, nested_outer_isr, NULL, 0);
+	arch_irq_connect_dynamic(NESTED_INNER_SGI, 0, nested_inner_isr, NULL, 0);
+	irq_enable(NESTED_OUTER_SGI);
+	irq_enable(NESTED_INNER_SGI);
+
+	sys_write32(GICD_SGIR_TGTFILT_REQONLY | GICD_SGIR_SGIINTID(NESTED_OUTER_SGI), GICD_SGIR);
+	k_busy_wait(1000);
+
+	irq_disable(NESTED_INNER_SGI);
+	irq_disable(NESTED_OUTER_SGI);
+
+	zassert_equal(nested_inner_count, 1U, "%u nested interrupts in the ISR",
+		      nested_inner_count);
+	zassert_not_equal(nested_outer_sp, 0U, "outer ISR did not run");
+	zassert_equal(nested_outer_sp & 7U, 0U, "SP 0x%08x in the ISR is not 8-byte aligned",
+		      nested_outer_sp);
+	zassert_equal(nested_inner_sp & 7U, 0U,
+		      "SP 0x%08x in the nested ISR is not 8-byte aligned", nested_inner_sp);
+}
 #endif

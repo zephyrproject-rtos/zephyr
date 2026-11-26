@@ -21,14 +21,68 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 extern void z_arm_unwind_stack(const struct arch_esf *esf);
 
 #ifdef CONFIG_EXCEPTION_DEBUG
+#if defined(CONFIG_CPU_AARCH32_CORTEX_A) || defined(CONFIG_CPU_AARCH32_CORTEX_R)
+#if defined(CONFIG_MPU_STACK_GUARD) && defined(CONFIG_CPU_AARCH32_CORTEX_R)
+K_KERNEL_STACK_ARRAY_DECLARE(z_arm_abort_stack, CONFIG_MP_MAX_NUM_CPUS,
+			     CONFIG_ARMV7_ABORT_STACK_SIZE);
+#endif
+
+/*
+ * Find the SP of the context the exception interrupted. The exception entry
+ * pushes the frame right below that SP, except from user mode, whose SP it
+ * saves in the thread. An exception taken in another mode interrupted an
+ * exception entry, which may not have its SP anywhere.
+ */
+static bool esf_interrupted_sp(const struct arch_esf *esf, uint32_t *sp)
+{
+	uint32_t mode = esf->basic.xpsr & (uint32_t)MODE_MASK;
+
+#if defined(CONFIG_MPU_STACK_GUARD) && defined(CONFIG_CPU_AARCH32_CORTEX_R)
+	uintptr_t abt =
+		POINTER_TO_UINT(K_KERNEL_STACK_BUFFER(z_arm_abort_stack[arch_curr_cpu()->id]));
+
+	/*
+	 * The stack overflow path builds its frame on the abort mode stack,
+	 * and z_arm_fault_stack_overflow() stores the SP right above it.
+	 */
+	if ((POINTER_TO_UINT(esf) >= abt) &&
+	    (POINTER_TO_UINT(esf) < (abt + CONFIG_ARMV7_ABORT_STACK_SIZE))) {
+		*sp = *(const uint32_t *)(&esf->basic + 1);
+		return true;
+	}
+#endif
+	if (mode == (uint32_t)MODE_SYS) {
+		*sp = POINTER_TO_UINT(&esf->basic + 1);
+		return true;
+	}
+#if defined(CONFIG_USERSPACE) && defined(CONFIG_CPU_AARCH32_CORTEX_R)
+	if (z_arm_preempted_thread_in_user_mode(esf)) {
+		*sp = _current->arch.sp_usr;
+		return true;
+	}
+#endif
+	return false;
+}
+#endif
+
 static void esf_dump(const struct arch_esf *esf)
 {
 	EXCEPTION_DUMP("r0/a1:  0x%08x  r1/a2:  0x%08x  r2/a3:  0x%08x",
 		esf->basic.a1, esf->basic.a2, esf->basic.a3);
 	EXCEPTION_DUMP("r3/a4:  0x%08x r12/ip:  0x%08x r14/lr:  0x%08x",
 		esf->basic.a4, esf->basic.ip, esf->basic.lr);
+#if defined(CONFIG_CPU_AARCH32_CORTEX_A) || defined(CONFIG_CPU_AARCH32_CORTEX_R)
+	uint32_t sp;
+
+	if (esf_interrupted_sp(esf, &sp)) {
+		EXCEPTION_DUMP("r13/sp: 0x%08x   xpsr:  0x%08x", sp, esf->basic.xpsr);
+	} else {
+		EXCEPTION_DUMP(" xpsr:  0x%08x", esf->basic.xpsr);
+	}
+#else
 	EXCEPTION_DUMP(" xpsr:  0x%08x", esf->basic.xpsr);
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+#endif
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) && defined(CONFIG_CPU_CORTEX_M)
 	bool extended_frame;
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO) && defined(EXC_RETURN_STACK_FRAME_TYPE_Msk)
 	extended_frame = ((esf->extra_info.exc_return & EXC_RETURN_STACK_FRAME_TYPE_Msk) ==
@@ -160,7 +214,8 @@ void z_do_kernel_oops(const struct arch_esf *esf, _callee_saved_t *callee_regs, 
 
 #endif /* CONFIG_USERSPACE */
 
-#if !defined(CONFIG_EXTRA_EXCEPTION_INFO)
+#if !defined(CONFIG_EXTRA_EXCEPTION_INFO) || !defined(CONFIG_CPU_CORTEX_M)
+	/* On Cortex-A/R, z_arm_cortex_ar_save_extra has filled the extra info */
 	z_arm_fatal_error(reason, esf);
 #else
 	struct arch_esf esf_copy;
