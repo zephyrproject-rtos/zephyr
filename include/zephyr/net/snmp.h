@@ -1,0 +1,622 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * @file
+ * @brief SNMP (Simple Network Management Protocol) agent
+ */
+
+#ifndef ZEPHYR_INCLUDE_NET_SNMP_H_
+#define ZEPHYR_INCLUDE_NET_SNMP_H_
+
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include <zephyr/net/net_ip.h>
+#include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/util.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @brief SNMP agent API
+ * @defgroup snmp SNMP agent
+ * @since 4.5
+ * @version 0.1.0
+ * @ingroup networking
+ * @{
+ */
+
+/** Maximum number of sub-identifiers in an object identifier. */
+#define SNMP_OID_MAX_LEN CONFIG_SNMP_OID_MAX_LEN
+
+/** UDP port notification receivers conventionally listen on. */
+#define SNMP_TRAP_PORT 162
+
+/** Sub-identifiers of the coldStart notification of @rfc{3418}. */
+#define SNMP_TRAP_COLD_START             1, 3, 6, 1, 6, 3, 1, 1, 5, 1
+/** Sub-identifiers of the authenticationFailure notification of @rfc{3418}. */
+#define SNMP_TRAP_AUTHENTICATION_FAILURE 1, 3, 6, 1, 6, 3, 1, 1, 5, 5
+
+/** Protocol version of a message. */
+enum snmp_version {
+	/** SNMPv1, @rfc{1157}. */
+	SNMP_VERSION_V1 = 0,
+	/** SNMPv2c, @rfc{1901} and @rfc{3416}. */
+	SNMP_VERSION_V2C = 1,
+};
+
+/** ASN.1 types a managed object can have. */
+enum snmp_type {
+	/** INTEGER, 32-bit signed. */
+	SNMP_TYPE_INTEGER,
+	/** OCTET STRING, arbitrary bytes. */
+	SNMP_TYPE_OCTET_STRING,
+	/** NULL, carries no value. Used in requests only. */
+	SNMP_TYPE_NULL,
+	/** OBJECT IDENTIFIER. */
+	SNMP_TYPE_OID,
+	/** IpAddress, four bytes in network order. */
+	SNMP_TYPE_IPADDRESS,
+	/** Counter32, monotonically increasing and wrapping. */
+	SNMP_TYPE_COUNTER32,
+	/** Gauge32, also used for Unsigned32. */
+	SNMP_TYPE_GAUGE32,
+	/** TimeTicks, hundredths of a second. */
+	SNMP_TYPE_TIMETICKS,
+	/** Counter64, SNMPv2c only. */
+	SNMP_TYPE_COUNTER64,
+};
+
+/** Value of a managed object instance. */
+struct snmp_value {
+	/** Type that selects the union member. */
+	enum snmp_type type;
+	/** Value, in the member that @ref type selects. */
+	union {
+		/** @ref SNMP_TYPE_INTEGER */
+		int32_t i32;
+		/** @ref SNMP_TYPE_COUNTER32, @ref SNMP_TYPE_GAUGE32, @ref SNMP_TYPE_TIMETICKS */
+		uint32_t u32;
+		/** @ref SNMP_TYPE_COUNTER64 */
+		uint64_t u64;
+		/** @ref SNMP_TYPE_OCTET_STRING and @ref SNMP_TYPE_IPADDRESS */
+		struct {
+			/** Bytes of the string. Not NUL terminated. */
+			const uint8_t *data;
+			/** Number of bytes. */
+			size_t len;
+		} octets;
+		/** @ref SNMP_TYPE_OID */
+		struct {
+			/** Sub-identifiers. */
+			const uint32_t *arcs;
+			/** Number of sub-identifiers. */
+			size_t len;
+		} oid;
+	};
+};
+
+/** One variable binding: an instance identifier and its value. */
+struct snmp_varbind {
+	/** Instance identifier, the object identifier followed by its index or 0. */
+	const uint32_t *oid;
+	/** Number of sub-identifiers in @ref oid. */
+	size_t oid_len;
+	/** Value of the instance. */
+	struct snmp_value value;
+};
+
+/** Phase of a SET request in which a setter is invoked. */
+enum snmp_set_phase {
+	/** Validate the value without changing anything. */
+	SNMP_SET_CHECK,
+	/** Apply a value that passed the check phase. */
+	SNMP_SET_COMMIT,
+};
+
+/**
+ * @brief Callback invoked once per existing table row.
+ *
+ * Called by a table's @ref snmp_table.foreach_row implementation. The row
+ * handle is opaque to the agent and is only passed back to the same table's
+ * callbacks.
+ *
+ * @param row Opaque handle of the row, as understood by the owning table.
+ * @param user_data Pointer given to @ref snmp_table.foreach_row.
+ */
+typedef void (*snmp_row_cb_t)(void *row, void *user_data);
+
+/**
+ * @brief Row provider shared by all columns of one conceptual table.
+ *
+ * A table does not store rows. Each callback derives them on demand from the
+ * data structure that owns them, for example the network interface list. The
+ * agent walks the rows again on every request, so a row that appears or
+ * disappears between two PDUs cannot corrupt a walk. All callbacks are
+ * invoked from the agent's context and must not block for long.
+ */
+struct snmp_table {
+	/**
+	 * @brief Invoke @p cb for every row that currently exists.
+	 *
+	 * The order of invocation is irrelevant; the agent selects the
+	 * lexicographically next row itself. A row handle passed to @p cb
+	 * must stay valid until the current PDU has been answered.
+	 *
+	 * @param tbl The table being enumerated.
+	 * @param cb Callback to invoke per row.
+	 * @param user_data Passed unchanged to @p cb.
+	 */
+	void (*foreach_row)(const struct snmp_table *tbl, snmp_row_cb_t cb, void *user_data);
+
+	/**
+	 * @brief Encode the INDEX of a row as OID sub-identifiers.
+	 *
+	 * Produces the arcs that follow the column OID in an instance OID,
+	 * for example a single arc holding ifIndex for ifTable.
+	 *
+	 * @param tbl The table the row belongs to.
+	 * @param row Row handle obtained from @ref foreach_row.
+	 * @param arcs Output buffer for the sub-identifiers.
+	 * @param max_arcs Capacity of @p arcs in sub-identifiers.
+	 *
+	 * @return Number of sub-identifiers written, greater than zero.
+	 * @retval -EMSGSIZE @p max_arcs is too small for this table's index.
+	 * @retval -ENOENT The row no longer exists.
+	 */
+	int (*row_index)(const struct snmp_table *tbl, void *row, uint32_t *arcs, size_t max_arcs);
+
+	/**
+	 * @brief Find the row identified by an exact INDEX.
+	 *
+	 * Used for GET and SET, where the instance OID names one row. The
+	 * arcs are exactly the suffix following the column OID; a suffix
+	 * with the wrong length or an unknown index yields no row.
+	 *
+	 * @param tbl The table to search.
+	 * @param arcs Sub-identifiers following the column OID.
+	 * @param len Number of sub-identifiers in @p arcs.
+	 *
+	 * @return Row handle, or NULL when no row has this index. NULL is
+	 *         reported to the manager as noSuchInstance.
+	 */
+	void *(*row_lookup)(const struct snmp_table *tbl, const uint32_t *arcs, size_t len);
+};
+
+/**
+ * @brief One entry of the MIB registry.
+ *
+ * Entries are placed in an iterable section by SNMP_SCALAR_DEFINE() and
+ * SNMP_COLUMN_DEFINE(); the agent never allocates them. An entry is either a
+ * scalar object, whose only instance is @c oid.0, or one column of a table,
+ * whose instances are @c oid followed by a row index. The section is not
+ * ordered; the agent scans all entries on every GET, GETNEXT and GETBULK.
+ * Two entries with the same OID are a configuration error.
+ */
+struct snmp_object {
+	/** Object identifier of the scalar or column, without instance suffix. */
+	const uint32_t *oid;
+	/** Number of sub-identifiers in @ref oid. */
+	uint8_t oid_len;
+	/** Row provider for a column, or NULL for a scalar. */
+	const struct snmp_table *table;
+
+	/**
+	 * @brief Read the value of one instance.
+	 *
+	 * For a scalar @p row is NULL. For a column it is the handle returned
+	 * by @ref snmp_table.row_lookup or @ref snmp_table.foreach_row.
+	 * Any buffer referenced from @p val must stay valid until the callback
+	 * that produced it returns to the agent and the agent has encoded it,
+	 * which happens before any other registry callback is invoked.
+	 *
+	 * @param obj The registry entry being read.
+	 * @param row Row handle, or NULL for a scalar.
+	 * @param val Output value.
+	 *
+	 * @retval 0 Success.
+	 * @retval -ENOENT No value for this instance, reported as noSuchInstance.
+	 * @retval -EIO Value could not be retrieved, reported as genErr.
+	 */
+	int (*get)(const struct snmp_object *obj, void *row, struct snmp_value *val);
+
+	/**
+	 * @brief Write one instance, or NULL for a read-only object.
+	 *
+	 * A SET request is processed in two phases. First the callback is
+	 * invoked with @ref SNMP_SET_CHECK for every binding of the request;
+	 * it validates length and range and changes nothing. Only when every
+	 * check succeeded is it invoked again with @ref SNMP_SET_COMMIT for
+	 * each binding, in request order. The agent has already verified
+	 * that the community grants write access and that the type matches
+	 * the one reported by @ref get. A commit must not fail for a reason
+	 * the check could have detected: nothing is rolled back, so a commit
+	 * failure after another binding was committed is reported to the
+	 * manager as undoFailed.
+	 *
+	 * @param obj The registry entry being written.
+	 * @param row Row handle, or NULL for a scalar.
+	 * @param val Value to store.
+	 * @param phase @ref SNMP_SET_CHECK or @ref SNMP_SET_COMMIT.
+	 *
+	 * @retval 0 Success.
+	 * @retval -EINVAL Wrong type for this object, reported as wrongType.
+	 * @retval -EMSGSIZE Value too long, reported as wrongLength.
+	 * @retval -ERANGE Value outside the permitted range, reported as wrongValue.
+	 * @retval -EACCES Instance is read-only, reported as notWritable.
+	 * @retval -EBUSY Value conflicts with the object's current state, reported
+	 *         as inconsistentValue.
+	 * @retval -EIO Commit failed, reported as commitFailed or undoFailed.
+	 */
+	int (*set)(const struct snmp_object *obj, void *row, const struct snmp_value *val,
+		   enum snmp_set_phase phase);
+
+	/** Opaque pointer for the implementer, not interpreted by the agent. */
+	void *user_data;
+};
+
+/** @cond INTERNAL_HIDDEN */
+#define Z_SNMP_OBJECT_DEFINE(_name, _table, _get, _set, _user_data, ...)                           \
+	static const uint32_t _name##_oid[] = {__VA_ARGS__};                                       \
+	const STRUCT_SECTION_ITERABLE(snmp_object, _name) = {                                      \
+		.oid = _name##_oid,                                                                \
+		.oid_len = ARRAY_SIZE(_name##_oid),                                                \
+		.table = _table,                                                                   \
+		.get = _get,                                                                       \
+		.set = _set,                                                                       \
+		.user_data = _user_data,                                                           \
+	}
+/** @endcond */
+
+/**
+ * @brief Define a scalar managed object.
+ *
+ * The object's only instance is the given OID followed by 0.
+ *
+ * @param _name C identifier of the registry entry, unique within the build.
+ * @param _get Getter callback, see @ref snmp_object.get.
+ * @param _set Setter callback, or NULL for a read-only object.
+ * @param _user_data Value stored in @ref snmp_object.user_data.
+ * @param ... Sub-identifiers of the object, for example 1, 3, 6, 1, 2, 1, 1, 1.
+ */
+#define SNMP_SCALAR_DEFINE(_name, _get, _set, _user_data, ...)                                     \
+	Z_SNMP_OBJECT_DEFINE(_name, NULL, _get, _set, _user_data, __VA_ARGS__)
+
+/**
+ * @brief Define one column of a conceptual table.
+ *
+ * Instances are the given OID followed by the index of each row that the
+ * table's row provider reports.
+ *
+ * @param _name C identifier of the registry entry, unique within the build.
+ * @param _table The @ref snmp_table shared by all columns of this table.
+ * @param _get Getter callback, see @ref snmp_object.get.
+ * @param _set Setter callback, or NULL for a read-only column.
+ * @param _user_data Value stored in @ref snmp_object.user_data.
+ * @param ... Sub-identifiers of the column, for example 1, 3, 6, 1, 2, 1, 2, 2, 1, 6.
+ */
+#define SNMP_COLUMN_DEFINE(_name, _table, _get, _set, _user_data, ...)                             \
+	Z_SNMP_OBJECT_DEFINE(_name, &(_table), _get, _set, _user_data, __VA_ARGS__)
+
+/**
+ * @brief A row of sysORTable: a compliance or capabilities statement the
+ * agent satisfies.
+ *
+ * Rows are placed in an iterable section by SNMP_CAPABILITY_DEFINE() and
+ * listed by the MIB-2 system group. sysORIndex is the position in the
+ * section, sysORUpTime is zero since every row exists from the start.
+ */
+struct snmp_capability {
+	/** Identifier of the MODULE-COMPLIANCE or AGENT-CAPABILITIES statement, sysORID. */
+	const uint32_t *oid;
+	/** Number of sub-identifiers in @ref oid. */
+	uint8_t oid_len;
+	/** Description of the statement, sysORDescr. */
+	const char *descr;
+};
+
+/**
+ * @brief Declare a compliance or capabilities statement for sysORTable.
+ *
+ * @param _name C identifier of the entry, unique within the build.
+ * @param _descr Description as a string literal, at most 255 characters.
+ * @param ... Sub-identifiers of the statement, for example 1, 3, 6, 1, 6, 3, 1, 2, 1, 3.
+ */
+#define SNMP_CAPABILITY_DEFINE(_name, _descr, ...)                                                 \
+	static const uint32_t _name##_oid[] = {__VA_ARGS__};                                       \
+	const STRUCT_SECTION_ITERABLE(snmp_capability, _name) = {                                  \
+		.oid = _name##_oid,                                                                \
+		.oid_len = ARRAY_SIZE(_name##_oid),                                                \
+		.descr = _descr,                                                                   \
+	}
+
+/**
+ * @brief Compare two object identifiers lexicographically.
+ *
+ * A proper prefix sorts before any of its extensions, as SNMP requires.
+ *
+ * @param a First identifier.
+ * @param a_len Number of sub-identifiers in @p a.
+ * @param b Second identifier.
+ * @param b_len Number of sub-identifiers in @p b.
+ *
+ * @return Negative when @p a sorts before @p b, zero when equal, positive otherwise.
+ */
+int snmp_oid_cmp(const uint32_t *a, size_t a_len, const uint32_t *b, size_t b_len);
+
+/**
+ * @brief Check whether an object identifier starts with a prefix.
+ *
+ * @param oid Identifier to test.
+ * @param oid_len Number of sub-identifiers in @p oid.
+ * @param prefix Prefix to look for.
+ * @param prefix_len Number of sub-identifiers in @p prefix.
+ *
+ * @return true when the first @p prefix_len sub-identifiers of @p oid equal @p prefix.
+ */
+bool snmp_oid_has_prefix(const uint32_t *oid, size_t oid_len, const uint32_t *prefix,
+			 size_t prefix_len);
+
+/** Selects one of the agent's community strings. */
+enum snmp_community {
+	/** Community that grants GET, GETNEXT and GETBULK. */
+	SNMP_COMMUNITY_READ,
+	/** Community that additionally grants SET. */
+	SNMP_COMMUNITY_WRITE,
+};
+
+/**
+ * @brief Set a community string.
+ *
+ * Replaces the default from CONFIG_SNMP_COMMUNITY_READ or
+ * CONFIG_SNMP_COMMUNITY_WRITE. An empty string disables the operations that
+ * community grants.
+ *
+ * @param which Community to change.
+ * @param community NUL terminated string of at most CONFIG_SNMP_COMMUNITY_MAX_LEN bytes.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL @p community is NULL or @p which is unknown.
+ * @retval -EMSGSIZE @p community is too long.
+ */
+int snmp_agent_set_community(enum snmp_community which, const char *community);
+
+/**
+ * @brief Start the agent.
+ *
+ * Opens a UDP socket bound to CONFIG_SNMP_PORT on every enabled address
+ * family. Requests are answered from the socket service thread.
+ *
+ * @retval 0 Success.
+ * @retval -EALREADY The agent is already running.
+ * @retval -errno A socket call failed; the reported errno.
+ */
+int snmp_agent_start(void);
+
+/**
+ * @brief Stop the agent and close its sockets.
+ *
+ * @retval 0 Success.
+ * @retval -EALREADY The agent is not running.
+ */
+int snmp_agent_stop(void);
+
+/**
+ * @brief Set the sysObjectID value of the MIB-2 system group.
+ *
+ * The identifier is copied. Until this is called the agent reports zeroDotZero.
+ *
+ * @param arcs Sub-identifiers of the vendor's authoritative identification.
+ * @param len Number of sub-identifiers.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL @p arcs is NULL, @p len is smaller than 2 or the first two
+ *         sub-identifiers cannot be encoded.
+ * @retval -EMSGSIZE @p len exceeds SNMP_OID_MAX_LEN.
+ */
+int snmp_mib2_system_set_object_id(const uint32_t *arcs, size_t len);
+
+/**
+ * @brief Set the sysName value of the MIB-2 system group.
+ *
+ * @param name NUL terminated string of at most CONFIG_SNMP_SYS_STRING_MAX_LEN bytes,
+ *             in the DisplayString repertoire of @rfc{2579}: ASCII, with CR only as CR LF.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL @p name is NULL or not a DisplayString.
+ * @retval -EMSGSIZE @p name is too long.
+ */
+int snmp_mib2_system_set_name(const char *name);
+
+/**
+ * @brief Set the sysContact value of the MIB-2 system group.
+ *
+ * @param contact NUL terminated string of at most CONFIG_SNMP_SYS_STRING_MAX_LEN bytes,
+ *                in the DisplayString repertoire of @rfc{2579}.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL @p contact is NULL or not a DisplayString.
+ * @retval -EMSGSIZE @p contact is too long.
+ */
+int snmp_mib2_system_set_contact(const char *contact);
+
+/**
+ * @brief Set the sysLocation value of the MIB-2 system group.
+ *
+ * @param location NUL terminated string of at most CONFIG_SNMP_SYS_STRING_MAX_LEN bytes,
+ *                 in the DisplayString repertoire of @rfc{2579}.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL @p location is NULL or not a DisplayString.
+ * @retval -EMSGSIZE @p location is too long.
+ */
+int snmp_mib2_system_set_location(const char *location);
+
+/**
+ * @brief Set the snmpEnableAuthenTraps value of the MIB-2 snmp group.
+ *
+ * The object records whether authenticationFailure notifications may be
+ * generated. Managers can change it with SET. The value is written to the
+ * registered storage, if any, before it takes effect.
+ *
+ * @param enabled true for enabled(1), false for disabled(2).
+ *
+ * @retval 0 Success.
+ * @retval -EIO The storage could not store the value; it is unchanged.
+ */
+int snmp_mib2_snmp_set_authen_traps(bool enabled);
+
+/**
+ * @brief A receiver of notifications.
+ *
+ * Initialize with a designated initializer: later releases may add members,
+ * which then default to zero.
+ */
+struct snmp_notification_target {
+	/** Address and port of the receiver, usually SNMP_TRAP_PORT. */
+	const struct net_sockaddr *addr;
+	/** Size of @ref addr. */
+	net_socklen_t addrlen;
+	/** Message version to send to this receiver. */
+	enum snmp_version version;
+	/** Community string carried by the notifications. */
+	const char *community;
+};
+
+/**
+ * @brief Add a receiver for notifications.
+ *
+ * The agent sends coldStart when it starts and authenticationFailure when
+ * it drops a request with an unknown community, as long as
+ * snmpEnableAuthenTraps permits, to every receiver added here. Receivers
+ * that should see coldStart must be added before snmp_agent_start(). The
+ * description is copied.
+ *
+ * @param target Description of the receiver.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL A pointer is NULL, the address family is unsupported or
+ *         the version is unknown.
+ * @retval -EMSGSIZE The community is longer than CONFIG_SNMP_COMMUNITY_MAX_LEN.
+ * @retval -ENOMEM CONFIG_SNMP_NOTIFICATION_TARGETS receivers are already configured.
+ */
+int snmp_agent_add_notification_target(const struct snmp_notification_target *target);
+
+/**
+ * @brief Remove all notification receivers.
+ */
+void snmp_agent_clear_notification_targets(void);
+
+/**
+ * @brief Send a notification to every receiver.
+ *
+ * The bindings are the instances named by the OBJECTS clause of the
+ * NOTIFICATION-TYPE, in that order. Version 2c receivers get an
+ * SNMPv2-Trap-PDU with sysUpTime.0, snmpTrapOID.0 and then the bindings.
+ * Version 1 receivers get a Trap-PDU translated as @rfc{3584,section-3.2}
+ * describes: a standard notification maps to its generic trap, any other to
+ * enterpriseSpecific with the enterprise derived from the notification
+ * identifier, and the bindings follow unchanged. A notification whose
+ * bindings carry a Counter64 value cannot be expressed in version 1 and is
+ * not sent to those receivers.
+ *
+ * The bindings are encoded before this function returns; the buffers they
+ * reference need not outlive the call.
+ *
+ * @param notification Sub-identifiers of the NOTIFICATION-TYPE.
+ * @param len Number of sub-identifiers, at least 2.
+ * @param bindings Variable bindings to carry, or NULL when @p count is 0.
+ * @param count Number of entries in @p bindings.
+ *
+ * @retval 0 Sent to every receiver, or no receiver is configured.
+ * @retval -EINVAL @p notification is NULL, cannot be encoded or has fewer than
+ *         2 sub-identifiers, or @p bindings is NULL with a non-zero @p count,
+ *         or a binding has no name or a name or value that cannot be encoded.
+ * @retval -EMSGSIZE The message does not fit CONFIG_SNMP_MAX_PDU_SIZE.
+ * @retval -ENOTCONN The agent is not running.
+ * @retval -errno The first error a socket call reported.
+ */
+int snmp_agent_notify(const uint32_t *notification, size_t len, const struct snmp_varbind *bindings,
+		      size_t count);
+
+/** Items the agent persists through @ref snmp_storage. */
+enum snmp_storage_item {
+	/** sysName, the string without NUL termination. */
+	SNMP_STORAGE_SYS_NAME,
+	/** sysContact, the string without NUL termination. */
+	SNMP_STORAGE_SYS_CONTACT,
+	/** sysLocation, the string without NUL termination. */
+	SNMP_STORAGE_SYS_LOCATION,
+	/** snmpEnableAuthenTraps, one byte holding 1 for enabled or 2 for disabled. */
+	SNMP_STORAGE_AUTHEN_TRAPS,
+};
+
+/**
+ * @brief Storage for the objects managers can change, supplied by the application.
+ *
+ * The agent loads every item in snmp_agent_start(), so stored values take
+ * precedence over the Kconfig defaults and over values the application set
+ * before starting it. A manager's SET and the application's setters write
+ * the item before the new value takes effect, and a failed write is reported
+ * to the manager as commitFailed and to the application as -EIO. Both
+ * callbacks run in the caller's context, the agent's for a SET.
+ */
+struct snmp_storage {
+	/**
+	 * @brief Read an item.
+	 *
+	 * @param item Item to read.
+	 * @param buf Destination.
+	 * @param size Size of @p buf in bytes.
+	 *
+	 * @return Number of bytes stored, zero for an empty value.
+	 * @retval -ENOENT Nothing is stored for @p item; the default applies.
+	 * @retval -EMSGSIZE The stored value is larger than @p size.
+	 * @retval -errno The medium failed; the default applies.
+	 */
+	int (*load)(enum snmp_storage_item item, void *buf, size_t size);
+
+	/**
+	 * @brief Write an item durably.
+	 *
+	 * Returns only once the data survives a reset; verifying the write is
+	 * the storage's business.
+	 *
+	 * @param item Item to write.
+	 * @param data Bytes to store.
+	 * @param len Number of bytes.
+	 *
+	 * @retval 0 Success.
+	 * @retval -errno The value could not be stored.
+	 */
+	int (*store)(enum snmp_storage_item item, const void *data, size_t len);
+};
+
+/**
+ * @brief Register the storage the agent persists to.
+ *
+ * Takes effect for writes at once and for loading at the next
+ * snmp_agent_start(). NULL disables persistence.
+ *
+ * @param storage Storage callbacks, or NULL.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL @p storage lacks a callback.
+ */
+int snmp_agent_set_storage(const struct snmp_storage *storage);
+
+/**
+ * @}
+ */
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* ZEPHYR_INCLUDE_NET_SNMP_H_ */

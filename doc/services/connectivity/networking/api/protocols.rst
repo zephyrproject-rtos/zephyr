@@ -21,6 +21,7 @@ Protocols
    mqtt_sn
    ocpp
    rtp
+   snmp
    stun
    tftp
    latmon
