@@ -1,0 +1,70 @@
+# Copyright (c) 2026 Priyanshu Singh <singhpriyanshu9838@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - kernel
+    - workqueue
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+
+tests:
+  kernel.workq.stack_aggregation.detection.default:
+    extra_args:
+      - EXPECT_USER_VALUE_RAISED=FALSE
+    extra_configs:
+      - CONFIG_TEST_EXPECTED_STACK_SIZE=2048
+
+  kernel.workq.stack_aggregation.detection.prj_conf:
+    extra_args:
+      - EXPECT_USER_VALUE_RAISED=TRUE
+      - CONF_FILE=conf_prj/prj.conf
+    extra_configs:
+      - CONFIG_TEST_EXPECTED_STACK_SIZE=2048
+
+  kernel.workq.stack_aggregation.detection.board_conf:
+    extra_args:
+      - EXPECT_USER_VALUE_RAISED=TRUE
+      - APPLICATION_CONFIG_DIR=conf_board
+    extra_configs:
+      - CONFIG_TEST_EXPECTED_STACK_SIZE=2048
+
+  kernel.workq.stack_aggregation.detection.extra_conf:
+    extra_args:
+      - EXPECT_USER_VALUE_RAISED=TRUE
+    extra_conf_files:
+      - overlay_user_stack.conf
+    extra_configs:
+      - CONFIG_TEST_EXPECTED_STACK_SIZE=2048
+
+  kernel.workq.stack_aggregation.detection.cli_arg:
+    extra_args:
+      - EXPECT_USER_VALUE_RAISED=TRUE
+      - CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE=1024
+    extra_configs:
+      - CONFIG_TEST_EXPECTED_STACK_SIZE=2048
+
+  kernel.workq.stack_aggregation.multi_subsys:
+    extra_args:
+      - EXPECT_USER_VALUE_RAISED=FALSE
+    extra_configs:
+      - CONFIG_TEST_ENABLE_SUBSYS_B=y
+      - CONFIG_TEST_EXPECTED_STACK_SIZE=3072
+
+  kernel.workq.stack_aggregation.ignore_min:
+    extra_args:
+      - CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE=1024
+      - CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE_IGNORE_MIN=y
+      - EXPECT_USER_VALUE_RAISED=FALSE
+    extra_configs:
+      - CONFIG_TEST_EXPECTED_STACK_SIZE=1024
+
+  kernel.workq.stack_aggregation.user_larger:
+    extra_args:
+      - CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE=4096
+      - EXPECT_USER_VALUE_RAISED=FALSE
+    extra_configs:
+      - CONFIG_TEST_EXPECTED_STACK_SIZE=4096
