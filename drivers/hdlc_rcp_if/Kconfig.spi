@@ -44,4 +44,5 @@ config HDLC_RCP_IF_SPI_DEFERRED_INIT
 	  the SPI IRQ is armed and the network interface is brought up.
 	  When disabled, SPI IRQ is armed during init and the interface
 	  is brought up automatically.
+
 endif
