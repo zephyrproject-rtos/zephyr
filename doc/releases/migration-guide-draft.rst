@@ -573,6 +573,11 @@ Timers
   now uses the generic system timer core, which keeps the match value at least 16 timer cycles
   ahead of the counter. Remove the option from application and board configurations.
 
+Video
+=====
+
+* The ``weact_ov2640_cam`` shield has been converted to a generic ``dvp_24pin_ov2640`` shield
+
 W1
 ==
 
@@ -873,7 +878,6 @@ Tools
 
 * The stm32flash runner now defaults to 115200 baud instead of 57600 when no ``--baud-rate`` is
   given. Pass ``--baud-rate=57600`` to keep the previous speed.
-
 
 IPC
 ===

@@ -378,7 +378,7 @@ Boards & SoC Support
   * :ref:`Nordic SemiConductor nRF7002 EB <nrf7002eb>`
   * :ref:`Nordic SemiConductor nRF7002 EK <nrf7002ek>`
   * :ref:`ST X-NUCLEO-WB05KN1: BLE expansion board <x-nucleo-wb05kn1>`
-  * :ref:`WeAct Studio MiniSTM32H7xx OV2640 Camera Sensor <weact_ov2640_cam_module>`
+  * :ref:`WeAct Studio MiniSTM32H7xx OV2640 Camera Sensor <dvp_24pin_ov2640>`
 
 Build system and Infrastructure
 *******************************

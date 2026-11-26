@@ -1,12 +1,12 @@
 sample:
   name: Video capture to LVGL
 tests:
-  sample.video.capture_to_lvgl.shield.weact_ov2640_cam_module:
+  sample.video.capture_to_lvgl.shield.dvp_24pin_ov2640:
     tags:
       - video
       - shield
       - samples
-    extra_args: SHIELD=weact_ov2640_cam_module
+    extra_args: SHIELD=dvp_24pin_ov2640
     harness: console
     harness_config:
       fixture: fixture_camera
