@@ -50,7 +50,12 @@ BUILD_ASSERT(!DT_PROP_OR(EEPROM_NODE, read_only, 0),
 BUILD_ASSERT(IS_POWER_OF_TWO(PAGE_SIZE),
 	     "EEPROM pagesize must be a power of two");
 
-#define TEST_AREA_BASE 0x00
+#define TEST_AREA_BASE CONFIG_TEST_I2C_AT24_AREA_OFFSET
+
+BUILD_ASSERT((TEST_AREA_BASE % PAGE_SIZE) == 0, "Test area must be page-aligned");
+BUILD_ASSERT(TEST_AREA_BASE + PAGE_SIZE <= EEPROM_SIZE, "Test area must fit in the EEPROM");
+BUILD_ASSERT(TEST_AREA_BASE + PAGE_SIZE <= BIT(ADDR_WIDTH),
+	     "Test area must be reachable with the EEPROM address width");
 
 static const struct i2c_dt_spec eeprom = I2C_DT_SPEC_GET(EEPROM_NODE);
 static uint8_t tx_buf[ADDR_BYTES + PAGE_SIZE];

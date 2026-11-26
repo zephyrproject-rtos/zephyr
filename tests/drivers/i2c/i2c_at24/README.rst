@@ -35,6 +35,13 @@ The EEPROM node must specify:
 Use the ``eeprom-0`` alias to select the test target. See
 ``boards/at24.overlay`` for an example.
 
+Board Settings
+==============
+
+The test overwrites one EEPROM page, starting at ``CONFIG_TEST_I2C_AT24_AREA_OFFSET``
+(default 0). A board whose EEPROM keeps data there sets a different page-aligned offset in
+``boards/<board>.conf``; see ``boards/am62l_evm_am62l3_a53.conf``.
+
 Building
 ========
 
