@@ -852,6 +852,9 @@ static void usbd_cdc_ncm_update(struct usbd_class_data *const c_data,
 
 	if (data_iface == iface && alternate == 0) {
 		atomic_clear_bit(&data->state, CDC_NCM_DATA_IFACE_ENABLED);
+		net_if_carrier_off(data->iface);
+		(void)k_work_cancel_delayable(&data->notif_work);
+		data->if_state = IF_STATE_INIT;
 		data->tx_seq = 0;
 		data->rx_seq = 0;
 	}
@@ -879,6 +882,9 @@ static void usbd_cdc_ncm_disable(struct usbd_class_data *const c_data)
 
 	atomic_clear_bit(&data->state, CDC_NCM_DATA_IFACE_ENABLED);
 	atomic_clear_bit(&data->state, CDC_NCM_CLASS_SUSPENDED);
+	net_if_carrier_off(data->iface);
+	(void)k_work_cancel_delayable(&data->notif_work);
+	data->if_state = IF_STATE_INIT;
 
 	LOG_INF("Disabled %s", c_data->name);
 }
