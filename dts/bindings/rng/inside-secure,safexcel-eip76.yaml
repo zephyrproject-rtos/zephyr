@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Inside Secure SafeXcel EIP-76 true random number generator.
+
+  Found on TI AM62L as TRNG_DRBG_EIP76D_WRAP0.
+
+compatible: "inside-secure,safexcel-eip76"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
