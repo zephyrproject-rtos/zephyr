@@ -33,19 +33,31 @@ config ESP_FLASH_ASYNC_WORK
 	help
 	  Use dedicated work thread to perform the workqueue tasks with flash asynchronous operations.
 
+config ESP_FLASH_PSRAM_STACK_HANDOFF
+	def_bool y
+	depends on ESP_SPIRAM && MULTITHREADING && ESP_FLASH_HOST && !ESP_FLASH_ASYNC && !MCUBOOT
+	help
+	  Run flash operations called from a thread whose stack is in external RAM on the
+	  flash work queue, whose stack is in internal RAM, because external RAM is
+	  unreachable while a flash operation has the cache disabled.
+
 config ESP_FLASH_ASYNC_WORK_PRIORITY
 	int "Thread priority for dedicated work thread"
-	depends on ESP_FLASH_ASYNC_WORK
+	depends on ESP_FLASH_ASYNC_WORK || ESP_FLASH_PSRAM_STACK_HANDOFF
 	default 5
 	help
-	  Define thread priority for a dedicated work thread processing workqueue.
+	  Define thread priority for a dedicated work thread processing workqueue, used by
+	  asynchronous flash operations and by flash operations handed off from external RAM
+	  stacks.
 
 config ESP_FLASH_ASYNC_WORK_STACK_SIZE
 	int "Stack size for dedicated work thread"
-	depends on ESP_FLASH_ASYNC_WORK
+	depends on ESP_FLASH_ASYNC_WORK || ESP_FLASH_PSRAM_STACK_HANDOFF
 	default 1024
 	help
-	  Define stack size for a dedicated work thread processing workqueue.
+	  Define stack size for a dedicated work thread processing workqueue, used by
+	  asynchronous flash operations and by flash operations handed off from external RAM
+	  stacks.
 
 config ESP_FLASH_ASYNC_IPM
 	bool "Allow multiple CPUs to access system flash"
