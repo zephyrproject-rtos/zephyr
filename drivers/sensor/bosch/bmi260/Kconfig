@@ -78,4 +78,14 @@ config BMI260_THREAD_STACK_SIZE
 
 endif # BMI260_TRIGGER_OWN_THREAD
 
+config EMUL_BMI260
+	bool "Emulator for the BMI260"
+	default y
+	depends on BMI260
+	depends on EMUL
+	help
+	  Enable the hardware emulator for the BMI260. Doing so allows
+	  exercising the driver against emulated I2C and SPI buses without real
+	  hardware.
+
 endif # BMI260
