@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr/init.h>
 #include <zephyr/sys/ringq.h>
-#include <zephyr/net/http/parser_url.h>
+#include <zephyr/net/url.h>
 #include <zephyr/net/lwm2m.h>
 #include <zephyr/net/lwm2m_path.h>
 #include <zephyr/net/net_ip.h>
@@ -3599,7 +3599,7 @@ int lwm2m_perform_composite_read_op(struct lwm2m_message *msg, uint16_t content_
 
 int lwm2m_parse_peerinfo(char *url, struct lwm2m_ctx *client_ctx, bool is_firmware_uri)
 {
-	struct http_parser_url parser;
+	struct net_url u;
 #if defined(CONFIG_LWM2M_DNS_SUPPORT)
 	struct zsock_addrinfo *res, hints = {0};
 #endif
@@ -3609,24 +3609,20 @@ int lwm2m_parse_peerinfo(char *url, struct lwm2m_ctx *client_ctx, bool is_firmwa
 
 	LOG_DBG("Parse url: %s", url);
 
-	http_parser_url_init(&parser);
-	ret = http_parser_parse_url(url, strlen(url), 0, &parser);
+	ret = net_url_parse(url, &u);
 	if (ret < 0) {
 		LOG_ERR("Invalid url: %s", url);
 		return -ENOTSUP;
 	}
 
-	off = parser.field_data[UF_SCHEMA].off;
-	len = parser.field_data[UF_SCHEMA].len;
-
 	/* check for supported protocol */
-	if (strncmp(url + off, "coaps", len) != 0) {
+	if (!net_url_scheme_is(&u, "coap") && !net_url_scheme_is(&u, "coaps")) {
 		return -EPROTONOSUPPORT;
 	}
 
 	/* check for DTLS requirement */
 	client_ctx->use_dtls = false;
-	if (len == 5U && strncmp(url + off, "coaps", len) == 0) {
+	if (net_url_scheme_is(&u, "coaps")) {
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
 		client_ctx->use_dtls = true;
 #else
@@ -3634,21 +3630,21 @@ int lwm2m_parse_peerinfo(char *url, struct lwm2m_ctx *client_ctx, bool is_firmwa
 #endif /* CONFIG_LWM2M_DTLS_SUPPORT */
 	}
 
-	if (!(parser.field_set & (1 << UF_PORT))) {
+	if (u.port == 0U) {
 		if (is_firmware_uri && client_ctx->use_dtls) {
 			/* Set to default coaps firmware update port */
-			parser.port = CONFIG_LWM2M_FIRMWARE_PORT_SECURE;
+			u.port = CONFIG_LWM2M_FIRMWARE_PORT_SECURE;
 		} else if (is_firmware_uri) {
 			/* Set to default coap firmware update port */
-			parser.port = CONFIG_LWM2M_FIRMWARE_PORT_NONSECURE;
+			u.port = CONFIG_LWM2M_FIRMWARE_PORT_NONSECURE;
 		} else {
 			/* Set to default LwM2M server port */
-			parser.port = CONFIG_LWM2M_PEER_PORT;
+			u.port = CONFIG_LWM2M_PEER_PORT;
 		}
 	}
 
-	off = parser.field_data[UF_HOST].off;
-	len = parser.field_data[UF_HOST].len;
+	off = u.host.off;
+	len = u.host.len;
 
 	/* truncate host portion */
 	tmp = url[off + len];
@@ -3715,11 +3711,9 @@ int lwm2m_parse_peerinfo(char *url, struct lwm2m_ctx *client_ctx, bool is_firmwa
 
 	/* set port */
 	if (client_ctx->remote_addr_storage.ss_family == NET_AF_INET6) {
-		net_sin6(net_sad(&client_ctx->remote_addr_storage))->sin6_port =
-			net_htons(parser.port);
+		net_sin6(net_sad(&client_ctx->remote_addr_storage))->sin6_port = net_htons(u.port);
 	} else if (client_ctx->remote_addr_storage.ss_family == NET_AF_INET) {
-		net_sin(net_sad(&client_ctx->remote_addr_storage))->sin_port =
-			net_htons(parser.port);
+		net_sin(net_sad(&client_ctx->remote_addr_storage))->sin_port = net_htons(u.port);
 	} else {
 		ret = -EPROTONOSUPPORT;
 	}
