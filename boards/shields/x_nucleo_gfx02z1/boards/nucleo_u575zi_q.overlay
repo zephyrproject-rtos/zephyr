@@ -8,6 +8,7 @@
 #include <freq.h>
 
 &mx_flash {
-	ospi-max-frequency = <DT_FREQ_M(50)>;
-	data-rate = <OSPI_STR_TRANSFER>;
+	mspi-max-frequency = <DT_FREQ_M(50)>;
+	data-rate = <MSPI_DATA_RATE_SINGLE>;
+	mspi-io-mode = <MSPI_IO_MODE_QUAD>;
 };
