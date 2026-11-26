@@ -264,7 +264,7 @@ EL1_Reset_Handler:
 
     ldr r0, =arm_cpu_boot_params
 
-#if CONFIG_MP_MAX_NUM_CPUS > 1 && DT_HAS_CHOSEN(zephyr_primary_cpu)
+#if DT_HAS_CHOSEN(zephyr_primary_cpu)
     /*
      * The CPU of the zephyr,primary-cpu chosen node is the primary core. Any
      * other core waits for arch_cpu_start() to publish its MPID in
@@ -279,12 +279,23 @@ EL1_Reset_Handler:
     get_cpu_id r1
     ldr r3, =DT_REG_ADDR(DT_CHOSEN(zephyr_primary_cpu))
     cmp r1, r3
+#if CONFIG_MP_MAX_NUM_CPUS > 1
     beq _primary_core
     mvn r3, #0
     str r3, [r0, #BOOT_PARAM_MPID_OFFSET]
     dsb
     b _secondary_core
+#else
+    /*
+     * A single-CPU image runs on the chosen primary core only. On a SoC that
+     * starts every core at reset, the other cores stay here.
+     */
+    beq 1f
+0:  wfi
+    b 0b
+1:
 #endif
+#endif /* DT_HAS_CHOSEN(zephyr_primary_cpu) */
 
 #if CONFIG_MP_MAX_NUM_CPUS > 1
     /*

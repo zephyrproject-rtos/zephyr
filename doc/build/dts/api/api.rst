@@ -545,7 +545,8 @@ device.
      - On AArch32 Cortex-A and Cortex-R, the CPU node of the primary core,
        which boots Zephyr. Its ``reg`` must be the core's MPIDR affinity
        value. reset.S then does not elect the primary core with a voting lock,
-       and the other cores wait until the kernel starts them.
+       and the other cores wait until the kernel starts them. In a build with
+       ``CONFIG_MP_MAX_NUM_CPUS`` set to 1, the other cores stay parked.
    * - zephyr,ram-console
      - Selects the :dtcompatible:`RAM section <zephyr,memory-region>` in which
        the console subsystem's RAM backend should place its buffer.
