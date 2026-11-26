@@ -34,8 +34,8 @@ LOG_MODULE_REGISTER(net_ppp, LOG_LEVEL);
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/capture.h>
 
-#include "../../subsys/net/ip/net_stats.h"
-#include "../../subsys/net/ip/net_private.h"
+#include "../../../subsys/net/ip/net_stats.h"
+#include "../../../subsys/net/ip/net_private.h"
 
 #define UART_BUF_LEN CONFIG_NET_PPP_UART_BUF_LEN
 #define UART_TX_BUF_LEN CONFIG_NET_PPP_ASYNC_UART_TX_BUF_LEN
