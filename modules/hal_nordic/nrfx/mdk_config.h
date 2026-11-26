@@ -515,7 +515,7 @@
 #endif
 #endif
 
-#if defined(CONFIG_SOC_NRF54L_CPUAPP_COMMON) && DT_PROP(DT_NODELABEL(hfpll), clock_frequency)
+#if defined(CONFIG_SOC_SERIES_NRF54L_CPUAPP_COMMON) && DT_PROP(DT_NODELABEL(hfpll), clock_frequency)
 #ifndef NRF_CONFIG_CPU_FREQ_MHZ
 #define NRF_CONFIG_CPU_FREQ_MHZ (DT_PROP(DT_NODELABEL(hfpll), clock_frequency) / 1000000)
 #endif
