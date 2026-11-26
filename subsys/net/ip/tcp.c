@@ -1024,7 +1024,9 @@ static void tcp_conn_clear_accepted(struct tcp *accepted_conn)
 	SYS_SLIST_FOR_EACH_CONTAINER(&tcp_conns, conn, next) {
 		k_mutex_lock(&conn->lock, K_FOREVER);
 
-		if (net_context_get_state(conn->context) != NET_CONTEXT_LISTENING &&
+		/* A connection is on the list before it gets its context */
+		if (conn->context != NULL &&
+		    net_context_get_state(conn->context) != NET_CONTEXT_LISTENING &&
 		    conn->accepted_conn == accepted_conn) {
 			conn->accepted_conn = NULL;
 		}
