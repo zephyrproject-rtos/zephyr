@@ -884,7 +884,6 @@ struct quic_endpoint {
 		uint64_t max_data;       /* Max data we allow peer to send */
 		uint64_t bytes_received; /* Connection flow-control credit consumed */
 		uint64_t max_data_sent;  /* Last MAX_DATA value we sent */
-		bool need_window_update; /* Flag to send MAX_DATA */
 	} rx_fc;
 
 #if defined(CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT)

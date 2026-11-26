@@ -5599,7 +5599,6 @@ static void quic_endpoint_init(struct quic_endpoint *ep)
 	ep->rx_fc.max_data = CONFIG_QUIC_INITIAL_MAX_DATA;
 	ep->rx_fc.bytes_received = 0;
 	ep->rx_fc.max_data_sent = CONFIG_QUIC_INITIAL_MAX_DATA;
-	ep->rx_fc.need_window_update = false;
 	ep->rx_sl.max_bidi = CONFIG_QUIC_INITIAL_MAX_STREAMS_BIDI;
 	ep->rx_sl.max_uni = CONFIG_QUIC_INITIAL_MAX_STREAMS_UNI;
 	ep->rx_sl.open_bidi = 0;
