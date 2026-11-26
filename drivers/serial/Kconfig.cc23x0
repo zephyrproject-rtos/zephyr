@@ -16,6 +16,7 @@ config UART_CC23X0
 
 config UART_CC23X0_DMA_DRIVEN
 	bool "DMA support for TI CC23X0 UART devices"
+	default y if UART_ASYNC_API
 	depends on UART_CC23X0
 	depends on UART_ASYNC_API
 	select DMA
