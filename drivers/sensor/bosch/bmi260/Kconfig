@@ -24,4 +24,13 @@ config BMI260_BUS_SPI
 	default y
 	depends on $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI260),spi)
 
+config BMI260_LOG_CONFIG
+	bool "Log the device configuration after initialization"
+	depends on LOG
+	help
+	  Read back and log the rate, range, offset compensation and error
+	  registers once initialization has finished. Useful when a reading
+	  looks wrong and the question is whether the device is configured the
+	  way the driver believes it is.
+
 endif # BMI260
