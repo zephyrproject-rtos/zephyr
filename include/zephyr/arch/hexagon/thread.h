@@ -21,8 +21,14 @@
  * frame pushed for the stack-limit exception itself lands in this area
  * below it, so the thread keeps all of the stack size it asked for.
  */
+#ifdef CONFIG_DEBUG_COREDUMP
+/* Coredump adds r16-r27 to the event frame. */
+#define ARCH_KERNEL_STACK_RESERVED 192
+#define ARCH_THREAD_STACK_RESERVED 192
+#else
 #define ARCH_KERNEL_STACK_RESERVED 128
 #define ARCH_THREAD_STACK_RESERVED 128
+#endif
 #endif
 
 #ifndef _ASMLANGUAGE

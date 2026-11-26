@@ -15,6 +15,7 @@
 #include <kswap.h>
 #include <hexagon_vm.h>
 #include <hexagon_fatal.h>
+#include <irq.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -139,6 +140,23 @@ static void z_hexagon_esf_from_ctx(struct arch_esf *esf,
 	esf->r13 = ctx->r12_r13[1];
 	esf->r14 = ctx->r14_r15[0];
 	esf->r15 = ctx->r14_r15[1];
+#ifdef CONFIG_DEBUG_COREDUMP
+	/* Only fault events have r16-r27 in the frame. */
+	if (event_type <= HEXAGON_EVENT_DEBUG) {
+		esf->r16 = ctx->r16_r27[0];
+		esf->r17 = ctx->r16_r27[1];
+		esf->r18 = ctx->r16_r27[2];
+		esf->r19 = ctx->r16_r27[3];
+		esf->r20 = ctx->r16_r27[4];
+		esf->r21 = ctx->r16_r27[5];
+		esf->r22 = ctx->r16_r27[6];
+		esf->r23 = ctx->r16_r27[7];
+		esf->r24 = ctx->r16_r27[8];
+		esf->r25 = ctx->r16_r27[9];
+		esf->r26 = ctx->r16_r27[10];
+		esf->r27 = ctx->r16_r27[11];
+	}
+#endif
 	esf->r28 = ctx->r28;
 	esf->r31_lr = ctx->link_reg;
 	esf->pc = ctx->gelr;
