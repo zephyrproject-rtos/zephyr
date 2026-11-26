@@ -21,6 +21,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/spinlock.h>
 
 LOG_MODULE_REGISTER(gpio_davinci, CONFIG_GPIO_LOG_LEVEL);
@@ -66,6 +67,9 @@ struct gpio_davinci_data {
 #endif
 
 	sys_slist_t cb;
+	uint32_t saved_dir;
+	uint32_t saved_out;
+	bool saved;
 };
 
 struct gpio_davinci_config {
@@ -162,6 +166,8 @@ static int gpio_davinci_port_toggle_bits(const struct device *dev,
 
 #if GPIO_DAVINCI_INTERRUPTS
 #define DEV_BINTEN(dev) ((mm_reg_t)DEVICE_MMIO_NAMED_GET(dev, binten))
+
+static struct k_spinlock gpio_davinci_binten_lock;
 
 static int gpio_davinci_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
 						enum gpio_int_mode mode, enum gpio_int_trig trig)
@@ -267,24 +273,31 @@ static void gpio_davinci_isr(const struct device *dev)
 	gpio_fire_callbacks(&data->cb, dev, status);
 }
 
-static void gpio_davinci_irq_init(const struct device *dev)
+static void gpio_davinci_irq_hw_init(const struct device *dev)
 {
 	const struct gpio_davinci_config *config = DEV_CFG(dev);
+	struct gpio_davinci_data *data = DEV_DATA(dev);
 	volatile struct gpio_davinci_regs *regs = DEV_REGS(dev);
+	k_spinlock_key_t key;
 
 	if (config->bank_mask == 0U) {
 		return;
 	}
 
-	DEVICE_MMIO_NAMED_MAP(dev, binten, K_MEM_CACHE_NONE);
+	if (!data->saved) {
+		regs->clr_ris_trig = UINT32_MAX;
+		regs->clr_fal_trig = UINT32_MAX;
+		regs->intstat = UINT32_MAX;
+	}
 
-	regs->clr_ris_trig = UINT32_MAX;
-	regs->clr_fal_trig = UINT32_MAX;
-	regs->intstat = UINT32_MAX;
+	key = k_spin_lock(&data->lock);
+	regs->set_ris_trig = data->enabled_mask & data->ris_mask;
+	regs->set_fal_trig = data->enabled_mask & data->fal_mask;
+	k_spin_unlock(&data->lock, key);
 
+	key = k_spin_lock(&gpio_davinci_binten_lock);
 	sys_write32(sys_read32(DEV_BINTEN(dev)) | config->bank_mask, DEV_BINTEN(dev));
-
-	config->irq_config(dev);
+	k_spin_unlock(&gpio_davinci_binten_lock, key);
 }
 #endif
 
@@ -302,24 +315,71 @@ static DEVICE_API(gpio, gpio_davinci_driver_api) = {
 #endif
 };
 
-static int gpio_davinci_init(const struct device *dev)
+static int gpio_davinci_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct gpio_davinci_config *config = DEV_CFG(dev);
+	struct gpio_davinci_data *data = DEV_DATA(dev);
+	volatile struct gpio_davinci_regs *regs = DEV_REGS(dev);
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		if (data->saved) {
+			regs->out_data = data->saved_out;
+			regs->dir = data->saved_dir;
+		} else {
+			config->bank_config(dev);
+		}
+
+#if GPIO_DAVINCI_INTERRUPTS
+		gpio_davinci_irq_hw_init(dev);
+#endif
+
+		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+		if (ret < 0 && ret != -ENOENT) {
+			LOG_ERR("failed to apply pinctrl");
+			return ret;
+		}
+		return 0;
+	case PM_DEVICE_ACTION_SUSPEND:
+		data->saved_dir = regs->dir;
+		data->saved_out = regs->out_data;
+		data->saved = true;
+		return 0;
+	case PM_DEVICE_ACTION_TURN_ON:
+	case PM_DEVICE_ACTION_TURN_OFF:
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+}
+
+static int gpio_davinci_init(const struct device *dev)
+{
+#if GPIO_DAVINCI_INTERRUPTS
+	const struct gpio_davinci_config *config = DEV_CFG(dev);
+#endif
 	int ret;
 
 	DEVICE_MMIO_NAMED_MAP(dev, port_base, K_MEM_CACHE_NONE);
 
-	config->bank_config(dev);
-
 #if GPIO_DAVINCI_INTERRUPTS
-	gpio_davinci_irq_init(dev);
+	if (config->bank_mask != 0U) {
+		DEVICE_MMIO_NAMED_MAP(dev, binten, K_MEM_CACHE_NONE);
+	}
 #endif
 
-	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-	if (ret < 0 && ret != -ENOENT) {
-		LOG_ERR("failed to apply pinctrl");
+	ret = pm_device_driver_init(dev, gpio_davinci_pm_action);
+	if (ret < 0) {
 		return ret;
 	}
+
+#if GPIO_DAVINCI_INTERRUPTS
+	if (config->bank_mask != 0U) {
+		config->irq_config(dev);
+	}
+#endif
+
 	return 0;
 }
 
@@ -377,6 +437,20 @@ static int gpio_davinci_init(const struct device *dev)
 #define GPIO_DAVINCI_IRQ_INIT(n)
 #endif
 
+#define GPIO_DAVINCI_DOMAIN_HAS_NO_DEVICE(n)						  \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, power_domains),				  \
+		    (DT_NODE_HAS_COMPAT(DT_INST_PHANDLE(n, power_domains),		  \
+					arm_scmi_power)), (0))
+
+#define GPIO_DAVINCI_PM_DEFINE(n)							  \
+	COND_CODE_1(GPIO_DAVINCI_DOMAIN_HAS_NO_DEVICE(n),				  \
+		    (PM_DEVICE_DEFINE(gpio_davinci_pm_##n, gpio_davinci_pm_action)),	  \
+		    (PM_DEVICE_DT_INST_DEFINE(n, gpio_davinci_pm_action)))
+
+#define GPIO_DAVINCI_PM_GET(n)								  \
+	COND_CODE_1(GPIO_DAVINCI_DOMAIN_HAS_NO_DEVICE(n),				  \
+		    (PM_DEVICE_GET(gpio_davinci_pm_##n)), (PM_DEVICE_DT_INST_GET(n)))
+
 #define GPIO_DAVINCI_INIT(n)							  \
 	PINCTRL_DT_INST_DEFINE(n);						  \
 	GPIO_DAVINCI_INIT_FUNC(n);						  \
@@ -392,9 +466,18 @@ static int gpio_davinci_init(const struct device *dev)
 										  \
 	static struct gpio_davinci_data gpio_davinci_##n##_data;		  \
 										  \
+	BUILD_ASSERT(!DT_INST_PROP(n, zephyr_pm_device_runtime_auto) &&		  \
+		     !IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME_DEFAULT_ENABLE),	  \
+		     "ti,davinci-gpio has no device runtime PM");		  \
+	BUILD_ASSERT(!COND_CODE_1(DT_INST_NODE_HAS_PROP(n, power_domains),	  \
+		     (DT_PROP(DT_INST_PHANDLE(n, power_domains),		  \
+			      zephyr_pm_device_runtime_auto)), (0)),		  \
+		     "ti,davinci-gpio needs its power domain always on");	  \
+	GPIO_DAVINCI_PM_DEFINE(n);						  \
+										  \
 	DEVICE_DT_INST_DEFINE(n,						  \
 		gpio_davinci_init,						  \
-		NULL,								  \
+		GPIO_DAVINCI_PM_GET(n),						  \
 		&gpio_davinci_##n##_data,					  \
 		&gpio_davinci_##n##_config,					  \
 		PRE_KERNEL_2,							  \
