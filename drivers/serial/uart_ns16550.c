@@ -104,6 +104,7 @@ LOG_MODULE_REGISTER(uart_ns16550, CONFIG_UART_LOG_LEVEL);
 #define REG_MDR1 0x08 /* Mode control reg. (TI_K3) */
 #define REG_EFR 0x02U
 #define REG_TCR 0x06U
+#define REG_SSR 0x11U
 #define REG_BRD1 0x10 /* Baud rate divisor. (BCM283x) */
 
 #if defined(CONFIG_UART_NS16550_INTEL_LPSS_DMA)
@@ -166,6 +167,8 @@ LOG_MODULE_REGISTER(uart_ns16550, CONFIG_UART_LOG_LEVEL);
 #define EFR_AUTO_CTS_EN BIT(7)
 
 #define MCR_TCR_TLR BIT(6)
+
+#define SSR_TX_FIFO_FULL BIT(0)
 
 #define TCR_RX_FIFO_TRIG_HALT  (60 / 4)
 #define TCR_RX_FIFO_TRIG_START (32 / 4)
@@ -284,6 +287,7 @@ LOG_MODULE_REGISTER(uart_ns16550, CONFIG_UART_LOG_LEVEL);
 #define MDR1(dev) (get_port(dev) + (REG_MDR1 * reg_interval(dev)))
 #define EFR(dev)  (get_port(dev) + (REG_EFR * reg_interval(dev)))
 #define TCR(dev)  (get_port(dev) + (REG_TCR * reg_interval(dev)))
+#define SSR(dev)  (get_port(dev) + (REG_SSR * reg_interval(dev)))
 #define BRD1(dev) (get_port(dev) + (REG_BRD1 * reg_interval(dev)))
 #define USR(dev) (get_port(dev) + REG_USR)
 #define DLF(dev) (get_port(dev) + REG_DLF)
@@ -1159,6 +1163,10 @@ static int uart_ns16550_fifo_fill(const struct device *dev,
 		 */
 		if (IS_ENABLED(CONFIG_UART_NS16550_DW8250_DW_APB) &&
 		    (ns16550_inbyte(dev_cfg, USR(dev)) & USR_TFNF) == 0) {
+			break;
+		}
+		if (IS_ENABLED(CONFIG_UART_NS16550_TI_K3) &&
+		    (ns16550_inbyte(dev_cfg, SSR(dev)) & SSR_TX_FIFO_FULL) != 0) {
 			break;
 		}
 		ns16550_outbyte(dev_cfg, THR(dev), tx_data[i]);
