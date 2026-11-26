@@ -258,7 +258,7 @@ static int udp_upload(int sock, int port,
 		}
 
 		if (IS_ENABLED(CONFIG_NET_ZPERF_LOG_LEVEL_DBG)) {
-			if (print_time >= loop_time) {
+			if (loop_time >= print_time) {
 				NET_DBG("nb_packets=%u", nb_packets);
 				print_time += print_period;
 			}
