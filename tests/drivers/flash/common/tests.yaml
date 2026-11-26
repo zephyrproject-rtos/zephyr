@@ -229,6 +229,15 @@ tests:
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf5340dk/nrf5340/cpuapp
+  drivers.flash.common.nrf_qspi_nor.mx25r_high_perf:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=boards/mx25r64_qspi_high_perf.overlay
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp
   drivers.flash.common.test_storage_partition:
     filter: CONFIG_FLASH_HAS_DRIVER_ENABLED
       and (dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
