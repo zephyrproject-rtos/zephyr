@@ -457,6 +457,139 @@ static int bmi260_set_odr(const struct device *dev, bool accel, int32_t hz)
 	return bmi260_reg_write(dev, reg, &conf, sizeof(conf));
 }
 
+/*
+ * Oversampling factor to the bandwidth field. Both sensors spell the three
+ * settings the same way and hold them in the same bits, so one table serves
+ * for each. Factors above 4 exist on the accelerometer only, and then only as
+ * averaging in the low-power mode the driver does not put the device into, so
+ * they are not offered here.
+ */
+static int bmi260_oversampling_to_field(int32_t factor, uint8_t *field)
+{
+	switch (factor) {
+	case 1:
+		*field = BMI260_ACC_BWP_NORM_AVG4;
+		return 0;
+	case 2:
+		*field = BMI260_ACC_BWP_OSR2_AVG2;
+		return 0;
+	case 4:
+		*field = BMI260_ACC_BWP_OSR4_AVG1;
+		return 0;
+	default:
+		return -EINVAL;
+	}
+}
+
+static int bmi260_set_oversampling(const struct device *dev, bool accel, int32_t factor)
+{
+	uint8_t reg = accel ? BMI260_REG_ACC_CONF : BMI260_REG_GYR_CONF;
+	uint8_t msk = accel ? BMI260_ACC_BWP_MSK : BMI260_GYR_BWP_MSK;
+	uint8_t pos = accel ? BMI260_ACC_BWP_POS : BMI260_GYR_BWP_POS;
+	uint8_t conf;
+	uint8_t field;
+	int ret;
+
+	ret = bmi260_oversampling_to_field(factor, &field);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = bmi260_reg_read(dev, reg, &conf, sizeof(conf));
+	if (ret != 0) {
+		return ret;
+	}
+
+	conf = (conf & ~msk) | ((field << pos) & msk);
+
+	return bmi260_reg_write(dev, reg, &conf, sizeof(conf));
+}
+
+static int bmi260_set_range(const struct device *dev, bool accel, const struct sensor_value *val)
+{
+	struct bmi260_data *data = dev->data;
+	uint8_t field;
+	int ret;
+
+	if (accel) {
+		/* The API carries acceleration in m/s^2; the register counts g. */
+		uint8_t range_g = (uint8_t)DIV_ROUND_CLOSEST(sensor_value_to_micro(val), SENSOR_G);
+
+		ret = bmi260_acc_range_to_field(range_g, &field);
+		if (ret != 0) {
+			return ret;
+		}
+
+		ret = bmi260_reg_write(dev, BMI260_REG_ACC_RANGE, &field, sizeof(field));
+		if (ret != 0) {
+			return ret;
+		}
+
+		data->acc_range_g = range_g;
+
+		return 0;
+	}
+
+	/* Angular velocity arrives in rad/s; the register counts degrees per second. */
+	uint16_t range_dps = (uint16_t)DIV_ROUND_CLOSEST(
+		sensor_value_to_micro(val) * 180LL, (int64_t)SENSOR_PI);
+
+	ret = bmi260_gyr_range_to_field(range_dps, &field);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = bmi260_reg_write(dev, BMI260_REG_GYR_RANGE, &field, sizeof(field));
+	if (ret != 0) {
+		return ret;
+	}
+
+	data->gyr_range_dps = range_dps;
+
+	return 0;
+}
+
+/*
+ * Setting the output data rate also settles the power mode, so an application
+ * that wants both a rate and a range has to be able to ask in either order and
+ * get the same device. The driver therefore applies the rate last whenever it
+ * is asked for alongside anything else, and this is the only place that
+ * ordering is encoded.
+ */
+static int bmi260_attr_set(const struct device *dev, enum sensor_channel chan,
+			   enum sensor_attribute attr, const struct sensor_value *val)
+{
+	bool accel;
+
+	switch (chan) {
+	case SENSOR_CHAN_ACCEL_X:
+	case SENSOR_CHAN_ACCEL_Y:
+	case SENSOR_CHAN_ACCEL_Z:
+	case SENSOR_CHAN_ACCEL_XYZ:
+		accel = true;
+		break;
+	case SENSOR_CHAN_GYRO_X:
+	case SENSOR_CHAN_GYRO_Y:
+	case SENSOR_CHAN_GYRO_Z:
+	case SENSOR_CHAN_GYRO_XYZ:
+		accel = false;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	switch (attr) {
+	case SENSOR_ATTR_SAMPLING_FREQUENCY:
+		return bmi260_set_odr(dev, accel, val->val1);
+	case SENSOR_ATTR_FULL_SCALE:
+		return bmi260_set_range(dev, accel, val);
+	case SENSOR_ATTR_OVERSAMPLING:
+		return bmi260_set_oversampling(dev, accel, val->val1);
+	default:
+		return -ENOTSUP;
+	}
+}
+
 /* Brings the accelerometer, the gyroscope and the thermometer out of suspend. */
 static int bmi260_enable_sensors(const struct device *dev)
 {
@@ -581,6 +714,7 @@ static int bmi260_init(const struct device *dev)
 static DEVICE_API(sensor, bmi260_driver_api) = {
 	.sample_fetch = bmi260_sample_fetch,
 	.channel_get = bmi260_channel_get,
+	.attr_set = bmi260_attr_set,
 };
 
 /* Fills in a struct bmi260_config for an instance on an I2C bus. */
