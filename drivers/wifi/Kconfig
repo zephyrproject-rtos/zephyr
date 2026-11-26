@@ -38,21 +38,21 @@ config WIFI_USE_NATIVE_NETWORKING
 	  to use native ethernet stack interface.
 
 # zephyr-keep-sorted-start
-source "drivers/wifi/ameba/Kconfig.ameba"
-source "drivers/wifi/bflb/Kconfig.bflb_wifi"
-source "drivers/wifi/esp32/Kconfig.esp32"
-source "drivers/wifi/esp_at/Kconfig.esp_at"
-source "drivers/wifi/esp_hosted/Kconfig.esp_hosted"
-source "drivers/wifi/esp_hosted_mcu/Kconfig.esp_hosted_mcu"
-source "drivers/wifi/eswifi/Kconfig.eswifi"
-source "drivers/wifi/hwsim/Kconfig"
-source "drivers/wifi/infineon/Kconfig.airoc"
-source "drivers/wifi/native_sim/Kconfig.native_sim"
-source "drivers/wifi/nrf_wifi/Kconfig.nrfwifi"
-source "drivers/wifi/nxp/Kconfig.nxp"
-source "drivers/wifi/simplelink/Kconfig.simplelink"
-source "drivers/wifi/siwx91x/Kconfig.siwx91x"
-source "drivers/wifi/st67w611m1/Kconfig.st67w611m1"
+rsource "ameba/Kconfig.ameba"
+rsource "bflb/Kconfig.bflb_wifi"
+rsource "esp32/Kconfig.esp32"
+rsource "esp_at/Kconfig.esp_at"
+rsource "esp_hosted/Kconfig.esp_hosted"
+rsource "esp_hosted_mcu/Kconfig.esp_hosted_mcu"
+rsource "eswifi/Kconfig.eswifi"
+rsource "hwsim/Kconfig"
+rsource "infineon/Kconfig.airoc"
+rsource "native_sim/Kconfig.native_sim"
+rsource "nrf_wifi/Kconfig.nrfwifi"
+rsource "nxp/Kconfig.nxp"
+rsource "simplelink/Kconfig.simplelink"
+rsource "siwx91x/Kconfig.siwx91x"
+rsource "st67w611m1/Kconfig.st67w611m1"
 # zephyr-keep-sorted-stop
 
 # Choice is after individual drivers to enable driver specific defaults

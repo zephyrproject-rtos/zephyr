@@ -70,21 +70,21 @@ config IEEE802154_L2_PKT_INCL_FCS
 	  on the upper layer selected.
 
 # zephyr-keep-sorted-start
-source "drivers/ieee802154/Kconfig.b91"
-source "drivers/ieee802154/Kconfig.bflb"
-source "drivers/ieee802154/Kconfig.cc1200"
-source "drivers/ieee802154/Kconfig.cc13xx_cc26xx"
-source "drivers/ieee802154/Kconfig.cc2520"
-source "drivers/ieee802154/Kconfig.dw1000"
-source "drivers/ieee802154/Kconfig.esp32"
-source "drivers/ieee802154/Kconfig.kw41z"
-source "drivers/ieee802154/Kconfig.mcr20a"
-source "drivers/ieee802154/Kconfig.mcxw"
-source "drivers/ieee802154/Kconfig.nrf5"
-source "drivers/ieee802154/Kconfig.rf2xx"
-source "drivers/ieee802154/Kconfig.silabs_efr32"
-source "drivers/ieee802154/Kconfig.stm32wba"
-source "drivers/ieee802154/Kconfig.uart_pipe"
+rsource "Kconfig.b91"
+rsource "Kconfig.bflb"
+rsource "Kconfig.cc1200"
+rsource "Kconfig.cc13xx_cc26xx"
+rsource "Kconfig.cc2520"
+rsource "Kconfig.dw1000"
+rsource "Kconfig.esp32"
+rsource "Kconfig.kw41z"
+rsource "Kconfig.mcr20a"
+rsource "Kconfig.mcxw"
+rsource "Kconfig.nrf5"
+rsource "Kconfig.rf2xx"
+rsource "Kconfig.silabs_efr32"
+rsource "Kconfig.stm32wba"
+rsource "Kconfig.uart_pipe"
 # zephyr-keep-sorted-stop
 
 config IEEE802154_CSL_ENDPOINT
