@@ -26,6 +26,17 @@ LOG_MODULE_REGISTER(qspi_nor, CONFIG_FLASH_LOG_LEVEL);
 #include <hal/nrf_clock.h>
 #include <hal/nrf_gpio.h>
 
+#define INST_0_MXICY_POWER_MODE DT_INST_NODE_HAS_PROP(0, mxicy_mx25r_power_mode)
+#define INST_0_MXICY_HIGH_PERF  DT_INST_ENUM_HAS_VALUE(0, mxicy_mx25r_power_mode, high_performance)
+
+/*
+ * In ultra low power mode the MX25R supports up to 8 MHz for quad I/O, so
+ * when high performance mode is requested with a faster SCK, SCK is limited
+ * to 8 MHz until that mode is set.
+ */
+#define INST_0_MXICY_LP_SCK_LIMIT                                                                  \
+	(INST_0_MXICY_HIGH_PERF && (DT_INST_PROP(0, sck_frequency) > MHZ(8)))
+
 struct qspi_nor_data {
 #ifdef CONFIG_MULTITHREADING
 	/* The semaphore to control exclusive access to the device. */
@@ -43,6 +54,10 @@ struct qspi_nor_data {
 	uint32_t xip_users;
 #if NRF53_ERRATA_159_ENABLE_WORKAROUND
 	nrf_clock_hfclk_div_t prev_hclk_div;
+#endif
+#if INST_0_MXICY_LP_SCK_LIMIT
+	/* Set once the MX25R is in high performance mode. */
+	bool mxicy_high_perf;
 #endif
 };
 
@@ -150,6 +165,29 @@ BUILD_ASSERT(INST_0_SCK_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 16),
 #endif
 
 #endif /* defined(CONFIG_SOC_SERIES_NRF53) */
+
+#if INST_0_MXICY_POWER_MODE
+BUILD_ASSERT((DT_INST_PROP_BY_IDX(0, jedec_id, 0) == 0xc2U) &&
+		     (DT_INST_PROP_BY_IDX(0, jedec_id, 1) == 0x28U),
+	     "mxicy,mx25r-power-mode is only supported on Macronix MX25R devices");
+BUILD_ASSERT(!DT_INST_ENUM_HAS_VALUE(0, mxicy_mx25r_power_mode, low_power) ||
+		     (INST_0_SCK_FREQUENCY <= MHZ(8)),
+	     "mxicy,mx25r-power-mode \"low-power\" supports at most 8 MHz sck-frequency");
+
+/* MXICY Low-power/high perf mode is second bit in configuration register 2 */
+#define MXICY_MX25R_LH_MASK BIT(1)
+#endif
+
+#if INST_0_MXICY_LP_SCK_LIMIT
+#if defined(CONFIG_SOC_SERIES_NRF53)
+#define INST_0_SCK_BASE_FREQ                                                                       \
+	((BASE_CLOCK_DIV == NRF_CLOCK_HFCLK_DIV_2) ? (NRF_QSPI_BASE_CLOCK_FREQ / 2)                \
+						   : NRF_QSPI_BASE_CLOCK_FREQ)
+#else
+#define INST_0_SCK_BASE_FREQ NRF_QSPI_BASE_CLOCK_FREQ
+#endif
+#define INST_0_MXICY_LP_SCK_CFG (DIV_ROUND_UP(INST_0_SCK_BASE_FREQ, MHZ(8)) - 1)
+#endif
 
 /* 0 for MODE0 (CPOL=0, CPHA=0), 1 for MODE3 (CPOL=1, CPHA=1). */
 #define INST_0_SPI_MODE DT_INST_PROP(0, cpol)
@@ -651,6 +689,97 @@ static int qspi_erase(const struct device *dev, uint32_t addr, uint32_t size)
 	return rc != 0 ? rc : rc2;
 }
 
+/* Get the nrfx configuration, with the SCK limit applied when needed. */
+static void qspi_nrfx_cfg_get(const struct device *dev, nrfx_qspi_config_t *cfg)
+{
+	const struct qspi_nor_config *dev_config = dev->config;
+
+	*cfg = dev_config->nrfx_cfg;
+
+#if INST_0_MXICY_LP_SCK_LIMIT
+	const struct qspi_nor_data *dev_data = dev->data;
+
+	if (!dev_data->mxicy_high_perf) {
+		cfg->phy_if.sck_freq = INST_0_MXICY_LP_SCK_CFG;
+	}
+#endif
+}
+
+#if INST_0_MXICY_POWER_MODE
+/* Set the MX25R L/H switch to the power mode from devicetree. */
+static int mxicy_configure(const struct device *dev)
+{
+	uint8_t cr[2];
+	const struct qspi_buf cr_buf = {
+		.buf = cr,
+		.len = sizeof(cr),
+	};
+	const struct qspi_cmd rdcr = {
+		.op_code = SPI_NOR_CMD_RDCR,
+		.rx_buf = &cr_buf,
+	};
+	int rc;
+
+	rc = qspi_send_cmd(dev, &rdcr, false);
+	if (rc < 0) {
+		return rc;
+	}
+
+	if (((cr[1] & MXICY_MX25R_LH_MASK) != 0U) == INST_0_MXICY_HIGH_PERF) {
+		return 0;
+	}
+
+	rc = qspi_rdsr(dev, 1);
+	if (rc < 0) {
+		return rc;
+	}
+
+	/* The configuration register bytes on the Macronix MX25R devices are
+	 * written using the Write Status Register command where the configuration
+	 * register bytes are written as two extra bytes after the status register.
+	 */
+	uint8_t sr_cr[3] = {(uint8_t)rc, cr[0], cr[1] ^ MXICY_MX25R_LH_MASK};
+	const struct qspi_buf sr_cr_buf = {
+		.buf = sr_cr,
+		.len = sizeof(sr_cr),
+	};
+	const struct qspi_cmd wrsr = {
+		.op_code = SPI_NOR_CMD_WRSR,
+		.tx_buf = &sr_cr_buf,
+	};
+
+	rc = qspi_send_cmd(dev, &wrsr, true);
+	if (rc < 0) {
+		return rc;
+	}
+
+	rc = qspi_wait_while_writing(dev, K_NO_WAIT);
+	if (rc < 0) {
+		return rc;
+	}
+
+	rc = qspi_rdsr(dev, 1);
+	if (rc < 0) {
+		return rc;
+	}
+
+	if ((uint8_t)rc != sr_cr[0]) {
+		return -EIO;
+	}
+
+	rc = qspi_send_cmd(dev, &rdcr, false);
+	if (rc < 0) {
+		return rc;
+	}
+
+	if ((cr[0] != sr_cr[1]) || (cr[1] != sr_cr[2])) {
+		return -EIO;
+	}
+
+	return 0;
+}
+#endif /* INST_0_MXICY_POWER_MODE */
+
 static int configure_chip(const struct device *dev)
 {
 	int rc = 0;
@@ -1090,10 +1219,12 @@ static int qspi_nor_write_protection_set(const struct device *dev,
 static int qspi_init(const struct device *dev)
 {
 	const struct qspi_nor_config *dev_config = dev->config;
+	nrfx_qspi_config_t cfg;
 	uint8_t id[SPI_NOR_MAX_ID_LEN];
 	int rc;
 
-	rc = nrfx_qspi_init(&dev_config->nrfx_cfg, qspi_handler, dev->data);
+	qspi_nrfx_cfg_get(dev, &cfg);
+	rc = nrfx_qspi_init(&cfg, qspi_handler, dev->data);
 	if (rc < 0) {
 		return rc;
 	}
@@ -1134,7 +1265,33 @@ static int qspi_init(const struct device *dev)
 	}
 
 	/* The chip is correct, it can be configured now. */
-	return configure_chip(dev);
+	rc = configure_chip(dev);
+	if (rc < 0) {
+		return rc;
+	}
+
+#if INST_0_MXICY_POWER_MODE
+	/* Do not fail init if setting the power mode fails */
+	rc = mxicy_configure(dev);
+	if (rc < 0) {
+		LOG_ERR("MX25R power mode set failed: %d", rc);
+		return 0;
+	}
+
+#if INST_0_MXICY_LP_SCK_LIMIT
+	struct qspi_nor_data *dev_data = dev->data;
+
+	rc = nrfx_qspi_reconfigure(&dev_config->nrfx_cfg);
+	if (rc < 0) {
+		LOG_ERR("QSPI reconfigure failed: %d", rc);
+		return 0;
+	}
+
+	dev_data->mxicy_high_perf = true;
+#endif
+#endif /* INST_0_MXICY_POWER_MODE */
+
+	return 0;
 }
 
 static int qspi_nor_init(const struct device *dev)
@@ -1329,6 +1486,7 @@ static int qspi_suspend(const struct device *dev)
 static int qspi_resume(const struct device *dev)
 {
 	const struct qspi_nor_config *dev_config = dev->config;
+	nrfx_qspi_config_t cfg;
 	int rc;
 
 	rc = pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
@@ -1336,7 +1494,8 @@ static int qspi_resume(const struct device *dev)
 		return rc;
 	}
 
-	rc = nrfx_qspi_init(&dev_config->nrfx_cfg, qspi_handler, dev->data);
+	qspi_nrfx_cfg_get(dev, &cfg);
+	rc = nrfx_qspi_init(&cfg, qspi_handler, dev->data);
 	if (rc < 0) {
 		return rc;
 	}
