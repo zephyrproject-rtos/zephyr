@@ -43,11 +43,24 @@
 #endif /* defined(CONFIG_SOC_SERIES_QINGKE_V4B) */
 
 #if defined(CONFIG_SOC_SERIES_QINGKE_V4C)
+#if defined(CONFIG_SOC_CH32X035)
+/* ch32x03xhw.h defines BIT_MASK as an SPI register bit constant that is
+ * unused within the HAL and collides with Zephyr's BIT_MASK(n). Save and
+ * restore Zephyr's definition around the include.
+ */
+#pragma push_macro("BIT_MASK")
+#undef BIT_MASK
+#define CH32X03x 1
+#else
 #define CH32V20x 1
 #if defined(CONFIG_SOC_CH32V208)
 #define CH32V20x_D8W 1
 #endif
+#endif /* defined(CONFIG_SOC_CH32X035) */
 #include <ch32fun.h>
+#if defined(CONFIG_SOC_CH32X035)
+#pragma pop_macro("BIT_MASK")
+#endif
 #endif /* defined(CONFIG_SOC_SERIES_QINGKE_V4C) */
 
 #if defined(CONFIG_SOC_SERIES_QINGKE_V4F)
