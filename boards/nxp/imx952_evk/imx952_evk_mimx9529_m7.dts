@@ -35,6 +35,12 @@
 	status = "okay";
 };
 
+&tpm2 {
+	pinctrl-0 = <&tpm2_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &tstmr2 {
 	status = "okay";
 };
