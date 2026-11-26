@@ -14,6 +14,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/mspi.h>
+#include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
@@ -31,6 +32,20 @@ LOG_MODULE_REGISTER(mspi_cadence, CONFIG_MSPI_LOG_LEVEL);
 #else
 #define CADENCE_MSPI_CLOCKS 0
 #endif
+
+#define CADENCE_MSPI_INTERRUPTS  DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts)
+#define CADENCE_MSPI_IRQ_WAIT_MS 1
+
+#define CADENCE_MSPI_IRQ_INDIRECT                                                                  \
+	(CADENCE_MSPI_IRQ_STATUS_REG_INDIRECT_XFER_LEVEL_BREACH_BIT |                              \
+	 CADENCE_MSPI_IRQ_STATUS_REG_INDRD_SRAM_FULL_BIT |                                         \
+	 CADENCE_MSPI_IRQ_STATUS_REG_INDIRECT_OP_DONE_BIT)
+
+#define CADENCE_MSPI_IRQ_ERRORS                                                                    \
+	(CADENCE_MSPI_IRQ_STATUS_REG_INDIRECT_READ_REJECT_BIT |                                    \
+	 CADENCE_MSPI_IRQ_STATUS_REG_PROT_WR_ATTEMPT_BIT |                                         \
+	 CADENCE_MSPI_IRQ_STATUS_REG_RX_CRC_DATA_ERR_BIT |                                         \
+	 CADENCE_MSPI_IRQ_STATUS_REG_ECC_FAIL_BIT)
 
 #define DEV_CFG(dev)  ((const struct mspi_cadence_config *)dev->config)
 #define DEV_DATA(dev) ((struct mspi_cadence_data *)dev->data)
@@ -50,6 +65,9 @@ struct mspi_cadence_config {
 	const uint32_t btwn_delay_ns;
 	const uint32_t after_delay_ns;
 	const uint32_t init_delay_ns;
+#if CADENCE_MSPI_INTERRUPTS
+	void (*irq_config)(const struct device *dev);
+#endif
 };
 
 struct mspi_cadence_data {
@@ -59,7 +77,94 @@ struct mspi_cadence_data {
 	struct k_sem transfer_lock;
 	const struct mspi_dev_id *current_peripheral;
 	uint32_t reference_frequency;
+#if CADENCE_MSPI_INTERRUPTS
+	struct k_sem irq_sem;
+	atomic_t irq_errors;
+#endif
 };
+
+static bool mspi_cadence_has_irq(const struct device *controller)
+{
+#if CADENCE_MSPI_INTERRUPTS
+	return DEV_CFG(controller)->irq_config != NULL;
+#else
+	ARG_UNUSED(controller);
+	return false;
+#endif
+}
+
+static void mspi_cadence_irq_arm(const struct device *controller, uint32_t events)
+{
+#if CADENCE_MSPI_INTERRUPTS
+	const mem_addr_t base_addr = DEVICE_MMIO_GET(controller);
+
+	sys_write32(0, base_addr + CADENCE_MSPI_IRQ_MASK_OFFSET);
+	sys_write32(CADENCE_MSPI_IRQ_STATUS_REG_ALL | CADENCE_MSPI_IRQ_STATUS_REG_ECC_FAIL_BIT,
+		    base_addr + CADENCE_MSPI_IRQ_STATUS_OFFSET);
+	k_sem_reset(&DEV_DATA(controller)->irq_sem);
+	atomic_clear(&DEV_DATA(controller)->irq_errors);
+	sys_write32(events, base_addr + CADENCE_MSPI_IRQ_MASK_OFFSET);
+#else
+	ARG_UNUSED(controller);
+	ARG_UNUSED(events);
+#endif
+}
+
+static void mspi_cadence_irq_disarm(const struct device *controller)
+{
+#if CADENCE_MSPI_INTERRUPTS
+	sys_write32(0, DEVICE_MMIO_GET(controller) + CADENCE_MSPI_IRQ_MASK_OFFSET);
+#else
+	ARG_UNUSED(controller);
+#endif
+}
+
+static void mspi_cadence_irq_wait(const struct device *controller)
+{
+#if CADENCE_MSPI_INTERRUPTS
+	int ret = k_sem_take(&DEV_DATA(controller)->irq_sem, K_MSEC(CADENCE_MSPI_IRQ_WAIT_MS));
+
+	if (ret != 0 && ret != -EAGAIN && ret != -EBUSY) {
+		LOG_ERR("Waiting for the MSPI interrupt failed: %d", ret);
+	}
+#else
+	ARG_UNUSED(controller);
+#endif
+}
+
+#if CADENCE_MSPI_INTERRUPTS
+static void mspi_cadence_isr(const struct device *controller)
+{
+	const mem_addr_t base_addr = DEVICE_MMIO_GET(controller);
+	struct mspi_cadence_data *data = DEV_DATA(controller);
+	uint32_t status = sys_read32(base_addr + CADENCE_MSPI_IRQ_STATUS_OFFSET);
+
+	sys_write32(status, base_addr + CADENCE_MSPI_IRQ_STATUS_OFFSET);
+
+	if ((status & CADENCE_MSPI_IRQ_ERRORS) != 0U) {
+		atomic_or(&data->irq_errors, status & CADENCE_MSPI_IRQ_ERRORS);
+	}
+
+	if (status != 0U) {
+		k_sem_give(&data->irq_sem);
+	}
+}
+#endif
+
+static int mspi_cadence_irq_error(const struct device *controller)
+{
+#if CADENCE_MSPI_INTERRUPTS
+	atomic_val_t errors = atomic_get(&DEV_DATA(controller)->irq_errors);
+
+	if (errors != 0) {
+		LOG_ERR("Indirect transfer failed, IRQ_STATUS errors 0x%lx", (unsigned long)errors);
+		return -EIO;
+	}
+#else
+	ARG_UNUSED(controller);
+#endif
+	return 0;
+}
 
 static uint32_t mspi_cadence_ref_freq(const struct device *controller)
 {
@@ -426,6 +531,13 @@ static int mspi_cadence_init(const struct device *dev)
 	val |= CADENCE_MSPI_IRQ_STATUS_REG_ALL;
 	sys_write32(val, base_addr + CADENCE_MSPI_IRQ_STATUS_OFFSET);
 
+#if CADENCE_MSPI_INTERRUPTS
+	if (config->irq_config != NULL) {
+		k_sem_init(&data->irq_sem, 0, 1);
+		config->irq_config(dev);
+	}
+#endif
+
 	/* Re-enable MSPI controller */
 	config_reg = sys_read32(base_addr + CADENCE_MSPI_CONFIG_OFFSET);
 	config_reg |= CADENCE_MSPI_CONFIG_REG_ENABLE_SPI_BIT;
@@ -542,6 +654,7 @@ static int mspi_cadence_indirect_read(const struct device *controller, const str
 {
 	const mem_addr_t base_address = DEVICE_MMIO_GET(controller);
 	const mem_addr_t fifo_address = DEVICE_MMIO_NAMED_GET(controller, fifo);
+	const struct mspi_cadence_config *config = DEV_CFG(controller);
 	const struct mspi_xfer_packet *packet = &req->packets[index];
 
 	uint32_t dev_instr_rd_cfg =
@@ -586,6 +699,13 @@ static int mspi_cadence_indirect_read(const struct device *controller, const str
 
 	sys_write32(dev_size_config, base_address + CADENCE_MSPI_DEV_SIZE_CONFIG_OFFSET);
 
+	if (mspi_cadence_has_irq(controller)) {
+		sys_write32(config->sram_allocated_for_read * sizeof(uint32_t) / 2,
+			    base_address + CADENCE_MSPI_INDIRECT_READ_XFER_WATERMARK_OFFSET);
+		mspi_cadence_irq_arm(controller,
+				     CADENCE_MSPI_IRQ_INDIRECT | CADENCE_MSPI_IRQ_ERRORS);
+	}
+
 	/* Start transfer */
 	uint32_t indirect_read_ctrl =
 		sys_read32(base_address + CADENCE_MSPI_INDIRECT_READ_XFER_CTRL_OFFSET);
@@ -605,9 +725,16 @@ static int mspi_cadence_indirect_read(const struct device *controller, const str
 			LOG_ERR("Timeout while receiving data from MSPI device");
 			goto timeout;
 		}
+		if (mspi_cadence_irq_error(controller) != 0) {
+			goto timeout;
+		}
 		uint32_t indac_read = sys_read32(base_address + CADENCE_MSPI_SRAM_FILL_OFFSET);
 
 		num_new_words = FIELD_GET(CADENCE_MSPI_SRAM_FILL_REG_INDAC_READ_MASK, indac_read);
+		if (num_new_words == 0 && mspi_cadence_has_irq(controller)) {
+			mspi_cadence_irq_wait(controller);
+			continue;
+		}
 		while (remaining_bytes > 0 && num_new_words > 0) {
 			current_new_word = sys_read32(fifo_address);
 			bytes_to_copy_from_current_word = MIN(remaining_bytes, 4);
@@ -619,9 +746,15 @@ static int mspi_cadence_indirect_read(const struct device *controller, const str
 	}
 
 	/* Wait until official indirect read completion */
-	if (mspi_cadence_poll(base_address + CADENCE_MSPI_INDIRECT_READ_XFER_CTRL_OFFSET,
-			      CADENCE_MSPI_INDIRECT_READ_XFER_CTRL_REG_IND_OPS_DONE_STATUS_BIT,
-			      true, mspi_cadence_ms_left(start_time, req->timeout)) != 0) {
+	int poll_ret =
+		mspi_cadence_poll(base_address + CADENCE_MSPI_INDIRECT_READ_XFER_CTRL_OFFSET,
+				  CADENCE_MSPI_INDIRECT_READ_XFER_CTRL_REG_IND_OPS_DONE_STATUS_BIT,
+				  true, mspi_cadence_ms_left(start_time, req->timeout));
+
+	if (mspi_cadence_irq_error(controller) != 0) {
+		goto timeout;
+	}
+	if (poll_ret != 0) {
 		LOG_ERR("Timeout waiting for official indirect read done confirmation");
 		goto timeout;
 	}
@@ -629,12 +762,14 @@ static int mspi_cadence_indirect_read(const struct device *controller, const str
 	indirect_read_ctrl |= CADENCE_MSPI_INDIRECT_READ_XFER_CTRL_REG_IND_OPS_DONE_STATUS_BIT;
 	sys_write32(indirect_read_ctrl, base_address + CADENCE_MSPI_INDIRECT_READ_XFER_CTRL_OFFSET);
 
+	mspi_cadence_irq_disarm(controller);
 	return 0;
 
 timeout:
 	indirect_read_ctrl = sys_read32(base_address + CADENCE_MSPI_INDIRECT_READ_XFER_CTRL_OFFSET);
 	indirect_read_ctrl |= CADENCE_MSPI_INDIRECT_READ_XFER_CTRL_REG_CANCEL_BIT;
 	sys_write32(indirect_read_ctrl, base_address + CADENCE_MSPI_INDIRECT_READ_XFER_CTRL_OFFSET);
+	mspi_cadence_irq_disarm(controller);
 	return -EIO;
 }
 
@@ -691,6 +826,10 @@ static int mspi_cadence_indirect_write(const struct device *controller, const st
 	uint32_t indirect_write_ctrl =
 		sys_read32(base_address + CADENCE_MSPI_INDIRECT_WRITE_XFER_CTRL_OFFSET);
 
+	if (mspi_cadence_has_irq(controller)) {
+		mspi_cadence_irq_arm(controller, CADENCE_MSPI_IRQ_ERRORS);
+	}
+
 	indirect_write_ctrl |= CADENCE_MSPI_INDIRECT_WRITE_XFER_CTRL_REG_START_BIT;
 
 	sys_write32(indirect_write_ctrl,
@@ -704,6 +843,9 @@ static int mspi_cadence_indirect_write(const struct device *controller, const st
 	while (remaining_bytes > 0) {
 		if (k_uptime_get() - start_time > req->timeout) {
 			LOG_ERR("Timeout while sending data to MSPI device");
+			goto timeout;
+		}
+		if (mspi_cadence_irq_error(controller) != 0) {
 			goto timeout;
 		}
 		uint32_t current_sram_fill =
@@ -726,9 +868,15 @@ static int mspi_cadence_indirect_write(const struct device *controller, const st
 	}
 
 	/* Wait for official finish */
-	if (mspi_cadence_poll(base_address + CADENCE_MSPI_INDIRECT_WRITE_XFER_CTRL_OFFSET,
-			      CADENCE_MSPI_INDIRECT_WRITE_XFER_CTRL_REG_IND_OPS_DONE_STATUS_BIT,
-			      true, mspi_cadence_ms_left(start_time, req->timeout)) != 0) {
+	int poll_ret =
+		mspi_cadence_poll(base_address + CADENCE_MSPI_INDIRECT_WRITE_XFER_CTRL_OFFSET,
+				  CADENCE_MSPI_INDIRECT_WRITE_XFER_CTRL_REG_IND_OPS_DONE_STATUS_BIT,
+				  true, mspi_cadence_ms_left(start_time, req->timeout));
+
+	if (mspi_cadence_irq_error(controller) != 0) {
+		goto timeout;
+	}
+	if (poll_ret != 0) {
 		LOG_ERR("Timeout while waiting for official write done confirmation");
 		goto timeout;
 	}
@@ -738,6 +886,7 @@ static int mspi_cadence_indirect_write(const struct device *controller, const st
 	sys_write32(indirect_write_ctrl,
 		    base_address + CADENCE_MSPI_INDIRECT_WRITE_XFER_CTRL_OFFSET);
 
+	mspi_cadence_irq_disarm(controller);
 	return 0;
 timeout:
 	indirect_write_ctrl =
@@ -745,6 +894,7 @@ timeout:
 	indirect_write_ctrl |= CADENCE_MSPI_INDIRECT_WRITE_XFER_CTRL_REG_CANCEL_BIT;
 	sys_write32(indirect_write_ctrl,
 		    base_address + CADENCE_MSPI_INDIRECT_WRITE_XFER_CTRL_OFFSET);
+	mspi_cadence_irq_disarm(controller);
 	return -EIO;
 }
 
@@ -1261,9 +1411,27 @@ static DEVICE_API(mspi, mspi_cadence_driver_api) = {
 				    ((clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name)),        \
 				    (NULL)),
 
+#if CADENCE_MSPI_INTERRUPTS
+#define CADENCE_MSPI_IRQ_FUNC(n)                                                                   \
+	static void mspi_cadence_irq_config_##n(const struct device *dev)                          \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mspi_cadence_isr,           \
+			    DEVICE_DT_INST_GET(n), DT_INST_IRQ(n, flags));                         \
+		irq_enable(DT_INST_IRQN(n));                                                       \
+	}
+#define CADENCE_MSPI_IRQ_DEFINE(n)                                                                 \
+	COND_CODE_1(DT_INST_IRQ_HAS_IDX(n, 0), (CADENCE_MSPI_IRQ_FUNC(n)), ())
+#define CADENCE_MSPI_IRQ_INIT(n)                                                                   \
+	.irq_config = COND_CODE_1(DT_INST_IRQ_HAS_IDX(n, 0), (mspi_cadence_irq_config_##n), (NULL)),
+#else
+#define CADENCE_MSPI_IRQ_DEFINE(n)
+#define CADENCE_MSPI_IRQ_INIT(n)
+#endif
+
 #define CADENCE_MSPI_DEFINE(n)                                                                     \
 	CADENCE_CHECK_MULTIPERIPHERAL(n);                                                          \
 	PINCTRL_DT_DEFINE(DT_DRV_INST(n));                                                         \
+	CADENCE_MSPI_IRQ_DEFINE(n)                                                                 \
 	static const struct mspi_cadence_config mspi_cadence_config_##n = {                        \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
 		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(fifo, DT_DRV_INST(n)),                          \
@@ -1276,6 +1444,7 @@ static DEVICE_API(mspi, mspi_cadence_driver_api) = {
 		.btwn_delay_ns = DT_INST_PROP(n, cdns_btwn_delay_ns),                              \
 		.after_delay_ns = DT_INST_PROP(n, cdns_after_delay_ns),                            \
 		.init_delay_ns = DT_INST_PROP(n, cdns_init_delay_ns),                              \
+		CADENCE_MSPI_IRQ_INIT(n)                                                           \
 	};                                                                                         \
 	static struct mspi_cadence_data mspi_cadence_data_##n = {};                                \
 	DEVICE_DT_INST_DEFINE(n, mspi_cadence_init, NULL, &mspi_cadence_data_##n,                  \
