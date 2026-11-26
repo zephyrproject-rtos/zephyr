@@ -4556,7 +4556,7 @@ NXP Platform Wireless:
     - boards/nxp/*rw*/
     - drivers/*/*mcxw*.c
     - drivers/bluetooth/hci/*nxp*
-    - drivers/hdlc_rcp_if/*nxp*
+    - drivers/net/hdlc_rcp_if/*nxp*
     - drivers/net/ieee802154/ieee802154_kw41z.c
     - drivers/net/wifi/nxp/
     - samples/bluetooth/**/*rw*
@@ -4583,7 +4583,7 @@ NXP Platform Wireless:
       collaborators:
         - George-Stefan
       files:
-        - drivers/hdlc_rcp_if/
+        - drivers/net/hdlc_rcp_if/
         - drivers/net/ieee802154/
         - soc/
     - name: MCXW platform
@@ -4882,6 +4882,7 @@ Networking:
     - doc/services/connectivity/networking/eth_*.rst
     - drivers/net/dsa/
     - drivers/net/ethernet/
+    - drivers/net/hdlc_rcp_if/
     - drivers/net/ieee802154/
     - drivers/net/mdio/
     - drivers/net/phy/
