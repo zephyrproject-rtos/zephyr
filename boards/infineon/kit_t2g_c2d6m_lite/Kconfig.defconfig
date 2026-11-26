@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_KIT_T2G_C2D6M_LITE
+
+configdefault ETH_DRIVER
+	default y
+
+endif # BOARD_KIT_T2G_C2D6M_LITE
