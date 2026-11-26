@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - regulator
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+tests:
+  drivers.regulator.tps6521x.tps65214: {}
+  drivers.regulator.tps6521x.tps65215:
+    extra_args: EXTRA_DTC_OVERLAY_FILE=tps65215.overlay
+  drivers.regulator.tps6521x.id_mismatch.tps65214:
+    extra_configs:
+      - CONFIG_TPS6521X_TEST_ID_MISMATCH=y
+  drivers.regulator.tps6521x.id_mismatch.tps65215:
+    extra_args: EXTRA_DTC_OVERLAY_FILE=tps65215.overlay
+    extra_configs:
+      - CONFIG_TPS6521X_TEST_ID_MISMATCH=y
