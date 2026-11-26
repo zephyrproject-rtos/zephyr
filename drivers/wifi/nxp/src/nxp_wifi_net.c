@@ -450,9 +450,12 @@ static void process_data_packet(const t_u8 *rcvdata, const t_u16 datalen)
 		} else {
 			/* Remove the LLC header if not the AMSDU packet */
 			ethhdr->type = ethllchdr->type;
-			(void)memmove(payload + SIZEOF_ETH_LLC_HDR, payload, SIZEOF_ETH_HDR);
+			(void)memmove(net_pkt_data(p) + SIZEOF_ETH_LLC_HDR,
+				      net_pkt_data(p),
+				      SIZEOF_ETH_HDR);
 			net_buf_pull(p->frags, SIZEOF_ETH_LLC_HDR);
 			net_pkt_cursor_init(p);
+			ethhdr = NET_ETH_HDR(p);
 			header_type = htons(ethhdr->type);
 		}
 	}
