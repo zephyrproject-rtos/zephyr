@@ -76,6 +76,13 @@ if(CONFIG_GEN_ISR_TABLES)
     zephyr_linker_section_configure(SECTION /DISCARD/ KEEP INPUT ".irq_info" PASS LINKER_ZEPHYR_FINAL)
     zephyr_linker_section_configure(SECTION /DISCARD/ KEEP INPUT ".intList"  PASS LINKER_ZEPHYR_FINAL)
   endif()
+
+  if(CONFIG_POSITION_INDEPENDENT)
+    # Kept in both links, see include/zephyr/linker/intlist.ld
+    zephyr_linker_section(NAME .intListParam GROUP RODATA_REGION NOINPUT)
+    zephyr_linker_section_configure(SECTION .intListParam KEEP INPUT ".intListParam"
+      SYMBOLS __isr_param_start __isr_param_end)
+  endif()
 endif()
 
 zephyr_linker_section_configure(SECTION /DISCARD/ INPUT ".note.GNU-stack")

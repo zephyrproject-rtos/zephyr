@@ -43,6 +43,8 @@ else()
   set_property(TARGET linker PROPERTY no_position_independent)
 endif()
 
+set_property(TARGET linker PROPERTY position_independent_elf "${LINKERFLAGPREFIX},-pie ${LINKERFLAGPREFIX},--no-dynamic-linker")
+
 set_property(TARGET linker PROPERTY partial_linking "-r")
 
 set_property(TARGET linker PROPERTY lto_arguments -flto=auto -fno-ipa-sra -ffunction-sections -fdata-sections)

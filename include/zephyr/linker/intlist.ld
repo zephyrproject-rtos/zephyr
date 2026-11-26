@@ -31,6 +31,23 @@
  * }
  */
 
+#ifdef CONFIG_POSITION_INDEPENDENT
+/*
+ * One pointer per _isr_list entry, in the same order: the param of each
+ * IRQ_CONNECT(). Unlike .intList, it is kept in the final image, so the
+ * self-relocation turns each pointer into the run-time address of the object
+ * it points to, in any memory region. z_adjust_isr_tables() copies them into
+ * the SW ISR table. It is also in zephyr_pre0.elf, where gen_isr_tables.py
+ * checks that its order matches the one of .intList.
+ */
+SECTION_PROLOGUE(.intListParam,,)
+{
+	__isr_param_start = .;
+	KEEP(*(.intListParam*))
+	__isr_param_end = .;
+} GROUP_LINK_IN(ROMABLE_REGION)
+#endif
+
 #ifndef LINKER_ZEPHYR_FINAL
 SECTION_PROLOGUE(.intList,,)
 {

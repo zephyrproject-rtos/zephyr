@@ -1,11 +1,13 @@
 /*
  * Copyright (c) 2017 Jean-Paul Etienne <fractalclone@gmail.com>
  * Contributors: 2018 Antmicro <www.antmicro.com>
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/toolchain.h>
+#include <zephyr/arch/cpu.h>
 
 /* exports */
 GTEXT(__start)
@@ -16,7 +18,50 @@ GTEXT(__initialize)
 GTEXT(_isr_wrapper)
 #endif
 
+#ifdef CONFIG_POSITION_INDEPENDENT
+	/*
+	 * Set by the boot hart once the .rela.dyn fixups are applied. Lives in
+	 * .data so that it reads 0 when the image is loaded. The fixups run once
+	 * per load: re-entering the image without reloading it is not supported,
+	 * as the delta then computes as 0 from the already relocated GOT.
+	 */
+	.section .data.z_riscv_pie_relocated, "aw"
+	.balign 4
+z_riscv_pie_relocated:
+	.word 0
+
+/*
+ * Load the current hart id into \dst. An external SBI passes it in a0, and
+ * mhartid is not accessible from S-mode.
+ */
+.macro get_hartid dst
+#ifdef CONFIG_RISCV_S_MODE_EXTERNAL_SBI
+	mv \dst, a0
+#else
+	csrr \dst, mhartid
+#endif
+.endm
+#endif
+
 SECTION_FUNC(vectors, __start)
+#ifdef CONFIG_POSITION_INDEPENDENT
+	/*
+	 * With -fPIC every la reads its address from the GOT, which the boot
+	 * hart patches below. Park the other harts before their first la so
+	 * they never see a partially relocated GOT. Only PC-relative accesses
+	 * (lla) are used until the boot hart releases them.
+	 */
+	get_hartid t0
+	li t1, CONFIG_RV_BOOT_HART
+	beq t0, t1, pie_park_done
+	lla t0, z_riscv_pie_relocated
+pie_park:
+	lw t1, 0(t0)
+	beqz t1, pie_park
+	fence r, rw		/* order GOT reads after the flag read */
+pie_park_done:
+#endif
+
 #if defined(CONFIG_RISCV_GP)
 	/* Initialize global pointer */
 	.option push
@@ -29,6 +74,165 @@ SECTION_FUNC(vectors, __start)
 
 #if defined(CONFIG_SOC_RESET_HOOK)
 	call soc_reset_hook
+#endif
+
+#ifdef CONFIG_POSITION_INDEPENDENT
+    /*
+	 * A static PIE has no dynamic linker, so only load-bias fixups
+	 * (R_RISCV_RELATIVE) can appear in .rela.dyn; symbol-resolution
+	 * relocations like R_RISCV_JUMP_SLOT/GLOB_DAT don't apply here.
+	 */
+#define REL_RISCV_RELATIVE  3
+
+    /*
+	 * .rela.dyn entry layout: Elf32_Rela is { r_offset, r_info, r_addend }
+	 * with 4-byte fields, Elf64_Rela is the same, but with 8-byte fields.
+	 * The relocation type is the low 32 bits of r_info on both.
+	 */
+#ifdef CONFIG_64BIT
+#define REL_OFFSET_OFF  0
+#define REL_INFO_OFF    8
+#define REL_ADDEND_OFF  16
+#define REL_ENTRY_SIZE  24
+#define REL_LOAD        ld
+#define REL_STORE       sd
+#define REL_ALIGN_MASK  0x7
+#define REL_WORD_BYTES  8
+#else
+#define REL_OFFSET_OFF  0
+#define REL_INFO_OFF    4
+#define REL_ADDEND_OFF  8
+#define REL_ENTRY_SIZE  12
+#define REL_LOAD        lw
+#define REL_STORE       sw
+#define REL_ALIGN_MASK  0x3
+#define REL_WORD_BYTES  4
+#endif
+
+/* The load delta must keep the stack pointer aligned at the first C call */
+#define REL_DELTA_ALIGN_MASK  (ARCH_STACK_PTR_ALIGN - 1)
+
+    /*
+	 * Calculate the delta between linker time address and run time address
+	 */
+reloc_pc:
+    auipc t0, 0       /* Get the runtime address of this instruction */
+    la t1, reloc_pc   /* Get the linker time address of this instruction */
+    sub t2, t0, t1
+
+    /*
+	 * A misaligned load delta would corrupt every relocated jump target
+	 * (mtvec, __reset, ISR handlers, ...) and leave the stack pointer
+	 * misaligned at the first C call, causing a confusing fault far from
+	 * the real cause. Halt here instead, at a known location.
+	 */
+    andi a4, t2, REL_DELTA_ALIGN_MASK
+    beqz a4, delta_aligned
+delta_misaligned:
+    j delta_misaligned
+delta_aligned:
+
+    /* adjust gp pointer */
+    add x3, x3, t2
+
+#ifndef CONFIG_RISCV_VECTORED_MODE
+    /* since the entries in _irq_vector_table has not been
+     * relocated, we only support non-vector mode here before
+     * relocation. For vector mode, the handler will be set
+     * after relocation.
+     */
+    la t0, _isr_wrapper
+    add t0, t0, t2
+#ifdef CONFIG_RISCV_S_MODE
+	csrw stvec, t0
+#else
+	csrw mtvec, t0
+#endif
+#endif
+
+    /*
+	 * Only the boot hart saves the load offset and applies the .rela.dyn
+	 * fixups. Secondary harts were parked at __start until the boot hart
+	 * released them, so their la reads an already relocated GOT.
+	 *
+	 * Secondary harts therefore compute a zero delta, which is still
+	 * correct for their own gp and trap vector, but would clobber
+	 * z_load_offset and undo the relocations if applied to shared memory.
+	 *
+	 * Note that a2-a4 are used as scratch registers rather than t3-t5 to
+	 * support RV32e, where the latter register do not exist.
+	 */
+    get_hartid a2
+    li a3, CONFIG_RV_BOOT_HART
+    bne a2, a3, rel_skip
+
+    /* Save offset to global variable */
+    la t0, z_load_offset
+    add t0, t0, t2
+    REL_STORE t2, 0(t0)
+
+    /* Do relocation work according to rela.dyn section */
+    la  t0, __rel_dyn_start
+    la  t1, __rel_dyn_end
+    beq t0, t1, rel_done
+    add t0, t0, t2
+    add t1, t1, t2
+
+rel_loop:
+    lw a2, REL_INFO_OFF(t0)        /* load relocation type (low 32 bits of r_info) */
+    li a3, REL_RISCV_RELATIVE
+    beqz a2, rel_handle_next       /* R_RISCV_NONE is padding */
+    bne a2, a3, rel_unexpected_type
+
+    /* case 1: handle RISCV_RELATIVE type */
+    REL_LOAD a2, REL_OFFSET_OFF(t0)
+    REL_LOAD a3, REL_ADDEND_OFF(t0)
+    add a2, a2, t2                 /* Adjusted GOT entry address */
+    add a3, a3, t2                 /* Adjusted target address */
+    andi a4, a2, REL_ALIGN_MASK    /* Check whether the address is naturally aligned */
+    bnez a4, rel_not_word_aligned
+    REL_STORE a3, 0(a2)            /* Fix GOT entry */
+    j rel_handle_next
+rel_not_word_aligned:
+#ifdef CONFIG_64BIT
+    /* Misaligned 64-bit target: store it one byte at a time */
+    li a4, REL_WORD_BYTES
+rel_store_byte:
+    sb a3, 0(a2)
+    srli a3, a3, 8
+    addi a2, a2, 1
+    addi a4, a4, -1
+    bnez a4, rel_store_byte
+#else
+    andi a4, a4, 0x1    /* check whether the address is 2 bytes aligned */
+    bnez a4, rel_not_half_word_aligned
+    srli a4, a3, 16
+    sh a3, 0(a2)        /* store lower half word */
+    sh a4, 2(a2)        /* store higher half word */
+    j rel_handle_next
+rel_not_half_word_aligned:
+    sb a3, 0(a2)
+    srli a3, a3, 8
+    sb a3, 1(a2)
+    srli a3, a3, 8
+    sb a3, 2(a2)
+    srli a3, a3, 8
+    sb a3, 3(a2)
+#endif /* CONFIG_64BIT */
+rel_handle_next:
+    addi t0, t0, REL_ENTRY_SIZE
+    bltu t0, t1, rel_loop
+    j rel_done
+rel_unexpected_type:
+    /* Only R_RISCV_RELATIVE is supported: halt at a known location */
+    j rel_unexpected_type
+rel_done:
+    /* Publish the relocated GOT, then release the parked harts */
+    fence w, w
+    lla t0, z_riscv_pie_relocated
+    li t1, 1
+    sw t1, 0(t0)
+rel_skip:
 #endif
 
 #if defined(CONFIG_RISCV_VECTORED_MODE)
