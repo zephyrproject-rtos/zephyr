@@ -19,6 +19,10 @@
 #include <zephyr/arch/cpu.h>
 #endif
 
+#if defined(CONFIG_SMP) && defined(CONFIG_CPU_AARCH32_CORTEX_R)
+#include "cortex_a_r/macro_priv.inc"
+#endif
+
 _ASM_FILE_PROLOGUE
 
 GTEXT(z_arm_userspace_enter)
@@ -34,7 +38,7 @@ GDATA(_kernel)
 /* Imports */
 GDATA(_k_syscall_table)
 
-#if defined(CONFIG_USE_SWITCH)
+#if defined(CONFIG_USE_SWITCH) && defined(CONFIG_CPU_CORTEX_M)
 #if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 # define LOCK(reg)   mov reg, #_EXC_IRQ_DEFAULT_PRIO ; msr BASEPRI, reg
 # define UNLOCK(reg) mov reg, #0 ; msr BASEPRI, reg
@@ -46,6 +50,25 @@ GDATA(_k_syscall_table)
 # define LOCK(unused)
 # define UNLOCK(unused)
 #endif
+
+/*
+ * Load the current thread pointer in \reg. With SMP, interrupts are
+ * masked while reading it, so the thread cannot move to another CPU
+ * between reading the CPU pointer and its current field. \tmp is only
+ * used with SMP.
+ */
+.macro load_current reg, tmp
+#if defined(CONFIG_SMP) && defined(CONFIG_CPU_AARCH32_CORTEX_R)
+    mrs \tmp, cpsr
+    cpsid i
+    get_cpu \reg
+    ldr \reg, [\reg, #___cpu_t_current_OFFSET]
+    msr cpsr_c, \tmp
+#else
+    ldr \reg, =_kernel
+    ldr \reg, [\reg, #_kernel_offset_to_current]
+#endif
+.endm
 
 /**
  *
@@ -74,8 +97,7 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
     pop {r4, r5, r6}
 
     /* get current thread pointer */
-    ldr r0, =_kernel
-    ldr r0, [r0, #_kernel_offset_to_current]
+    load_current r0, ip
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     /* move p1 to ip */
@@ -138,9 +160,18 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
      * stack, since we do not control how much stack is actually left, when
      * user invokes z_arm_userspace_enter().
      */
-    ldr r0, =_kernel
-    ldr r0, [r0, #_kernel_offset_to_current]
+#if defined(CONFIG_SMP) && defined(CONFIG_CPU_AARCH32_CORTEX_R)
+    /* z_arm_configure_dynamic_mpu_regions() must stay on one CPU */
+    mrs r6, cpsr
+    cpsid i
+    get_cpu r0
+    ldr r0, [r0, #___cpu_t_current_OFFSET]
     bl z_arm_configure_dynamic_mpu_regions
+    msr cpsr_c, r6
+#else
+    load_current r0, ip
+    bl z_arm_configure_dynamic_mpu_regions
+#endif
 
     /* clear the user stack area to clean out privileged data */
     /* from right past the guard right up to the end */
@@ -180,8 +211,10 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
 #if defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
     /*
      * set stack to user stack.  We are in SYSTEM state, so r13 and r14 are
-     * shared with USER state
+     * shared with USER state.  Interrupts stay masked until the switch to
+     * user mode below.
      */
+    cpsid i
     mov sp, r0
 #else
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
@@ -337,8 +370,13 @@ SECTION_FUNC(TEXT, z_arm_do_syscall)
      * The SVC handler has already switched to the privileged stack.
      * Store the user SP and LR at the beginning of the priv stack.
      */
-    ldr ip, =_kernel
-    ldr ip, [ip, #_kernel_offset_to_current]
+#if defined(CONFIG_SMP)
+    push {r0}
+    load_current ip, r0
+    pop {r0}
+#else
+    load_current ip, ip
+#endif
     ldr ip, [ip, #_thread_offset_to_sp_usr]
     push {ip, lr}
 #endif
@@ -495,6 +533,7 @@ dispatch_syscall:
     isb
 #endif
 
+#if defined(CONFIG_CPU_CORTEX_M)
     push {r0, r1}
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     push {r2, r3}
@@ -513,17 +552,14 @@ dispatch_syscall:
 
     msr CONTROL, r2
     pop {r2, r3}
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE) \
-    || defined(CONFIG_CPU_AARCH32_CORTEX_R)
-    ldr r0, =_kernel
-    ldr r0, [r0, #_kernel_offset_to_current]
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+    load_current r0, ip
     ldr r1, [r0, #_thread_offset_to_mode]
     orrs r1, r1, #1
     /* Store (unprivileged) mode in thread's mode state variable */
     str r1, [r0, #_thread_offset_to_mode]
     dsb
 
-#if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     /* drop privileges by setting bit 0 in CONTROL */
     mrs ip, CONTROL
     orrs ip, ip, #1
@@ -533,9 +569,6 @@ dispatch_syscall:
 z_syscall_exit_race1:
     msr CONTROL, ip
 z_syscall_exit_race2:
-#else
-    UNLOCK(r0)
-#endif
 #endif
 
     /* ISB is not strictly necessary here (stack pointer is not being
@@ -544,6 +577,7 @@ z_syscall_exit_race2:
      */
     isb
     pop {r0, r1}
+#endif /* CONFIG_CPU_CORTEX_M */
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
   /* Zero out volatile (caller-saved) registers so as to not leak state from
@@ -587,7 +621,11 @@ z_syscall_exit_race2:
     mov ip, r8
     orrs ip, ip, #1
 #elif defined(CONFIG_CPU_AARCH32_CORTEX_R)
-    /* Restore user stack pointer */
+    /*
+     * Restore user stack pointer.  Interrupts stay masked until the switch
+     * to user mode below.
+     */
+    cpsid i
     ldr ip, [sp,#12]
     mov sp, ip
 
@@ -600,10 +638,10 @@ z_syscall_exit_race2:
     mov r3, #0
 
     /*
-     * return back to original function that called SVC
+     * return back to original function that called SVC, and re-enable IRQs
      */
     mov ip, r8
-    cps #MODE_USR
+    cpsie i, #MODE_USR
 #endif
 
     bx ip
