@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT nxp_flexio_camera
 
 #include <zephyr/kernel.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -30,8 +31,6 @@ struct nxp_flexio_camera_config {
 	const struct device *flexio_dev;
 	/* FlexIO peripheral register block — DT_REG_ADDR(parent) */
 	FLEXIO_Type *flexio_base;
-	/* Connected sensor device via video-interfaces endpoint */
-	const struct device *source_dev;
 	/* FlexIO child resource descriptor */
 	const struct nxp_flexio_child *child;
 	/* Pinctrl configuration */
@@ -59,20 +58,14 @@ struct nxp_flexio_camera_config {
 };
 
 struct nxp_flexio_camera_data {
+	struct video_device vdev; /* keep first */
 	/* Back-pointer needed in callbacks */
 	const struct device *dev;
 	/* SDK camera handle — shifterStartIdx/timerIdx filled after child_attach */
 	FLEXIO_CAMERA_Type flexio_cam;
-	/* Current pixel format */
-	struct video_format fmt;
 	/* Buffer queues. Head of fifo_in is the buffer currently being filled
 	 * by DMA; it is removed and pushed to fifo_out once the last line completes.
 	 */
-	struct k_fifo fifo_in;
-	struct k_fifo fifo_out;
-	/* Semaphore given when stream runs out of buffers */
-	struct k_sem stream_empty;
-	bool streaming;
 	/* Current line index within the active buffer (0..fmt.height-1) */
 	uint32_t current_line;
 	/* Pre-built DMA config — dest_address and block_size are updated per line */
@@ -148,15 +141,15 @@ static int nxp_flexio_camera_configure_xclk(const struct device *dev)
  */
 static void nxp_flexio_camera_start_line_dma(struct nxp_flexio_camera_data *data)
 {
-	const struct nxp_flexio_camera_config *config = data->dev->config;
-	struct video_buffer *vbuf = k_fifo_peek_head(&data->fifo_in);
+	const struct nxp_flexio_camera_config *config = data->vdev.dev->config;
+	struct video_buffer *vbuf = k_fifo_peek_head(&data->vdev.out_buf_submitted);
 
 	if (vbuf == NULL) {
 		return;
 	}
 
 	data->dma_block.dest_address = (uint32_t)vbuf->buffer +
-					data->current_line * data->fmt.pitch;
+					data->current_line * data->vdev.out_fmt.pitch;
 
 	if (dma_config(config->dma_dev, config->dma_channel, &data->dma_cfg) != 0) {
 		LOG_ERR("DMA reconfigure failed");
@@ -192,27 +185,25 @@ static void nxp_flexio_camera_dma_callback(const struct device *dma_dev,
 		return;
 	}
 
-	if (!data->streaming) {
+	if ((data->vdev.is_streaming & BIT(VIDEO_BUF_TYPE_OUTPUT)) == 0) {
 		return;
 	}
 
 	data->current_line++;
 
-	if (data->current_line < data->fmt.height) {
+	if (data->current_line < data->vdev.out_fmt.height) {
 		nxp_flexio_camera_start_line_dma(data);
 		return;
 	}
 
 	/* Last line completed — pop the active buffer and publish the frame */
-	vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
+	vbuf = video_buffer_next(dev, VIDEO_BUF_TYPE_OUTPUT, K_NO_WAIT);
 	if (vbuf == NULL) {
 		return;
 	}
-	vbuf->timestamp   = k_uptime_get_32();
-	vbuf->bytesused   = data->fmt.size;
 	vbuf->line_offset = 0U;
 
-	k_fifo_put(&data->fifo_out, vbuf);
+	video_buffer_done(dev, vbuf, 0);
 }
 
 /* VSYNC GPIO interrupt — signals the application that a new frame began. */
@@ -231,36 +222,24 @@ static void nxp_flexio_camera_vsync_isr(const struct device *port,
 		return;
 	}
 
-	vbuf = k_fifo_peek_head(&data->fifo_in);
+	vbuf = k_fifo_peek_head(&data->vdev.out_buf_submitted);
 	if (vbuf == NULL) {
-		k_sem_give(&data->stream_empty);
 		return;
 	}
 
 	data->current_line = 0U;
-	data->dma_block.block_size = data->fmt.pitch;
+	data->dma_block.block_size = data->vdev.out_fmt.pitch;
 
 	nxp_flexio_camera_start_line_dma(data);
 }
 
-static int nxp_flexio_camera_set_format(const struct device *dev,
-					struct video_format *fmt)
+static int nxp_flexio_camera_set_format(const struct device *dev, struct video_format *fmt,
+					size_t idx)
 {
 	const struct nxp_flexio_camera_config *config = dev->config;
 	struct nxp_flexio_camera_data *data = dev->data;
 	flexio_camera_config_t cam_cfg;
 	int ret;
-
-	if (!device_is_ready(config->source_dev)) {
-		LOG_ERR("Source device not ready");
-		return -ENODEV;
-	}
-
-	/* Propagate format to sensor */
-	ret = video_set_format(config->source_dev, fmt);
-	if (ret < 0) {
-		return ret;
-	}
 
 	/* Build FLEXIO_CAMERA_Type using dynamically allocated indices */
 	data->flexio_cam.flexioBase      = config->flexio_base;
@@ -279,11 +258,6 @@ static int nxp_flexio_camera_set_format(const struct device *dev,
 	nxp_flexio_lock(config->flexio_dev);
 	FLEXIO_CAMERA_Init(&data->flexio_cam, &cam_cfg);
 	nxp_flexio_unlock(config->flexio_dev);
-
-	/* Compute pitch and full-frame size */
-	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
-	fmt->size  = fmt->pitch * fmt->height;
-	data->fmt  = *fmt;
 
 	/* Pre-build DMA config. dest_address and block_size are updated per line
 	 * in nxp_flexio_camera_start_line_dma().
@@ -310,43 +284,23 @@ static int nxp_flexio_camera_set_format(const struct device *dev,
 	return 0;
 }
 
-static int nxp_flexio_camera_get_format(const struct device *dev,
-					struct video_format *fmt)
-{
-	const struct nxp_flexio_camera_config *config = dev->config;
-	struct nxp_flexio_camera_data *data = dev->data;
-
-	if (!device_is_ready(config->source_dev)) {
-		LOG_ERR("Source device not ready");
-		return -ENODEV;
-	}
-
-	int ret = video_get_format(config->source_dev, fmt);
-
-	if (ret < 0) {
-		return ret;
-	}
-
-	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
-	fmt->size  = fmt->pitch * fmt->height;
-	data->fmt  = *fmt;
-
-	return 0;
-}
-
 static int nxp_flexio_camera_get_caps(const struct device *dev,
 				      struct video_caps *caps)
 {
 	const struct nxp_flexio_camera_config *config = dev->config;
 
+	if (caps->type != VIDEO_BUF_TYPE_OUTPUT) {
+		return -ENOTSUP;
+	}
+
 	/* Need at least two buffers: one active in DMA, one queued for next frame */
 	caps->min_vbuf_count = 2U;
 
-	if (!device_is_ready(config->source_dev)) {
+	if (!device_is_ready(data->vdev.source_dev)) {
 		return -ENODEV;
 	}
 
-	return video_get_caps(config->source_dev, caps);
+	return video_get_caps(data->vdev.source_dev, caps);
 }
 
 static int nxp_flexio_camera_set_stream(const struct device *dev, bool enable,
@@ -370,7 +324,7 @@ static int nxp_flexio_camera_set_stream(const struct device *dev, bool enable,
 		FLEXIO_CAMERA_Enable(&data->flexio_cam, true);
 
 		/* Start the sensor last */
-		ret = video_stream_start(config->source_dev, type);
+		ret = video_stream_start(data->vdev.source_dev, type);
 		if (ret < 0) {
 			FLEXIO_CAMERA_Enable(&data->flexio_cam, false);
 			gpio_pin_interrupt_configure_dt(&config->vsync_gpio,
@@ -378,13 +332,12 @@ static int nxp_flexio_camera_set_stream(const struct device *dev, bool enable,
 			return ret;
 		}
 
-		k_sem_reset(&data->stream_empty);
 		data->streaming = true;
 	} else {
 		data->streaming = false;
 
 		/* Stop sensor first so no new frames arrive */
-		video_stream_stop(config->source_dev, type);
+		video_stream_stop(data->vdev.source_dev, type);
 
 		gpio_pin_interrupt_configure_dt(&config->vsync_gpio, GPIO_INT_DISABLE);
 
@@ -397,67 +350,11 @@ static int nxp_flexio_camera_set_stream(const struct device *dev, bool enable,
 	return 0;
 }
 
-static int nxp_flexio_camera_enqueue(const struct device *dev,
-				     struct video_buffer *vbuf)
-{
-	struct nxp_flexio_camera_data *data = dev->data;
-
-	if (vbuf->size < data->fmt.size) {
-		return -EINVAL;
-	}
-
-	/* Clear any stale "stream drained" signal so a subsequent flush(cancel=false)
-	 * properly waits for this new buffer to be filled instead of returning
-	 * immediately on the leftover give() from a previous starvation.
-	 */
-	k_sem_reset(&data->stream_empty);
-
-	k_fifo_put(&data->fifo_in, vbuf);
-
-	return 0;
-}
-
-static int nxp_flexio_camera_dequeue(const struct device *dev,
-				     struct video_buffer **vbuf,
-				     k_timeout_t timeout)
-{
-	struct nxp_flexio_camera_data *data = dev->data;
-
-	*vbuf = k_fifo_get(&data->fifo_out, timeout);
-	if (*vbuf == NULL) {
-		return -EAGAIN;
-	}
-
-	return 0;
-}
-
-static int nxp_flexio_camera_flush(const struct device *dev, bool cancel)
-{
-	const struct nxp_flexio_camera_config *config = dev->config;
-	struct nxp_flexio_camera_data *data = dev->data;
-	struct video_buffer *vbuf;
-
-	if (!cancel) {
-		/* Wait until the DMA engine drains the last queued buffer */
-		k_sem_take(&data->stream_empty, K_FOREVER);
-	} else {
-		dma_stop(config->dma_dev, config->dma_channel);
-		/* Forward all pending input buffers to the output queue */
-		while ((vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT)) != NULL) {
-			k_fifo_put(&data->fifo_out, vbuf);
-		}
-	}
-
-	return 0;
-}
-
 static int nxp_flexio_camera_init(const struct device *dev)
 {
 	const struct nxp_flexio_camera_config *config = dev->config;
 	struct nxp_flexio_camera_data *data = dev->data;
 	int ret;
-
-	data->dev = dev;
 
 	/* Validate shifter range: start index = end_index + 1 - count must not underflow.
 	 * With enum: [1,2,4,8] on shifter-count and enum: [3,7] on shifter-end-index,
@@ -523,21 +420,13 @@ static int nxp_flexio_camera_init(const struct device *dev)
 		return ret;
 	}
 
-	k_fifo_init(&data->fifo_in);
-	k_fifo_init(&data->fifo_out);
-	k_sem_init(&data->stream_empty, 0, 1);
-
 	return 0;
 }
 
 static DEVICE_API(video, nxp_flexio_camera_api) = {
 	.set_format = nxp_flexio_camera_set_format,
-	.get_format = nxp_flexio_camera_get_format,
 	.get_caps   = nxp_flexio_camera_get_caps,
 	.set_stream = nxp_flexio_camera_set_stream,
-	.enqueue    = nxp_flexio_camera_enqueue,
-	.dequeue    = nxp_flexio_camera_dequeue,
-	.flush      = nxp_flexio_camera_flush,
 };
 
 #define SOURCE_DEV(inst) \
@@ -545,10 +434,12 @@ static DEVICE_API(video, nxp_flexio_camera_api) = {
 
 #define MCUX_FLEXIO_CAMERA_INIT(inst)								\
 	PINCTRL_DT_INST_DEFINE(inst);								\
+												\
 	static const struct nxp_flexio_child flexio_cam_child_##inst = {			\
 		.isr	= NULL,									\
 		.user_data = (void *)DEVICE_DT_INST_GET(inst),					\
 	};											\
+												\
 	static const struct nxp_flexio_camera_config flexio_cam_config_##inst = {		\
 		.flexio_dev     = DEVICE_DT_GET(DT_INST_PARENT(inst)),				\
 		.flexio_base    = (FLEXIO_Type *)DT_REG_ADDR(DT_INST_PARENT(inst)),		\
@@ -569,17 +460,19 @@ static DEVICE_API(video, nxp_flexio_camera_api) = {
 		.xclk_timer	= DT_INST_PROP(inst, xclk_timer),				\
 		.pclk_timer	= DT_INST_PROP(inst, pclk_timer),				\
 	};											\
-	static struct nxp_flexio_camera_data flexio_cam_data_##inst;				\
+												\
+	static struct nxp_flexio_camera_data flexio_cam_data_##inst = {				\
+		.vdev = VIDEO_DEVICE_INIT(flexio_cam_data_##inst,				\
+					  DT_DRV_INST(inst), SOURCE_DEV(inst)),			\
+	};											\
+												\
 	DEVICE_DT_INST_DEFINE(inst,								\
 			      nxp_flexio_camera_init,						\
 			      NULL,								\
 			      &flexio_cam_data_##inst,						\
 			      &flexio_cam_config_##inst,					\
 			      POST_KERNEL,							\
-			      CONFIG_VIDEO_MCUX_FLEXIO_INIT_PRIORITY,			\
-			      &nxp_flexio_camera_api);						\
-	VIDEO_DEVICE_DEFINE(flexio_cam_##inst,							\
-			    DEVICE_DT_INST_GET(inst),						\
-			    SOURCE_DEV(inst));
+			      CONFIG_VIDEO_MCUX_FLEXIO_INIT_PRIORITY,				\
+			      &nxp_flexio_camera_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_FLEXIO_CAMERA_INIT)

@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT sony_imx335
 
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/video.h>
@@ -58,9 +59,8 @@ struct imx335_ctrls {
 };
 
 struct imx335_data {
+	struct video_device vdev; /* keep first */
 	struct imx335_ctrls ctrls;
-	struct video_format fmt;
-	uint32_t frame_rate;
 	bool enabled;
 };
 
@@ -371,15 +371,6 @@ static const uint32_t imx335_framerates[] = {
 	[IMX335_60_FPS] = 60,
 };
 
-static int imx335_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct imx335_data *drv_data = dev->data;
-
-	*fmt = drv_data->fmt;
-
-	return 0;
-}
-
 static int imx335_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	caps->format_caps = imx335_fmts;
@@ -488,28 +479,18 @@ static int imx335_set_ctrl(const struct device *dev, unsigned int cid)
 	}
 }
 
-static int imx335_set_frmival(const struct device *dev, struct video_frmival *frmival)
+static int imx335_set_frmival(const struct device *dev, struct video_frmival *frmival, size_t idx)
 {
 	const struct imx335_config *cfg = dev->config;
 	struct imx335_data *drv_data = dev->data;
 	int ret;
 
-	struct video_frmival_enum match = {
-		.format = &drv_data->fmt,
-		.type = VIDEO_FRMIVAL_TYPE_DISCRETE,
-		.discrete = *frmival,
-	};
-	ret = video_closest_frmival(dev, &match);
-	if (ret < 0) {
-		return ret;
-	}
-
 	uint16_t hmax;
 
-	/* The line length is the same with and without 2x2 binning */
-	switch (match.index) {
+	switch (idx) {
 	case IMX335_25_FPS:
-		hmax = 0x0294;
+		hmax = (drv_data->vdev.out_fmt.width == IMX335_BIN_2X2_WIDTH &&
+			drv_data->vdev.out_fmt.height == IMX335_BIN_2X2_HEIGHT) ? 0x0280 : 0x0294;
 		break;
 	case IMX335_30_FPS:
 		hmax = 0x0226;
@@ -540,33 +521,22 @@ static int imx335_set_frmival(const struct device *dev, struct video_frmival *fr
 		return ret;
 	}
 
-	frmival->numerator = 1;
-	frmival->denominator = imx335_framerates[match.index];
-	drv_data->frame_rate = imx335_framerates[match.index];
-
 	return 0;
 }
 
-static int imx335_set_fmt(const struct device *dev, struct video_format *fmt)
+static int imx335_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	struct imx335_data *drv_data = dev->data;
 	const struct imx335_config *cfg = dev->config;
 	struct imx335_ctrls *ctrls = &drv_data->ctrls;
 	int ret;
-	size_t fmt_idx;
 
 	if (drv_data->enabled) {
 		LOG_ERR("Cannot set format while the stream is running");
 		return -EBUSY;
 	}
 
-	ret = video_format_caps_index(imx335_fmts, fmt, &fmt_idx);
-	if (ret < 0) {
-		LOG_ERR("Unsupported pixel format or resolution");
-		return ret;
-	}
-
-	if (fmt_idx == IMX335_RES_2592x1944) {
+	if (idx == IMX335_RES_2592x1944) {
 		/* Full resolution */
 
 		ret = video_write_cci_multiregs(&cfg->i2c, imx335_bin_none,
@@ -578,7 +548,7 @@ static int imx335_set_fmt(const struct device *dev, struct video_format *fmt)
 
 		ctrls->exposure.range.max = IMX335_VMAX_DEFAULT - IMX335_SHR0_MIN;
 		ctrls->exposure.range.def = IMX335_VMAX_DEFAULT - IMX335_SHR0_MIN;
-	} else if (fmt_idx == IMX335_RES_1296x972) {
+	} else if (idx == IMX335_RES_1296x972) {
 		/* 2x2 binning mode */
 
 		LOG_DBG("2x2 binning mode active");
@@ -601,25 +571,11 @@ static int imx335_set_fmt(const struct device *dev, struct video_format *fmt)
 		}
 	}
 
-	drv_data->fmt.width = fmt->width;
-	drv_data->fmt.height = fmt->height;
+	drv_data->vdev.out_fmt.width = fmt->width;
+	drv_data->vdev.out_fmt.height = fmt->height;
 	/* update framerate, since the timing and allowed framerates may have changed */
-	struct video_frmival frmival = {
-		.numerator = 1,
-		.denominator = drv_data->frame_rate,
-	};
 
-	return imx335_set_frmival(dev, &frmival);
-}
-
-static int imx335_get_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	struct imx335_data *drv_data = dev->data;
-
-	frmival->numerator = 1;
-	frmival->denominator = drv_data->frame_rate;
-
-	return 0;
+	return video_set_frmival(dev, &drv_data->vdev.frmival);
 }
 
 static int imx335_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
@@ -646,12 +602,10 @@ static int imx335_enum_frmival(const struct device *dev, struct video_frmival_en
 
 static DEVICE_API(video, imx335_driver_api) = {
 	.set_format = imx335_set_fmt,
-	.get_format = imx335_get_fmt,
 	.get_caps = imx335_get_caps,
 	.set_stream = imx335_set_stream,
 	.set_ctrl = imx335_set_ctrl,
 	.set_frmival = imx335_set_frmival,
-	.get_frmival = imx335_get_frmival,
 	.enum_frmival = imx335_enum_frmival,
 };
 
@@ -749,8 +703,20 @@ static int imx335_init_controls(const struct device *dev)
 static int imx335_init(const struct device *dev)
 {
 	const struct imx335_config *cfg = dev->config;
+	struct video_format fmt = {
+		.type = VIDEO_BUF_TYPE_OUTPUT,
+		.pixelformat = VIDEO_PIX_FMT_SRGGB10P,
+		.width = IMX335_NATIVE_WIDTH,
+		.height = IMX335_NATIVE_HEIGHT,
+	};
 	struct imx335_data *drv_data = dev->data;
 	int ret;
+
+	ret = imx335_init_controls(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to initialized video controls: %d", ret);
+		return ret;
+	}
 
 	if (!device_is_ready(cfg->i2c.bus)) {
 		LOG_ERR("Bus device is not ready");
@@ -775,10 +741,9 @@ static int imx335_init(const struct device *dev)
 
 		gpio_pin_set_dt(&cfg->reset_gpio, 0);
 
-		k_sleep(K_USEC(600)); /* T4 */
+		k_sleep(K_USEC(1000)); /* T4 + 400 */
 	}
 #endif
-
 	/* Initialize register values */
 	ret = video_write_cci_multiregs(&cfg->i2c, imx335_init_params,
 					ARRAY_SIZE(imx335_init_params));
@@ -795,7 +760,11 @@ static int imx335_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = imx335_set_fmt(dev, &drv_data->fmt);
+	/* The frame interval is updated by imx335_set_fmt() */
+	drv_data->vdev.frmival.numerator = 1;
+	drv_data->vdev.frmival.denominator = 30;
+
+	ret = video_set_format(dev, &fmt);
 	if (ret < 0) {
 		LOG_ERR("Unable to apply format");
 		return ret;
@@ -815,7 +784,7 @@ static int imx335_init(const struct device *dev)
 		return ret;
 	}
 
-	return imx335_init_controls(dev);
+	return 0;
 }
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
@@ -826,12 +795,7 @@ static int imx335_init(const struct device *dev)
 
 #define IMX335_INIT(n)										\
 	static struct imx335_data imx335_data_##n = {						\
-		.fmt = {									\
-			.pixelformat = VIDEO_PIX_FMT_SRGGB10P,					\
-			.width = IMX335_NATIVE_WIDTH,						\
-			.height = IMX335_NATIVE_HEIGHT,						\
-		},										\
-		.frame_rate = 30,								\
+		.vdev = VIDEO_DEVICE_INIT(imx335_data_##n, DT_DRV_INST(n), NULL),			\
 		.enabled = false,								\
 	};											\
 	static const struct imx335_config imx335_cfg_##n = {					\
@@ -841,8 +805,6 @@ static int imx335_init(const struct device *dev)
 	};											\
 												\
 	DEVICE_DT_INST_DEFINE(n, &imx335_init, NULL, &imx335_data_##n, &imx335_cfg_##n,		\
-			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &imx335_driver_api);	\
-												\
-	VIDEO_DEVICE_DEFINE(imx335_##n, DEVICE_DT_INST_GET(n), NULL);
+			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &imx335_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IMX335_INIT)

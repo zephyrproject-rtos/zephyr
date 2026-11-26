@@ -74,7 +74,7 @@ int video_auto_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz, int32_t manual
 
 static int video_find_ctrl(const struct device *dev, uint32_t id, struct video_ctrl **ctrl)
 {
-	struct video_device *vdev = video_find_vdev(dev);
+	struct video_device *vdev = dev->data;
 
 	while (vdev) {
 		SYS_DLIST_FOR_EACH_CONTAINER(&vdev->ctrls, *ctrl, node) {
@@ -83,7 +83,7 @@ static int video_find_ctrl(const struct device *dev, uint32_t id, struct video_c
 			}
 		}
 
-		vdev = video_find_vdev(vdev->src_dev);
+		vdev = vdev->source_dev->data;
 	}
 
 	return -ENOTSUP;
@@ -94,6 +94,7 @@ int video_get_ctrl(const struct device *dev, struct video_control *control)
 	struct video_ctrl *ctrl = NULL;
 
 	if (dev == NULL || control == NULL) {
+		LOG_ERR("Invalid parameters (%p, %p)", (void *)dev, (void *)control);
 		return -EINVAL;
 	}
 
@@ -138,6 +139,7 @@ int video_set_ctrl(const struct device *dev, struct video_control *control)
 	int64_t val64 = 0;
 
 	if (dev == NULL || control == NULL) {
+		LOG_ERR("Invalid parameters (%p, %p)", (void *)dev, (void *)control);
 		return -EINVAL;
 	}
 
@@ -361,21 +363,21 @@ int video_query_ctrl(struct video_ctrl_query *cq)
 	struct video_ctrl *ctrl = NULL;
 
 	if (cq == NULL || cq->dev == NULL) {
+		LOG_ERR("Invalid parameters (%p)", (void *)cq);
 		return -EINVAL;
 	}
 
 	if (cq->id & VIDEO_CTRL_FLAG_NEXT_CTRL) {
 		cq->id &= ~VIDEO_CTRL_FLAG_NEXT_CTRL;
-		vdev = video_find_vdev(cq->dev);
-		while (vdev != NULL) {
+		while (cq->dev != NULL) {
+			vdev = cq->dev->data;
 			SYS_DLIST_FOR_EACH_CONTAINER(&vdev->ctrls, ctrl, node) {
 				if (ctrl->id > cq->id) {
 					goto fill_query;
 				}
 			}
 			cq->id = 0;
-			cq->dev = vdev->src_dev;
-			vdev = video_find_vdev(cq->dev);
+			cq->dev = vdev->source_dev;
 		}
 		return -ENOTSUP;
 	}
@@ -408,7 +410,7 @@ void video_print_ctrl(const struct video_ctrl_query *const cq)
 	int ret;
 
 	if (cq == NULL || cq->dev == NULL) {
-		LOG_ERR("%s - Invalid parameter given", __func__);
+		LOG_ERR("Invalid parameters (%p)", (void *)cq);
 		return;
 	}
 

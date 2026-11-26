@@ -129,7 +129,7 @@ static int cmd_video_tree(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	for (int level = 0; dev != NULL; level++) {
-		vdev = video_find_vdev(dev);
+		vdev = dev->data;
 		if (vdev == NULL) {
 			shell_error(sh, "%s is not a valid video device", dev->name);
 			return -EINVAL;
@@ -137,7 +137,7 @@ static int cmd_video_tree(const struct shell *sh, size_t argc, char **argv)
 
 		shell_print(sh, "%*s +- %s", level * 2, "", dev->name);
 
-		dev = vdev->src_dev;
+		dev = vdev->source_dev;
 	}
 
 	return 0;
@@ -445,7 +445,12 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_video_dev, complete_video_dev);
 static int video_shell_print_frmival(const struct shell *sh, const struct device *dev,
 				     uint32_t pixfmt, uint32_t width, uint32_t height)
 {
-	struct video_format fmt = {.pixelformat = pixfmt, .width = width, .height = height};
+	struct video_format fmt = {
+		.type = VIDEO_BUF_TYPE_OUTPUT,
+		.pixelformat = pixfmt,
+		.width = width,
+		.height = height,
+	};
 	struct video_frmival_enum fie = {.format = &fmt};
 
 	for (fie.index = 0; video_enum_frmival(dev, &fie) == 0; fie.index++) {

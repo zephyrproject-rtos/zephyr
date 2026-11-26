@@ -46,6 +46,14 @@
 		};
 	};
 
+	dcmi_camera_connector: dcmi-camera-connector {
+		compatible = "st,dvp-cam-zif-30-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <6 0 &gpioh 13 0>;	/* PWR_EN */
+	};
+
 	aliases {
 		led0 = &green_led_1;
 		sw0 = &user_button;
@@ -104,7 +112,7 @@
 	apb2-prescaler = <2>;
 };
 
-&i2c1 {
+st_cam_i2c: &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
 	scl-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
@@ -322,3 +330,12 @@ zephyr_udc0: &usbotg_fs {
 		vfront-porch = <4>;
 	};
 };
+
+st_cam_dvp: &dcmi {
+	pinctrl-0 = <&dcmi_hsync_pa4 &dcmi_pixclk_pa6 &dcmi_vsync_pg9
+		     &dcmi_d0_ph9 &dcmi_d1_ph10 &dcmi_d2_ph11 &dcmi_d3_ph12
+		     &dcmi_d4_ph14 &dcmi_d5_pd3 &dcmi_d6_pe5 &dcmi_d7_pe6>;
+	pinctrl-names = "default";
+};
+
+st_cam_interface: &dcmi {};

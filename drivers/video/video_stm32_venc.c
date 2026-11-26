@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <stdlib.h>
 
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/video.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
@@ -96,19 +97,58 @@ struct stm32_venc_ewl {
 static struct stm32_venc_ewl ewl_instance;
 
 struct stm32_venc_data {
-	const struct device *dev;
-	struct k_mutex lock;
-	struct video_format in_fmt;
-	struct video_format out_fmt;
-	struct k_fifo in_fifo_in;
-	struct k_fifo in_fifo_out;
-	struct k_fifo out_fifo_in;
-	struct k_fifo out_fifo_out;
+	struct video_device vdev; /* keep first */
 	struct video_buffer *vbuf;
 	H264EncInst encoder;
 	uint32_t frame_nb;
 	bool resync;
 };
+
+static int stm32_venc_transform_cap(const struct device *const dev,
+				    const struct video_format_cap *const cap,
+				    struct video_format_cap *const res_cap,
+				    enum video_buf_type type, uint16_t ind)
+{
+	static const struct {
+		uint32_t src;
+		uint32_t dst;
+	} pixfmt_conversions[] = {
+		{.src = VIDEO_PIX_FMT_NV12, .dst = VIDEO_PIX_FMT_H264},
+		{.src = VIDEO_PIX_FMT_RGB565, .dst = VIDEO_PIX_FMT_H264},
+	};
+
+	*res_cap = *cap;
+
+	switch (type) {
+	case VIDEO_BUF_TYPE_OUTPUT:
+		for (size_t i = 0; i < ARRAY_SIZE(pixfmt_conversions); i++) {
+			if (pixfmt_conversions[i].src == cap->pixelformat) {
+				if (ind == 0) {
+					res_cap->pixelformat = pixfmt_conversions[i].dst;
+					break;
+				}
+				ind--;
+			}
+		}
+		break;
+	case VIDEO_BUF_TYPE_INPUT:
+		for (size_t i = 0; i < ARRAY_SIZE(pixfmt_conversions); i++) {
+			if (pixfmt_conversions[i].dst == cap->pixelformat) {
+				if (ind == 0) {
+					res_cap->pixelformat = pixfmt_conversions[i].src;
+					break;
+				}
+				ind--;
+			}
+		}
+		break;
+	default:
+		LOG_ERR("Invalid buffer type %d", type);
+		return -EINVAL;
+	}
+
+	return 0;
+}
 
 static H264EncPictureType to_h264pixfmt(uint32_t pixelformat)
 {
@@ -404,42 +444,11 @@ static int stm32_venc_enable_clock(const struct device *dev)
 	return 0;
 }
 
-static int stm32_venc_set_fmt(const struct device *dev, struct video_format *fmt)
+static int stm32_venc_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
-	struct stm32_venc_data *data = dev->data;
-
-	if (fmt->type == VIDEO_BUF_TYPE_INPUT) {
-		if ((fmt->pixelformat != VIDEO_PIX_FMT_NV12) &&
-		    (fmt->pixelformat != VIDEO_PIX_FMT_RGB565)) {
-			LOG_ERR("invalid input pixel format");
-			return -EINVAL;
-		}
-
-		fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
-		data->in_fmt = *fmt;
-	} else {
-		if (fmt->pixelformat != VIDEO_PIX_FMT_H264) {
-			LOG_ERR("invalid output pixel format");
-			return -EINVAL;
-		}
-
+	if (fmt->type == VIDEO_BUF_TYPE_OUTPUT) {
 		fmt->size = ROUND_UP(fmt->width * fmt->height / VENC_ESTIMATED_COMPRESSION_RATIO,
 				     ALIGNMENT_INCR);
-
-		data->out_fmt = *fmt;
-	}
-
-	return 0;
-}
-
-static int stm32_venc_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct stm32_venc_data *data = dev->data;
-
-	if (fmt->type == VIDEO_BUF_TYPE_INPUT) {
-		*fmt = data->in_fmt;
-	} else {
-		*fmt = data->out_fmt;
 	}
 
 	return 0;
@@ -464,8 +473,8 @@ static int encoder_prepare(struct stm32_venc_data *data)
 	cfg.frameRateDenom = 1;
 	cfg.frameRateNum = VENC_DEFAULT_FRAMERATE;
 	/* image resolution */
-	cfg.width = data->out_fmt.width;
-	cfg.height = data->out_fmt.height;
+	cfg.width = data->vdev.out_fmt.width;
+	cfg.height = data->vdev.out_fmt.height;
 	/* stream type */
 	cfg.streamType = H264ENC_BYTE_STREAM;
 
@@ -486,7 +495,7 @@ static int encoder_prepare(struct stm32_venc_data *data)
 		LOG_ERR("H264EncGetPreProcessing error=%d", h264ret);
 		return -EIO;
 	}
-	preproc_cfg.inputType = to_h264pixfmt(data->in_fmt.pixelformat);
+	preproc_cfg.inputType = to_h264pixfmt(data->vdev.in_fmt.pixelformat);
 	h264ret = H264EncSetPreProcessing(data->encoder, &preproc_cfg);
 	if (h264ret != H264ENC_OK) {
 		LOG_ERR("H264EncSetPreProcessing error=%d", h264ret);
@@ -572,8 +581,9 @@ static int encoder_end(struct stm32_venc_data *data)
 	return 0;
 }
 
-static int encode_frame(struct stm32_venc_data *data)
+static int stm32_venc_trigger(const struct device *dev, enum video_buf_type type)
 {
+	struct stm32_venc_data *data = dev->data;
 	int ret = 0;
 	H264EncRet h264ret = H264ENC_FRAME_READY;
 	struct video_buffer *input;
@@ -582,13 +592,14 @@ static int encode_frame(struct stm32_venc_data *data)
 	H264EncOut enc_out = {0};
 	struct stm32_venc_ewl *inst = &ewl_instance;
 
-	if (k_fifo_is_empty(&data->in_fifo_in) || k_fifo_is_empty(&data->out_fifo_in)) {
+	if (video_buffer_is_empty(dev, VIDEO_BUF_TYPE_INPUT) ||
+	    video_buffer_is_empty(dev, VIDEO_BUF_TYPE_OUTPUT)) {
 		/* Encoding deferred to next buffer queueing */
 		return 0;
 	}
 
-	input = k_fifo_get(&data->in_fifo_in, K_NO_WAIT);
-	output = k_fifo_get(&data->out_fifo_in, K_NO_WAIT);
+	input = video_buffer_next(dev, VIDEO_BUF_TYPE_INPUT, K_NO_WAIT);
+	output = video_buffer_next(dev, VIDEO_BUF_TYPE_OUTPUT, K_NO_WAIT);
 
 	if (data->encoder == NULL) {
 		ret = encoder_prepare(data);
@@ -624,7 +635,7 @@ static int encode_frame(struct stm32_venc_data *data)
 
 	/* set input buffers to structures */
 	enc_in.busLuma = (ptr_t)input->buffer;
-	enc_in.busChromaU = (ptr_t)enc_in.busLuma + data->in_fmt.width * data->in_fmt.height;
+	enc_in.busChromaU = (ptr_t)enc_in.busLuma + data->vdev.in_fmt.width * data->vdev.in_fmt.height;
 
 	enc_in.pOutBuf = (uint32_t *)output->buffer;
 	enc_in.busOutBuf = (uint32_t)enc_in.pOutBuf;
@@ -676,8 +687,8 @@ static int encode_frame(struct stm32_venc_data *data)
 	data->frame_nb++;
 
 out:
-	k_fifo_put(&data->in_fifo_out, input);
-	k_fifo_put(&data->out_fifo_out, output);
+	video_buffer_done(dev, input, 0);
+	video_buffer_done(dev, output, 0);
 
 	return ret;
 }
@@ -697,49 +708,6 @@ static int stm32_venc_set_stream(const struct device *dev, bool enable, enum vid
 	}
 
 	return 0;
-}
-
-static int stm32_venc_enqueue(const struct device *dev, struct video_buffer *vbuf)
-{
-	struct stm32_venc_data *data = dev->data;
-	int ret = 0;
-
-	k_mutex_lock(&data->lock, K_FOREVER);
-
-	if (vbuf->type == VIDEO_BUF_TYPE_INPUT) {
-		k_fifo_put(&data->in_fifo_in, vbuf);
-	} else {
-		k_fifo_put(&data->out_fifo_in, vbuf);
-	}
-
-	ret = encode_frame(data);
-
-	k_mutex_unlock(&data->lock);
-	return ret;
-}
-
-static int stm32_venc_dequeue(const struct device *dev, struct video_buffer **vbuf,
-			      k_timeout_t timeout)
-{
-	struct stm32_venc_data *data = dev->data;
-	int ret = 0;
-
-	k_mutex_lock(&data->lock, K_FOREVER);
-
-	if ((*vbuf)->type == VIDEO_BUF_TYPE_INPUT) {
-		*vbuf = k_fifo_get(&data->in_fifo_out, timeout);
-	} else {
-		*vbuf = k_fifo_get(&data->out_fifo_out, timeout);
-	}
-
-	if (*vbuf == NULL) {
-		ret = -EAGAIN;
-		goto out;
-	}
-
-out:
-	k_mutex_unlock(&data->lock);
-	return ret;
 }
 
 ISR_DIRECT_DECLARE(stm32_venc_isr)
@@ -799,23 +767,26 @@ static int stm32_venc_get_caps(const struct device *dev, struct video_caps *caps
 {
 	if (caps->type == VIDEO_BUF_TYPE_INPUT) {
 		caps->format_caps = in_fmts;
-	} else {
+	} else if (caps->type == VIDEO_BUF_TYPE_OUTPUT) {
 		caps->format_caps = out_fmts;
+	} else {
+		return -ENOTSUP;
 	}
 
 	/* VENC produces full frames */
 	caps->min_vbuf_count = 1;
+
+	caps->buf_align = ALIGNMENT_INCR;
 
 	return 0;
 }
 
 static DEVICE_API(video, stm32_venc_driver_api) = {
 	.set_format = stm32_venc_set_fmt,
-	.get_format = stm32_venc_get_fmt,
 	.set_stream = stm32_venc_set_stream,
-	.enqueue = stm32_venc_enqueue,
-	.dequeue = stm32_venc_dequeue,
+	.trigger = stm32_venc_trigger,
 	.get_caps = stm32_venc_get_caps,
+	.transform_cap = stm32_venc_transform_cap,
 };
 
 static void stm32_venc_irq_config_func(const struct device *dev)
@@ -824,7 +795,9 @@ static void stm32_venc_irq_config_func(const struct device *dev)
 	irq_enable(DT_INST_IRQN(0));
 }
 
-static struct stm32_venc_data stm32_venc_data_0 = {};
+static struct stm32_venc_data stm32_venc_data_0 = {
+	.vdev = VIDEO_DEVICE_INIT(stm32_venc_data_0, DT_DRV_INST(n), NULL),
+};
 
 static const struct stm32_venc_config stm32_venc_config_0 = {
 	.reg = DT_INST_REG_ADDR(0),
@@ -859,13 +832,6 @@ static int stm32_venc_init(const struct device *dev)
 	}
 	reset_line_toggle_dt(&config->reset);
 
-	data->dev = dev;
-	k_mutex_init(&data->lock);
-	k_fifo_init(&data->in_fifo_in);
-	k_fifo_init(&data->in_fifo_out);
-	k_fifo_init(&data->out_fifo_in);
-	k_fifo_init(&data->out_fifo_out);
-
 	/* Run IRQ init */
 	config->irq_config(dev);
 
@@ -874,15 +840,15 @@ static int stm32_venc_init(const struct device *dev)
 	LOG_DBG("pclk5 frequency  : %d", HAL_RCC_GetPCLK5Freq() / 1000000);
 
 	/* default input */
-	data->in_fmt.width = VENC_DEFAULT_WIDTH;
-	data->in_fmt.height = VENC_DEFAULT_HEIGHT;
-	data->in_fmt.pixelformat = VENC_DEFAULT_IN_FMT;
-	data->in_fmt.pitch = data->in_fmt.width;
+	data->vdev.in_fmt.width = VENC_DEFAULT_WIDTH;
+	data->vdev.in_fmt.height = VENC_DEFAULT_HEIGHT;
+	data->vdev.in_fmt.pixelformat = VENC_DEFAULT_IN_FMT;
+	data->vdev.in_fmt.pitch = data->vdev.in_fmt.width;
 
 	/* default output */
-	data->out_fmt.width = VENC_DEFAULT_WIDTH;
-	data->out_fmt.height = VENC_DEFAULT_HEIGHT;
-	data->out_fmt.pixelformat = VENC_DEFAULT_OUT_FMT;
+	data->vdev.out_fmt.width = VENC_DEFAULT_WIDTH;
+	data->vdev.out_fmt.height = VENC_DEFAULT_HEIGHT;
+	data->vdev.out_fmt.pixelformat = VENC_DEFAULT_OUT_FMT;
 
 	/* store config for register accesses */
 	ewl_instance.config = config;

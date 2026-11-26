@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT ovti_ov2640
 
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/video.h>
@@ -551,8 +552,8 @@ struct ov2640_ctrls {
 };
 
 struct ov2640_data {
+	struct video_device vdev; /* keep first */
 	struct ov2640_ctrls ctrls;
-	struct video_format fmt;
 };
 
 #define OV2640_VIDEO_FORMAT_CAP(width, height, format)                                             \
@@ -941,35 +942,18 @@ uint8_t ov2640_check_connection(const struct device *dev)
 	return ret;
 }
 
-static int ov2640_set_fmt(const struct device *dev, struct video_format *fmt)
+static int ov2640_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
-	struct ov2640_data *drv_data = dev->data;
-	uint16_t width, height;
 	int ret = 0;
 	int i = 0;
-
-	/* We only support RGB565 and JPEG pixel formats */
-	if (fmt->pixelformat != VIDEO_PIX_FMT_RGB565 && fmt->pixelformat != VIDEO_PIX_FMT_JPEG) {
-		LOG_ERR("ov2640 camera supports only RGB565 and JPG pixelformats!");
-		return -ENOTSUP;
-	}
-
-	width = fmt->width;
-	height = fmt->height;
-
-	if (!memcmp(&drv_data->fmt, fmt, sizeof(drv_data->fmt))) {
-		/* nothing to do */
-		return 0;
-	}
-
-	drv_data->fmt = *fmt;
 
 	/* Set output format */
 	ret |= ov2640_set_output_format(dev, fmt->pixelformat);
 
 	/* Check if camera is capable of handling given format */
 	while (fmts[i].pixelformat) {
-		if (fmts[i].width_min == width && fmts[i].height_min == height &&
+		if (fmts[i].width_min == fmt->width &&
+		    fmts[i].height_min == fmt->height &&
 		    fmts[i].pixelformat == fmt->pixelformat) {
 			/* Set window size */
 			ret |= ov2640_set_resolution(dev, fmt->width, fmt->height);
@@ -981,15 +965,6 @@ static int ov2640_set_fmt(const struct device *dev, struct video_format *fmt)
 	/* Camera is not capable of handling given format */
 	LOG_ERR("Image format not supported\n");
 	return -ENOTSUP;
-}
-
-static int ov2640_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct ov2640_data *drv_data = dev->data;
-
-	*fmt = drv_data->fmt;
-
-	return 0;
 }
 
 static int ov2640_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
@@ -1039,7 +1014,6 @@ static int ov2640_set_ctrl(const struct device *dev, uint32_t id)
 
 static DEVICE_API(video, ov2640_driver_api) = {
 	.set_format = ov2640_set_fmt,
-	.get_format = ov2640_get_fmt,
 	.get_caps = ov2640_get_caps,
 	.set_stream = ov2640_set_stream,
 	.set_ctrl = ov2640_set_ctrl,
@@ -1120,10 +1094,17 @@ static int ov2640_init(const struct device *dev)
 	int ret = 0;
 	/* set default/init format SVGA RGB565 */
 	struct video_format fmt = {
+		.type = VIDEO_BUF_TYPE_OUTPUT,
 		.pixelformat = VIDEO_PIX_FMT_RGB565,
 		.width = SVGA_WIDTH,
 		.height = SVGA_HEIGHT,
 	};
+
+	ret = ov2640_init_controls(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to initialize controls: %d", ret);
+		return ret;
+	}
 
 #if DT_INST_NODE_HAS_PROP(0, pwdn_gpios)
 	ret = gpio_pin_configure_dt(&cfg->pwdn_gpio, GPIO_OUTPUT_INACTIVE);
@@ -1156,7 +1137,7 @@ static int ov2640_init(const struct device *dev)
 
 	ov2640_write_all(dev, default_regs, ARRAY_SIZE(default_regs));
 
-	ret = ov2640_set_fmt(dev, &fmt);
+	ret = video_set_format(dev, &fmt);
 	if (ret) {
 		LOG_ERR("Unable to configure default format");
 		return -EIO;
@@ -1169,8 +1150,7 @@ static int ov2640_init(const struct device *dev)
 		return ret;
 	}
 
-	/* Initialize controls */
-	return ov2640_init_controls(dev);
+	return 0;
 }
 
 /* Unique Instance */
@@ -1184,7 +1164,9 @@ static const struct ov2640_config ov2640_cfg_0 = {
 #endif
 	.clock_rate_control = DT_INST_PROP(0, clock_rate_control),
 };
-static struct ov2640_data ov2640_data_0;
+static struct ov2640_data ov2640_data_0 = {
+	.vdev = VIDEO_DEVICE_INIT(ov2640_data_0, DT_DRV_INST(0), NULL),
+};
 
 static int ov2640_init_0(const struct device *dev)
 {
@@ -1220,5 +1202,3 @@ static int ov2640_init_0(const struct device *dev)
 
 DEVICE_DT_INST_DEFINE(0, &ov2640_init_0, NULL, &ov2640_data_0, &ov2640_cfg_0, POST_KERNEL,
 		      CONFIG_VIDEO_INIT_PRIORITY, &ov2640_driver_api);
-
-VIDEO_DEVICE_DEFINE(ov2640, DEVICE_DT_INST_GET(0), NULL);

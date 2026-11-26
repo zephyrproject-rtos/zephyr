@@ -1003,12 +1003,18 @@ static int sc2336_init(const struct device *dev)
 {
 	const struct sc2336_config *cfg = dev->config;
 	struct video_format fmt = {
+		.type = VIDEO_BUF_TYPE_OUTPUT,
 		.pixelformat = sc2336_fmts[SC2336_MODE_1024X600_RAW8].pixelformat,
 		.width = sc2336_fmts[SC2336_MODE_1024X600_RAW8].width_min,
 		.height = sc2336_fmts[SC2336_MODE_1024X600_RAW8].height_min,
 	};
 	uint32_t chip_id;
 	int ret;
+
+	ret = sc2336_init_ctrls(dev);
+	if (ret < 0) {
+		return ret;
+	}
 
 	if (!device_is_ready(cfg->i2c.bus)) {
 		LOG_ERR("I2C bus %s is not ready", cfg->i2c.bus->name);
@@ -1032,11 +1038,6 @@ static int sc2336_init(const struct device *dev)
 	if (chip_id != SC2336_CHIP_ID) {
 		LOG_ERR("Wrong chip ID 0x%04x instead of 0x%04x", chip_id, SC2336_CHIP_ID);
 		return -ENODEV;
-	}
-
-	ret = sc2336_init_ctrls(dev);
-	if (ret < 0) {
-		return ret;
 	}
 
 	return sc2336_set_fmt(dev, &fmt);

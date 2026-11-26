@@ -8,6 +8,7 @@
 #define DT_DRV_COMPAT sony_imx219
 
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/video.h>
@@ -100,9 +101,8 @@ struct imx219_ctrls {
 };
 
 struct imx219_data {
+	struct video_device vdev; /* keep first */
 	struct imx219_ctrls ctrls;
-	struct video_format fmt;
-	uint32_t fps;
 };
 
 struct imx219_config {
@@ -198,7 +198,7 @@ static const struct video_reg imx219_pll_regs[] = {
  */
 static uint16_t imx219_frm_length(uint32_t height, uint32_t fps)
 {
-	uint32_t lines = IMX219_PIXEL_RATE_HZ / (IMX219_LINE_LENGTH * fps);
+	uint32_t lines = IMX219_PIXEL_RATE_HZ / IMX219_LINE_LENGTH / fps;
 
 	/* FRM_LENGTH_A is a 16-bit register */
 	return MIN(MAX(lines, height + IMX219_VBLANK_MIN), UINT16_MAX);
@@ -230,10 +230,11 @@ static const struct video_format_cap imx219_fmts[] = {
 	{0},
 };
 
-static int imx219_set_fmt(const struct device *dev, struct video_format *fmt)
+static int imx219_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	const struct imx219_config *cfg = dev->config;
 	struct imx219_data *drv_data = dev->data;
+	uint32_t fps = NSEC_PER_SEC / video_frmival_nsec(&drv_data->vdev.frmival);
 	struct video_reg crop_regs[] = {
 		/* Image crop size */
 		{IMX219_CCI_X_ADD_STA_A, (IMX219_FULL_WIDTH - fmt->width) / 2},
@@ -246,33 +247,13 @@ static int imx219_set_fmt(const struct device *dev, struct video_format *fmt)
 		{IMX219_CCI_Y_OUTPUT_SIZE, fmt->height},
 
 		/* Frame length for the frame rate in use, at least the new output size */
-		{IMX219_CCI_FRM_LENGTH_A, imx219_frm_length(fmt->height, drv_data->fps)},
+		{IMX219_CCI_FRM_LENGTH_A, imx219_frm_length(fmt->height, fps)},
 
 		/* Test pattern size */
 		{IMX219_CCI_TP_WINDOW_WIDTH, fmt->width},
 		{IMX219_CCI_TP_WINDOW_HEIGHT, fmt->height}
 	};
-	size_t idx;
 	int ret;
-
-	ret = video_format_caps_index(imx219_fmts, fmt, &idx);
-	if (ret < 0) {
-		LOG_ERR("Format requested '%s' %ux%u not supported",
-			VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height);
-		return -ENOTSUP;
-	}
-
-	if (fmt->width != imx219_fmts[idx].width_min &&
-	    (fmt->width - imx219_fmts[idx].width_min) % imx219_fmts[idx].width_step != 0) {
-		LOG_ERR("Unsupported width %u requested", fmt->width);
-		return -EINVAL;
-	}
-
-	if (fmt->height != imx219_fmts[idx].height_min &&
-	    (fmt->height - imx219_fmts[idx].height_min) % imx219_fmts[idx].height_step != 0) {
-		LOG_ERR("Unsupported height %u requested", fmt->height);
-		return -EINVAL;
-	}
 
 	/* Select the base resolution and imaging mode */
 	switch (idx) {
@@ -298,46 +279,16 @@ static int imx219_set_fmt(const struct device *dev, struct video_format *fmt)
 		return ret;
 	}
 
-	drv_data->fmt = *fmt;
-
-	return 0;
-}
-
-static int imx219_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct imx219_data *drv_data = dev->data;
-
-	*fmt = drv_data->fmt;
-
 	return 0;
 }
 
 static int imx219_get_caps(const struct device *dev, struct video_caps *caps)
 {
-	if (caps->type != VIDEO_BUF_TYPE_OUTPUT) {
-		LOG_ERR("Only output buffers supported");
-		return -EINVAL;
-	}
-
 	caps->format_caps = imx219_fmts;
-
 	return 0;
 }
 
-enum {
-	IMX219_30FPS_IDX,
-	IMX219_15FPS_IDX,
-};
-
-enum {
-	IMX219_30FPS = 30,
-	IMX219_15FPS = 15,
-};
-
-static const uint32_t imx219_framerates[] = {
-	[IMX219_30FPS_IDX] = IMX219_30FPS,
-	[IMX219_15FPS_IDX] = IMX219_15FPS,
-};
+static const uint32_t imx219_framerates[] = { 30, 15 };
 
 static int imx219_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
@@ -352,42 +303,22 @@ static int imx219_enum_frmival(const struct device *dev, struct video_frmival_en
 	return 0;
 }
 
-static int imx219_set_frmival(const struct device *dev, struct video_frmival *frmival)
+static int imx219_set_frmival(const struct device *dev, struct video_frmival *frmival, size_t idx)
 {
 	const struct imx219_config *cfg = dev->config;
 	struct imx219_data *drv_data = dev->data;
-	struct video_frmival_enum fie = {
-		.discrete = *frmival,
-		.type = VIDEO_FRMIVAL_TYPE_DISCRETE,
-		.format = &drv_data->fmt,
-	};
 	int ret;
 
-	ret = video_closest_frmival(dev, &fie);
-	if (ret < 0) {
-		return ret;
-	}
-
-	drv_data->fps = imx219_framerates[fie.index];
-
 	ret = video_write_cci_reg(&cfg->i2c, IMX219_CCI_FRM_LENGTH_A,
-				  imx219_frm_length(drv_data->fmt.height, drv_data->fps));
+				  imx219_frm_length(drv_data->vdev.out_fmt.height,
+				  		    imx219_framerates[idx]));
 	if (ret < 0) {
 		return ret;
 	}
 
 	frmival->numerator = 1;
-	frmival->denominator = imx219_frame_rate(drv_data->fmt.height, drv_data->fps);
-
-	return 0;
-}
-
-static int imx219_get_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	struct imx219_data *drv_data = dev->data;
-
-	frmival->numerator = 1;
-	frmival->denominator = imx219_frame_rate(drv_data->fmt.height, drv_data->fps);
+	frmival->denominator = imx219_frame_rate(drv_data->vdev.out_fmt.height,
+						 imx219_framerates[idx]);
 
 	return 0;
 }
@@ -438,10 +369,8 @@ static DEVICE_API(video, imx219_driver_api) = {
 	.set_stream = imx219_set_stream,
 	.set_ctrl = imx219_set_ctrl,
 	.set_format = imx219_set_fmt,
-	.get_format = imx219_get_fmt,
 	.get_caps = imx219_get_caps,
 	.set_frmival = imx219_set_frmival,
-	.get_frmival = imx219_get_frmival,
 	.enum_frmival = imx219_enum_frmival,
 };
 
@@ -528,16 +457,23 @@ static int imx219_init(const struct device *dev)
 {
 	const struct imx219_config *cfg = dev->config;
 	struct video_format fmt = {
+		.type = VIDEO_BUF_TYPE_OUTPUT,
 		.width = imx219_fmts[0].width_min,
 		.height = imx219_fmts[0].height_min,
 		.pixelformat = imx219_fmts[0].pixelformat,
 	};
 	struct video_frmival frmival = {
 		.numerator = 1,
-		.denominator = IMX219_30FPS,
+		.denominator = 30,
 	};
 	uint32_t reg;
 	int ret;
+
+	ret = imx219_init_ctrls(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to initialize controls: %d", ret);
+		return ret;
+	}
 
 	if (!device_is_ready(cfg->i2c.bus)) {
 		LOG_ERR("I2C device %s is not ready", cfg->i2c.bus->name);
@@ -611,17 +547,17 @@ static int imx219_init(const struct device *dev)
 	}
 
 	/* The frame rate comes first, since the format derives its frame length from it */
-	ret = imx219_set_frmival(dev, &frmival);
+	ret = video_set_frmival(dev, &frmival);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = imx219_set_fmt(dev, &fmt);
+	ret = video_set_format(dev, &fmt);
 	if (ret < 0) {
 		return ret;
 	}
 
-	return imx219_init_ctrls(dev);
+	return 0;
 }
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
@@ -632,7 +568,7 @@ static int imx219_init(const struct device *dev)
 
 #define IMX219_INIT(n)                                                                             \
 	static struct imx219_data imx219_data_##n = {                                              \
-		.fps = IMX219_30FPS,                                                               \
+		.vdev = VIDEO_DEVICE_INIT(imx219_data_##n, DT_DRV_INST(n), NULL),                  \
 	};                                                                                         \
                                                                                                    \
 	static const struct imx219_config imx219_cfg_##n = {                                       \
@@ -642,8 +578,6 @@ static int imx219_init(const struct device *dev)
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &imx219_init, NULL, &imx219_data_##n, &imx219_cfg_##n,            \
-			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &imx219_driver_api);        \
-                                                                                                   \
-	VIDEO_DEVICE_DEFINE(imx219_##n, DEVICE_DT_INST_GET(n), NULL);
+			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &imx219_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IMX219_INIT)

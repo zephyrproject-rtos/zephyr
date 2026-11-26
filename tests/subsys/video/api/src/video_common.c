@@ -29,7 +29,7 @@ static const struct video_format_cap fmts[] = {
 
 ZTEST(video_common, test_video_format_caps_index)
 {
-	struct video_format fmt = {0};
+	struct video_format fmt = {.type = VIDEO_BUF_TYPE_OUTPUT};
 	size_t idx;
 	int ret;
 
