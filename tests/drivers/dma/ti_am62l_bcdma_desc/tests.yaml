@@ -1,0 +1,10 @@
+tests:
+  drivers.dma.ti_am62l_bcdma_desc:
+    tags:
+      - drivers
+      - dma
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
