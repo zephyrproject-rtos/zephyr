@@ -1236,9 +1236,6 @@ __net_socket struct quic_stream {
 	 */
 	bool read_closed;
 
-	/** Flag indicating stream needs window update (MAX_STREAM_DATA) */
-	bool need_window_update : 1;
-
 	/** A rejected 0-RTT FIN must be replayed after queued data is resent. */
 	bool replay_fin_pending : 1;
 
