@@ -20,6 +20,17 @@ int video_get_caps(const struct device *dev, struct video_caps *caps)
 	return video_driver_get_caps(dev, caps);
 }
 
+int video_enum_format_cap(const struct device *dev, struct video_format_cap *caps, size_t idx)
+{
+	if (dev == NULL || caps == NULL ||
+	    (caps->type != VIDEO_BUF_TYPE_INPUT && caps->type != VIDEO_BUF_TYPE_OUTPUT)) {
+		LOG_ERR("Invalid parameters (%p, %p)", (void *)dev, (void *)caps);
+		return -EINVAL;
+	}
+
+	return video_driver_get_caps(dev, caps);
+}
+
 int video_format_caps_index(const struct video_format_cap *fmts, const struct video_format *fmt,
 			    size_t *idx)
 {

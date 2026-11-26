@@ -9,6 +9,10 @@
 
 LOG_MODULE_REGISTER(video_format, CONFIG_VIDEO_LOG_LEVEL);
 
+#ifndef ABS
+#define ABS(x) ((x) < 0 ? -(x) : (x))
+#endif
+
 static int video_check_format_caps(const struct device *dev, struct video_format *fmt)
 {
 	struct video_caps caps = {.type = fmt->type};
@@ -341,6 +345,61 @@ int video_estimate_fmt_size(struct video_format *fmt)
 	return 0;
 }
 
+static int video_closest_format_by_size(const struct device *dev,
+					const struct video_format *fmt,
+					struct video_format *match)
+{
+	struct video_caps caps = {.type = fmt->type};
+	int ret;
+
+	ret = video_get_caps(dev, &caps);
+	if (ret < 0) {
+		LOG_ERR("Failed to query %s formats to apply scaling", dev->name);
+		return ret;
+	}
+
+	match->width = UINT16_MAX;
+	match->height = UINT16_MAX;
+
+	for (size_t i = 0; caps.format_caps[i].pixelformat != 0; i++) {
+		int32_t width;
+		int32_t height;
+
+		if (fmt->pixelformat != caps.format_caps[i].pixelformat) {
+			continue;
+		}
+
+		width = (fmt->width - caps.format_caps[i].width_min)
+			/ caps.format_caps[i].width_step
+			* caps.format_caps[i].width_step
+			+ caps.format_caps[i].width_min;
+
+		height = (fmt->height - caps.format_caps[i].height_min)
+			/ caps.format_caps[i].height_step
+			* caps.format_caps[i].height_step
+			+ caps.format_caps[i].height_min;
+
+		if (ABS((int32_t)fmt->width - width) *
+		    ABS((int32_t)fmt->height - height) <
+		    ABS((int32_t)fmt->width - match->width) *
+		    ABS((int32_t)fmt->height - match->height)) {
+			match->width = width;
+			match->height = height;
+		}
+	}
+
+	if (match->width == UINT16_MAX || match->height == UINT16_MAX) {
+		return -ENOENT;
+	}
+
+	ret = video_estimate_fmt_size(match);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return 0;
+}
+
 int video_set_compose_format(const struct device *dev, struct video_format *fmt)
 {
 	struct video_selection sel = {
@@ -351,13 +410,41 @@ int video_set_compose_format(const struct device *dev, struct video_format *fmt)
 		.rect.width = fmt->width,
 		.rect.height = fmt->height,
 	};
+	struct video_format match = {.type = fmt->type, .pixelformat = fmt->pixelformat};
 	int ret;
 
-	ret = video_set_selection(dev, &sel);
-	if (ret < 0 && ret != -ENOSYS) {
-		LOG_ERR("Unable to set selection compose");
+	ret = video_set_format(dev, fmt);
+	if (ret == 0) {
+		/* Format supported without scaling, no need to try further  */
+		return 0;
+	}
+
+	LOG_DBG("Failed to apply '%s' %ux%u to %s directly, falling back to scaling",
+		VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height, dev->name);
+
+	/* TODO: should be platform-specific choices/policies */
+	ret = video_closest_format_by_size(dev, fmt, &match);
+	if (ret < 0) {
+		LOG_ERR("Failed to get %s closest matching format to '%s' %ux%u selected: %d",
+			dev->name, VIDEO_FOURCC_TO_STR(match.pixelformat),
+			match.width, match.height, ret);
 		return ret;
 	}
 
-	return video_set_format(dev, fmt);
+	ret = video_set_format(dev, &match);
+	if (ret < 0) {
+		LOG_ERR("Unable to set %s to '%s' %ux%u before scaling: %d",
+			dev->name, VIDEO_FOURCC_TO_STR(match.pixelformat),
+			match.width, match.height, ret);
+		return ret;
+	}
+
+	ret = video_set_selection(dev, &sel);
+	if (ret < 0) {
+		LOG_ERR("Unable to configure %s scaling to %ux%u",
+			dev->name, sel.rect.width, sel.rect.height);
+		return ret;
+	}
+
+	return 0;
 }
