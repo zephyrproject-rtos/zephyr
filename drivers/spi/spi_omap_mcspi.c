@@ -535,7 +535,8 @@ static size_t omap_mcspi_chunk_len(struct spi_context *ctx)
 	return MIN(spi_context_max_continuous_chunk(ctx), OMAP_MCSPI_XFERLEVEL_WCNT_MAX);
 }
 
-static void omap_mcspi_chunk_setup(const struct device *dev, size_t count, uint32_t xferlevel)
+static void omap_mcspi_chunk_setup(const struct device *dev, size_t count, uint32_t xferlevel,
+				   bool irq)
 {
 	struct omap_mcspi_data *data = DEV_DATA(dev);
 	struct omap_mcspi_regs *regs = DEV_REGS(dev);
@@ -571,7 +572,13 @@ static void omap_mcspi_chunk_setup(const struct device *dev, size_t count, uint3
 		data->chconf &= ~OMAP_MCSPI_CHCONF_FFEW;
 	}
 
-	if (count > 1) {
+	/*
+	 * The TRM recommends turbo off for a single word, and turbo receive-only
+	 * needs at least two. On the interrupt path, with it off, a one-word
+	 * transmit-only chunk after a full-duplex one stalled on the AM62L EVM in
+	 * spi_loopback_rtio, CHSTAT 0x06, so it is set there unless receive-only.
+	 */
+	if (count > 1 || (irq && tx_buf != NULL)) {
 		data->chconf |= OMAP_MCSPI_CHCONF_TURBO;
 	} else {
 		data->chconf &= ~OMAP_MCSPI_CHCONF_TURBO;
@@ -596,7 +603,7 @@ static int omap_mcspi_transceive_one(const struct device *dev)
 		goto exit;
 	}
 
-	omap_mcspi_chunk_setup(dev, count, 0U);
+	omap_mcspi_chunk_setup(dev, count, 0U, false);
 
 	/* enable channel */
 	omap_mcspi_channel_enable(dev, true);
@@ -734,7 +741,8 @@ static void omap_mcspi_irq_start(const struct device *dev)
 
 	omap_mcspi_chunk_setup(dev, count,
 			       FIELD_PREP(OMAP_MCSPI_XFERLEVEL_AFL, level_bytes - 1U) |
-				       FIELD_PREP(OMAP_MCSPI_XFERLEVEL_AEL, level_bytes - 1U));
+				       FIELD_PREP(OMAP_MCSPI_XFERLEVEL_AEL, level_bytes - 1U),
+			       true);
 
 	omap_mcspi_channel_enable(dev, true);
 
