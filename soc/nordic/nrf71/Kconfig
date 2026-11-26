@@ -22,8 +22,6 @@ config SOC_NRF7120_CPUAPP
 	select HAS_NORDIC_RAM_CTRL
 	select HAS_POWEROFF
 	select HAS_SWO
-	select SOC_LATE_INIT_HOOK if MULTITHREADING && \
-		$(dt_node_str_prop_equals,$(dt_nodelabel_path,lfxo),mode,pixo)
 
 config SOC_NRF7120_CPUFLPR
 	select RISCV_CORE_NORDIC_VPR
@@ -40,8 +38,6 @@ config SOC_NRF7120E_CPUAPP
 	select HAS_NORDIC_RAM_CTRL
 	select HAS_POWEROFF
 	select HAS_SWO
-	select SOC_LATE_INIT_HOOK if MULTITHREADING && \
-		$(dt_node_str_prop_equals,$(dt_nodelabel_path,lfxo),mode,pixo)
 
 config SOC_NRF7120E_CPUFLPR
 	select RISCV_CORE_NORDIC_VPR
@@ -61,6 +57,20 @@ config SOC_SERIES_NRF71_SKIP_PREV_IMAGE_INIT
 
 	  Enable this in images started by a bootloader that performs this
 	  setup.
+
+config SOC_NRF71_LFXO_PIXO
+	def_bool $(dt_node_str_prop_equals,$(dt_nodelabel_path,lfxo),mode,pixo)
+	depends on SOC_NRF7120_CPUAPP || SOC_NRF7120E_CPUAPP
+	depends on MULTITHREADING && !TRUSTED_EXECUTION_NONSECURE
+	depends on NRF_GRTC_TIMER_SOURCE_LFXO || \
+		($(dt_nodelabel_enabled,lfclk) && \
+		$(dt_node_str_prop_equals,$(dt_nodelabel_path,lfclk),k32src,xtal))
+	select SOC_LATE_INIT_HOOK
+	help
+	  Switch the LFXO to PIXO mode in System ON when the LFXO devicetree
+	  mode property is "pixo", and back to Pierce mode before System OFF.
+	  Only done when the LFXO clocks the LFCLK or the GRTC, and not in
+	  non-secure images, where the LFXO is owned by the secure firmware.
 
 config SOC_NRF7120_APPROTECT_BOOT_WORKAROUND
 	bool

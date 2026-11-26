@@ -63,7 +63,12 @@ properties:
     description: |
       Oscillator mode. The LFXO always starts in Pierce mode. If set to
       "pixo", the LFXO is switched to PIXO mode once it is running. If not
-      set, the LFXO stays in Pierce mode.
+      set, the LFXO stays in Pierce mode. The switch is not done by
+      non-secure images, as the LFXO is owned by the secure firmware.
+
+      PIXO mode is experimental and is only used in System ON. Before the
+      system enters System OFF, the LFXO is switched back to Pierce mode, and
+      it is switched to PIXO mode again after the next boot.
 
   idac-init:
     type: int
