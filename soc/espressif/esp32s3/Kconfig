@@ -136,6 +136,4 @@ config SOC_ESP32S3_DATA_CACHE_LINE_SIZE
 
 endmenu  # Cache config
 
-rsource "Kconfig.caps"
-
 endif # SOC_SERIES_ESP32S3

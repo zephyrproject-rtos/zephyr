@@ -1,0 +1,35 @@
+sample:
+  description: Build-only Secure Boot v2 coverage for Espressif SoCs
+  name: secure_boot
+tests:
+  sample.boards.espressif.secure_boot.sysbuild:
+    sysbuild: true
+    build_only: true
+    platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp32s2_devkitc/esp32s2
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp8684_devkitm/esp32c2
+      - esp32c3_devkitc/esp32c3
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32c61_devkitc/esp32c61
+      - esp32h2_devkitm/esp32h2
+      - esp32p4_function_ev_board/esp32p4/hpcore
+    integration_platforms:
+      - esp32_devkitc/esp32/procpu
+      - esp32s2_devkitc/esp32s2
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp8684_devkitm/esp32c2
+      - esp32c3_devkitc/esp32c3
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32c61_devkitc/esp32c61
+      - esp32h2_devkitm/esp32h2
+      - esp32p4_function_ev_board/esp32p4/hpcore
+    tags:
+      - espressif
+      - mcuboot
+      - secure-boot
+    extra_args:
+      - SB_CONFIG_SOC_FAMILY_ESPRESSIF_SECURE_BOOT=y
