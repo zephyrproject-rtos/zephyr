@@ -3754,6 +3754,13 @@ struct net_if *net_if_get_wifi_sta(void);
 struct net_if *net_if_get_wifi_sap(void);
 
 /**
+ * @brief Get Wi-Fi NAN (Neighbor Awareness Networking) management interface.
+ *
+ * @return Pointer to network interface, NULL if not found.
+ */
+struct net_if *net_if_get_wifi_nan(void);
+
+/**
  * @brief Get network interface name.
  *
  * @details If interface name support is not enabled, empty string is returned.

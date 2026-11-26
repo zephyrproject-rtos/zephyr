@@ -5129,10 +5129,18 @@ static int cmd_wifi_nan_exec(const struct shell *sh, size_t argc, char *argv[],
 		return -EINVAL;
 	}
 
-	iface = net_if_get_wifi_sta();
-	if (!iface) {
-		PR_ERROR("No WiFi STA interface found\n");
-		return -ENODEV;
+	if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN_MGMT_IFACE)) {
+		iface = net_if_get_wifi_nan();
+		if (iface == NULL) {
+			PR_ERROR("No WiFi NAN interface found\n");
+			return -ENODEV;
+		}
+	} else {
+		iface = net_if_get_wifi_sta();
+		if (iface == NULL) {
+			PR_ERROR("No WiFi STA interface found\n");
+			return -ENODEV;
+		}
 	}
 
 	if (net_mgmt(NET_REQUEST_WIFI_NAN, iface, params, sizeof(*params))) {

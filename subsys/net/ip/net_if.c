@@ -7445,6 +7445,19 @@ struct net_if *net_if_get_wifi_sap(void)
 	return net_if_get_first_wifi();
 }
 
+struct net_if *net_if_get_wifi_nan(void)
+{
+#ifdef CONFIG_WIFI_NM
+	STRUCT_SECTION_FOREACH(net_if, iface) {
+		if (net_if_is_wifi(iface) &&
+		    (wifi_nm_get_type_iface(iface) & BIT(WIFI_TYPE_NAN)) != 0U) {
+			return iface;
+		}
+	}
+#endif
+	return NULL;
+}
+
 int net_if_get_name(struct net_if *iface, char *buf, int len)
 {
 #if defined(CONFIG_NET_INTERFACE_NAME)
