@@ -4,6 +4,7 @@
 menuconfig DEBUG_COREDUMP
 	bool "Core Dump"
 	depends on ARCH_SUPPORTS_COREDUMP
+	select CORTEX_M_DEBUG_SAVE_FAULT_SP if CPU_CORTEX_M
 	help
 	  Enable core dump so it can be used for offline debugging.
 
