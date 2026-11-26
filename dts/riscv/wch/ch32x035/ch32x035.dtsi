@@ -1,0 +1,280 @@
+/*
+ * Copyright (c) 2026 Chen Ren
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+#include <mem.h>
+#include <wch/qingke-v4c.dtsi>
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/clock/ch32x035-clocks.h>
+#include <zephyr/dt-bindings/reset/ch32x035-reset.h>
+
+/ {
+	clocks {
+		/*
+		 * The CH32X035 has a single fixed 48 MHz HSI oscillator as the
+		 * system clock source: there is no HSE, no PLL, and no LSI (AWU
+		 * and IWDG are clocked from HSI/1024).
+		 */
+		clk_hsi: clk-hsi {
+			compatible = "wch,ch32x035-hsi-clock";
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(48)>;
+			status = "okay";
+		};
+	};
+
+	soc {
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(20)>;
+		};
+
+		tim2: counter@40000000 {
+			compatible = "wch,adtm";
+			reg = <0x40000000 16>;
+			prescaler = <1>;
+			channels = <4>;
+			clocks = <&rcc CH32X035_CLOCK_TIM2>;
+			interrupt-parent = <&pfic>;
+			interrupts = <53>, <38>, <52>, <51>;
+			interrupt-names = "brk", "up", "trg", "cc";
+			status = "disabled";
+
+			pwm2: pwm {
+				compatible = "wch,adtm-pwm";
+				pwm-controller;
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		tim3: counter@40000400 {
+			compatible = "wch,gptm";
+			reg = <0x40000400 16>;
+			prescaler = <1>;
+			channels = <2>;
+			clocks = <&rcc CH32X035_CLOCK_TIM3>;
+			interrupt-parent = <&pfic>;
+			interrupts = <54>;
+			interrupt-names = "global";
+			status = "disabled";
+
+			pwm3: pwm {
+				compatible = "wch,gptm-pwm";
+				pwm-controller;
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		iwdg: watchdog@40003000 {
+			compatible = "wch,iwdg";
+			reg = <0x40003000 0x10>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@40005400 {
+			compatible = "wch,i2c";
+			reg = <0x40005400 0x20>;
+			clocks = <&rcc CH32X035_CLOCK_I2C1>;
+			interrupt-parent = <&pfic>;
+			interrupts = <30>, <31>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		pwr: pwr@40007000 {
+			compatible = "wch,pwr";
+			reg = <0x40007000 0x10>;
+		};
+
+		pinctrl: pin-controller@40010000 {
+			compatible = "wch,x03x-afio";
+			reg = <0x40010000 0x1C>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			clocks = <&rcc CH32X035_CLOCK_AFIO>;
+
+			gpioa: gpio@40010800 {
+				compatible = "wch,gpio";
+				reg = <0x40010800 0x24>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <24>;
+				clocks = <&rcc CH32X035_CLOCK_IOPA>;
+			};
+
+			gpiob: gpio@40010c00 {
+				compatible = "wch,gpio";
+				reg = <0x40010c00 0x24>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <24>;
+				clocks = <&rcc CH32X035_CLOCK_IOPB>;
+			};
+
+			gpioc: gpio@40011000 {
+				compatible = "wch,gpio";
+				reg = <0x40011000 0x24>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <24>;
+				clocks = <&rcc CH32X035_CLOCK_IOPC>;
+			};
+		};
+
+		/*
+		 * The X035 EXTI block has 30 lines: 0-23 are GPIO lines,
+		 * 24-25 are the fixed SDI lines (PC18/PC19, no EXTICR
+		 * select) and 26-29 are internal wake-up events without an
+		 * EXTI vector. Lines 16-25 share the EXTI25_16 interrupt.
+		 */
+		exti: interrupt-controller@40010400 {
+			compatible = "wch,exti";
+			reg = <0x40010400 0x18>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			interrupt-parent = <&pfic>;
+			num-lines = <26>;
+			line-ranges = <0 8>, <8 8>, <16 10>;
+			interrupts = <20>, <40>, <41>;
+			interrupt-names = "line0-7", "line8-15", "line16-25";
+			status = "disabled";
+		};
+
+		adc1: adc@40012400 {
+			compatible = "wch,adc";
+			reg = <0x40012400 16>;
+			clocks = <&rcc CH32X035_CLOCK_ADC1>;
+			interrupt-parent = <&pfic>;
+			interrupts = <29>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		tim1: counter@40012c00 {
+			compatible = "wch,adtm";
+			reg = <0x40012c00 16>;
+			prescaler = <1>;
+			channels = <4>;
+			clocks = <&rcc CH32X035_CLOCK_TIM1>;
+			interrupt-parent = <&pfic>;
+			interrupts = <34>, <35>, <36>, <37>;
+			interrupt-names = "brk", "up", "trg", "cc";
+			status = "disabled";
+
+			pwm1: pwm {
+				compatible = "wch,adtm-pwm";
+				pwm-controller;
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		spi1: spi@40013000 {
+			compatible = "wch,spi";
+			/* 0x28 includes HSCR at 0x24, the last SPI_TypeDef member */
+			reg = <0x40013000 0x28>;
+			clocks = <&rcc CH32X035_CLOCK_SPI1>;
+			interrupt-parent = <&pfic>;
+			interrupts = <33>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		usart1: uart@40013800 {
+			compatible = "wch,usart";
+			reg = <0x40013800 0x20>;
+			clocks = <&rcc CH32X035_CLOCK_USART1>;
+			resets = <&rctl CH32_RESET(APB2, 14)>;
+			interrupt-parent = <&pfic>;
+			interrupts = <32>;
+			status = "disabled";
+		};
+
+		usart2: uart@40004400 {
+			compatible = "wch,usart";
+			reg = <0x40004400 0x20>;
+			clocks = <&rcc CH32X035_CLOCK_USART2>;
+			resets = <&rctl CH32_RESET(APB1, 17)>;
+			interrupt-parent = <&pfic>;
+			interrupts = <39>;
+			status = "disabled";
+		};
+
+		usart3: uart@40004800 {
+			compatible = "wch,usart";
+			reg = <0x40004800 0x20>;
+			clocks = <&rcc CH32X035_CLOCK_USART3>;
+			resets = <&rctl CH32_RESET(APB1, 18)>;
+			interrupt-parent = <&pfic>;
+			interrupts = <42>;
+			status = "disabled";
+		};
+
+		usart4: uart@40004c00 {
+			compatible = "wch,usart";
+			reg = <0x40004c00 0x20>;
+			clocks = <&rcc CH32X035_CLOCK_USART4>;
+			resets = <&rctl CH32_RESET(APB1, 19)>;
+			interrupt-parent = <&pfic>;
+			interrupts = <43>;
+			status = "disabled";
+		};
+
+		dma1: dma@40020000 {
+			compatible = "wch,wch-dma";
+			reg = <0x40020000 0xa8>;
+			clocks = <&rcc CH32X035_CLOCK_DMA1>;
+			#dma-cells = <1>;
+			interrupt-parent = <&pfic>;
+			interrupts = <22>, <23>, <24>, <25>, <26>, <27>, <28>, <44>;
+			dma-channels = <8>;
+			status = "disabled";
+		};
+
+		rcc: rcc@40021000 {
+			compatible = "wch,rcc";
+			reg = <0x40021000 0x2C>;
+			clocks = <&clk_hsi>;
+			#clock-cells = <1>;
+			status = "okay";
+
+			rctl: reset-controller {
+				compatible = "wch,ch32-rcc-rctl";
+				#reset-cells = <1>;
+			};
+		};
+
+		flash: flash-controller@40022000 {
+			compatible = "wch,x03x-flash-controller";
+			reg = <0x40022000 0x400>;
+			ranges;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@8000000 {
+				compatible = "soc-nv-flash";
+				reg = <0x08000000 DT_SIZE_K(62)>;
+				ranges = <0x0 0x08000000 DT_SIZE_K(62)>;
+				erase-block-size = <256>;
+				write-block-size = <256>;
+
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(48)>;
+};
