@@ -687,18 +687,52 @@ void ull_filter_adv_scan_state_cb(uint8_t bm)
 	}
 }
 
-void ull_filter_adv_update(uint8_t adv_fp)
+/* Whether an enabled advertising set, scan set or initiator uses the Filter Accept List */
+static bool fal_in_use(void)
 {
-	/* Clear before populating filter */
+	uint8_t handle;
+
+	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
+		for (handle = 0U; handle < BT_CTLR_ADV_SET; handle++) {
+			if (ull_adv_filter_pol_get(handle) != 0U) {
+				return true;
+			}
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_OBSERVER)) {
+		for (handle = 0U; handle < BT_CTLR_SCAN_SET; handle++) {
+			if ((ull_scan_filter_pol_get(handle) & 0x1U) != 0U) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+/* The Filter Accept List filter is shared by all advertising sets, the scan sets and the
+ * initiator. When one of them uses it, it already holds the list, which the Host may not modify
+ * while it is in use, so it is left as is. Otherwise it is cleared, and populated if the
+ * advertising set or scan set being enabled uses the list.
+ */
+static void fal_filter_update(bool fal_needed)
+{
+	if (fal_in_use()) {
+		return;
+	}
+
 	filter_clear(&fal_filter);
 
-	/* enabling advertising */
-	if (adv_fp &&
-	    (!IS_ENABLED(CONFIG_BT_OBSERVER) ||
-	     !(ull_scan_filter_pol_get(0) & 0x1))) {
-		/* filter accept list not in use, update FAL */
+	if (fal_needed) {
 		fal_update();
 	}
+}
+
+void ull_filter_adv_update(uint8_t adv_fp)
+{
+	/* enabling advertising */
+	fal_filter_update(adv_fp != 0U);
 
 	/* Clear before populating rl filter */
 	filter_clear(&rl_filter);
@@ -712,16 +746,8 @@ void ull_filter_adv_update(uint8_t adv_fp)
 
 void ull_filter_scan_update(uint8_t scan_fp)
 {
-	/* Clear before populating filter */
-	filter_clear(&fal_filter);
-
-	/* enabling advertising */
-	if ((scan_fp & 0x1) &&
-	    (!IS_ENABLED(CONFIG_BT_BROADCASTER) ||
-	     !ull_adv_filter_pol_get(0))) {
-		/* Filter Accept List not in use, update FAL */
-		fal_update();
-	}
+	/* enabling scanning */
+	fal_filter_update((scan_fp & 0x1U) != 0U);
 
 	/* Clear before populating rl filter */
 	filter_clear(&rl_filter);
