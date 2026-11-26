@@ -18,6 +18,12 @@ tests:
         - tests_scripts/anonymous.sh
         - tests_scripts/anonymous_other.sh
         - tests_scripts/connect_fal.sh
+        - tests_scripts/connect_fal_adv.sh
+        - tests_scripts/connect_adv_fal_scan.sh
+        - tests_scripts/connect_adv_fal_adv.sh
+        - tests_scripts/connect_adv1_fal_scan.sh
+        - tests_scripts/connect_fal_adv_coded.sh
+        - tests_scripts/scan_rl_adv.sh
         - tests_scripts/aux_connect_req.sh
 
   bluetooth.controller.advx.ticker_expire_info:
