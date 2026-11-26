@@ -16,3 +16,15 @@ common:
 tests:
   logging.backend.ble:
     {}
+  logging.backend.ble.open_smp:
+    extra_configs:
+      - CONFIG_BT_SMP=y
+      - CONFIG_LOG_BACKEND_BLE_SECURITY_NONE=y
+  logging.backend.ble.encrypt:
+    extra_configs:
+      - CONFIG_BT_SMP=y
+      - CONFIG_LOG_BACKEND_BLE_SECURITY_ENCRYPT=y
+  logging.backend.ble.authen:
+    extra_configs:
+      - CONFIG_BT_SMP=y
+      - CONFIG_LOG_BACKEND_BLE_SECURITY_AUTHEN=y

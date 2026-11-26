@@ -82,6 +82,13 @@ Libraries / Subsystems
     :c:member:`i3c_config_controller.tcas_ps` and the ``tcas-ps`` controller
     Devicetree property.
 
+* Logging
+
+  * The :ref:`Bluetooth LE logging backend <logging_api>` can now restrict log access to
+    encrypted connections (:kconfig:option:`CONFIG_LOG_BACKEND_BLE_SECURITY_ENCRYPT`) and
+    can require authenticated pairing (:kconfig:option:`CONFIG_LOG_BACKEND_BLE_SECURITY_AUTHEN`).
+    Open access remains the default (:kconfig:option:`CONFIG_LOG_BACKEND_BLE_SECURITY_NONE`).
+
 * LoRaWAN
 
   * The native backend now supports the KR920, AS923 and US915 regions

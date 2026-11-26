@@ -1,7 +1,7 @@
 # Copyright (c) 2023 Victor Chavez
 # SPDX-License-Identifier: Apache-2.0
 
-config LOG_BACKEND_BLE
+menuconfig LOG_BACKEND_BLE
 	bool "Bluetooth Low Energy (LE) backend [EXPERIMENTAL]"
 	depends on BT
 	depends on LOG_PROCESS_THREAD_STACK_SIZE>=2048
@@ -14,6 +14,27 @@ config LOG_BACKEND_BLE
 	  as the nRF UART 2.0 or nRF Toolbox app.
 
 if LOG_BACKEND_BLE
+
+choice LOG_BACKEND_BLE_SECURITY
+	prompt "Log access security"
+	default LOG_BACKEND_BLE_SECURITY_NONE
+	help
+	  Minimum Bluetooth LE security required to subscribe to and receive
+	  log notifications. The application must support a pairing method
+	  that meets the selected security level.
+
+config LOG_BACKEND_BLE_SECURITY_NONE
+	bool "No security required"
+
+config LOG_BACKEND_BLE_SECURITY_ENCRYPT
+	bool "Encryption required"
+	depends on BT_SMP
+
+config LOG_BACKEND_BLE_SECURITY_AUTHEN
+	bool "Encryption and authentication required"
+	depends on BT_SMP
+
+endchoice # LOG_BACKEND_BLE_SECURITY
 
 backend = BLE
 backend-str = ble

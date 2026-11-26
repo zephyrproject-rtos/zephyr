@@ -206,6 +206,12 @@ Backend options:
 :kconfig:option:`CONFIG_LOG_BACKEND_NET`: Enable built-in Networking backend to send syslog messages
 to a network server.
 
+:kconfig:option:`CONFIG_LOG_BACKEND_BLE`: Enable the Bluetooth LE backend to send logs as
+notifications over a Nordic UART Service (NUS) compatible service. By default, clients can subscribe
+and receive logs over an unencrypted connection. With :kconfig:option:`CONFIG_BT_SMP` enabled,
+select :kconfig:option:`CONFIG_LOG_BACKEND_BLE_SECURITY_ENCRYPT` to require an encrypted link or
+:kconfig:option:`CONFIG_LOG_BACKEND_BLE_SECURITY_AUTHEN` to also require authenticated pairing.
+
 
 .. _log_usage:
 
