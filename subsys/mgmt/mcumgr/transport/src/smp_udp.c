@@ -46,6 +46,8 @@ BUILD_ASSERT(sizeof(struct net_sockaddr_storage) <= CONFIG_MCUMGR_TRANSPORT_NETB
 	     "CONFIG_MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE must be >= sizeof(struct "
 	     "net_sockaddr_storage)");
 
+#define SMP_UDP_DTLS_POLL_MS 1000
+
 enum proto_type {
 	PROTOCOL_IPV4 = 0,
 	PROTOCOL_IPV6,
@@ -53,6 +55,7 @@ enum proto_type {
 
 struct config {
 	int sock;
+	bool stopping;
 	enum proto_type proto;
 	struct k_sem network_ready_sem;
 	struct smp_transport smp_transport;
@@ -79,6 +82,7 @@ struct configs {
 static bool threads_created;
 
 static struct configs smp_udp_configs;
+static int smp_udp_stop_fds[2] = { -1, -1 };
 
 static struct net_mgmt_event_callback smp_udp_mgmt_cb;
 
@@ -264,6 +268,41 @@ static int create_socket(enum proto_type proto, int *sock)
 	return 0;
 }
 
+static void close_socket(struct config *conf)
+{
+	int sock = conf->sock;
+
+	conf->sock = -1;
+
+	if (sock >= 0) {
+		(void)zsock_close(sock);
+	}
+}
+
+static int open_stop_fds(void)
+{
+	int err;
+
+	if (IS_ENABLED(CONFIG_MCUMGR_TRANSPORT_UDP_DTLS) && (smp_udp_stop_fds[0] < 0) &&
+	    (zsock_socketpair(NET_AF_UNIX, NET_SOCK_STREAM, 0, smp_udp_stop_fds) < 0)) {
+		err = errno;
+		LOG_ERR("Could not create stop socket pair, err: %i", err);
+		return -err;
+	}
+
+	return 0;
+}
+
+static void close_stop_fds(void)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(smp_udp_stop_fds); i++) {
+		if (smp_udp_stop_fds[i] >= 0) {
+			(void)zsock_close(smp_udp_stop_fds[i]);
+			smp_udp_stop_fds[i] = -1;
+		}
+	}
+}
+
 static void smp_udp_receive_thread(void *p1, void *p2, void *p3)
 {
 	struct config *conf = (struct config *)p1;
@@ -273,6 +312,11 @@ static void smp_udp_receive_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 
 	(void)k_sem_take(&conf->network_ready_sem, K_FOREVER);
+
+	if (conf->stopping) {
+		return;
+	}
+
 	rc = create_socket(conf->proto, &conf->sock);
 
 	if (rc < 0) {
@@ -282,13 +326,42 @@ static void smp_udp_receive_thread(void *p1, void *p2, void *p3)
 	__ASSERT(rc >= 0, "Socket is invalid");
 	LOG_INF("Started (%s)", smp_udp_proto_to_name(conf->proto));
 
-	while (1) {
+	while (!conf->stopping) {
 		struct net_sockaddr_storage addr = { 0 };
 		net_socklen_t addr_len = sizeof(addr);
+		int flags = 0;
+		int len;
 
-		int len = zsock_recvfrom(conf->sock, conf->recv_buffer,
-					 CONFIG_MCUMGR_TRANSPORT_UDP_MTU, 0, net_sad(&addr),
-					 &addr_len);
+		if (IS_ENABLED(CONFIG_MCUMGR_TRANSPORT_UDP_DTLS)) {
+			struct zsock_pollfd pfd[] = {
+				{
+					.fd = conf->sock,
+					.events = ZSOCK_POLLIN,
+				},
+				{
+					.fd = (conf->proto == PROTOCOL_IPV4) ? smp_udp_stop_fds[0]
+									     : smp_udp_stop_fds[1],
+					.events = ZSOCK_POLLIN,
+				},
+			};
+
+			rc = zsock_poll(pfd, ARRAY_SIZE(pfd), SMP_UDP_DTLS_POLL_MS);
+
+			if (conf->stopping) {
+				continue;
+			}
+
+			if (rc < 0) {
+				LOG_ERR("poll error (%s): %i", smp_udp_proto_to_name(conf->proto),
+					errno);
+				(void)k_msleep(SMP_UDP_DTLS_POLL_MS);
+			}
+
+			flags = ZSOCK_MSG_DONTWAIT;
+		}
+
+		len = zsock_recvfrom(conf->sock, conf->recv_buffer, CONFIG_MCUMGR_TRANSPORT_UDP_MTU,
+				     flags, net_sad(&addr), &addr_len);
 
 		if (len > 0) {
 			struct net_sockaddr_storage *ud;
@@ -314,7 +387,7 @@ static void smp_udp_receive_thread(void *p1, void *p2, void *p3)
 			memcpy(ud, &addr, sizeof(addr));
 
 			smp_rx_req(&conf->smp_transport, nb);
-		} else if (len < 0) {
+		} else if ((len < 0) && !conf->stopping && (errno != EAGAIN)) {
 			LOG_ERR("recvfrom error (%s): %i, %d", smp_udp_proto_to_name(conf->proto),
 				errno, len);
 		}
@@ -363,12 +436,37 @@ static void create_thread(struct config *conf, const char *name)
 	k_thread_start(&(conf->thread));
 }
 
+static void stop_thread(struct config *conf)
+{
+	conf->stopping = true;
+	k_sem_give(&conf->network_ready_sem);
+
+	if (IS_ENABLED(CONFIG_MCUMGR_TRANSPORT_UDP_DTLS)) {
+		const uint8_t wake = 1U;
+		int peer = (conf->proto == PROTOCOL_IPV4) ? smp_udp_stop_fds[1]
+							   : smp_udp_stop_fds[0];
+
+		if (zsock_send(peer, &wake, sizeof(wake), ZSOCK_MSG_DONTWAIT) < 0) {
+			LOG_WRN("Could not wake receive thread (%s), err: %i",
+				smp_udp_proto_to_name(conf->proto), errno);
+		}
+	}
+
+	close_socket(conf);
+
+	if (k_thread_join(&conf->thread, K_MSEC(2 * SMP_UDP_DTLS_POLL_MS)) != 0) {
+		k_thread_abort(&conf->thread);
+	}
+
+	close_socket(conf);
+}
+
 int smp_udp_open(void)
 {
 	bool started = false;
+	int rc;
 
 #if defined(CONFIG_MCUMGR_TRANSPORT_UDP_DTLS)
-	int rc;
 	size_t len = 0;
 
 	rc = tls_credential_get(CONFIG_MCUMGR_TRANSPORT_UDP_DTLS_TLS_TAG,
@@ -389,10 +487,17 @@ int smp_udp_open(void)
 	}
 #endif
 
+	rc = open_stop_fds();
+
+	if (rc < 0) {
+		return rc;
+	}
+
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
 	if (k_thread_join(&smp_udp_configs.ipv4.thread, K_NO_WAIT) == 0 ||
 	    threads_created == false) {
 		(void)k_sem_reset(&smp_udp_configs.ipv4.network_ready_sem);
+		smp_udp_configs.ipv4.stopping = false;
 		create_thread(&smp_udp_configs.ipv4, "smp_udp4");
 		started = true;
 	} else {
@@ -404,6 +509,7 @@ int smp_udp_open(void)
 	if (k_thread_join(&smp_udp_configs.ipv6.thread, K_NO_WAIT) == 0 ||
 	    threads_created == false) {
 		(void)k_sem_reset(&smp_udp_configs.ipv6.network_ready_sem);
+		smp_udp_configs.ipv6.stopping = false;
 		create_thread(&smp_udp_configs.ipv6, "smp_udp6");
 		started = true;
 	} else {
@@ -424,12 +530,7 @@ int smp_udp_close(void)
 {
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
 	if (k_thread_join(&smp_udp_configs.ipv4.thread, K_NO_WAIT) == -EBUSY) {
-		k_thread_abort(&(smp_udp_configs.ipv4.thread));
-
-		if (smp_udp_configs.ipv4.sock >= 0) {
-			zsock_close(smp_udp_configs.ipv4.sock);
-			smp_udp_configs.ipv4.sock = -1;
-		}
+		stop_thread(&smp_udp_configs.ipv4);
 	} else {
 		LOG_ERR("IPv4 UDP MCUmgr thread is not running");
 	}
@@ -437,16 +538,13 @@ int smp_udp_close(void)
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV6
 	if (k_thread_join(&smp_udp_configs.ipv6.thread, K_NO_WAIT) == -EBUSY) {
-		k_thread_abort(&(smp_udp_configs.ipv6.thread));
-
-		if (smp_udp_configs.ipv6.sock >= 0) {
-			zsock_close(smp_udp_configs.ipv6.sock);
-			smp_udp_configs.ipv6.sock = -1;
-		}
+		stop_thread(&smp_udp_configs.ipv6);
 	} else {
 		LOG_ERR("IPv6 UDP MCUmgr thread is not running");
 	}
 #endif
+
+	close_stop_fds();
 
 	return 0;
 }

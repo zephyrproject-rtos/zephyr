@@ -76,6 +76,7 @@ extern "C" {
 #endif
 
 struct zvfs_pollfd;
+struct zvfs_fd_ref;
 
 /**
  * File descriptor virtual method table.
@@ -218,6 +219,124 @@ void *zvfs_get_fd_obj(int fd, const struct fd_op_vtable *vtable, int err);
  */
 void *zvfs_get_fd_obj_and_vtable(int fd, const struct fd_op_vtable **vtable,
 			      struct k_mutex **lock);
+
+/**
+ * @brief Get underlying object pointer and vtable pointer, with the descriptor held and locked.
+ *
+ * On success, takes a reference on the descriptor, so its slot is not freed or
+ * reused until zvfs_fd_unlock_put(), and then takes its lock. Fails once
+ * close() has closed the object or zvfs_free_fd() has freed the descriptor,
+ * including while the caller waited for the lock. Every successful call must
+ * be paired with exactly one zvfs_fd_unlock_put(); a failed call must not be.
+ * k_thread_abort() on a thread in between gives it no chance to call
+ * zvfs_fd_unlock_put(), so the reference is not dropped and the slot is not
+ * freed; read() and write() on any descriptor hold one for the length of the
+ * call.
+ *
+ * @param fd File descriptor previously returned by zvfs_reserve_fd()
+ * @param obj A pointer to a pointer variable to store the object pointer; written only on success
+ * @param vtable A pointer to a pointer variable to store the vtable; written only on success
+ *
+ * @return Handle of the held descriptor, or NULL with errno set to EBADF and nothing held
+ */
+struct zvfs_fd_ref *zvfs_fd_get_locked(int fd, void **obj, const struct fd_op_vtable **vtable);
+
+/**
+ * @brief Unlock and drop a descriptor taken by zvfs_fd_get_locked().
+ *
+ * Must be called exactly once for each successful zvfs_fd_get_locked() call,
+ * and for no other reason. If the descriptor was closed meanwhile, the last
+ * reference frees its slot.
+ *
+ * @param ref Handle returned by zvfs_fd_get_locked()
+ */
+void zvfs_fd_unlock_put(struct zvfs_fd_ref *ref);
+
+/**
+ * @brief Hold a descriptor without locking it.
+ *
+ * For a caller that waits with the descriptor unlocked, such as poll(). The
+ * slot is not freed or reused until zvfs_fd_put(), but close() can still close
+ * the object, so take zvfs_fd_lock() for each call into it. Every
+ * successful call must be paired with exactly one zvfs_fd_put().
+ *
+ * @param fd File descriptor previously returned by zvfs_reserve_fd()
+ *
+ * @return Handle of the held descriptor, or NULL with errno set to EBADF and nothing held
+ */
+struct zvfs_fd_ref *zvfs_fd_get(int fd);
+
+/**
+ * @brief Lock a descriptor held by zvfs_fd_get().
+ *
+ * Takes the descriptor's lock and no reference. Fails once close() has closed
+ * the object or zvfs_free_fd() has freed the descriptor, including while the
+ * caller waited for the lock, or when the descriptor has no object. Every
+ * successful call must be paired with exactly one zvfs_fd_unlock(); a failed
+ * call must not be.
+ *
+ * @param ref Handle returned by zvfs_fd_get() and not yet put
+ * @param[out] obj Where to store the object pointer; written only on success
+ * @param[out] vtable Where to store the vtable pointer; written only on success
+ *
+ * @retval 0 Locked, with @p obj and @p vtable written
+ * @retval -1 Closed, freed or no object; errno is set to EBADF and the lock is not held
+ */
+int zvfs_fd_lock(struct zvfs_fd_ref *ref, void **obj, const struct fd_op_vtable **vtable);
+
+/**
+ * @brief Unlock a descriptor locked by zvfs_fd_lock().
+ *
+ * The descriptor stays held until zvfs_fd_put().
+ *
+ * @param ref Handle passed to the matching zvfs_fd_lock()
+ */
+void zvfs_fd_unlock(struct zvfs_fd_ref *ref);
+
+/**
+ * @brief Drop a descriptor held by zvfs_fd_get().
+ *
+ * @param ref Handle returned by zvfs_fd_get()
+ */
+void zvfs_fd_put(struct zvfs_fd_ref *ref);
+
+/**
+ * @brief Initialize the event that close() of a held descriptor signals.
+ *
+ * close() and zvfs_free_fd() signal it for every caller waiting on it, and keep
+ * it signalled until the slot is reused. Available with CONFIG_ZVFS_POLL.
+ *
+ * @param ref Handle returned by zvfs_fd_get() and not yet put
+ * @param[out] event The event to initialize, for k_poll()
+ */
+void zvfs_fd_poll_close_event(struct zvfs_fd_ref *ref, struct k_poll_event *event);
+
+/**
+ * @brief Count the caller in before it waits in k_poll() on a held descriptor.
+ *
+ * close() and zvfs_free_fd() do not close the object or free the descriptor
+ * until every caller counted in has been counted out by zvfs_fd_poll_leave().
+ * Call it before each k_poll() call that waits on the descriptor's object, and
+ * zvfs_fd_poll_leave() right after that call returns. Available with
+ * CONFIG_ZVFS_POLL.
+ *
+ * @param ref Handle returned by zvfs_fd_get() and not yet put
+ *
+ * @retval true Counted in
+ * @retval false close() or zvfs_free_fd() has started on the descriptor; the
+ *	   caller is not counted in and must not wait on its object
+ */
+bool zvfs_fd_poll_enter(struct zvfs_fd_ref *ref);
+
+/**
+ * @brief Count the caller out after k_poll() returned.
+ *
+ * Wakes a close() waiting for the last caller to leave. Available with
+ * CONFIG_ZVFS_POLL.
+ *
+ * @param ref Handle passed to a zvfs_fd_poll_enter() that returned true
+ */
+void zvfs_fd_poll_leave(struct zvfs_fd_ref *ref);
 
 /**
  * @brief Get the mutex and condition variable associated with the given object and vtable.

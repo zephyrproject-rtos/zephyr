@@ -447,9 +447,14 @@ static int can_close_socket(struct net_context *ctx)
 
 static int can_sock_close_vmeth(void *obj)
 {
+	struct net_context *ctx = obj;
 	int ret;
 
-	ret = can_close_socket(obj);
+	sock_set_error(ctx, EINTR);
+	k_fifo_cancel_wait(&ctx->recv_q);
+	(void)k_condvar_broadcast(&ctx->cond.recv);
+
+	ret = can_close_socket(ctx);
 	if (ret < 0) {
 		NET_DBG("Cannot detach net_context %p (%d)", obj, ret);
 
