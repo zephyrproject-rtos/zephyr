@@ -286,6 +286,12 @@ void map_rom_segments(int core, struct rom_segments *map)
 
 	rc |= cache_flash_mmu_set(core, 0, app_irom_vaddr_align, app_irom_start_align, 64,
 				  irom_page_count);
+#if CONFIG_MP_MAX_NUM_CPUS > 1
+	rc |= cache_flash_mmu_set(1, 0, app_drom_vaddr_align, app_drom_start_align, 64,
+				  drom_page_count);
+	rc |= cache_flash_mmu_set(1, 0, app_irom_vaddr_align, app_irom_start_align, 64,
+				  irom_page_count);
+#endif
 	if (rc != 0) {
 		ESP_EARLY_LOGE(TAG, "Failed to setup flash cache (e=0x%X). Aborting!", rc);
 		abort();

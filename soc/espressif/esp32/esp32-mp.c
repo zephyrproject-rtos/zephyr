@@ -14,6 +14,7 @@
 #include <soc.h>
 #include <esp_cpu.h>
 #include <esp_rom_serial_output.h>
+#include <esp_rom_sys.h>
 
 #include <esp_mcuboot_image.h>
 #include <esp_memory_utils.h>
@@ -34,6 +35,7 @@ struct cpustart_rec {
 	void *arg;
 	int vecbase;
 	volatile int *alive;
+	int ipi_line;
 };
 
 volatile struct cpustart_rec *start_rec;
@@ -82,6 +84,7 @@ static void appcpu_entry2(void)
 	 */
 	__asm__ volatile("rsr.PS %0" : "=r"(ps));
 	ps &= ~(XCHAL_PS_EXCM_MASK | XCHAL_PS_INTLEVEL_MASK);
+	ps |= XCHAL_EXCM_LEVEL << XCHAL_PS_INTLEVEL_SHIFT;
 	__asm__ volatile("wsr.PS %0" : : "r"(ps));
 
 	ie = 0;
@@ -97,6 +100,15 @@ static void appcpu_entry2(void)
 	__asm__ volatile("wsr %0, " ZSR_CPU_STR : : "r"(cpu));
 
 	smp_log("ESP32: APPCPU running");
+
+	/* The kernel cannot allocate interrupts on this CPU yet. Route the
+	 * IPI source to the line PROCPU allocated for its own IPI and
+	 * reserved here; that line's handler is esp_crosscore_isr().
+	 */
+	esp_rom_route_intr_matrix(1, DT_IRQ_BY_IDX(DT_NODELABEL(ipi1), 0, irq),
+				  start_rec->ipi_line);
+	ie = BIT(start_rec->ipi_line);
+	__asm__ volatile("wsr.INTENABLE %0" : : "r"(ie));
 
 	*start_rec->alive = 1;
 	start_rec->fn(start_rec->arg);
@@ -233,7 +245,9 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg)
 {
 	volatile struct cpustart_rec sr;
+	intr_handle_t ipi_handle;
 	int vb;
+	int ret;
 	volatile int alive_flag;
 
 	__ASSERT(cpu_num == 1, "ESP-32 supports only two CPUs");
@@ -251,6 +265,24 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz,
 
 	appcpu_top = K_KERNEL_STACK_BUFFER(stack) + sz;
 
+	/* FROM_CPU_INTRn must reach CPU n. The interrupt matrix routes a
+	 * source to the CPU that allocates it, so FROM_CPU_INTR0 is allocated
+	 * here, and appcpu_entry2() routes FROM_CPU_INTR1 to the same line
+	 * on the APPCPU, which is reserved there for it.
+	 */
+	ret = esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(ipi0), 0, irq),
+		ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(ipi0), 0, priority)) |
+		ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(ipi0), 0, flags)) |
+			ESP_INTR_FLAG_IRAM,
+		esp_crosscore_isr,
+		NULL,
+		&ipi_handle);
+	__ASSERT(ret == 0, "IPI interrupt allocation failed: %d", ret);
+
+	sr.ipi_line = esp_intr_get_intno(ipi_handle);
+	ret = esp_intr_reserve(sr.ipi_line, cpu_num);
+	__ASSERT(ret == 0, "IPI line reservation failed: %d", ret);
+
 	start_rec = &sr;
 
 	esp_appcpu_start(appcpu_entry1);
@@ -261,34 +293,18 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz,
 	cpus_active[0] = true;
 	cpus_active[cpu_num] = true;
 
-	esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(ipi0), 0, irq),
-		ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(ipi0), 0, priority)) |
-		ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(ipi0), 0, flags)) |
-			ESP_INTR_FLAG_IRAM,
-		esp_crosscore_isr,
-		NULL,
-		NULL);
-
-	esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(ipi1), 0, irq),
-		ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(ipi1), 0, priority)) |
-		ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(ipi1), 0, flags)) |
-			ESP_INTR_FLAG_IRAM,
-		esp_crosscore_isr,
-		NULL,
-		NULL);
-
 	smp_log("ESP32: APPCPU initialized");
 }
 
 void arch_sched_directed_ipi(uint32_t cpu_bitmap)
 {
-	const int core_id = esp_core_id();
+	/* FROM_CPU_INTRn is routed to CPU n */
+	cpu_bitmap &= ~BIT(esp_core_id());
 
-	ARG_UNUSED(cpu_bitmap);
-
-	if (core_id == 0) {
+	if ((cpu_bitmap & BIT(0)) != 0U) {
 		DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, DPORT_CPU_INTR_FROM_CPU_0);
-	} else {
+	}
+	if ((cpu_bitmap & BIT(1)) != 0U) {
 		DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_1_REG, DPORT_CPU_INTR_FROM_CPU_1);
 	}
 }
