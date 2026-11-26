@@ -50,6 +50,10 @@ extern "C" {
 #define STUN_INTEGRITY_SHA256_MIN_LEN 16U
 /** Length of a MESSAGE-INTEGRITY-SHA256 value that is not truncated. */
 #define STUN_INTEGRITY_SHA256_MAX_LEN 32U
+/** Length of the key of a long-term credential, an MD5 hash. */
+#define STUN_LONG_TERM_KEY_LEN        16U
+/** Length of the key of a long-term credential with the SHA-256 password algorithm. */
+#define STUN_LONG_TERM_KEY_SHA256_LEN 32U
 
 /**
  * Longest USERNAME, SOFTWARE, REALM, NONCE or ERROR-CODE reason phrase the
@@ -390,6 +394,52 @@ int stun_verify_integrity(const struct stun_msg *msg, const uint8_t *key, size_t
  */
 int stun_verify_integrity_sha256(const struct stun_msg *msg, const uint8_t *key, size_t key_len,
 				 size_t min_len);
+
+/**
+ * @brief Compute the key of a long-term credential
+ *
+ * The key is MD5(username ":" realm ":" password) (@rfc{8489,section-9.2.2}), the
+ * one a server uses unless it names another password algorithm. It is the key of
+ * stun_add_integrity(), stun_add_integrity_sha256(), stun_finish() and the
+ * functions that verify. Takes @kconfig{CONFIG_PSA_WANT_ALG_MD5}.
+ *
+ * @param username User name, at most @ref STUN_USERNAME_MAX_LEN bytes, already
+ *        processed with the OpaqueString profile (@rfc{8265}).
+ * @param realm Realm the server gave in REALM, at most @ref STUN_TEXT_MAX_LEN
+ *        bytes, processed the same way.
+ * @param password Password, processed the same way.
+ * @param[out] key The key.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL NULL argument, or a string that is not well-formed UTF-8
+ *         (@rfc{3629,section-4}) or is longer than its limit.
+ * @retval -EIO The cryptographic backend failed, or has no MD5.
+ */
+int stun_long_term_key(const char *username, const char *realm, const char *password,
+		       uint8_t key[STUN_LONG_TERM_KEY_LEN]);
+
+/**
+ * @brief Compute the key of a long-term credential with the SHA-256 password algorithm
+ *
+ * The key is SHA-256(username ":" realm ":" password) (@rfc{8489,section-18.5.1.2}),
+ * the one to use when the server and the client agree on that algorithm with
+ * PASSWORD-ALGORITHMS and PASSWORD-ALGORITHM (@rfc{8489,section-9.2}). It is used
+ * as the key of stun_long_term_key() is.
+ *
+ * @param username User name, at most @ref STUN_USERNAME_MAX_LEN bytes, already
+ *        processed with the OpaqueString profile (@rfc{8265}).
+ * @param realm Realm the server gave in REALM, at most @ref STUN_TEXT_MAX_LEN
+ *        bytes, processed the same way.
+ * @param password Password, processed the same way.
+ * @param[out] key The key.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL NULL argument, or a string that is not well-formed UTF-8
+ *         (@rfc{3629,section-4}) or is longer than its limit.
+ * @retval -EIO The cryptographic backend failed, or has no SHA-256.
+ */
+int stun_long_term_key_sha256(const char *username, const char *realm, const char *password,
+			      uint8_t key[STUN_LONG_TERM_KEY_SHA256_LEN]);
 
 /**
  * @brief Verify FINGERPRINT
