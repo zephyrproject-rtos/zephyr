@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
-#include <soc.h>
+#include <zephyr/arch/cpu.h>
 #include <stdbool.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_if.h>
@@ -82,8 +82,8 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 		     UINT_TO_POINTER(config->tx_buf_addr + (context->txslot * ETH_LITEX_SLOT_SIZE)),
 		     len);
 
-	litex_write8(context->txslot, config->tx_slot_addr);
-	litex_write16(len, config->tx_length_addr);
+	sys_write8(context->txslot, config->tx_slot_addr);
+	sys_write16(len, config->tx_length_addr);
 
 	/* wait for the device to be ready to transmit */
 	ret = k_sem_take(&context->sem_tx_ready, MAX_TX_FAILURE);
@@ -92,7 +92,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 		return -EIO;
 	};
 	/* start transmitting */
-	litex_write8(1, config->tx_start_addr);
+	sys_write8(1, config->tx_start_addr);
 
 	/* change slot */
 	context->txslot = (context->txslot + 1) % config->tx_buf_n;
@@ -114,10 +114,10 @@ static void eth_rx(const struct device *port)
 	}
 
 	/* get frame's length */
-	len = litex_read16(config->rx_length_addr);
+	len = sys_read16(config->rx_length_addr);
 
 	/* which slot is the frame in */
-	rxslot = litex_read8(config->rx_slot_addr);
+	rxslot = sys_read8(config->rx_slot_addr);
 
 	/* obtain rx buffer */
 	pkt = net_pkt_rx_alloc_with_buffer(config->iface, len, NET_AF_UNSPEC, 0,
@@ -149,19 +149,19 @@ static void eth_irq_handler(const struct device *port)
 	struct eth_litex_dev_data *context = port->data;
 	const struct eth_litex_config *config = port->config;
 	/* check sram reader events (tx) */
-	if (litex_read8(config->tx_ev_pending_addr) & BIT(0)) {
+	if (sys_read8(config->tx_ev_pending_addr) & BIT(0)) {
 		k_sem_give(&context->sem_tx_ready);
 
 		/* ack reader irq */
-		litex_write8(BIT(0), config->tx_ev_pending_addr);
+		sys_write8(BIT(0), config->tx_ev_pending_addr);
 	}
 
 	/* check sram writer events (rx) */
-	if (litex_read8(config->rx_ev_pending_addr) & BIT(0)) {
+	if (sys_read8(config->rx_ev_pending_addr) & BIT(0)) {
 		eth_rx(port);
 
 		/* ack writer irq */
-		litex_write8(BIT(0), config->rx_ev_pending_addr);
+		sys_write8(BIT(0), config->rx_ev_pending_addr);
 	}
 }
 
@@ -189,15 +189,15 @@ static int eth_start(const struct device *dev, struct net_if *iface __unused)
 	struct eth_litex_dev_data *context = dev->data;
 	const struct eth_litex_config *config = dev->config;
 
-	if (litex_read8(config->tx_ready_addr)) {
+	if (sys_read8(config->tx_ready_addr)) {
 		k_sem_give(&context->sem_tx_ready);
 	}
 
-	litex_write8(BIT(0), config->tx_ev_pending_addr);
-	litex_write8(BIT(0), config->rx_ev_pending_addr);
+	sys_write8(BIT(0), config->tx_ev_pending_addr);
+	sys_write8(BIT(0), config->rx_ev_pending_addr);
 
-	litex_write8(1, config->tx_ev_enable_addr);
-	litex_write8(1, config->rx_ev_enable_addr);
+	sys_write8(1, config->tx_ev_enable_addr);
+	sys_write8(1, config->rx_ev_enable_addr);
 
 	return 0;
 }
@@ -206,8 +206,8 @@ static int eth_stop(const struct device *dev, struct net_if *iface __unused)
 {
 	const struct eth_litex_config *config = dev->config;
 
-	litex_write8(0, config->tx_ev_enable_addr);
-	litex_write8(0, config->rx_ev_enable_addr);
+	sys_write8(0, config->tx_ev_enable_addr);
+	sys_write8(0, config->rx_ev_enable_addr);
 
 	return 0;
 }
