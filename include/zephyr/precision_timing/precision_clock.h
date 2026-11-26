@@ -31,6 +31,9 @@ extern "C" {
  */
 
 struct precision_clock;
+struct precision_clock_output_caps;
+struct precision_clock_output_config;
+struct precision_clock_output_status;
 
 /** Number of fractional bits in a scaled parts-per-million rate adjustment. */
 #define PRECISION_CLOCK_SCALED_PPM_SHIFT 16
@@ -41,8 +44,10 @@ struct precision_clock;
 /**
  * @brief Operations implemented by a precision clock adapter.
  *
- * All operations are mandatory. Callers must provide a valid initialized
- * clock and valid operation arguments.
+ * The four base clock operations are mandatory. Scheduled-output operations
+ * are optional and may be omitted when the clock has no output provider.
+ * Callers must provide a valid initialized clock and valid arguments to the
+ * base operations.
  */
 struct precision_clock_api {
 	/** Read the current clock value. */
@@ -53,6 +58,21 @@ struct precision_clock_api {
 	int (*adjust_phase)(const struct precision_clock *precision_clk, precision_time_t phase_ns);
 	/** Set the clock rate offset from its nominal frequency. */
 	int (*adjust_rate)(const struct precision_clock *precision_clk, int64_t scaled_ppm);
+	/** Query capabilities of all scheduled-output channels. */
+	int (*output_get_caps)(const struct precision_clock *precision_clk,
+			       struct precision_clock_output_caps *caps);
+	/**
+	 * Start a scheduled output on a channel.
+	 *
+	 * Use the return and ownership contract of @ref precision_clock_output_start.
+	 */
+	int (*output_start)(const struct precision_clock *precision_clk, uint32_t channel,
+			    const struct precision_clock_output_config *config);
+	/** Stop a scheduled-output channel and validate @p channel. */
+	int (*output_stop)(const struct precision_clock *precision_clk, uint32_t channel);
+	/** Query scheduled-output channel status and validate @p channel. */
+	int (*output_get_status)(const struct precision_clock *precision_clk, uint32_t channel,
+				 struct precision_clock_output_status *status);
 };
 
 /** Protocol-neutral precision clock instance. */
