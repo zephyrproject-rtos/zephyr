@@ -5,6 +5,7 @@
 /*
  * Copyright (c) 2015-2016 Intel Corporation
  * Copyright (c) 2023 Nordic Semiconductor
+ * Copyright (c) 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -459,15 +460,19 @@ struct bt_l2cap_br_endpoint {
 	 */
 	uint8_t                                 max_transmit;
 	/** Endpoint Retransmission Timeout
-	 * The field is configured by
-	 * @kconfig{CONFIG_BT_L2CAP_BR_RET_TIMEOUT}
+	 * The local timeout in milliseconds is configured by
+	 * @kconfig{CONFIG_BT_L2CAP_BR_RET_TIMEOUT}.
+	 * In Enhanced Retransmission mode, the TX endpoint uses the local timeout;
+	 * the RX endpoint records the peer's timeout from a successful configuration response.
 	 * The field should be no more than the field
 	 * `monitor_timeout`.
 	 */
 	uint16_t                                ret_timeout;
 	/** Endpoint Monitor Timeout
-	 * The field is configured by
-	 * @kconfig{CONFIG_BT_L2CAP_BR_MONITOR_TIMEOUT}
+	 * The local timeout in milliseconds is configured by
+	 * @kconfig{CONFIG_BT_L2CAP_BR_MONITOR_TIMEOUT}.
+	 * In Enhanced Retransmission mode, the TX endpoint uses the local timeout;
+	 * the RX endpoint records the peer's timeout from a successful configuration response.
 	 */
 	uint16_t                                monitor_timeout;
 	/** Endpoint Maximum PDU payload Size */

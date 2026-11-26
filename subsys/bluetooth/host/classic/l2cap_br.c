@@ -2806,6 +2806,11 @@ static void l2cap_br_conf(struct bt_l2cap_br *l2cap, struct bt_l2cap_chan *chan,
 		ret_fc.max_transmit = BR_CHAN(chan)->rx.max_transmit;
 		ret_fc.retransmission_timeout = sys_cpu_to_le16(BR_CHAN(chan)->rx.ret_timeout);
 		ret_fc.monitor_timeout = sys_cpu_to_le16(BR_CHAN(chan)->rx.monitor_timeout);
+		if (ret_fc.mode == BT_L2CAP_BR_LINK_MODE_ERET) {
+			/* Core 5.4, Vol 3, Part A, 8.6.2.1: ACL-U requests carry zero timeouts. */
+			ret_fc.retransmission_timeout = 0;
+			ret_fc.monitor_timeout = 0;
+		}
 		ret_fc.mps = sys_cpu_to_le16(BR_CHAN(chan)->rx.mps);
 		l2cap_br_conf_add_ret_fc(buf, &ret_fc);
 
@@ -3463,9 +3468,12 @@ static uint16_t l2cap_br_conf_rsp_opt_ret_fc(struct bt_l2cap_chan *chan, struct 
 			}
 		}
 
-		opt_ret_fc->retransmission_timeout =
-			sys_cpu_to_le16(CONFIG_BT_L2CAP_BR_RET_TIMEOUT);
-		opt_ret_fc->monitor_timeout = sys_cpu_to_le16(CONFIG_BT_L2CAP_BR_MONITOR_TIMEOUT);
+		if (opt_ret_fc->mode != BT_L2CAP_BR_LINK_MODE_ERET) {
+			opt_ret_fc->retransmission_timeout =
+				sys_cpu_to_le16(CONFIG_BT_L2CAP_BR_RET_TIMEOUT);
+			opt_ret_fc->monitor_timeout =
+				sys_cpu_to_le16(CONFIG_BT_L2CAP_BR_MONITOR_TIMEOUT);
+		}
 
 		if (opt_ret_fc->tx_windows_size > CONFIG_BT_L2CAP_MAX_WINDOW_SIZE) {
 			opt_ret_fc->tx_windows_size =
@@ -3476,8 +3484,8 @@ static uint16_t l2cap_br_conf_rsp_opt_ret_fc(struct bt_l2cap_chan *chan, struct 
 			goto done;
 		}
 
-		br_chan->rx.ret_timeout = CONFIG_BT_L2CAP_BR_RET_TIMEOUT;
-		br_chan->rx.monitor_timeout = CONFIG_BT_L2CAP_BR_MONITOR_TIMEOUT;
+		br_chan->rx.ret_timeout = sys_le16_to_cpu(opt_ret_fc->retransmission_timeout);
+		br_chan->rx.monitor_timeout = sys_le16_to_cpu(opt_ret_fc->monitor_timeout);
 		br_chan->rx.max_transmit = opt_ret_fc->max_transmit;
 		br_chan->rx.max_window = sys_le16_to_cpu(opt_ret_fc->tx_windows_size);
 		br_chan->rx.mps = sys_le16_to_cpu(opt_ret_fc->mps);
@@ -4769,12 +4777,18 @@ static uint16_t l2cap_br_conf_opt_ret_fc(struct bt_l2cap_chan *chan, struct net_
 			}
 		}
 
-		retransmission_timeout = sys_le16_to_cpu(opt_ret_fc->retransmission_timeout);
-
-		monitor_timeout = sys_le16_to_cpu(opt_ret_fc->monitor_timeout);
-		if (monitor_timeout < retransmission_timeout) {
-			monitor_timeout = retransmission_timeout;
-			accept = false;
+		if (opt_ret_fc->mode == BT_L2CAP_BR_LINK_MODE_ERET) {
+			/* ERTM timeouts describe the responder's local transmitter. */
+			retransmission_timeout = CONFIG_BT_L2CAP_BR_RET_TIMEOUT;
+			monitor_timeout = CONFIG_BT_L2CAP_BR_MONITOR_TIMEOUT;
+		} else {
+			retransmission_timeout =
+				sys_le16_to_cpu(opt_ret_fc->retransmission_timeout);
+			monitor_timeout = sys_le16_to_cpu(opt_ret_fc->monitor_timeout);
+			if (monitor_timeout < retransmission_timeout) {
+				monitor_timeout = retransmission_timeout;
+				accept = false;
+			}
 		}
 
 		if (opt_ret_fc->tx_windows_size > CONFIG_BT_L2CAP_MAX_WINDOW_SIZE) {
