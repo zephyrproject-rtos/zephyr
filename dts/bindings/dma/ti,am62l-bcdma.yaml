@@ -26,6 +26,20 @@ description: |
   that channel. ASEL 14 and 15 route the transfers through the A53 ACP so
   they are coherent with the CPU caches (TRM 3.5).
 
+  A split channel pairs with its PDMA peer through CHANRT_CTL.AUTOPAIR, so
+  the specifier carries no PSI-L thread. The McASP endpoints use the rings
+  48-53 of the interrupt-map. The vendor devicetree gives each McASP
+  instance and direction a PSI-L thread (in parentheses, TX threads have
+  bit 15 set; the RX ones are in the PDMA_MCASP range of TRM Table 4-81)
+  and no channel number: the numbering below follows the ring order and
+  only McASP0 (channels 48 and 49) ran on hardware. The driver sets ACC32
+  and BURST of the PDMA static TR for the channels 48-53, the only PDMA
+  endpoints it serves, because the DMA API has no field for them:
+
+    McASP0 tx / rx   <&main_bcdma 49 0> (0xc500)  <&main_bcdma 48 0> (0x4500)
+    McASP1 tx / rx   <&main_bcdma 51 0> (0xc501)  <&main_bcdma 50 0> (0x4501)
+    McASP2 tx / rx   <&main_bcdma 53 0> (0xc502)  <&main_bcdma 52 0> (0x4502)
+
 compatible: "ti,am62l-bcdma"
 
 include: [dma-controller.yaml, interrupt-nexus.yaml]
