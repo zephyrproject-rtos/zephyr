@@ -1,0 +1,14 @@
+identifier: dshanpi_2a_plus/rk3506/a7/smp
+name: DShanPi 2A+ A7 SMP
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 524288
+supported:
+  - smp
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

@@ -3,6 +3,8 @@
 
 if(CONFIG_SOC_RK3568)
   add_subdirectory(rk3568)
+elseif(CONFIG_SOC_RK3506)
+  add_subdirectory(rk3506)
 elseif(CONFIG_SOC_RK3588S)
   add_subdirectory(rk3588s)
 elseif(CONFIG_SOC_RK3588)

@@ -15,6 +15,7 @@
 
 # zephyr-keep-sorted-start
 01space	01Space
+100ask	Shenzhen Baiwenwang Technology Co., Ltd. (100ASK)
 96boards	96Boards
 aaeon	AAEON Technology Inc.
 abb	ABB
@@ -210,6 +211,7 @@ dptechnics	DPTechnics
 dragino	Dragino Technology Co., Limited
 dsdtech	Dongguan Deshide Technology Co., Ltd. (DSD TECH)
 dserve	dServe Technology B.V.
+dshanpi	DShanPi
 dynaimage	Dyna-Image
 ea	Embedded Artists AB
 ebang	Zhejiang Ebang Communication Co., Ltd

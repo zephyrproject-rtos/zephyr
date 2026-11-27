@@ -51,3 +51,11 @@ config ARM_MMU_REGION_MIN_ALIGN_AND_SIZE
 	  This value should not be modified.
 
 endif # CPU_HAS_MMU
+
+config ARM_MMU_MAP_VECTORS
+	bool
+	default y if AARCH32_ARMV8_A
+	help
+	  Map the image vector table in the generic AArch32 MMU ranges.
+	  Platforms using VBAR to point outside the normal text range can
+	  select this option.
