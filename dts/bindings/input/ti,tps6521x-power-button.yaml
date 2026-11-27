@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TI TPS65214/TPS65215 PMIC power button
+
+  The node is a child of a "ti,tps65214" or "ti,tps65215" node, which needs
+  the int-gpios property. The EN/PB/VSENSE pin must be configured as a push
+  button by the PMIC NVM; otherwise the device fails to initialise. The
+  driver unmasks push-button events on nINT (MASK_INT_FOR_PB).
+
+  Press and release are reported after the PMIC deglitch time (64-128 ms).
+  The press that powered the board up is not reported.
+
+  Example:
+
+    pmic@30 {
+      compatible = "ti,tps65214";
+      reg = <0x30>;
+      int-gpios = <&gpio0 5 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+
+      power-button {
+        compatible = "ti,tps6521x-power-button";
+        zephyr,code = <INPUT_KEY_POWER>;
+      };
+    };
+
+compatible: "ti,tps6521x-power-button"
+
+properties:
+  zephyr,code:
+    type: int
+    required: true
+    description: Key code to report.
