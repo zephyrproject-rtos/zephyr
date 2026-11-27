@@ -13,10 +13,17 @@
  */
 
 #include <zephyr/ztest.h>
+#include <stdint.h>
+
+#if defined(CONFIG_ARM64)
+#include <zephyr/arch/arm64/lib_helpers.h>
+#endif
 
 volatile bool expect_fault;
 #if defined(CONFIG_ARM64)
 volatile unsigned int last_fault_reason;
+volatile uint64_t last_fault_spsr;
+volatile uint64_t last_fault_far;
 #endif
 
 void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf)
@@ -32,6 +39,8 @@ void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf)
 
 #if defined(CONFIG_ARM64)
 	last_fault_reason = reason;
+	last_fault_spsr = (esf != NULL) ? esf->spsr : 0ULL;
+	last_fault_far = read_far_el1();
 #endif
 	expect_fault = false;
 	printk("System error was expected\n");

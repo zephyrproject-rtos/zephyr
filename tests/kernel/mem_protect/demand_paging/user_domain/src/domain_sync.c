@@ -131,6 +131,18 @@ ZTEST(demand_paging_read_only, test_user_write_to_read_only_partition_is_fatal)
 }
 
 #if defined(CONFIG_ARM64)
+static void sttr_bad_entry(void *p1, void *p2, void *p3)
+{
+	volatile uint32_t *target = p1;
+	uint32_t val = 0xa5U;
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	__asm__ volatile("sttr %w0, [%1]" : : "r"(val), "r"(target) : "memory");
+	ro_write_succeeded = true;
+}
+
 static void stale_syscall_oops_entry(void *p1, void *p2, void *p3)
 {
 	volatile char *page = p1;
@@ -147,6 +159,52 @@ static void stale_syscall_oops_entry(void *p1, void *p2, void *p3)
 	arch_syscall_oops(&dummy_esf);
 }
 #endif
+
+ZTEST(demand_paging_read_only, test_el1_sttr_to_kernel_only_page_is_fatal)
+{
+#if defined(CONFIG_ARM64)
+	char *sttr_page = k_mem_map(CONFIG_MMU_PAGE_SIZE, K_MEM_PERM_RW);
+	int join_ret;
+	uint32_t written;
+
+	zassert_not_null(sttr_page, "k_mem_map failed");
+	sttr_page[0] = 0x5a;
+	*(volatile uint32_t *)&sttr_page[4] = 0U;
+
+	k_thread_create(&ro_bad_thread, ro_bad_stack, K_THREAD_STACK_SIZEOF(ro_bad_stack),
+			sttr_bad_entry, &sttr_page[4], NULL, NULL, K_PRIO_PREEMPT(1), 0U,
+			K_FOREVER);
+
+	last_fault_reason = UINT_MAX;
+	last_fault_spsr = 0ULL;
+	last_fault_far = 0ULL;
+	ro_write_succeeded = false;
+	expect_fault = true;
+	k_thread_start(&ro_bad_thread);
+	join_ret = k_thread_join(&ro_bad_thread, K_SECONDS(10));
+	expect_fault = false;
+	if (join_ret != 0) {
+		k_thread_abort(&ro_bad_thread);
+		(void)k_thread_join(&ro_bad_thread, K_SECONDS(10));
+	}
+
+	written = *(volatile uint32_t *)&sttr_page[4];
+	k_mem_unmap(sttr_page, CONFIG_MMU_PAGE_SIZE);
+
+	zassert_ok(join_ret, "STTR faulting thread was not aborted");
+	zassert_false(ro_write_succeeded, "STTR to EL1-only resident page succeeded");
+	zassert_equal(written, 0U, "STTR modified target word");
+	zassert_equal(last_fault_reason, K_ERR_CPU_EXCEPTION, "unexpected fatal reason %u",
+		      last_fault_reason);
+	zassert_not_equal(last_fault_spsr & SPSR_MODE_MASK, SPSR_MODE_EL0T,
+			  "expected EL1 fault, got SPSR %#llx",
+			  (unsigned long long)last_fault_spsr);
+	zassert_equal(last_fault_far, (uint64_t)(uintptr_t)&sttr_page[4],
+		      "unexpected STTR fault FAR %#llx", (unsigned long long)last_fault_far);
+#else
+	ztest_test_skip();
+#endif
+}
 
 ZTEST(demand_paging_read_only, test_syscall_oops_with_stale_paging_regs)
 {
