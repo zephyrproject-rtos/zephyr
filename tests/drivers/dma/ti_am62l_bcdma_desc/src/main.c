@@ -102,4 +102,64 @@ ZTEST(bcdma_desc, test_trpd_layout)
 	zassert_equal(bcdma_trpd_size(4), 336);
 }
 
+ZTEST(bcdma_desc, test_trpd_layout_32)
+{
+	static uint8_t desc[1024] __aligned(64);
+	const uint32_t *w = (const uint32_t *)desc;
+
+	zassert_equal((uint8_t *)bcdma_trpd_tr_rec(desc, 0, BCDMA_TR_REC_32) - desc, 32);
+	zassert_equal((volatile uint8_t *)bcdma_trpd_resp_rec(desc, 1, 0, BCDMA_TR_REC_32) - desc,
+		      64);
+	zassert_equal(bcdma_trpd_size_rec(1, BCDMA_TR_REC_32), 68);
+	bcdma_trpd_init_rec(desc, 1, false, BCDMA_TR_REC_32);
+	zassert_equal(w[1], 1U << 24, "TR size code 1");
+}
+
+ZTEST(bcdma_desc, test_tr1_fields)
+{
+	struct bcdma_tr15 tr;
+	struct bcdma_piece p = {.offset = 0x40, .icnt0 = 0x200, .icnt1 = 1};
+	const uint32_t *w = (const uint32_t *)&tr;
+
+	(void)memset(&tr, 0xA5, sizeof(tr));
+	bcdma_tr1_fill(&tr, 0x82000000ULL, &p, 0, false);
+
+	zassert_equal(w[0], 1U, "FLAGS: type 1, no trigger, event at completion");
+	zassert_equal(w[1], 0x200U | (1U << 16), "ICNT0/ICNT1");
+	zassert_equal(w[2], 0x82000040U, "ADDR low");
+	zassert_equal(w[3], 0U, "ADDR high, ASEL 0");
+	zassert_equal(w[4], 0x200U, "DIM1");
+	for (int i = 5; i < 16; i++) {
+		zassert_equal(w[i], 0U, "word %d cleared", i);
+	}
+
+	bcdma_tr1_fill(&tr, 0x82000000ULL, &p, 0, true);
+	zassert_equal(w[0], 1U | BIT(31), "FLAGS: type 1 with EOP");
+}
+
+ZTEST(bcdma_desc, test_static_xy)
+{
+	uint32_t xy = 0U;
+
+	zassert_ok(bcdma_static_xy(2, 4, false, &xy));
+	zassert_equal(xy, (1U << 24) | 2U, "16-bit samples, two per event");
+	zassert_ok(bcdma_static_xy(3, 6, false, &xy));
+	zassert_equal(xy, (2U << 24) | 2U, "24-bit samples, two per event");
+	zassert_ok(bcdma_static_xy(4, 8, true, &xy));
+	zassert_equal(xy, BIT(31) | BIT(30) | (3U << 24) | 2U, "32-bit, ACC32, BURST");
+	zassert_ok(bcdma_static_xy(1, 1, false, &xy));
+	zassert_equal(xy, 1U);
+	zassert_ok(bcdma_static_xy(8, 8, false, &xy));
+	zassert_equal(xy, (4U << 24) | 1U);
+	zassert_ok(bcdma_static_xy(4, 4 * 4095, false, &xy));
+	zassert_equal(xy, (3U << 24) | 4095U);
+
+	zassert_equal(bcdma_static_xy(4, 4 * 4096, false, &xy), -EINVAL, "Y overflow");
+	zassert_equal(bcdma_static_xy(4, 6, false, &xy), -EINVAL, "partial sample");
+	zassert_equal(bcdma_static_xy(4, 0, false, &xy), -EINVAL, "no burst");
+	zassert_equal(bcdma_static_xy(5, 5, false, &xy), -EINVAL, "no 40-bit code");
+	zassert_equal(bcdma_static_xy(0, 4, false, &xy), -EINVAL);
+	zassert_equal(bcdma_static_xy(16, 16, false, &xy), -EINVAL);
+}
+
 ZTEST_SUITE(bcdma_desc, NULL, NULL, NULL, NULL, NULL);
