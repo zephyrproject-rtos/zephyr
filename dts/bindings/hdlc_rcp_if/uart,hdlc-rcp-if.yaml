@@ -6,4 +6,4 @@ description: UART HDLC RCP interface node
 
 compatible: "uart,hdlc-rcp-if"
 
-include: base.yaml
+include: [base.yaml, hdlc-rcp-if.yaml]

@@ -5,7 +5,7 @@ description: SPI HDLC RCP interface node
 
 compatible: "spi,hdlc-rcp-if"
 
-include: spi-device.yaml
+include: [spi-device.yaml, hdlc-rcp-if.yaml]
 
 properties:
   int-gpios:
