@@ -545,6 +545,13 @@ static int decode_delta(uint8_t *data, uint16_t offset, uint16_t *pos, uint16_t 
 			return -EINVAL;
 		}
 
+		/* The sum may exceed 16 bits, which no option number and no
+		 * option length in a message does.
+		 */
+		if (val > UINT16_MAX - COAP_OPTION_EXT_269) {
+			return -EINVAL;
+		}
+
 		opt = val + COAP_OPTION_EXT_269;
 	} else if (opt == COAP_OPTION_EXT_15) {
 		return -EINVAL;
