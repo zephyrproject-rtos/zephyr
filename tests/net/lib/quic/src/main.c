@@ -10074,4 +10074,72 @@ ZTEST(net_socket_quic, test_555_stream_open_honours_peer_stream_limit)
 	reset_test_disconnect(&peers);
 }
 
+ZTEST(net_socket_quic, test_566_stop_sending_stops_only_the_sending_part)
+{
+	const uint8_t data[] = "sent after the stop";
+	struct reset_test_peers peers;
+	struct quic_stream *stream;
+	struct zsock_pollfd pfd;
+	uint8_t buf[32];
+	int ret;
+
+	reset_test_connect(&peers, "127.0.0.1:54366", "127.0.0.1:19966");
+
+	/* The server asks the client to stop sending */
+	ret = zsock_shutdown(peers.server_stream, ZSOCK_SHUT_RD);
+	zassert_ok(ret, "Failed to shut the read half down (%d)", -errno);
+
+	stream = zvfs_get_fd_obj(peers.client_stream, NULL, 0);
+	zassert_not_null(stream, "No stream behind fd %d", peers.client_stream);
+
+	for (int i = 0; i < 100 && !stream->tx_reset; i++) {
+		k_msleep(10);
+	}
+
+	zassert_true(stream->tx_reset, "The client stream was not asked to stop sending");
+
+	/* The sending part of the client stream is done: a send fails, and
+	 * poll() reports that it does not block.
+	 */
+	wait_for_revents(peers.client_stream, ZSOCK_POLLOUT, "the stream to be writable");
+	ret = zsock_send(peers.client_stream, data, sizeof(data), 0);
+	zassert_equal(ret, -1, "send() on a stopped stream returned %d", ret);
+	zassert_equal(errno, EPIPE, "send() on a stopped stream set errno to %d", errno);
+
+	/* The receiving part is not: nothing is there to read yet, and what
+	 * the server sends afterwards is read (RFC 9000 ch. 3.5).
+	 */
+	pfd.fd = peers.client_stream;
+	pfd.events = ZSOCK_POLLIN;
+	pfd.revents = 0;
+	ret = zsock_poll(&pfd, 1, 0);
+	zassert_equal(ret, 0, "A stopped stream reads as ended (revents 0x%x)", pfd.revents);
+
+	ret = quic_test_send_all(peers.server_stream, data, sizeof(data));
+	zassert_ok(ret, "Failed to send on the server stream (%d)", ret);
+
+	wait_for_revents(peers.client_stream, ZSOCK_POLLIN, "the data");
+	ret = zsock_recv(peers.client_stream, buf, sizeof(buf), 0);
+	zassert_equal(ret, sizeof(data), "Received %d bytes after the stop (%d)", ret, errno);
+	zassert_mem_equal(buf, data, sizeof(data), "Wrong data after the stop");
+
+	/* It ends when the server ends the stream */
+	ret = zsock_close(peers.server_stream);
+	zassert_ok(ret, "Failed to close the server stream (%d)", -errno);
+
+	wait_for_revents(peers.client_stream, ZSOCK_POLLIN, "the end of the stream");
+	ret = zsock_recv(peers.client_stream, buf, sizeof(buf), 0);
+	zassert_equal(ret, 0, "Expected the end of the stream, got %d (%d)", ret, errno);
+
+	ret = zsock_close(peers.client_stream);
+	zassert_ok(ret, "Failed to close the client stream (%d)", -errno);
+
+	ret = quic_connection_close(peers.server_conn);
+	zassert_ok(ret, "Failed to close the server connection (%d)", ret);
+	ret = quic_connection_close(peers.client_sock);
+	zassert_ok(ret, "Failed to close the client connection (%d)", ret);
+	ret = quic_connection_close(peers.server_sock);
+	zassert_ok(ret, "Failed to close the server socket (%d)", ret);
+}
+
 ZTEST_SUITE(net_socket_quic, NULL, setup, before, after, NULL);
