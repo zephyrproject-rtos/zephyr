@@ -231,3 +231,22 @@
 		};
 	};
 };
+
+/* The first enabled CPU node is not the first CPU node */
+&cpu0 {
+	status = "disabled";
+};
+
+/ {
+	cpus {
+		cpu@1 {
+			compatible = "zephyr,native-sim-cpu";
+			reg = <1>;
+		};
+
+		cpu@2 {
+			compatible = "zephyr,native-sim-cpu";
+			reg = <2>;
+		};
+	};
+};

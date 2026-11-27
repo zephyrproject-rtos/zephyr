@@ -105,4 +105,10 @@ ZTEST(test_kconfig_functions, test_dt_partition_mtd)
 	zassert_str_equal(CONFIG_KCONFIG_DT_MTD_INVALID_NODE, "");
 }
 
+ZTEST(test_kconfig_functions, test_dt_first_enabled_cpu_path)
+{
+	zassert_str_equal(CONFIG_KCONFIG_DT_FIRST_ENABLED_CPU_PATH,
+			  DT_NODE_PATH(DT_PATH(cpus, cpu_1)));
+}
+
 ZTEST_SUITE(test_kconfig_functions, NULL, NULL, NULL, NULL, NULL);
