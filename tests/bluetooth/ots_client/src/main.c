@@ -85,6 +85,34 @@ ZTEST(ots_client_dir_list, test_two_records)
 	zassert_str_equal(decoded[1].name_c, "bc");
 }
 
+/* The octets of a record after the fields it defines, such as an Extension field from a later
+ * version of the service, are skipped to reach the next record
+ */
+ZTEST(ots_client_dir_list, test_record_extension)
+{
+	uint8_t ext_record[] = {RECORD(0x01, 1, 'a'), 0xAA, 0xBB, 0xCC};
+	uint8_t next_record[] = {RECORD(0x02, 2, 'b', 'c')};
+	uint8_t listing[sizeof(ext_record) + sizeof(next_record)];
+	int count;
+
+	/* The Record Length counts the Extension field */
+	sys_put_le16(sizeof(ext_record), ext_record);
+	memcpy(listing, ext_record, sizeof(ext_record));
+	memcpy(&listing[sizeof(ext_record)], next_record, sizeof(next_record));
+
+	count = bt_ots_client_decode_dirlisting(listing, sizeof(listing), dirlisting_cb);
+
+	zassert_equal(count, 2, "decode returned %d", count);
+	zassert_equal(decoded_count, 2);
+	zassert_equal(decoded[0].id, 0x01);
+	zassert_str_equal(decoded[0].name_c, "a");
+	zassert_equal(decoded[0].props, OBJ_PROPS);
+	zassert_equal(decoded[1].id, 0x02);
+	zassert_str_equal(decoded[1].name_c, "bc");
+	zassert_equal(decoded[1].size.cur, OBJ_SIZE);
+	zassert_equal(decoded[1].props, OBJ_PROPS);
+}
+
 /* A record that claims more octets than the listing holds is still rejected */
 ZTEST(ots_client_dir_list, test_truncated_record)
 {
