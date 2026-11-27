@@ -42,6 +42,17 @@ properties:
     description: |
       How many steps to count before reporting an input event.
 
+  detent-state:
+    type: int
+    enum: [0, 1, 2, 3]
+    description: |
+      One of the two resting states of a mechanical encoder with
+      steps-per-period = 2. Bit 0 is the logical level of the first GPIO
+      and bit 1 is the level of the second. The other resting state has
+      both bits inverted. At initialization and resume, counting starts
+      at the first observed resting state. When omitted, counting starts
+      at the initial GPIO state.
+
   zephyr,axis:
     type: int
     required: true
