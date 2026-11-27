@@ -5,7 +5,7 @@ description: Texas Instruments CC2520 802.15.4 wireless transceiver
 
 compatible: "ti,cc2520"
 
-include: spi-device.yaml
+include: [spi-device.yaml, ieee802154-radio.yaml]
 
 properties:
   vreg-en-gpios:

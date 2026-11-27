@@ -5,4 +5,4 @@ description: Test IEEE 802.15.4
 
 compatible: "vnd,ieee802154"
 
-include: base.yaml
+include: [base.yaml, ieee802154-radio.yaml]

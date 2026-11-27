@@ -5,7 +5,7 @@ description: ATMEL AT86RF2xx 802.15.4 wireless transceiver
 
 compatible: "atmel,rf2xx"
 
-include: spi-device.yaml
+include: [spi-device.yaml, ieee802154-radio.yaml]
 
 properties:
   irq-gpios:

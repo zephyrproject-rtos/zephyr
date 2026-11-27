@@ -5,4 +5,4 @@ description: UART PIPE fake radio device (used in QEMU)
 
 compatible: "zephyr,ieee802154-uart-pipe"
 
-include: base.yaml
+include: [base.yaml, ieee802154-radio.yaml]

@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for IEEE 802.15.4 radio devices
+
+class:
+  - net_if
+  - ieee802154_radio

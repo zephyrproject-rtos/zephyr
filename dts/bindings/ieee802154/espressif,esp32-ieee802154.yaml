@@ -5,4 +5,4 @@ description: Espressif ESP32 IEEE 802.15.4 node
 
 compatible: "espressif,esp32-ieee802154"
 
-include: base.yaml
+include: [base.yaml, ieee802154-radio.yaml]

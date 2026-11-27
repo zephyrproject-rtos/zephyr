@@ -5,7 +5,7 @@ description: Telink B91 IEEE802154 node
 
 compatible: "telink,b91-zb"
 
-include: base.yaml
+include: [base.yaml, ieee802154-radio.yaml]
 
 properties:
   reg:

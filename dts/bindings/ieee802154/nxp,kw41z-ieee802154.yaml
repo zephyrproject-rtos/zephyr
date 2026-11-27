@@ -5,7 +5,7 @@ description: NXP KW41Z IEEE 802.15.4 node
 
 compatible: "nxp,kw41z-ieee802154"
 
-include: base.yaml
+include: [base.yaml, ieee802154-radio.yaml]
 
 properties:
   reg:

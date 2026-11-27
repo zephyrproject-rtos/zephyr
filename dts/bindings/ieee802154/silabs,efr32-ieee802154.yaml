@@ -5,7 +5,7 @@ description: Silicon Labs EFR32 IEEE 802.15.4 radio
 
 compatible: "silabs,efr32-ieee802154"
 
-include: base.yaml
+include: [base.yaml, ieee802154-radio.yaml]
 
 properties:
   hfxo:
