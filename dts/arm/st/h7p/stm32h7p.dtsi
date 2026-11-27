@@ -42,12 +42,6 @@
 		};
 	};
 
-	itcm: memory@0 {
-		compatible = "zephyr,memory-region", "arm,itcm";
-		reg = <0x00000000 DT_SIZE_K(192)>;
-		zephyr,memory-region = "ITCM";
-	};
-
 	clocks {
 		clk_hse: clk-hse {
 			compatible = "st,stm32-hse-clock";
@@ -950,6 +944,12 @@
 		};
 
 		/* Debug bus: DBGMCU (not supported yet) */
+	};
+
+	itcm: memory@0 {
+		compatible = "zephyr,memory-region", "arm,itcm";
+		reg = <0x00000000 DT_SIZE_K(192)>;
+		zephyr,memory-region = "ITCM";
 	};
 
 	dtcm: memory@20000000 {
