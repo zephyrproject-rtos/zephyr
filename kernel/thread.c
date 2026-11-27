@@ -784,12 +784,12 @@ static inline void init_thread_cpu_mask(struct k_thread *thread, k_thread_entry_
 {
 #ifdef CONFIG_SCHED_CPU_MASK
 	if (IS_ENABLED(CONFIG_SCHED_CPU_MASK_PIN_ONLY)) {
-		thread->base.cpu_mask = 1; /* must specify only one cpu */
+		thread->base.cpu_mask = CPU_MASK_CPU(0); /* must specify only one cpu */
 	} else if (IS_ENABLED(CONFIG_SCHED_CPU_MASK_DEFAULT_SINGLE_CPU) &&
 		   !z_is_idle_thread_entry(entry)) {
-		thread->base.cpu_mask = BIT(0); /* default to logical cpu 0 */
+		thread->base.cpu_mask = CPU_MASK_CPU(0); /* default to logical cpu 0 */
 	} else {
-		thread->base.cpu_mask = -1; /* allow all cpus */
+		thread->base.cpu_mask = CPU_MASK_CPU_ALL; /* allow all cpus */
 	}
 #else
 	ARG_UNUSED(thread);
@@ -1607,7 +1607,7 @@ void z_dummy_thread_init(struct k_thread *dummy_thread)
 {
 	dummy_thread->base.thread_state = _THREAD_DUMMY;
 #ifdef CONFIG_SCHED_CPU_MASK
-	dummy_thread->base.cpu_mask = -1;
+	dummy_thread->base.cpu_mask = CPU_MASK_CPU_ALL;
 #endif /* CONFIG_SCHED_CPU_MASK */
 	dummy_thread->base.user_options = K_ESSENTIAL;
 #if Z_MUTEX_PI_ENABLED

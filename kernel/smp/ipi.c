@@ -7,6 +7,7 @@
 #include <zephyr/sys/math_extras.h>
 #include <kswap.h>
 #include <ksched.h>
+#include <ksmp.h>
 #include <ipi.h>
 
 #if defined(CONFIG_IPI_OPTIMIZE_IDLE) && defined(CONFIG_PM)
@@ -95,7 +96,7 @@ bool ipi_idle_thread_rebind(struct k_thread *old_thread,
 	bool eligible = sched_ipi_idle_cpu_active(cpu);
 
 #if defined(CONFIG_SCHED_CPU_MASK)
-	eligible = eligible && ((new_thread->base.cpu_mask & BIT(cpu)) != 0U);
+	eligible = eligible && ((new_thread->base.cpu_mask & CPU_MASK_CPU(cpu)) != 0U);
 #endif
 
 	if (!eligible) {
@@ -161,7 +162,7 @@ atomic_val_t ipi_mask_create(struct k_thread *thread)
 	    z_is_idle_thread_object(last_thread) &&
 	    sched_ipi_idle_cpu_active(last) &&
 #if defined(CONFIG_SCHED_CPU_MASK)
-	    (thread->base.cpu_mask & BIT(last)) != 0 &&
+	    (thread->base.cpu_mask & CPU_MASK_CPU(last)) != 0 &&
 #endif
 	    (_kernel.sched_ipi_reserved & BIT(last)) == 0U) {
 		sched_ipi_idle_reserve(last, thread);
@@ -186,7 +187,7 @@ atomic_val_t ipi_mask_create(struct k_thread *thread)
 		 */
 
 #if defined(CONFIG_SCHED_CPU_MASK)
-		if ((thread->base.cpu_mask & BIT(i)) == 0) {
+		if ((thread->base.cpu_mask & CPU_MASK_CPU(i)) == 0) {
 			continue;
 		}
 #endif
