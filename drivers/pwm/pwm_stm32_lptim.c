@@ -416,6 +416,26 @@ static bool is_single_output_inverted(const LPTIM_TypeDef *timer)
 #endif
 }
 
+/*
+ * Stop an instance with a single output before a new polarity is written. Until then the output
+ * idles at the polarity level of the stopped timer.
+ */
+static int stop_single_output(const struct device *dev, bool next_high)
+{
+	const struct pwm_stm32_lptim_config *cfg = dev->config;
+
+	/*
+	 * Only a high output with the regular polarity, in a pulse, drops low until the new
+	 * polarity is written.
+	 */
+	if (next_high) {
+		CLEAR_BIT(cfg->timer->CR, LPTIM_CR_ENABLE);
+		return 0;
+	}
+
+	return reset_timer(dev);
+}
+
 static int set_cycles_single_output(const struct device *dev, uint32_t period_cycles,
 				    uint32_t pulse_cycles, bool inverted)
 {
@@ -460,10 +480,10 @@ static int set_cycles_single_output(const struct device *dev, uint32_t period_cy
 	}
 
 	/*
-	 * The polarity can only be changed while the timer is disabled, which also holds the
-	 * output at the polarity level.
+	 * The polarity can only be changed while the timer is disabled. The next level is the
+	 * constant one, or the inactive level that a waveform starts with.
 	 */
-	ret = reset_timer(dev);
+	ret = stop_single_output(dev, constant ? high : inverted);
 	if (ret < 0) {
 		return ret;
 	}
