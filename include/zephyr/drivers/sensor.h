@@ -80,6 +80,14 @@ enum sensor_channel {
 	SENSOR_CHAN_GYRO_Z,
 	/** Angular velocity around the X, Y and Z axes. */
 	SENSOR_CHAN_GYRO_XYZ,
+	/** Inclination angle on the X axis, in degrees. */
+	SENSOR_CHAN_INCLINATION_X,
+	/** Inclination angle on the Y axis, in degrees. */
+	SENSOR_CHAN_INCLINATION_Y,
+	/** Inclination angle on the Z axis, in degrees. */
+	SENSOR_CHAN_INCLINATION_Z,
+	/** Inclination angles on the X, Y, and Z axes, in degrees. */
+	SENSOR_CHAN_INCLINATION_XYZ,
 	/** Magnetic field on the X axis, in G. */
 	SENSOR_CHAN_MAGN_X,
 	/** Magnetic field on the Y axis, in G. */
@@ -268,7 +276,8 @@ enum sensor_channel {
  */
 #define SENSOR_CHANNEL_3_AXIS(chan)                                                                \
 	((chan) == SENSOR_CHAN_ACCEL_XYZ || (chan) == SENSOR_CHAN_GYRO_XYZ ||                      \
-	 (chan) == SENSOR_CHAN_MAGN_XYZ || (chan) == SENSOR_CHAN_POS_DXYZ)
+	 (chan) == SENSOR_CHAN_MAGN_XYZ || (chan) == SENSOR_CHAN_POS_DXYZ ||                       \
+	 (chan) == SENSOR_CHAN_INCLINATION_XYZ)
 
 /**
  * @brief checks if a given channel is an Accelerometer
@@ -293,6 +302,19 @@ enum sensor_channel {
 #define SENSOR_CHANNEL_IS_GYRO(chan)                                           \
 	((chan) == SENSOR_CHAN_GYRO_XYZ || (chan) == SENSOR_CHAN_GYRO_X ||     \
 	 (chan) == SENSOR_CHAN_GYRO_Y || (chan) == SENSOR_CHAN_GYRO_Z)
+
+/**
+ * @brief Checks if a given channel is an inclination measurement.
+ *
+ * @param[in] chan The channel to check
+ * @retval true if @p chan is any of @ref SENSOR_CHAN_INCLINATION_XYZ,
+ *         @ref SENSOR_CHAN_INCLINATION_X, @ref SENSOR_CHAN_INCLINATION_Y,
+ *         or @ref SENSOR_CHAN_INCLINATION_Z
+ * @retval false otherwise
+ */
+#define SENSOR_CHANNEL_IS_INCLINATION(chan)                                                        \
+	((chan) == SENSOR_CHAN_INCLINATION_XYZ || (chan) == SENSOR_CHAN_INCLINATION_X ||           \
+	 (chan) == SENSOR_CHAN_INCLINATION_Y || (chan) == SENSOR_CHAN_INCLINATION_Z)
 
 /**
  * @brief Sensor trigger types.
@@ -437,6 +459,11 @@ enum sensor_attribute {
 	SENSOR_ATTR_RESOLUTION,
 	/** Chip ID of a sensor */
 	SENSOR_ATTR_CHIP_ID,
+	/**
+	* Selects the operating mode of the sensor, which may configure
+	* measurement behavior, resolution.
+	*/
+	SENSOR_ATTR_MEASUREMENT_MODE,
 	/**
 	 * Number of all common sensor attributes.
 	 */

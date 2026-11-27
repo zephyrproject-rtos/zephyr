@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Sacra Systems Private Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: Murata SCL3300 inclinometer sensor
+
+compatible: "murata,scl3300"
+
+include: spi-device.yaml
+
+properties:
+  init:
+    type: boolean
+    description: Enable sensor initialization sequence
