@@ -636,7 +636,8 @@ static int close(const struct device *instance)
 	rpmsg_inst = &data->rpmsg_inst;
 
 	if (!check_endpoints_freed(rpmsg_inst)) {
-		return -EBUSY;
+		err = -EBUSY;
+		goto error;
 	}
 
 	err = ipc_rpmsg_deinit(rpmsg_inst, data->role);
