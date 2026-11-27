@@ -361,7 +361,13 @@ int modbus_write_holding_regs_fp(const int iface,
 				 float *const reg_buf,
 				 const uint16_t num_regs);
 
-/** Modbus Server User Callback structure */
+/**
+ * @brief Modbus Server User Callback structure
+ *
+ * The callbacks return 0 on success. If a write callback fails, the server
+ * responds with the exception ILLEGAL DATA VALUE if -EINVAL is returned, and
+ * with ILLEGAL DATA ADDRESS for any other error.
+ */
 struct modbus_user_callbacks {
 	/** Coil read callback */
 	int (*coil_rd)(uint16_t addr, bool *state);

@@ -41,6 +41,10 @@ static int coil_rd(uint16_t addr, bool *state)
 
 static int coil_wr(uint16_t addr, bool state)
 {
+	if (addr == MB_TEST_INVAL_COIL) {
+		return state ? -EINVAL : 0;
+	}
+
 	if (addr >= (sizeof(coils) * 8)) {
 		return -ENOTSUP;
 	}
@@ -118,6 +122,10 @@ static int holding_reg_wr(uint16_t addr, uint16_t reg)
 		return -ENOTSUP;
 	}
 
+	if (reg == MB_TEST_INVAL_VALUE) {
+		return -EINVAL;
+	}
+
 	holding_reg[addr] = reg;
 
 	LOG_DBG("Holding register write, addr %u", addr);
@@ -142,6 +150,10 @@ static int holding_reg_wr_fp(uint16_t addr, float reg)
 {
 	if (!IN_RANGE(addr, fp_offset, sizeof(holding_fp) / 2 + fp_offset)) {
 		return -ENOTSUP;
+	}
+
+	if (reg < 0.0f) {
+		return -EINVAL;
 	}
 
 	holding_fp[(addr - fp_offset) / 2] = reg;
