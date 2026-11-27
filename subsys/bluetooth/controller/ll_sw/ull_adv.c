@@ -1958,15 +1958,21 @@ static uint32_t ticker_update_rand(struct ll_adv_set *adv, uint32_t ticks_delay_
 {
 	uint32_t random_delay = 0U;
 	uint32_t ret;
+	int err;
 
 	/* Get pseudo-random number in the range [0..ticks_delay_window].
 	 * Please note that using modulo of 2^32 sample space has an uneven
 	 * distribution, slightly favoring smaller values.
 	 *
-	 * The pool that is read in interrupt context can have fewer bytes
-	 * than are asked for, which leaves the rest of the value as it was.
+	 * On entropy failure keep the minimum delay instead of a stale or
+	 * fixed pseudo-random value: the advertising event timing loses its
+	 * randomisation for this event, but no non-random data is passed off
+	 * as random and the event still occurs at a spec compliant time.
 	 */
-	lll_rand_isr_get(&random_delay, sizeof(random_delay));
+	err = lll_rand_isr_get(&random_delay, sizeof(random_delay));
+	if (err != 0) {
+		random_delay = 0U;
+	}
 	random_delay %= ticks_delay_window;
 	random_delay += (ticks_delay_window_offset + 1);
 

@@ -382,6 +382,48 @@ int lll_deinit(void)
 	return 0;
 }
 
+/* Number of entropy_get_entropy_isr() attempts to fill a buffer. The call
+ * does not wait and may return fewer bytes than requested; retrying can
+ * only help drivers that produce more data without another interrupt, so
+ * keep the bound small.
+ */
+#define LLL_RAND_ISR_RETRIES 3U
+
+static int rand_isr_fill(void *buf, size_t len)
+{
+#if defined(CONFIG_ENTROPY_HAS_DRIVER)
+	uint8_t *dst = (uint8_t *)buf;
+	uint8_t retries = LLL_RAND_ISR_RETRIES;
+	int err;
+
+	do {
+		err = entropy_get_entropy_isr(dev_entropy, dst, len, 0U);
+		if (err < 0) {
+			return err;
+		}
+
+		dst += err;
+		len -= (size_t)err;
+		retries--;
+	} while ((len > 0U) && (retries > 0U));
+
+	if (len > 0U) {
+		/* Buffer not filled without waiting; do not use partially
+		 * randomised data.
+		 */
+		return -EAGAIN;
+	}
+
+	return 0;
+#else /* !CONFIG_ENTROPY_HAS_DRIVER */
+	/* FIXME: No suitable entropy device available yet.
+	 *        It is required by Controller to use random numbers.
+	 *        Hence, return uninitialized buf contents, for now.
+	 */
+	return 0;
+#endif /* !CONFIG_ENTROPY_HAS_DRIVER */
+}
+
 int lll_csrand_get(void *buf, size_t len)
 {
 #if defined(CONFIG_ENTROPY_HAS_DRIVER)
@@ -397,15 +439,7 @@ int lll_csrand_get(void *buf, size_t len)
 
 int lll_csrand_isr_get(void *buf, size_t len)
 {
-#if defined(CONFIG_ENTROPY_HAS_DRIVER)
-	return entropy_get_entropy_isr(dev_entropy, buf, len, 0);
-#else /* !CONFIG_ENTROPY_HAS_DRIVER */
-	/* FIXME: No suitable entropy device available yet.
-	 *        It is required by Controller to use random numbers.
-	 *        Hence, return uninitialized buf contents, for now.
-	 */
-	return 0;
-#endif /* !CONFIG_ENTROPY_HAS_DRIVER */
+	return rand_isr_fill(buf, len);
 }
 
 int lll_rand_get(void *buf, size_t len)
@@ -423,15 +457,7 @@ int lll_rand_get(void *buf, size_t len)
 
 int lll_rand_isr_get(void *buf, size_t len)
 {
-#if defined(CONFIG_ENTROPY_HAS_DRIVER)
-	return entropy_get_entropy_isr(dev_entropy, buf, len, 0);
-#else /* !CONFIG_ENTROPY_HAS_DRIVER */
-	/* FIXME: No suitable entropy device available yet.
-	 *        It is required by Controller to use random numbers.
-	 *        Hence, return uninitialized buf contents, for now.
-	 */
-	return 0;
-#endif /* !CONFIG_ENTROPY_HAS_DRIVER */
+	return rand_isr_fill(buf, len);
 }
 
 int lll_reset(void)

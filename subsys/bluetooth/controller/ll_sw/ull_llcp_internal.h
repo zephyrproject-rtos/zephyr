@@ -667,12 +667,12 @@ void llcp_pdu_decode_version_ind(struct ll_conn *conn, struct pdu_data *pdu);
  * Encryption Start Procedure Helper
  */
 #if defined(CONFIG_BT_CENTRAL)
-void llcp_pdu_encode_enc_req(struct proc_ctx *ctx, struct pdu_data *pdu);
+int llcp_pdu_encode_enc_req(struct proc_ctx *ctx, struct pdu_data *pdu);
 #endif /* CONFIG_BT_CENTRAL */
 
 #if defined(CONFIG_BT_PERIPHERAL)
 void llcp_ntf_encode_enc_req(struct proc_ctx *ctx, struct pdu_data *pdu);
-void llcp_pdu_encode_enc_rsp(struct pdu_data *pdu);
+int llcp_pdu_encode_enc_rsp(struct pdu_data *pdu);
 void llcp_pdu_encode_start_enc_req(struct pdu_data *pdu);
 #endif /* CONFIG_BT_PERIPHERAL */
 

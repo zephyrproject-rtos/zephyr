@@ -135,8 +135,10 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 	struct pdu_adv *pdu_prev, *pdu;
 	struct lll_adv_sync *lll_sync;
 	struct ll_adv_sync_set *sync;
+	uint8_t crc_init[PDU_CRC_SIZE];
 	struct ll_adv_set *adv;
 	uint8_t err, ter_idx;
+	int csrand_err;
 
 	adv = ull_adv_is_created_get(handle);
 	if (!adv) {
@@ -148,6 +150,14 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 		if (err) {
 			return err;
 		}
+	}
+
+	/* Draw random values up-front so that an entropy failure is reported
+	 * before any resource has been acquired.
+	 */
+	csrand_err = lll_csrand_get(crc_init, sizeof(crc_init));
+	if (csrand_err != 0) {
+		return BT_HCI_ERR_HW_FAILURE;
 	}
 
 	lll_sync = adv->lll.sync;
@@ -184,7 +194,7 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 		lll_sync->chm[chm_last].data_chan_count =
 			ull_chan_map_get(lll_sync->chm[chm_last].data_chan_map);
 
-		lll_csrand_get(lll_sync->crc_init, sizeof(lll_sync->crc_init));
+		memcpy(lll_sync->crc_init, crc_init, sizeof(lll_sync->crc_init));
 
 		lll_sync->latency_prepare = 0;
 		lll_sync->latency_event = 0;
