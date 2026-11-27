@@ -48,6 +48,22 @@ static void common(struct gpio_get_direction_fixture *fixture)
 	zassert_ok(rv, "gpio_pin_configure() failed: %d", rv);
 }
 
+static void check_port_direction(const struct gpio_get_direction_fixture *fixture,
+				 bool expect_input, bool expect_output)
+{
+	gpio_port_pins_t inputs = 0U;
+	gpio_port_pins_t outputs = 0U;
+	gpio_port_pins_t pin_mask = (gpio_port_pins_t)BIT(fixture->pin);
+	int rv;
+
+	rv = gpio_port_get_direction(fixture->port, pin_mask, &inputs, &outputs);
+	zassert_ok(rv, "gpio_port_get_direction() failed: %d", rv);
+	zassert_equal(expect_input ? pin_mask : 0U, inputs & pin_mask,
+		      "gpio_port_get_direction() unexpected inputs: 0x%x", (unsigned int)inputs);
+	zassert_equal(expect_output ? pin_mask : 0U, outputs & pin_mask,
+		      "gpio_port_get_direction() unexpected outputs: 0x%x", (unsigned int)outputs);
+}
+
 ZTEST_F(gpio_get_direction, test_disconnect)
 {
 	int rv;
@@ -65,6 +81,8 @@ ZTEST_F(gpio_get_direction, test_disconnect)
 
 	rv = gpio_pin_is_output(fixture->port, fixture->pin);
 	zassert_equal(false, rv, "gpio_pin_is_output() failed: %d", rv);
+
+	check_port_direction(fixture, false, false);
 }
 
 ZTEST_F(gpio_get_direction, test_input)
@@ -84,6 +102,8 @@ ZTEST_F(gpio_get_direction, test_input)
 
 	rv = gpio_pin_is_output(fixture->port, fixture->pin);
 	zassert_equal(false, rv, "gpio_pin_is_output() failed: %d", rv);
+
+	check_port_direction(fixture, true, false);
 }
 
 ZTEST_F(gpio_get_direction, test_output)
@@ -103,6 +123,8 @@ ZTEST_F(gpio_get_direction, test_output)
 
 	rv = gpio_pin_is_output(fixture->port, fixture->pin);
 	zassert_equal(true, rv, "gpio_pin_is_output() failed: %d", rv);
+
+	check_port_direction(fixture, false, true);
 }
 
 ZTEST_F(gpio_get_direction, test_input_output)
@@ -122,6 +144,8 @@ ZTEST_F(gpio_get_direction, test_input_output)
 
 	rv = gpio_pin_is_output(fixture->port, fixture->pin);
 	zassert_equal(true, rv, "gpio_pin_is_output() failed: %d", rv);
+
+	check_port_direction(fixture, true, true);
 }
 
 ZTEST_SUITE(gpio_get_direction, NULL, gpio_get_direction_setup, gpio_get_direction_before, NULL,
