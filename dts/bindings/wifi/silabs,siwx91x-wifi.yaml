@@ -6,6 +6,8 @@ description: Silabs SiWx91x SoC WiFi
 
 compatible: "silabs,siwx91x-wifi"
 
+include: [wifi-native.yaml, wifi-offload.yaml]
+
 properties:
   wifi-max-tx-pwr-scan:
     type: int

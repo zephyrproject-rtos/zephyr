@@ -5,7 +5,7 @@ description: ESP8266/ESP32 WiFi modem (AT Commands)
 
 compatible: "espressif,esp-at"
 
-include: uart-device.yaml
+include: [uart-device.yaml, wifi-offload.yaml]
 
 properties:
   power-gpios:

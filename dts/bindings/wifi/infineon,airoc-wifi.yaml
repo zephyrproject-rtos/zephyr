@@ -8,7 +8,7 @@ description: |
 
 compatible: "infineon,airoc-wifi"
 
-include: [base.yaml, pinctrl-device.yaml]
+include: [base.yaml, pinctrl-device.yaml, wifi-native.yaml]
 
 properties:
   wifi-reg-on-gpios:

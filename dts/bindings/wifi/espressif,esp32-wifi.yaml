@@ -4,3 +4,5 @@
 description: ESP32 SoC Wi-Fi
 
 compatible: "espressif,esp32-wifi"
+
+include: wifi-native.yaml

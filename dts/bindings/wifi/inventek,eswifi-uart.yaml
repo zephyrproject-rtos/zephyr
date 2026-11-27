@@ -6,7 +6,7 @@ description: es-WiFi module (uart firmware interface)
 
 compatible: "inventek,eswifi-uart"
 
-include: uart-device.yaml
+include: [uart-device.yaml, wifi-offload.yaml]
 
 properties:
   resetn-gpios:

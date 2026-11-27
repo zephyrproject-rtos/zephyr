@@ -7,7 +7,7 @@ description: |
 
 compatible: "zephyr,wifi-hwsim"
 
-include: ethernet-controller.yaml
+include: [ethernet-controller.yaml, wifi-native.yaml]
 
 properties:
   radio-index:

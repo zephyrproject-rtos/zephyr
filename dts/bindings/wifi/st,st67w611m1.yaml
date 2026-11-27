@@ -5,7 +5,7 @@ description: ST67W611M1 Wi-Fi module
 
 compatible: "st,st67w611m1"
 
-include: spi-device.yaml
+include: [spi-device.yaml, wifi-native.yaml]
 
 properties:
   chip-select-gpios:

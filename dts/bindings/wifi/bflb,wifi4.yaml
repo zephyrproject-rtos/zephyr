@@ -10,7 +10,7 @@ description: |
 
 compatible: "bflb,wifi4"
 
-include: base.yaml
+include: [base.yaml, wifi-native.yaml]
 
 properties:
   interrupts:
