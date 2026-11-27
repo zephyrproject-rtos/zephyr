@@ -88,7 +88,7 @@ static void ttc_isr(const void *arg)
 	ticks = (cycles - last_cycles) / CYCLES_PER_TICK;
 
 	/* Update last cycles count */
-	last_cycles = cycles;
+	last_cycles += ticks * CYCLES_PER_TICK;
 #else
 	/* Update counter match value for the next interrupt */
 	update_match(cycles, cycles + CYCLES_PER_TICK);
