@@ -4,6 +4,9 @@
  */
 
 #include "mesh_test.h"
+#include "mesh/net.h"
+#include "mesh/proxy.h"
+#include "mesh/proxy_cli.h"
 #include "mesh/proxy_msg.h"
 
 #include <zephyr/bluetooth/byteorder.h>
@@ -17,8 +20,24 @@
 #include <testlib/scan.h>
 
 #define WAIT_TIME 10 /* seconds */
+#define LINK_LOSS_WAIT_TIME 20 /* seconds, including a supervision timeout of 4 s */
 
 #define TESTER_NAME "gatt_srv tester"
+
+#define DUT_ADDR    0x0001
+#define TESTER_ADDR 0x0002
+
+/* The opcode alone, so that each relayed Network PDU fits in one notification at the default
+ * ATT MTU.
+ */
+#define MSG_LEN 1
+
+/* With the DUT's reply, which the tester may leave unacknowledged, the relays use up the
+ * controller's ACL buffers, which the lost link never frees, so that the host holds the last ones.
+ */
+#define RELAY_COUNT (CONFIG_BT_BUF_ACL_TX_COUNT + 2)
+BUILD_ASSERT(RELAY_COUNT + 1 - CONFIG_BT_BUF_ACL_TX_COUNT < CONFIG_BT_ATT_TX_COUNT,
+	     "ATT would block the mesh work queue");
 
 extern const struct bt_mesh_comp comp;
 
@@ -98,6 +117,49 @@ static void test_dut_pb_gatt(void)
 	PASS();
 }
 
+static void test_dut_proxy_relay_link_loss(void)
+{
+	static const struct bt_mesh_test_cfg dut_cfg = {
+		.addr = DUT_ADDR,
+		.dev_key = { 0x01 },
+	};
+	struct bt_mesh_adv *advs[CONFIG_BT_MESH_ADV_BUF_COUNT];
+
+	bt_mesh_test_cfg_set(&dut_cfg, LINK_LOSS_WAIT_TIME);
+	bt_mesh_test_setup();
+
+	/* Keep the local advertising buffers for the relayed messages only, and receive the
+	 * tester's message over GATT only, so that the Proxy Server adds the tester to its filter.
+	 */
+	bt_mesh_beacon_set(false);
+	ASSERT_OK(bt_mesh_scan_disable());
+
+	ASSERT_OK(bt_mesh_test_recv(MSG_LEN, DUT_ADDR, NULL, K_SECONDS(WAIT_TIME)));
+	ASSERT_OK(bt_mesh_test_send(TESTER_ADDR, NULL, MSG_LEN, 0, K_SECONDS(1)));
+
+	/* Let the tester vanish, then queue relayed messages that it will never receive. */
+	k_sleep(K_SECONDS(1));
+	ASSERT_EQUAL(1, bt_mesh_proxy_srv_connected_cnt());
+
+	for (int i = 0; i < RELAY_COUNT; i++) {
+		ASSERT_OK(bt_mesh_test_send(TESTER_ADDR, NULL, MSG_LEN, 0, K_SECONDS(1)));
+	}
+
+	WAIT_FOR_COND(bt_mesh_proxy_srv_connected_cnt() == 0, WAIT_TIME);
+
+	for (int i = 0; i < ARRAY_SIZE(advs); i++) {
+		advs[i] = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
+					     BT_MESH_TRANSMIT(2, 20), K_NO_WAIT);
+		ASSERT_TRUE_MSG(advs[i] != NULL, "Only %d advertising buffers free\n", i);
+	}
+
+	for (int i = 0; i < ARRAY_SIZE(advs); i++) {
+		bt_mesh_adv_unref(advs[i]);
+	}
+
+	PASS();
+}
+
 /* Write to Data In and to the CCC of Data Out of a Mesh GATT service on a link that the server
  * did not accept: the write to the CCC must fail and the DUT must still respond afterwards.
  */
@@ -163,6 +225,45 @@ static void test_tester_pb_gatt(void)
 		     BT_MESH_PROXY_PROV);
 }
 
+/* Keep the supervision timeout of the link: the DUT requests a shorter one 5 s after connecting. */
+static bool le_param_req_reject(struct bt_conn *conn, struct bt_le_conn_param *param)
+{
+	return false;
+}
+
+static struct bt_conn_cb param_req_reject_cb = {
+	.le_param_req = le_param_req_reject,
+};
+
+static void test_tester_proxy_relay_link_loss(void)
+{
+	static const struct bt_mesh_test_cfg tester_cfg = {
+		.addr = TESTER_ADDR,
+		.dev_key = { 0x02 },
+	};
+	int err;
+
+	bt_mesh_test_cfg_set(&tester_cfg, LINK_LOSS_WAIT_TIME);
+	ASSERT_OK(bt_conn_cb_register(&param_req_reject_cb));
+	bt_mesh_test_setup();
+
+	ASSERT_OK(bt_mesh_proxy_connect(0));
+	WAIT_FOR_COND(bt_mesh_proxy_cli_is_connected(0), WAIT_TIME);
+
+	/* The Proxy Client relays messages only once it has enabled notifications on the link. */
+	do {
+		ASSERT_OK(bt_mesh_test_send(DUT_ADDR, NULL, MSG_LEN, 0, K_SECONDS(1)));
+		err = bt_mesh_test_recv(MSG_LEN, TESTER_ADDR, NULL, K_MSEC(500));
+	} while (err == -ETIMEDOUT);
+	ASSERT_OK(err);
+
+	/* Exit without terminating the link: the DUT loses it on the supervision timeout. The
+	 * script runs the tester with -disconnect_on_exit=1, so the simulation continues.
+	 */
+	PASS();
+	bs_trace_silent_exit(0);
+}
+
 #define TEST_CASE(role, name, description)                                                         \
 	{                                                                                          \
 		.test_id = "gatt_srv_" #role "_" #name, .test_descr = description,                 \
@@ -172,9 +273,11 @@ static void test_tester_pb_gatt(void)
 static const struct bst_test_instance test_gatt_srv[] = {
 	TEST_CASE(dut, proxy, "Provisioned node with a link the Proxy Server did not accept"),
 	TEST_CASE(dut, pb_gatt, "PB-GATT node with a link the PB-GATT Server did not accept"),
+	TEST_CASE(dut, proxy_relay_link_loss, "Proxy Server losing the link with relays queued"),
 
 	TEST_CASE(tester, proxy, "Write to the Mesh Proxy Service on a link not accepted"),
 	TEST_CASE(tester, pb_gatt, "Write to the Mesh Provisioning Service on a link not accepted"),
+	TEST_CASE(tester, proxy_relay_link_loss, "Proxy Client leaving without ending the link"),
 
 	BSTEST_END_MARKER};
 
