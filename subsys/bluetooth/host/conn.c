@@ -3262,9 +3262,6 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 			info->le.remote = &conn->le.init_addr;
 		}
 		info->le.interval_us = conn->le.interval_us;
-#if !defined(CONFIG_BT_SHORTER_CONNECTION_INTERVALS)
-		info->le._interval = conn->le.interval_us / BT_HCI_LE_INTERVAL_UNIT_US;
-#endif
 		info->le.latency = conn->le.latency;
 		info->le.timeout = conn->le.timeout;
 #if defined(CONFIG_BT_USER_PHY_UPDATE)

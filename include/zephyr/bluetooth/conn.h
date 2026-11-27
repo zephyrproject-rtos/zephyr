@@ -15,7 +15,7 @@
  * @brief Connection management
  * @defgroup bt_conn Connection management
  * @since 1.0
- * @version 1.0.1
+ * @version 2.0.0
  * @ingroup bluetooth
  * @{
  */
@@ -1116,20 +1116,6 @@ struct bt_conn_le_info {
 	const bt_addr_le_t *remote;
 	/** Connection interval in microseconds */
 	uint32_t interval_us;
-#if !defined(CONFIG_BT_SHORTER_CONNECTION_INTERVALS) || defined(__DOXYGEN__)
-	union {
-		/** @brief Connection interval in units of 1.25 ms
-		 *
-		 * @deprecated Use @ref bt_conn_le_info.interval_us instead
-		 */
-		__deprecated uint16_t interval;
-		/** @cond INTERNAL_HIDDEN */
-		/** Workaround for setting deprecated @ref bt_conn_le_info.interval */
-		uint16_t _interval;
-		/** @endcond */
-	};
-#endif /* !CONFIG_BT_SHORTER_CONNECTION_INTERVALS */
-
 	uint16_t latency; /**< Connection peripheral latency */
 	uint16_t timeout; /**< Connection supervision timeout */
 
