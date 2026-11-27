@@ -20,12 +20,15 @@ LOG_MODULE_REGISTER(ti_adc);
 #define TI_ADC_TOTAL_CHANNELS  (8)
 #define TI_ADC_TOTAL_STEPS     (16)
 #define TI_ADC_IDLE_TIMEOUT_MS (83)
+#define TI_ADC_IDLE_TIMEOUT_ISR_US (1000U)
+#define TI_ADC_IDLE_POLL_US (10U)
 
 struct ti_adc_regs {
 	uint8_t RESERVED_1[0x28];     /**< Reserved, offset: 0xA0 - 0x28 */
 	volatile uint32_t IRQ_STATUS; /**< Interrupt Status Register, offset: 0x28 */
 	volatile uint32_t IRQ_ENABLE; /**< Interrupt Enable Register, offset: 0x2C */
-	uint8_t RESERVED_2[0x10];     /**< Reserved, offset: 0x30 - 0x40 */
+	volatile uint32_t IRQ_ENABLE_CLR; /**< Interrupt Enable Clear Register, offset: 0x30 */
+	uint8_t RESERVED_2[0xC];      /**< Reserved, offset: 0x34 - 0x40 */
 	volatile uint32_t CONTROL;    /**< Control Register, offset: 0x40 */
 	volatile uint32_t SEQ_STATUS; /**< Sequencer Status Register, offset: 0x44 */
 	uint8_t RESERVED_3[0xC];      /**< Reserved, offset: 0x48 - 0x54 */
@@ -65,13 +68,11 @@ enum ti_adc_irq {
 /* ADC Sequencer Status Register */
 #define TI_ADC_SEQ_STATUS_FSM       BIT(5)        /* FSM Status */
 #define TI_ADC_SEQ_STATUS_FSM_IDLE  (0x0U)        /* FSM Status - Idle */
-#define TI_ADC_SEQ_STATUS_STEP      GENMASK(4, 0) /* Current Step */
-#define TI_ADC_SEQ_STATUS_STEP_IDLE (0x10U)       /* Current Step - Idle */
 
 /* ADC Sequencer Step Config Register */
 #define TI_ADC_STEPCONFIG_MODE            GENMASK(1, 0)   /* Step Mode */
-#define TI_ADC_STEPCONFIG_MODE_SINGLESHOT (0x0U)          /* Step Mode - Continuous */
-#define TI_ADC_STEPCONFIG_MODE_CONTINUOUS (0x1U)          /* Step Mode - Singleshot */
+#define TI_ADC_STEPCONFIG_MODE_SINGLESHOT (0x0U)          /* Step Mode - Singleshot */
+#define TI_ADC_STEPCONFIG_MODE_CONTINUOUS (0x1U)          /* Step Mode - Continuous */
 #define TI_ADC_STEPCONFIG_AVERAGING       GENMASK(4, 2)   /* Step Averaging */
 #define TI_ADC_STEPCONFIG_AVERAGING_MAX   (4U)            /* Step Averaging - Max */
 #define TI_ADC_STEPCONFIG_SEL_INM         GENMASK(18, 15) /* Negative Input */
@@ -90,6 +91,9 @@ enum ti_adc_irq {
 #define TI_ADC_FIFO_THRESHOLD (40)
 
 #define TI_ADC_FIFOWC_NUMWDS GENMASK(8, 0)
+
+#define TI_ADC_BURST_LEVEL_MAX (128U)
+#define TI_ADC_BURST_LEVEL_MIN (2U)
 
 /* FIFO Data Register */
 #define TI_ADC_FIFODATA_ADCDATA GENMASK(11, 0) /* FIFO Data Mask */
@@ -115,8 +119,13 @@ struct ti_adc_data {
 	const struct device *dev;
 	uint8_t steps[TI_ADC_TOTAL_CHANNELS];
 	uint32_t fifo_irq_mask;
+	uint32_t fifo_thr_irq;
 	volatile const uint32_t *fifo_wc_ptr;
 	volatile const uint32_t *fifo_data_ptr;
+	volatile uint32_t *fifo_thr_ptr;
+	bool burst;
+	uint32_t words_left;
+	uint8_t burst_pos;
 	uint16_t *buffer;
 	uint16_t *repeat_buffer;
 	uint8_t slot[TI_ADC_TOTAL_CHANNELS];
@@ -124,16 +133,59 @@ struct ti_adc_data {
 	uint8_t step_count;
 };
 
-/* Forward Declaration */
-static int ti_adc_sequencer_start(const struct device *dev);
+static int ti_adc_wait_idle(const struct device *dev)
+{
+	struct ti_adc_data *data = DEV_DATA(dev);
+	struct ti_adc_regs *regs = DEV_REGS(dev);
+	const bool in_isr = k_is_in_isr();
+	uint32_t timeout_us = TI_ADC_IDLE_TIMEOUT_MS * USEC_PER_MSEC * data->chan_count;
+
+	if (in_isr) {
+		timeout_us = TI_ADC_IDLE_TIMEOUT_ISR_US;
+	}
+
+	return WAIT_FOR(FIELD_GET(TI_ADC_SEQ_STATUS_FSM, regs->SEQ_STATUS) ==
+				TI_ADC_SEQ_STATUS_FSM_IDLE,
+			timeout_us,
+			in_isr ? k_busy_wait(TI_ADC_IDLE_POLL_US)
+			       : (void)k_sleep(K_USEC(TI_ADC_IDLE_POLL_US)))
+		       ? 0
+		       : -ETIMEDOUT;
+}
+
+static void ti_adc_fail(const struct device *dev, int status)
+{
+	struct ti_adc_regs *regs = DEV_REGS(dev);
+	struct ti_adc_data *data = DEV_DATA(dev);
+
+	regs->CONTROL &= ~TI_ADC_CONTROL_ENABLE;
+	regs->STEPENABLE = 0;
+	regs->IRQ_ENABLE_CLR = data->fifo_thr_irq | TI_ADC_IRQ_END_OF_SEQUENCE;
+	data->burst = false;
+
+	if (data->ctx.sequence.options != NULL && data->ctx.options.interval_us != 0) {
+		adc_context_disable_timer(&data->ctx);
+	}
+
+	adc_context_complete(&data->ctx, status);
+}
 
 static void adc_context_start_sampling(struct adc_context *ctx)
 {
 	struct ti_adc_data *data = CONTAINER_OF(ctx, struct ti_adc_data, ctx);
 	struct ti_adc_regs *regs = DEV_REGS(data->dev);
+	const uint32_t mode =
+		data->burst ? TI_ADC_STEPCONFIG_MODE_CONTINUOUS : TI_ADC_STEPCONFIG_MODE_SINGLESHOT;
 	uint8_t n = 0;
 
 	regs->CONTROL &= ~TI_ADC_CONTROL_ENABLE;
+
+	if (ti_adc_wait_idle(data->dev) < 0) {
+		LOG_ERR("Sequencer failed to go idle");
+		ti_adc_fail(data->dev, -EIO);
+		return;
+	}
+
 	regs->STEPENABLE = 0;
 
 	for (uint32_t wc = FIELD_GET(TI_ADC_FIFOWC_NUMWDS, *data->fifo_wc_ptr); wc > 0; wc--) {
@@ -145,6 +197,11 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	/* enable steps */
 	for (int chan = 0; chan < TI_ADC_TOTAL_CHANNELS; chan++) {
 		if (IS_BIT_SET(ctx->sequence.channels, chan)) {
+			uint32_t config = regs->STEP[data->steps[chan]].CONFIG;
+
+			config &= ~TI_ADC_STEPCONFIG_MODE;
+			config |= FIELD_PREP(TI_ADC_STEPCONFIG_MODE, mode);
+			regs->STEP[data->steps[chan]].CONFIG = config;
 			regs->STEPENABLE |= BIT(data->steps[chan] + 1);
 		}
 	}
@@ -159,9 +216,19 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 		}
 	}
 
-	if (ti_adc_sequencer_start(data->dev) < 0) {
-		LOG_ERR("Sequencer failed to start");
-	};
+	if (data->burst) {
+		regs->IRQ_ENABLE_CLR = TI_ADC_IRQ_END_OF_SEQUENCE;
+		*data->fifo_thr_ptr =
+			CLAMP(data->words_left, TI_ADC_BURST_LEVEL_MIN, TI_ADC_BURST_LEVEL_MAX) - 1;
+		regs->IRQ_STATUS = data->fifo_thr_irq | TI_ADC_IRQ_END_OF_SEQUENCE;
+		regs->IRQ_ENABLE = data->fifo_thr_irq;
+	} else {
+		regs->IRQ_ENABLE_CLR = data->fifo_thr_irq;
+		regs->IRQ_STATUS = data->fifo_thr_irq | TI_ADC_IRQ_END_OF_SEQUENCE;
+		regs->IRQ_ENABLE = TI_ADC_IRQ_END_OF_SEQUENCE;
+	}
+
+	regs->CONTROL |= TI_ADC_CONTROL_ENABLE;
 }
 
 static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repeat)
@@ -175,36 +242,16 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repe
 	}
 }
 
-static int ti_adc_sequencer_start(const struct device *dev)
-{
-	struct ti_adc_data *data = DEV_DATA(dev);
-	struct ti_adc_regs *regs = DEV_REGS(dev);
-	uint64_t timeout = k_uptime_get();
-	uint32_t seq_status = regs->SEQ_STATUS;
-
-	while (FIELD_GET(TI_ADC_SEQ_STATUS_FSM, seq_status) != TI_ADC_SEQ_STATUS_FSM_IDLE &&
-	       FIELD_GET(TI_ADC_SEQ_STATUS_STEP, seq_status) != TI_ADC_SEQ_STATUS_STEP_IDLE) {
-		/* Timeout */
-		if (k_uptime_get() - timeout > (TI_ADC_IDLE_TIMEOUT_MS * data->chan_count)) {
-			return -ETIMEDOUT;
-		}
-
-		k_sleep(K_USEC(10)); /* sleep for 10us */
-
-		seq_status = regs->SEQ_STATUS;
-	}
-
-	regs->CONTROL |= TI_ADC_CONTROL_ENABLE;
-
-	return 0;
-}
-
 static int ti_adc_channel_setup(const struct device *dev, const struct adc_channel_cfg *chan_cfg)
 {
 	const struct ti_adc_cfg *cfg = DEV_CFG(dev);
 	struct ti_adc_data *data = DEV_DATA(dev);
 	struct ti_adc_regs *regs = DEV_REGS(dev);
 	const uint8_t chan = chan_cfg->channel_id;
+
+	if (data->burst) {
+		return -EBUSY;
+	}
 
 	if (chan >= cfg->channel_count) {
 		LOG_ERR("Channel %d invalid, must be less than %d", chan, cfg->channel_count);
@@ -259,7 +306,6 @@ static int ti_adc_channel_setup(const struct device *dev, const struct adc_chann
 		data->steps[chan] = data->step_count++;
 	}
 
-	/* TODO: allow continuous mode when DMA is possible */
 	regs->STEP[data->steps[chan]].CONFIG =
 		FIELD_PREP(TI_ADC_STEPCONFIG_MODE, TI_ADC_STEPCONFIG_MODE_SINGLESHOT) |
 		FIELD_PREP(TI_ADC_STEPCONFIG_AVERAGING, cfg->oversampling[chan]) |
@@ -340,6 +386,11 @@ static int ti_adc_read_start(const struct device *dev, const struct adc_sequence
 	data->buffer = sequence->buffer;
 	data->repeat_buffer = sequence->buffer;
 
+	data->burst = sequence->options != NULL && sequence->options->interval_us == 0 &&
+		      sequence->options->extra_samplings > 0 && sequence->options->callback == NULL;
+	data->words_left = data->chan_count * samplings;
+	data->burst_pos = 0;
+
 	adc_context_start_read(&data->ctx, sequence);
 
 	return adc_context_wait_for_completion(&data->ctx);
@@ -385,14 +436,18 @@ static int ti_adc_init(const struct device *dev)
 	if (cfg->fifo == 0) {
 		/* FIFO 0 */
 		data->fifo_irq_mask = TI_ADC_IRQ_FIFO0_OVERFLOW | TI_ADC_IRQ_FIFO0_UNDERFLOW;
+		data->fifo_thr_irq = TI_ADC_IRQ_FIFO0_THR;
 		data->fifo_wc_ptr = &regs->FIFO0WC;
 		data->fifo_data_ptr = &regs->FIFO0DATA;
+		data->fifo_thr_ptr = &regs->FIFO0THRSH;
 		regs->FIFO0THRSH = TI_ADC_FIFO_THRESHOLD;
 	} else if (cfg->fifo == 1) {
 		/* FIFO 1 */
 		data->fifo_irq_mask = TI_ADC_IRQ_FIFO1_OVERFLOW | TI_ADC_IRQ_FIFO1_UNDERFLOW;
+		data->fifo_thr_irq = TI_ADC_IRQ_FIFO1_THR;
 		data->fifo_wc_ptr = &regs->FIFO1WC;
 		data->fifo_data_ptr = &regs->FIFO1DATA;
+		data->fifo_thr_ptr = &regs->FIFO1THRSH;
 		regs->FIFO1THRSH = TI_ADC_FIFO_THRESHOLD;
 	} else {
 		LOG_ERR("FIFO must be 0 or 1");
@@ -400,7 +455,7 @@ static int ti_adc_init(const struct device *dev)
 	}
 
 	/* clear interrupt status */
-	regs->IRQ_STATUS = data->fifo_irq_mask | TI_ADC_IRQ_END_OF_SEQUENCE;
+	regs->IRQ_STATUS = data->fifo_irq_mask | data->fifo_thr_irq | TI_ADC_IRQ_END_OF_SEQUENCE;
 
 	/* power up if not already up */
 	if (regs->CONTROL & TI_ADC_CONTROL_POWER_DOWN) {
@@ -415,6 +470,70 @@ static int ti_adc_init(const struct device *dev)
 	return 0;
 }
 
+static void ti_adc_burst_stop(const struct device *dev, int status)
+{
+	struct ti_adc_regs *regs = DEV_REGS(dev);
+	struct ti_adc_data *data = DEV_DATA(dev);
+
+	regs->CONTROL &= ~TI_ADC_CONTROL_ENABLE;
+	regs->STEPENABLE = 0;
+	regs->IRQ_ENABLE_CLR = data->fifo_thr_irq;
+	data->burst = false;
+
+	adc_context_complete(&data->ctx, status);
+}
+
+static void ti_adc_burst_isr(const struct device *dev, uint32_t status)
+{
+	struct ti_adc_regs *regs = DEV_REGS(dev);
+	struct ti_adc_data *data = DEV_DATA(dev);
+	uint32_t level;
+
+	if ((status & data->fifo_irq_mask) != 0U) {
+		regs->IRQ_STATUS = status & data->fifo_irq_mask;
+		LOG_ERR("FIFO %s",
+			(status & (TI_ADC_IRQ_FIFO0_OVERFLOW | TI_ADC_IRQ_FIFO1_OVERFLOW))
+				? "overflow"
+				: "underflow");
+		ti_adc_burst_stop(dev, -EIO);
+		return;
+	}
+
+	if ((status & data->fifo_thr_irq) == 0) {
+		regs->IRQ_STATUS = status;
+		return;
+	}
+
+	regs->IRQ_STATUS = data->fifo_thr_irq;
+
+	do {
+		uint32_t wc = FIELD_GET(TI_ADC_FIFOWC_NUMWDS, *data->fifo_wc_ptr);
+
+		wc = MIN(wc, data->words_left);
+		data->words_left -= wc;
+
+		while (wc-- > 0) {
+			uint32_t word = *data->fifo_data_ptr;
+
+			data->buffer[data->slot[data->burst_pos]] =
+				FIELD_GET(TI_ADC_FIFODATA_ADCDATA, word);
+
+			if (++data->burst_pos == data->chan_count) {
+				data->burst_pos = 0;
+				data->buffer += data->chan_count;
+			}
+		}
+
+		if (data->words_left == 0) {
+			ti_adc_burst_stop(dev, 0);
+			return;
+		}
+
+		level = CLAMP(data->words_left, TI_ADC_BURST_LEVEL_MIN, TI_ADC_BURST_LEVEL_MAX);
+		*data->fifo_thr_ptr = level - 1;
+	} while (FIELD_GET(TI_ADC_FIFOWC_NUMWDS, *data->fifo_wc_ptr) >= level - 1);
+}
+
 static void ti_adc_isr(const struct device *dev)
 {
 	struct ti_adc_regs *regs = DEV_REGS(dev);
@@ -422,6 +541,11 @@ static void ti_adc_isr(const struct device *dev)
 	uint32_t status = regs->IRQ_STATUS;
 	uint8_t count = 0;
 	uint32_t fsm;
+
+	if (data->burst) {
+		ti_adc_burst_isr(dev, status);
+		return;
+	}
 
 	/* fifo overflow or underflow */
 	if (status & data->fifo_irq_mask) {
