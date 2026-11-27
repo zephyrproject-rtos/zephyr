@@ -7386,6 +7386,10 @@ static int quic_tls_clone(struct quic_tls_context *target_tls,
 	memcpy(&target_tls->options, &source_tls->options,
 	       sizeof(target_tls->options));
 
+	memcpy(target_tls->cert_chain_tags, source_tls->cert_chain_tags,
+	       sizeof(target_tls->cert_chain_tags));
+	target_tls->cert_chain_count = source_tls->cert_chain_count;
+
 	return 0;
 }
 
