@@ -13,14 +13,6 @@ static atomic_val_t cpu_pending_ipi[CONFIG_MP_MAX_NUM_CPUS];
 #define IPI_SCHED     0
 #define IPI_FPU_FLUSH 1
 
-static int send_ipi(unsigned long hart_mask, unsigned long hart_mask_base)
-{
-	struct sbiret ret =
-		sbi_ecall(hart_mask, hart_mask_base, 0, 0, 0, 0, SBI_FUNC_SEND_IPI, SBI_EXT_IPI);
-
-	return sbi_err_to_errno(ret.error);
-}
-
 void arch_sched_directed_ipi(uint32_t cpu_bitmap)
 {
 	unsigned long hartid, hmask = 0, hbase = 0, htop = 0;
@@ -40,7 +32,7 @@ void arch_sched_directed_ipi(uint32_t cpu_bitmap)
 
 		if (hmask) {
 			if (hartid + BITS_PER_LONG <= htop || hbase + BITS_PER_LONG <= hartid) {
-				send_ipi(hmask, hbase);
+				(void)sbi_send_ipi(hmask, hbase);
 				hmask = 0;
 			} else if (hartid < hbase) {
 				/* shift the mask to fit lower hartid */
@@ -58,7 +50,7 @@ void arch_sched_directed_ipi(uint32_t cpu_bitmap)
 	}
 
 	if (hmask) {
-		send_ipi(hmask, hbase);
+		(void)sbi_send_ipi(hmask, hbase);
 	}
 
 	arch_irq_unlock(key);
@@ -68,7 +60,7 @@ void arch_sched_directed_ipi(uint32_t cpu_bitmap)
 void arch_flush_fpu_ipi(unsigned int cpu)
 {
 	atomic_set_bit(&cpu_pending_ipi[cpu], IPI_FPU_FLUSH);
-	send_ipi(1UL, _kernel.cpus[cpu].arch.hartid);
+	(void)sbi_send_ipi(1UL, _kernel.cpus[cpu].arch.hartid);
 }
 #endif /* CONFIG_FPU_SHARING */
 

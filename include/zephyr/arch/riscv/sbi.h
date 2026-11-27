@@ -11,9 +11,8 @@
  *
  * Defines SBI extension IDs, function IDs, and error codes used by
  * S-mode code to request M-mode firmware services via the @c ecall
- * instruction.  The subset defined here covers only the extensions
- * used by Zephyr's in-tree minimal SBI runtime
- * (@c arch/riscv/core/sbi.S).
+ * instruction. The same calls can be used with Zephyr's minimal SBI
+ * runtime or external firmware that provides the requested extension.
  *
  * References: RISC-V SBI Specification v2.0
  * (https://github.com/riscv-non-isa/riscv-sbi-doc)
@@ -24,6 +23,8 @@
 
 #ifndef _ASMLANGUAGE
 #include <errno.h>
+#include <stdint.h>
+#include <zephyr/sys/util_macro.h>
 #endif /* _ASMLANGUAGE */
 
 /** @brief SBI extension ID for the Timer extension (TIME) */
@@ -168,6 +169,39 @@ static inline struct sbiret sbi_ecall(unsigned long arg0, unsigned long arg1, un
 	ret.value = a1;
 
 	return ret;
+}
+
+/** Program the absolute 64-bit timer deadline, split across a0/a1 on RV32. */
+static inline struct sbiret sbi_set_timer(uint64_t deadline)
+{
+	unsigned long hi = IS_ENABLED(CONFIG_64BIT) ? 0 : (unsigned long)(deadline >> 32);
+
+	return sbi_ecall((unsigned long)deadline, hi, 0, 0, 0, 0, SBI_FUNC_SET_TIMER, SBI_EXT_TIME);
+}
+
+/** Request a system reset or shutdown. */
+static inline struct sbiret sbi_system_reset(uint32_t type, uint32_t reason)
+{
+	return sbi_ecall(type, reason, 0, 0, 0, 0, SBI_FUNC_SYSTEM_RESET, SBI_EXT_SRST);
+}
+
+/** Send a supervisor software interrupt to the selected harts. */
+static inline struct sbiret sbi_send_ipi(unsigned long hart_mask, unsigned long hart_mask_base)
+{
+	return sbi_ecall(hart_mask, hart_mask_base, 0, 0, 0, 0, SBI_FUNC_SEND_IPI, SBI_EXT_IPI);
+}
+
+/** Start a hart at a physical address, passing opaque in a1 on entry. */
+static inline struct sbiret sbi_hart_start(unsigned long hartid, unsigned long start_addr,
+					   unsigned long opaque)
+{
+	return sbi_ecall(hartid, start_addr, opaque, 0, 0, 0, SBI_FUNC_HART_START, SBI_EXT_HSM);
+}
+
+/** Stop the calling hart. A successful call does not return. */
+static inline struct sbiret sbi_hart_stop(void)
+{
+	return sbi_ecall(0, 0, 0, 0, 0, 0, SBI_FUNC_HART_STOP, SBI_EXT_HSM);
 }
 #endif /* _ASMLANGUAGE */
 
