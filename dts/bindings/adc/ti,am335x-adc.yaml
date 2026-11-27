@@ -24,6 +24,15 @@ properties:
       - 1
     description: FIFO for storing conversions
 
+  channel-count:
+    type: int
+    default: 8
+    enum: [1, 2, 3, 4, 5, 6, 7, 8]
+    description: |
+      Number of analog inputs of this ADC instance. The default is the full
+      8-input mux, all bonded out on AM64x; a SoC that bonds out fewer, such
+      as AM62L, must set it.
+
   "#io-channel-cells":
     const: 1
 
