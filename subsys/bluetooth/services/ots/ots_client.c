@@ -1762,6 +1762,11 @@ static int decode_record(struct net_buf_simple *buf,
 		rec->metadata.props = net_buf_simple_pull_le32(buf);
 	}
 
+	/* Skip the octets that follow the fields above, such as an Extension field, to the start
+	 * of the next record
+	 */
+	(void)net_buf_simple_pull(buf, rec->len - (start_len - buf->len));
+
 	return rec->len;
 }
 
