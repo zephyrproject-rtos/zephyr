@@ -14,7 +14,7 @@
  * @brief RFCOMM
  * @defgroup bt_rfcomm RFCOMM
  * @since 1.6
- * @version 0.1.0
+ * @version 0.1.1
  * @ingroup bluetooth
  * @{
  */
@@ -109,22 +109,22 @@ struct bt_rfcomm_dlc_ops {
 	 *  credits (CFC) or assert FC=1 (non-CFC) until @ref bt_rfcomm_dlc_recv_complete is called
 	 *  for every outstanding buffer.
 	 *
-	 *  When @c -EINPROGRESS is returned, the application takes ownership of the @p buf
-	 *  reference and must eventually call @ref bt_rfcomm_dlc_recv_complete exactly once,
-	 *  passing back the same @p buf pointer. No @ref net_buf_ref or @ref net_buf_unref calls
-	 *  are needed around that hand-off.
+	 *  Returning @c -EINPROGRESS makes the application responsible for completing the @p buf
+	 *  reference through exactly one call to @ref bt_rfcomm_dlc_recv_complete, passing back
+	 *  the same @p buf pointer. No @ref net_buf_ref or @ref net_buf_unref calls are needed
+	 *  around that hand-off.
 	 *
-	 *  @warning @ref bt_rfcomm_dlc_recv_complete must be called from a thread context
-	 *           <b>after this callback has returned</b>. Calling it from inside the recv
-	 *           callback (before it returns) will underflow the in-progress counter and
-	 *           cause @ref bt_rfcomm_dlc_recv_complete to fail with @c -EINVAL.
+	 *  @ref bt_rfcomm_dlc_recv_complete may be called from a thread context before this
+	 *  callback returns, including from inside the callback. In that case, completion is
+	 *  recorded until the callback returns. The callback must still return @c -EINPROGRESS;
+	 *  otherwise the stack reports an error and disconnects the DLC.
 	 *
 	 *  @param dlc The dlc receiving data.
 	 *  @param buf Buffer containing incoming data.
 	 *
 	 *  @retval 0 Data was fully consumed synchronously; the stack retains ownership of @p buf.
-	 *  @retval -EINPROGRESS Data processing is deferred; the application now owns @p buf and
-	 *                       must call @ref bt_rfcomm_dlc_recv_complete once processing is done.
+	 *  @retval -EINPROGRESS The application completes @p buf through
+	 *                       @ref bt_rfcomm_dlc_recv_complete before or after this return.
 	 *  @return Other negative error code; the DLC will be actively disconnected by the stack.
 	 */
 	int (*recv)(struct bt_rfcomm_dlc *dlc, struct net_buf *buf);
@@ -263,16 +263,21 @@ struct bt_rfcomm_dlc {
 	 *
 	 *  Counts how many @ref bt_rfcomm_dlc_ops::recv callbacks have returned @c -EINPROGRESS
 	 *  but have not yet been completed by calling @ref bt_rfcomm_dlc_recv_complete.
+	 *  A completion recorded before the callback returns does not add to this count.
+	 *  Access is protected by the RFCOMM receive spinlock.
 	 *
 	 *  For CFC-supported sessions, this counter is used to delay RX credit refill:
 	 *  RX credits are not refilled until the in-progress bufs are completed, ensuring
 	 *  the remote peer cannot send more frames than the application can handle concurrently.
 	 *
 	 *  For non-CFC sessions, this counter gates the MSC flow-control commands:
-	 *  - MSC with FC=1 (pause) is sent only when the count is changing from 0 to 1
-	 *  - MSC with FC=0 (resume) is sent only when the count is changing from 1 to 0
+	 *  - MSC with FC=1 (pause) is requested when the count changes from 0 to 1
+	 *  - MSC with FC=0 (resume) is sent only when the count changes from 1 to 0
 	 */
-	atomic_t rx_credit_inprogress;
+	uint16_t rx_credit_inprogress;
+
+	/** Current receive callback buffer, protected by the RFCOMM receive spinlock. */
+	struct net_buf *rx_callback_buf;
 
 	/** DLC flags */
 	atomic_t flags;
@@ -441,19 +446,20 @@ int bt_rfcomm_dlc_disconnect(struct bt_rfcomm_dlc *dlc);
 /**
  * @brief Complete receiving RFCOMM channel data
  *
- * Must be called exactly once for each invocation of @ref bt_rfcomm_dlc_ops::recv that returned
+ * Must be called exactly once for each invocation of @ref bt_rfcomm_dlc_ops::recv that returns
  * @c -EINPROGRESS. Pass back the same @p buf pointer that was received in that callback; no
  * additional @ref net_buf_ref or @ref net_buf_unref calls are needed.
  *
  * @note This function must be called from a thread context only, never from an ISR.
  *
- * @note This function must be called only after @ref bt_rfcomm_dlc_ops::recv has returned.
- *       Calling it from within the recv callback (before it returns) underflows the in-progress
- *       counter and causes this function to return @c -EINVAL.
+ * This function may be called before @ref bt_rfcomm_dlc_ops::recv returns. The completion is then
+ * recorded, and the stack releases the buffer reference after the callback returns. The callback
+ * must still return @c -EINPROGRESS. The application must not access @p buf after submitting
+ * completion.
  *
- * When this function returns, the stack releases its reference to @p buf regardless of the return
- * value, unless @p dlc or @p buf is @c NULL (in which case @c -EINVAL is returned immediately and
- * @p buf is not touched).
+ * Otherwise, the stack releases its reference to @p buf when this function returns, regardless
+ * of the return value. If @p dlc or @p buf is @c NULL, or a duplicate completion is rejected
+ * with @c -EALREADY while the callback is running, @p buf is not touched.
  *
  * Flow-control behavior after a successful call:
  * - CFC sessions: the stack may now send additional RX credits to the remote peer, allowing it
@@ -462,13 +468,13 @@ int bt_rfcomm_dlc_disconnect(struct bt_rfcomm_dlc *dlc);
  *   all in-progress buffers are completed.
  *
  * @param dlc Pointer to the RFCOMM DLC whose receive operation is being completed.
- * @param buf The buffer that was passed to @ref bt_rfcomm_dlc_ops::recv when it returned
- *            @c -EINPROGRESS.
+ * @param buf The buffer passed to @ref bt_rfcomm_dlc_ops::recv, which must return @c -EINPROGRESS.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @retval 0 Completion accepted, possibly pending the receive callback's return.
  * @retval -EINVAL @p dlc or @p buf is @c NULL, the DLC's CFC state is unknown, or the
  *                 in-progress counter would underflow (more completions than in-progress calls).
  * @retval -ENOTCONN The DLC has no associated session or is not in the connected state.
+ * @retval -EALREADY This buffer already has a completion recorded in the running receive callback.
  */
 int bt_rfcomm_dlc_recv_complete(struct bt_rfcomm_dlc *dlc, struct net_buf *buf);
 
