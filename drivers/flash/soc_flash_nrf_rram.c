@@ -13,29 +13,20 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/barrier.h>
-#include <hal/nrf_rramc.h>
+
+#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+#include <nrfx_rramc.h>
+#endif
 
 #include <zephyr/../../drivers/flash/soc_flash_nrf.h>
 #include <soc_secure.h>
 
 /* Note that it is supported to compile this driver for both secure
  * and non-secure images, but non-secure images cannot call
- * nrf_rramc_config_set because NRF_RRAMC_NS does not exist.
+ * nrfx_rramc_write_enable_set() because NRF_RRAMC_NS does not exist.
  *
- * Instead, when TF-M boots, it will configure RRAMC with this static
- * configuration:
- *
- * nrf_rramc_config_t config = {
- *   .mode_write = true,
- *   .write_buff_size = WRITE_BUFFER_SIZE
- * };
- *
- * nrf_rramc_ready_next_timeout_t params = {
- *   .value = CONFIG_NRF_RRAM_READYNEXT_TIMEOUT_VALUE,
- *   .enable = true,
- * };
- *
- * For more details see NCSDK-26982.
+ * Instead, when TF-M boots, it will configure RRAMC with static configuration
+ * (write mode, buffer size, preload timeout). For more details see NCSDK-26982.
  */
 
 LOG_MODULE_REGISTER(flash_nrf_rram, CONFIG_FLASH_LOG_LEVEL);
@@ -113,7 +104,7 @@ static inline bool is_within_bounds(off_t addr, size_t len, off_t boundary_start
 static void commit_changes(off_t addr, size_t len)
 {
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
-	if (nrf_rramc_empty_buffer_check(NRF_RRAMC)) {
+	if (nrfx_rramc_write_buffer_empty_check()) {
 		/* The internal write-buffer has been committed to RRAM and is now empty. */
 		return;
 	}
@@ -127,7 +118,7 @@ static void commit_changes(off_t addr, size_t len)
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 	ARG_UNUSED(addr);
 
-	nrf_rramc_task_trigger(NRF_RRAMC, NRF_RRAMC_TASK_COMMIT_WRITEBUF);
+	nrfx_rramc_write_buffer_commit();
 #else
 	/*
 	 * When the commit task is unavailable we need to get creative to
@@ -198,9 +189,7 @@ static int write_op(void *context)
 	/* Defensive re-program of RRAMC write mode at the start of every radio time slot.
 	 * Setting it again here makes write_op() self-contained.
 	 */
-	nrf_rramc_config_t config = {.mode_write = true, .write_buff_size = WRITE_BUFFER_SIZE};
-
-	nrf_rramc_config_set(NRF_RRAMC, &config);
+	nrfx_rramc_write_enable_set(true, WRITE_BUFFER_SIZE);
 #endif
 
 	if (w_ctx->enable_time_limit) {
@@ -291,9 +280,7 @@ static int nrf_write(off_t addr, const void *data, uint8_t fill_val, size_t len)
 	 * re-programs write mode at the start of every radio slot for
 	 * defence in depth.
 	 */
-	nrf_rramc_config_t config = {.mode_write = true, .write_buff_size = WRITE_BUFFER_SIZE};
-
-	nrf_rramc_config_set(NRF_RRAMC, &config);
+	nrfx_rramc_write_enable_set(true, WRITE_BUFFER_SIZE);
 #endif
 
 #ifndef CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE
@@ -335,8 +322,7 @@ static int nrf_write(off_t addr, const void *data, uint8_t fill_val, size_t len)
 	}
 
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
-	config.mode_write = false;
-	nrf_rramc_config_set(NRF_RRAMC, &config);
+	nrfx_rramc_write_enable_set(false, WRITE_BUFFER_SIZE);
 #endif
 
 	SYNC_UNLOCK();
@@ -545,13 +531,22 @@ static int nrf_rram_init(const struct device *dev)
 	nrf_flash_sync_init();
 #endif /* !CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE */
 
-#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) && CONFIG_NRF_RRAM_READYNEXT_TIMEOUT_VALUE > 0
-	nrf_rramc_ready_next_timeout_t params = {
-		.value = CONFIG_NRF_RRAM_READYNEXT_TIMEOUT_VALUE,
-		.enable = true,
-	};
+#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+	nrfx_rramc_config_t config = NRFX_RRAMC_DEFAULT_CONFIG(WRITE_BUFFER_SIZE);
 
-	nrf_rramc_ready_next_timeout_set(NRF_RRAMC, &params);
+#if CONFIG_NRF_RRAM_READYNEXT_TIMEOUT_VALUE > 0
+	config.preload_timeout_enable = true;
+	config.preload_timeout = CONFIG_NRF_RRAM_READYNEXT_TIMEOUT_VALUE;
+#else
+	config.preload_timeout_enable = false;
+	config.preload_timeout = 0;
+#endif
+
+	int err = nrfx_rramc_init(&config, NULL);
+
+	if (err != 0 && err != -EALREADY) {
+		return err;
+	}
 #endif
 
 	return 0;
