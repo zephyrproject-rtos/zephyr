@@ -623,8 +623,8 @@ set_err_and_return:
 }
 
 #ifdef CONFIG_BT_A2DP_SOURCE
-int a2dp_delay_report_ind(struct bt_avdtp *session, struct bt_avdtp_sep *sep, struct net_buf *buf,
-			  uint8_t *errcode)
+static int a2dp_delay_report_ind(struct bt_avdtp *session, struct bt_avdtp_sep *sep,
+				 struct net_buf *buf, uint8_t *errcode)
 {
 	struct bt_a2dp_ep *ep;
 	struct bt_a2dp_stream *stream;
@@ -1490,7 +1490,7 @@ static const struct bt_avdtp_sep_ops sink_sep_ops = {
 };
 #endif
 
-int a2dp_accept(struct bt_conn *conn, struct bt_avdtp **session)
+static int a2dp_accept(struct bt_conn *conn, struct bt_avdtp **session)
 {
 	struct bt_a2dp *a2dp;
 

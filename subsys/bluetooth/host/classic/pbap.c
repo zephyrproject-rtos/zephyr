@@ -1042,7 +1042,7 @@ static void pse_set_phone_book(struct bt_obex_server *server, uint8_t flags, str
 	}
 }
 
-void pse_abort(struct bt_obex_server *server, struct net_buf *buf)
+static void pse_abort(struct bt_obex_server *server, struct net_buf *buf)
 {
 	struct bt_pbap_pse *pbap_pse = CONTAINER_OF(server, struct bt_pbap_pse, _server);
 

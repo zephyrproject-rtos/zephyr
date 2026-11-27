@@ -876,7 +876,7 @@ static int read_ext_features(void)
 	return 0;
 }
 
-void device_supported_pkt_type(void)
+static void device_supported_pkt_type(void)
 {
 	/* Device supported features and sco packet types */
 	if (BT_FEAT_LMP_SCO_CAPABLE(bt_dev.features)) {

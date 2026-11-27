@@ -54,7 +54,7 @@ static void next_list(struct at_client *at)
 	pull_chars(&at->rsp_buf, pull_comma, &data);
 }
 
-int at_check_byte(struct net_buf *buf, char check_byte)
+static int at_check_byte(struct net_buf *buf, char check_byte)
 {
 	const unsigned char *str = buf->data;
 
@@ -373,7 +373,7 @@ static int at_state_process_result(struct at_client *at, struct net_buf *buf)
 	return 0;
 }
 
-int cme_handle(struct at_client *at)
+static int cme_handle(struct at_client *at)
 {
 	enum at_cme cme_err;
 	uint32_t val;
