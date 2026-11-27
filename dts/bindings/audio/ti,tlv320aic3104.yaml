@@ -74,3 +74,19 @@ properties:
 
       Leave it out on a board that grounds the sleeve. HPRCOM is then
       unused, and powering it would only burn current.
+
+  hp-single-ended:
+    type: boolean
+    description: |
+      The board drives its headphone load from HPLOUT and HPROUT alone,
+      each through a coupling capacitor, and leaves HPLCOM and HPRCOM
+      unconnected. configure() then writes page 0 register 14 as 0x80:
+      ac-coupled drivers, D6 (stereo fully differential configuration)
+      clear.
+
+      Without it register 14 is 0xC0, which also tells the codec that
+      HPLOUT/HPLCOM and HPROUT/HPRCOM drive a fully differential load.
+
+      Do not set it together with hprcom-vcm-output. A load returned
+      through HPRCOM is a pseudo-differential one (register 14 D3), which
+      the driver does not program; a build with both set fails.

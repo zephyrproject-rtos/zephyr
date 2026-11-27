@@ -25,6 +25,7 @@ target_sources(app PRIVATE
     src/test_aic3106.c
     src/test_mclk_clock.c
     src/fake_clock.c
+    src/test_hp_single_ended.c
 )
 
 target_include_directories(app PRIVATE src ${ZEPHYR_BASE}/drivers/audio)

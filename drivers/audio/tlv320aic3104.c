@@ -1057,7 +1057,6 @@ static int codec_configure(const struct device *dev, struct audio_codec_cfg *cfg
 		{CODEC_FILTER, 0x00U},
 		{LINE1L_TO_LADC_CTRL, LINE1_TO_ADC_DISCONNECT},
 		{LINE1R_TO_RADC_CTRL, LINE1_TO_ADC_DISCONNECT},
-		{HEADSET_DETECT_B, HEADSET_DETECT_B_DIFF_AC},
 		{DAC_POWER_DRV, DAC_POWER_ON},
 		{HP_OUTPUT_STAGE, HP_OUTPUT_1P5V_SOFT},
 		{OUTPUT_POP_REDUCTION, OUTPUT_POP_800MS_BG},
@@ -1133,6 +1132,13 @@ static int codec_configure(const struct device *dev, struct audio_codec_cfg *cfg
 		return ret;
 	}
 	ret = tlv320aic3104_bus_write_reg(dev, 0, ASI_CTRL_B, dai_sol.r9_asi_ctrl_b);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = tlv320aic3104_bus_write_reg(dev, 0, HEADSET_DETECT_B,
+					  dev_cfg->hp_single_ended ? HEADSET_DETECT_B_AC_COUPLED
+								   : HEADSET_DETECT_B_DIFF_AC);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1417,6 +1423,9 @@ static DEVICE_API(audio_codec, codec_driver_api) = {
 	((clock_control_subsys_t)(uintptr_t)DT_INST_PHA_BY_NAME_OR(inst, clocks, mclk, name, 0))
 
 #define TLV320AIC3104_DEFINE(inst, part)                                                           \
+	BUILD_ASSERT(!(DT_INST_PROP(inst, hp_single_ended) &&                                      \
+		       DT_INST_PROP(inst, hprcom_vcm_output)),                                     \
+		     "hp-single-ended and hprcom-vcm-output are mutually exclusive");              \
 	static struct tlv320aic3104_data tlv320aic3104_data_##part##_##inst;                       \
 	static const struct tlv320aic3104_config tlv320aic3104_config_##part##_##inst = {          \
 		.variant = &tlv320aic3104_variant_##part,                                          \
@@ -1430,6 +1439,7 @@ static DEVICE_API(audio_codec, codec_driver_api) = {
 		.default_input_right = TLV320AIC3104_DEFAULT_INPUT(inst, right_capture_input),     \
 		.adc_hpf = (uint8_t)DT_INST_PROP(inst, adc_high_pass_filter),                      \
 		.hprcom_vcm_output = DT_INST_PROP(inst, hprcom_vcm_output),                        \
+		.hp_single_ended = DT_INST_PROP(inst, hp_single_ended),                            \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(inst, codec_initialize, NULL, &tlv320aic3104_data_##part##_##inst,   \
 			      &tlv320aic3104_config_##part##_##inst, POST_KERNEL,                  \

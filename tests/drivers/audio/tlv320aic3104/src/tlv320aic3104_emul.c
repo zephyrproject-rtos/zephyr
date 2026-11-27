@@ -19,6 +19,8 @@ struct tlv320aic3104_emul_cfg {
 static uint8_t s_page;
 static uint8_t s_regs[2][128];
 static bool s_written[2][128];
+static unsigned int s_write_seq[2][128];
+static unsigned int s_writes;
 static unsigned int s_reserved_writes;
 
 static uint8_t s_pending_reg;
@@ -43,6 +45,11 @@ void tlv320aic3104_emul_fail_write_at(uint8_t page, uint8_t addr)
 	s_fail_page = page & 1;
 	s_fail_addr = addr & 0x7F;
 	s_fail_armed = true;
+}
+
+unsigned int tlv320aic3104_emul_write_seq(uint8_t page, uint8_t addr)
+{
+	return s_write_seq[page & 1][addr & 0x7F];
 }
 
 bool tlv320aic3104_emul_was_written(uint8_t page, uint8_t addr)
@@ -82,6 +89,8 @@ void tlv320aic3104_emul_reset(void)
 {
 	memset(s_regs, 0, sizeof(s_regs));
 	memset(s_written, 0, sizeof(s_written));
+	memset(s_write_seq, 0, sizeof(s_write_seq));
+	s_writes = 0;
 	s_reserved_writes = 0;
 	s_page = 0;
 	s_pending_reg = 0;
@@ -137,6 +146,7 @@ static int tlv320aic3104_emul_transfer(const struct emul *target, struct i2c_msg
 		}
 		s_regs[s_page][reg & 0x7F] = val;
 		s_written[s_page][reg & 0x7F] = true;
+		s_write_seq[s_page][reg & 0x7F] = ++s_writes;
 	}
 	return 0;
 }

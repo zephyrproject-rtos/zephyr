@@ -176,5 +176,13 @@
 			clock-names = "mclk";
 			status = "okay";
 		};
+
+		tlv320aic3106_hp_se: tlv320aic3106@2c {
+			compatible = "ti,tlv320aic3106";
+			reg = <0x2c>;
+			reset-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			hp-single-ended;
+			status = "okay";
+		};
 	};
 };

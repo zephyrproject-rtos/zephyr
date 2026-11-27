@@ -52,7 +52,9 @@ extern "C" {
 #define ADC_HPF_LEFT_SHIFT       6U
 #define ADC_HPF_RIGHT_SHIFT      4U
 #define HEADSET_DETECT_B         0x0EU
-#define HEADSET_DETECT_B_DIFF_AC 0xC0U
+#define HEADSET_DETECT_B_AC_COUPLED 0x80U
+#define HEADSET_DETECT_B_FULLY_DIFF 0x40U
+#define HEADSET_DETECT_B_DIFF_AC    (HEADSET_DETECT_B_AC_COUPLED | HEADSET_DETECT_B_FULLY_DIFF)
 
 #define NDAC_NADC                       0x02U
 #define PLL_PROG_A                      0x03U
@@ -200,6 +202,7 @@ struct tlv320aic3104_config {
 	uint8_t adc_hpf;
 
 	bool hprcom_vcm_output;
+	bool hp_single_ended;
 };
 
 struct tlv320aic3104_data {

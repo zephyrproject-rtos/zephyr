@@ -19,3 +19,5 @@ void tlv320aic3104_emul_reset(void);
 bool tlv320aic3104_emul_was_written(uint8_t page, uint8_t addr);
 
 unsigned int tlv320aic3104_emul_reserved_writes(void);
+
+unsigned int tlv320aic3104_emul_write_seq(uint8_t page, uint8_t addr);
