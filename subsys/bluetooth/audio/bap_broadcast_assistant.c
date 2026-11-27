@@ -678,10 +678,8 @@ static uint8_t char_discover_func(struct bt_conn *conn,
 				inst->recv_state_cnt++;
 			}
 		} else {
-			LOG_DBG("Invalid UUID %s", bt_uuid_str(chrc->uuid));
-			bap_broadcast_assistant_discover_complete(conn, -EBADMSG, 0);
-
-			return BT_GATT_ITER_STOP;
+			/* For example a characteristic of a later revision of the service */
+			LOG_DBG("Unknown characteristic %s", bt_uuid_str(chrc->uuid));
 		}
 
 		if (sub_params != NULL) {
