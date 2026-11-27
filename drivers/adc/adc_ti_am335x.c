@@ -118,6 +118,7 @@ struct ti_adc_data {
 	volatile const uint32_t *fifo_data_ptr;
 	uint16_t *buffer;
 	uint16_t *repeat_buffer;
+	uint8_t slot[TI_ADC_TOTAL_CHANNELS];
 	uint8_t chan_count;
 	uint8_t step_count;
 };
@@ -129,6 +130,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 {
 	struct ti_adc_data *data = CONTAINER_OF(ctx, struct ti_adc_data, ctx);
 	struct ti_adc_regs *regs = DEV_REGS(data->dev);
+	uint8_t n = 0;
 
 	regs->CONTROL &= ~TI_ADC_CONTROL_ENABLE;
 	regs->STEPENABLE = 0;
@@ -143,6 +145,16 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	for (int chan = 0; chan < TI_ADC_TOTAL_CHANNELS; chan++) {
 		if (IS_BIT_SET(ctx->sequence.channels, chan)) {
 			regs->STEPENABLE |= BIT(data->steps[chan] + 1);
+		}
+	}
+
+	for (uint8_t step = 0; step < data->step_count; step++) {
+		for (int chan = 0; chan < TI_ADC_TOTAL_CHANNELS; chan++) {
+			if (data->steps[chan] == step && IS_BIT_SET(ctx->sequence.channels, chan)) {
+				data->slot[n] = POPCOUNT(ctx->sequence.channels & BIT_MASK(chan));
+				n++;
+				break;
+			}
 		}
 	}
 
@@ -423,7 +435,8 @@ static void ti_adc_isr(const struct device *dev)
 
 			/* write from fifo to buffer */
 			if (i < data->chan_count) {
-				data->buffer[i] = FIELD_GET(TI_ADC_FIFODATA_ADCDATA, word);
+				data->buffer[data->slot[i]] =
+					FIELD_GET(TI_ADC_FIFODATA_ADCDATA, word);
 			}
 		}
 
