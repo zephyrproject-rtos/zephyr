@@ -1606,13 +1606,11 @@ static uint8_t discover_func(struct bt_conn *conn,
 		if (bt_uuid_cmp(chrc->uuid, BT_UUID_TBS_CALL_STATE) == 0) {
 			LOG_DBG("Call state");
 			sub_params = &current_inst->call_state_sub_params;
-			sub_params->value_handle = chrc->value_handle;
 			sub_params->disc_params = &current_inst->call_state_sub_disc_params;
 #if defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_TBS_PROVIDER_NAME) == 0) {
 			LOG_DBG("Provider name");
 			sub_params = &current_inst->name_sub_params;
-			sub_params->value_handle = chrc->value_handle;
 			sub_params->disc_params = &current_inst->name_sub_disc_params;
 #endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME) */
 #if defined(CONFIG_BT_TBS_CLIENT_BEARER_UCI)
@@ -1624,7 +1622,6 @@ static uint8_t discover_func(struct bt_conn *conn,
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_TBS_TECHNOLOGY) == 0) {
 			LOG_DBG("Technology");
 			sub_params = &current_inst->technology_sub_params;
-			sub_params->value_handle = chrc->value_handle;
 			sub_params->disc_params = &current_inst->technology_sub_disc_params;
 #endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY) */
 #if defined(CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST)
@@ -1636,7 +1633,6 @@ static uint8_t discover_func(struct bt_conn *conn,
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_TBS_SIGNAL_STRENGTH) == 0) {
 			LOG_DBG("Signal strength");
 			sub_params = &current_inst->signal_strength_sub_params;
-			sub_params->value_handle = chrc->value_handle;
 			sub_params->disc_params = &current_inst->signal_strength_sub_disc_params;
 #endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_SIGNAL_STRENGTH) */
 #if defined(CONFIG_BT_TBS_CLIENT_READ_BEARER_SIGNAL_INTERVAL) \
@@ -1650,7 +1646,6 @@ static uint8_t discover_func(struct bt_conn *conn,
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_TBS_LIST_CURRENT_CALLS) == 0) {
 			LOG_DBG("Current calls");
 			sub_params = &current_inst->current_calls_sub_params;
-			sub_params->value_handle = chrc->value_handle;
 			sub_params->disc_params = &current_inst->current_calls_sub_disc_params;
 #endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_LIST_CURRENT_CALLS) */
 #if defined(CONFIG_BT_TBS_CLIENT_CCID)
@@ -1662,21 +1657,18 @@ static uint8_t discover_func(struct bt_conn *conn,
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_TBS_INCOMING_URI) == 0) {
 			LOG_DBG("Incoming target URI");
 			sub_params = &current_inst->in_target_uri_sub_params;
-			sub_params->value_handle = chrc->value_handle;
 			sub_params->disc_params = &current_inst->in_target_uri_sub_disc_params;
 #endif /* defined(CONFIG_BT_TBS_CLIENT_INCOMING_URI) */
 #if defined(CONFIG_BT_TBS_CLIENT_STATUS_FLAGS)
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_TBS_STATUS_FLAGS) == 0) {
 			LOG_DBG("Status flags");
 			sub_params = &current_inst->status_flags_sub_params;
-			sub_params->value_handle = chrc->value_handle;
 			sub_params->disc_params = &current_inst->status_sub_disc_params;
 #endif /* defined(CONFIG_BT_TBS_CLIENT_STATUS_FLAGS) */
 #if defined(CONFIG_BT_TBS_CLIENT_CP_PROCEDURES)
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_TBS_CALL_CONTROL_POINT) == 0) {
 			LOG_DBG("Call control point");
 			sub_params = &current_inst->call_cp_sub_params;
-			sub_params->value_handle = chrc->value_handle;
 			sub_params->disc_params = &current_inst->call_cp_sub_disc_params;
 #endif /* defined(CONFIG_BT_TBS_CLIENT_CP_PROCEDURES) */
 #if defined(CONFIG_BT_TBS_CLIENT_OPTIONAL_OPCODES)
@@ -1688,25 +1680,28 @@ static uint8_t discover_func(struct bt_conn *conn,
 			LOG_DBG("Termination reason");
 			current_inst->termination_reason_handle = chrc->value_handle;
 			sub_params = &current_inst->termination_sub_params;
-			sub_params->value_handle = chrc->value_handle;
 			sub_params->disc_params = &current_inst->termination_sub_disc_params;
 #if defined(CONFIG_BT_TBS_CLIENT_CALL_FRIENDLY_NAME)
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_TBS_FRIENDLY_NAME) == 0) {
 			LOG_DBG("Incoming friendly name");
 			sub_params = &current_inst->friendly_name_sub_params;
-			sub_params->value_handle = chrc->value_handle;
 			sub_params->disc_params = &current_inst->friendly_name_sub_disc_params;
 #endif /* defined(CONFIG_BT_TBS_CLIENT_CALL_FRIENDLY_NAME) */
 #if defined(CONFIG_BT_TBS_CLIENT_INCOMING_CALL)
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_TBS_INCOMING_CALL) == 0) {
 			LOG_DBG("Incoming call");
 			sub_params = &current_inst->incoming_call_sub_params;
-			sub_params->value_handle = chrc->value_handle;
 			sub_params->disc_params = &current_inst->incoming_call_sub_disc_params;
 #endif /* defined(CONFIG_BT_TBS_CLIENT_INCOMING_CALL) */
 		}
 
-		if (sub_params != NULL) {
+		if (sub_params != NULL && sub_params->disc_params->func != NULL) {
+			/* A repeated declaration of the characteristic, in a malformed service. The
+			 * CCC discovery for the earlier one still uses the subscribe parameters.
+			 */
+			LOG_DBG("Ignoring repeated declaration at handle 0x%04X", attr->handle);
+		} else if (sub_params != NULL) {
+			sub_params->value_handle = chrc->value_handle;
 			sub_params->value = 0U;
 			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
 				sub_params->value = BT_GATT_CCC_NOTIFY;
@@ -1728,6 +1723,9 @@ static uint8_t discover_func(struct bt_conn *conn,
 					       "characteristic at handle 0x%04X"
 					       "(%d)",
 					       sub_params->value_handle, err);
+					/* A CCC discovery that failed to start left them set */
+					(void)memset(sub_params->disc_params, 0,
+						     sizeof(*sub_params->disc_params));
 					tbs_client_discover_complete(conn, err);
 
 					return BT_GATT_ITER_STOP;
