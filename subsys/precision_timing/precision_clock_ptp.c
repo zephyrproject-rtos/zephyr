@@ -9,6 +9,7 @@
 #include <limits.h>
 
 #include <zephyr/drivers/ptp_clock.h>
+#include <zephyr/precision_timing/precision_clock_output.h>
 #include <zephyr/precision_timing/precision_clock_ptp.h>
 #include <zephyr/sys/clock.h>
 
@@ -85,11 +86,106 @@ static int precision_clock_ptp_adjust_rate(const struct precision_clock *precisi
 	return ptp_clock_adjust_rate(adapter->dev, scaled_ppm);
 }
 
+#ifdef CONFIG_PRECISION_CLOCK_OUTPUT
+static const struct precision_clock_output_provider *
+precision_clock_ptp_output_provider(const struct precision_clock_ptp_adapter *adapter)
+{
+	const struct ptp_clock_driver_api *api;
+
+	if (adapter == NULL || adapter->dev == NULL) {
+		return NULL;
+	}
+
+	api = DEVICE_API_GET(ptp_clock, adapter->dev);
+	return api->output;
+}
+
+static int precision_clock_ptp_output_get_caps(const struct precision_clock *precision_clk,
+					       struct precision_clock_output_caps *caps)
+{
+	const struct precision_clock_ptp_adapter *adapter = precision_clk->data;
+	const struct precision_clock_output_provider *provider;
+
+	if (adapter == NULL || caps == NULL) {
+		return -EINVAL;
+	}
+
+	provider = precision_clock_ptp_output_provider(adapter);
+	if (provider == NULL || provider->get_caps == NULL) {
+		return -ENOTSUP;
+	}
+
+	return provider->get_caps(adapter->dev, caps);
+}
+
+static int precision_clock_ptp_output_start(const struct precision_clock *precision_clk,
+					   uint32_t channel,
+					   const struct precision_clock_output_config *config)
+{
+	const struct precision_clock_ptp_adapter *adapter = precision_clk->data;
+	const struct precision_clock_output_provider *provider;
+
+	if (adapter == NULL || config == NULL) {
+		return -EINVAL;
+	}
+
+	provider = precision_clock_ptp_output_provider(adapter);
+	if (provider == NULL || provider->start == NULL) {
+		return -ENOTSUP;
+	}
+
+	return provider->start(adapter->dev, channel, config);
+}
+
+static int precision_clock_ptp_output_stop(const struct precision_clock *precision_clk,
+					   uint32_t channel)
+{
+	const struct precision_clock_ptp_adapter *adapter = precision_clk->data;
+	const struct precision_clock_output_provider *provider;
+
+	if (adapter == NULL) {
+		return -EINVAL;
+	}
+
+	provider = precision_clock_ptp_output_provider(adapter);
+	if (provider == NULL || provider->stop == NULL) {
+		return -ENOTSUP;
+	}
+
+	return provider->stop(adapter->dev, channel);
+}
+
+static int precision_clock_ptp_output_get_status(const struct precision_clock *precision_clk,
+						 uint32_t channel,
+						 struct precision_clock_output_status *status)
+{
+	const struct precision_clock_ptp_adapter *adapter = precision_clk->data;
+	const struct precision_clock_output_provider *provider;
+
+	if (adapter == NULL || status == NULL) {
+		return -EINVAL;
+	}
+
+	provider = precision_clock_ptp_output_provider(adapter);
+	if (provider == NULL || provider->get_status == NULL) {
+		return -ENOTSUP;
+	}
+
+	return provider->get_status(adapter->dev, channel, status);
+}
+#endif /* CONFIG_PRECISION_CLOCK_OUTPUT */
+
 static const struct precision_clock_api precision_clock_ptp_api = {
 	.read = precision_clock_ptp_read,
 	.set = precision_clock_ptp_set,
 	.adjust_phase = precision_clock_ptp_adjust_phase,
 	.adjust_rate = precision_clock_ptp_adjust_rate,
+#ifdef CONFIG_PRECISION_CLOCK_OUTPUT
+	.output_get_caps = precision_clock_ptp_output_get_caps,
+	.output_start = precision_clock_ptp_output_start,
+	.output_stop = precision_clock_ptp_output_stop,
+	.output_get_status = precision_clock_ptp_output_get_status,
+#endif /* CONFIG_PRECISION_CLOCK_OUTPUT */
 };
 
 void precision_clock_ptp_init(struct precision_clock_ptp_adapter *adapter,
