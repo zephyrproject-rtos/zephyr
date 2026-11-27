@@ -47,3 +47,22 @@ void test_fs_littlefs_mount(void)
 	test_shell_exec("fs mount littlefs /littlefs", 0);
 }
 ZTEST_SUITE(multi_fs_help, NULL, NULL, NULL, NULL, NULL);
+
+ZTEST(multi_fs_littlefs_dir, test_fs_tail_errors)
+{
+#ifdef CONFIG_FILE_SYSTEM_SHELL
+	test_shell_exec("fs tail", -EINVAL);
+	test_shell_exec("fs tail /littlefs 3", -EINVAL);
+	test_shell_exec("fs tail /littlefs -n", -EINVAL);
+	test_shell_exec("fs tail /littlefs -x 3", -EINVAL);
+	test_shell_exec("fs tail /littlefs -n +3", -EINVAL);
+	test_shell_exec("fs tail /littlefs -n 1 extra", -EINVAL);
+	test_shell_exec("fs tail /littlefs -n -1", -EINVAL);
+	test_shell_exec("fs tail /littlefs -n 2x", -EINVAL);
+	test_shell_exec("fs tail /littlefs -n 18446744073709551616", -EINVAL);
+	test_shell_exec("fs tail /littlefs", -EISDIR);
+	test_shell_exec("fs tail /littlefs/missing", -ENOENT);
+#else
+	ztest_test_skip();
+#endif
+}
