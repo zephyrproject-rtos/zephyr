@@ -2484,12 +2484,12 @@ close:
 
 	/* Connection closed by peer. Notify streams and release endpoint */
 	quic_endpoint_notify_streams_closed(ep);
-	quic_endpoint_unref(ep);
+	quic_endpoint_drop_list_ref(ep);
 	return ret;
 
 fail:
 	QUIC_EP_STAT_INC(ep, drop_rx);
-	quic_endpoint_unref(ep);
+	quic_endpoint_drop_list_ref(ep);
 	return ret;
 }
 

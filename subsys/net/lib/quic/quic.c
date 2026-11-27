@@ -3425,6 +3425,25 @@ static bool quic_endpoint_is_used(struct quic_endpoint *ep)
 	return !!atomic_get(&ep->refcount);
 }
 
+/* Drop the reference that an endpoint has for being on the endpoint list of
+ * a context. The context that goes away, a timeout and a packet that ends
+ * the connection can each want to, and only the first of them does. The
+ * caller holds a reference of its own, so the endpoint is there to look at.
+ */
+static void quic_endpoint_drop_list_ref(struct quic_endpoint *ep)
+{
+	bool drop;
+
+	k_mutex_lock(&contexts_lock, K_FOREVER);
+	drop = !ep->list_ref_dropped;
+	ep->list_ref_dropped = true;
+	k_mutex_unlock(&contexts_lock);
+
+	if (drop) {
+		quic_endpoint_unref(ep);
+	}
+}
+
 #if defined(CONFIG_QUIC_LOG_LEVEL_DBG)
 static int quic_endpoint_ref_debug(struct quic_endpoint *ep, const char *caller, int line)
 #define quic_endpoint_ref(ep) quic_endpoint_ref_debug(ep, __func__, __LINE__)
@@ -8453,7 +8472,7 @@ static void process_pkt(struct quic_pkt *pkt)
 		} else if (ret == 1) {
 			NET_DBG("[EP:%p/%d] Connection closing after %s packet",
 				pkt->ep, quic_get_by_ep(pkt->ep), "Initial");
-			quic_endpoint_unref(pkt->ep);
+			quic_endpoint_drop_list_ref(pkt->ep);
 		}
 
 		if (ret == 0) {
@@ -8491,7 +8510,7 @@ static void process_pkt(struct quic_pkt *pkt)
 		} else if (ret == 1) {
 			NET_DBG("[EP:%p/%d] Connection closing after %s packet",
 				pkt->ep, quic_get_by_ep(pkt->ep), "Handshake");
-			quic_endpoint_unref(pkt->ep);
+			quic_endpoint_drop_list_ref(pkt->ep);
 		}
 
 		if (ret == 0) {
@@ -8519,7 +8538,7 @@ static void process_pkt(struct quic_pkt *pkt)
 		} else if (ret == 1) {
 			NET_DBG("[EP:%p/%d] Connection closing after %s packet",
 				pkt->ep, quic_get_by_ep(pkt->ep), "0-RTT");
-			quic_endpoint_unref(pkt->ep);
+			quic_endpoint_drop_list_ref(pkt->ep);
 		}
 		break;
 
@@ -8546,7 +8565,7 @@ static void process_pkt(struct quic_pkt *pkt)
 	}
 
 	if (ret < 0) {
-		quic_endpoint_unref(pkt->ep);
+		quic_endpoint_drop_list_ref(pkt->ep);
 	}
 }
 
@@ -8776,7 +8795,7 @@ static bool process_long_header_msg(struct quic_pkt *pkt)
 	return true;
 
 free_ep:
-	quic_endpoint_unref(ep);
+	quic_endpoint_drop_list_ref(ep);
 	return false;
 
 fail:
@@ -8858,15 +8877,21 @@ static void quic_service_thread(void *p1, void *p2, void *p3)
 
 		NET_DBG("Processing packet %p", pkt);
 
-		quic_endpoint_unref(pkt->ep);
-
-		if (!quic_endpoint_is_used(pkt->ep) || pkt->ep->sock < 0) {
+		/* The reference taken when the packet was queued is kept
+		 * until the packet is handled. Handling it can end the
+		 * connection and wake the application, which may close the
+		 * socket and open another one at once: without the reference
+		 * the endpoint could go away, or be handed out again for the
+		 * new connection, under the packet.
+		 */
+		if (pkt->ep->list_ref_dropped || pkt->ep->sock < 0) {
 			NET_DBG("Endpoint %p released while in queue",
 				pkt->ep);
 		} else {
 			process_one_msg(pkt);
 		}
 
+		quic_endpoint_unref(pkt->ep);
 		quic_pkt_unref(pkt);
 	}
 }
