@@ -9,6 +9,7 @@
 #include <mmu.h>
 #include <kernel_arch_interface.h>
 #include <zephyr/init.h>
+#include <zephyr/spinlock.h>
 
 #include <zephyr/kernel/mm/demand_paging.h>
 
@@ -28,7 +29,8 @@ static void nru_periodic_update(struct k_timer *timer)
 {
 	uintptr_t phys;
 	struct k_mem_page_frame *pf;
-	unsigned int key = irq_lock();
+	struct k_spinlock *mm_lock = z_mm_lock_get();
+	k_spinlock_key_t key = k_spin_lock(mm_lock);
 
 	ARG_UNUSED(timer);
 
@@ -42,7 +44,7 @@ static void nru_periodic_update(struct k_timer *timer)
 					 NULL, true);
 	}
 
-	irq_unlock(key);
+	k_spin_unlock(mm_lock, key);
 }
 
 struct k_mem_page_frame *k_mem_paging_eviction_select(bool *dirty_ptr)
