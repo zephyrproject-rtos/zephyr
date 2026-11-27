@@ -829,7 +829,10 @@ static struct coap_client_tcp_internal_request *get_request_with_token_tcp(
 
 static bool find_echo_option(const struct coap_packet *response, struct coap_option *option)
 {
-	return coap_find_options(response, COAP_OPTION_ECHO, option, 1);
+	/* An error is not an Echo option: one too long for a struct coap_option
+	 * was not copied.
+	 */
+	return coap_find_options(response, COAP_OPTION_ECHO, option, 1) > 0;
 }
 
 static int send_pong(struct coap_client_tcp *client)
@@ -943,8 +946,13 @@ static int handle_response_tcp(struct coap_client_tcp *client, const struct coap
 		return 0;
 	}
 
-	/* Handle echo option */
-	if (find_echo_option(response, &client->echo_option)) {
+	/* Handle echo option. It is looked up apart from the value kept for the
+	 * next request: the lookup writes the options it passes, so that a
+	 * response without Echo option would replace that value by another.
+	 */
+	struct coap_option echo;
+
+	if (find_echo_option(response, &echo)) {
 		if (response_code == COAP_RESPONSE_CODE_UNAUTHORIZED) {
 			ret = coap_client_tcp_init_request(client, &internal_req->coap_request,
 							   internal_req);
@@ -954,8 +962,7 @@ static int handle_response_tcp(struct coap_client_tcp *client, const struct coap
 			}
 
 			ret = coap_packet_append_option(&internal_req->request, COAP_OPTION_ECHO,
-							client->echo_option.value,
-							client->echo_option.len);
+							echo.value, echo.len);
 			if (ret < 0) {
 				LOG_ERR("Failed to append echo option");
 				goto fail;
@@ -976,6 +983,7 @@ static int handle_response_tcp(struct coap_client_tcp *client, const struct coap
 			return 1;
 		}
 
+		client->echo_option = echo;
 		client->send_echo = true;
 	}
 
@@ -1215,6 +1223,11 @@ int coap_client_tcp_connect(struct coap_client_tcp *client,
 			return ret;
 		}
 	}
+
+	/* RFC 9175, section 2.3: an Echo option value kept from an earlier
+	 * connection is not for the endpoint of this one.
+	 */
+	client->send_echo = false;
 
 	ret = zsock_socket(addr->sa_family, NET_SOCK_STREAM, proto);
 	if (ret < 0) {
