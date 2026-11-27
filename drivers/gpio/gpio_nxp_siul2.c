@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024, 2025 NXP
+ * Copyright 2022-2024, 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(nxp_siul2_gpio, CONFIG_GPIO_LOG_LEVEL);
 #endif
 #ifdef CONFIG_NXP_S32_WKPU
 #include <zephyr/drivers/interrupt_controller/intc_wkpu_nxp_s32.h>
+#include "nxp_s32_wkpu_shared.h"
 #endif
 
 /* SIUL2 Multiplexed Signal Configuration Register (offset from port base) */
@@ -340,12 +341,14 @@ static int nxp_siul2_gpio_config_wkpu(const struct device *dev,
 		if (nxp_siul2_gpio_wkpu_get_trigger(&wkpu_trigger, trig)) {
 			return -ENOTSUP;
 		}
-		if (wkpu_nxp_s32_set_callback(irq_cfg->ctrl, irq_line, pin,
-					      nxp_siul2_gpio_isr, (void *)dev)) {
-			LOG_ERR("pin %d is already in use", pin);
-			return -EBUSY;
+		int ret = wkpu_nxp_s32_configure_interrupt(irq_cfg->ctrl, irq_line, pin,
+							  wkpu_trigger, nxp_siul2_gpio_isr,
+							  (void *)dev);
+
+		if (ret != 0) {
+			LOG_ERR("Failed to configure WKPU interrupt for pin %d: %d", pin, ret);
+			return ret;
 		}
-		wkpu_nxp_s32_enable_interrupt(irq_cfg->ctrl, irq_line, wkpu_trigger);
 	}
 
 	return 0;

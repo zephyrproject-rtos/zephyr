@@ -18,6 +18,7 @@ supported:
   - rtc
   - dma
   - watchdog
+  - wuc
   - adc
   - hwinfo
   - i2c

@@ -1,0 +1,25 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&powerdown {
+	status = "okay";
+};
+
+&cpu0 {
+	cpu-power-states = <&powerdown>;
+};
+
+&smu2 {
+	status = "disabled";
+};
+
+/delete-node/ &stcm0;
+
+&stcm {
+	stcm0: system-memory@8000 {
+		compatible = "mmio-sram";
+		reg = <0x8000 DT_SIZE_K(32)>;
+	};
+};

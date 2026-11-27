@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP S32 WKPU wakeup controller. This node is a child of an nxp,s32-wkpu
+  controller, which owns the shared registers and interrupt handling.
+
+  Interrupt and wakeup requests use the same edge detector, with separate
+  request gates. Internal sources 0-3 support rising edges only.
+
+compatible: "nxp,s32-wkpu-wuc"
+
+include: [base.yaml, wuc-controller.yaml]
+
+properties:
+  "#wakeup-ctrl-cells":
+    const: 1
+
+wakeup-ctrl-cells:
+  - id

@@ -1,0 +1,20 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	cpus {
+		power-states {
+			powerdown: powerdown {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-ram";
+				substate-id = <0>;
+				min-residency-us = <1000000>;
+				/* Includes SoC/PM restore and measured-profile margin. */
+				exit-latency-us = <3000>;
+				status = "disabled";
+			};
+		};
+	};
+};

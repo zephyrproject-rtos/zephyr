@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 Intel Corporation
+ * Copyright 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,5 +41,8 @@ int test_pwr_mgmt_multithread(uint8_t cycles);
  * @retval 0 if successful, errno otherwise.
  */
 int test_dummy_init(void);
+
+void test_pm_s2ram_prepare(void);
+void test_pm_s2ram_resume(void);
 
 #endif /* __TEST_PWRMGMT_H__ */

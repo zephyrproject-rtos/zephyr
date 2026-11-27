@@ -1,3 +1,6 @@
+.. SPDX-FileCopyrightText: Copyright 2026 NXP
+.. SPDX-License-Identifier: Apache-2.0
+
 .. zephyr:board:: frdm_mcxw72
 
 Overview
@@ -28,6 +31,42 @@ Supported Features
 ==================
 
 .. zephyr:board-supported-hw::
+
+Suspend-to-RAM
+==============
+
+Suspend-to-RAM is opt-in on ``frdm_mcxw72/mcxw727c`` application core0.
+It uses MAIN Power Down, WAKE Deep Sleep and Radio Power Down.
+Enable the ``powerdown`` power-state node and add it to ``cpu0``'s
+``cpu-power-states``; the board's default sleep states are unchanged.
+The supported configuration requires standalone secure internal-flash XIP,
+``CONFIG_NXP_NBU=n``, software CRC dispatch (``CONFIG_CRC_HW_HANDLER=n``),
+and factory ROM fast-wake eligibility without NPX/FLW reconstruction.
+
+The MCXW72 Reference Manual, Rev. 5, section 14.4.2 identifies the first
+16 KiB of STCM initialized on Power Down wake, but section 15.2 reserves
+the first 32 KiB for the bootloader and some ROM APIs. S2RAM uses the larger
+documented range: ``[0x30000000, 0x30008000)`` and its non-secure alias.
+Kernel SRAM must start at or above ``0x30008000``; the PM test overlay uses
+32 KiB there. This is W72's own ROM requirement, not a bound borrowed from W71.
+
+The ``s2ram_reserved`` DT node supplies both aliases to the retention logic
+and final-ELF checker. The checker also rejects allocated sections in
+powered-off banks or unsupported memory. Other live state may use retained
+CTCM or STCM, including named regions; ``__noinit`` alone does not establish
+retention or protect against ROM writes. Disable unused radio SMU2 in the
+standalone S2RAM overlay. See the PM test README below for static bank selection.
+Ordinary PM, cold ECC initialization and the default RAM layout are unchanged.
+
+LPTMR0 through WUU supplies automatic timed wake. The PM test keeps
+the default UART1 debug console and reconstructs its pinctrl/UART configuration
+from application-thread context after resume; no extra UART0 connection or
+button is required. Other MAIN-domain peripherals need their own register and
+pinctrl restoration support. REGFILE1 REG[0] and REGFILE0 REG[6] are reserved
+while S2RAM is enabled; REGFILE1 REG[1]/[2] are not modified. See
+:zephyr_file:`tests/subsys/pm/power_mgmt_soc/README.rst` for the opt-in
+retained-execution scenarios. These scenarios do not qualify actual POR/ECC
+behavior or complete peripheral recovery.
 
 Fetch Binary Blobs
 ******************

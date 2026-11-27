@@ -66,6 +66,27 @@ triggered state. When not implemented, the APIs return ``-ENOSYS``.
        (void)wuc_clear_wakeup_source_triggered_dt(&button_wuc);
    }
 
+NXP S32 WKPU
+************
+
+The :dtcompatible:`nxp,s32-wkpu-wuc` backend is a child of the existing
+:dtcompatible:`nxp,s32-wkpu` interrupt controller. The parent owns the registers,
+initialization, and locking. Use ``NXP_S32_WKPU_SOURCE(source, edge)`` from
+:zephyr_file:`include/zephyr/dt-bindings/wuc/wuc_nxp_s32_wkpu.h` for source IDs.
+WUC configures wakeup edges without requiring IRQ setup.
+
+Each physical source has one logical WUC owner; enable/disable calls are
+idempotent, not reference-counted. IRQ and wake requests can share a source
+only with matching edges. Conflicting WUC or GPIO configuration returns
+``-EBUSY`` without changing the existing configuration. The legacy WKPU IRQ
+enable function retains its ``void`` signature and logs rejected requests.
+Disabling one request preserves the edges needed by the other.
+
+Triggered status is source-event history, including ordinary IRQ events,
+not proof of a system wakeup. Successful clear does not guarantee hardware
+status deassertion: pending IRQ flags remain for the IRQ consumer, and
+internal sources may require clearing at the originating peripheral.
+
 API Reference
 *************
 

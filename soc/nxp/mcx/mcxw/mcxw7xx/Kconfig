@@ -14,6 +14,9 @@ config SOC_MCXW716C
 	select HAS_POWEROFF
 	select CPU_HAS_ICACHE
 	select HAS_MCUX_MCM_LPCAC
+	select HAS_PM_S2RAM_CUSTOM_MARKING if PM_S2RAM
+	select SOC_EARLY_RESET_HOOK if PM_S2RAM
+	select CRC if PM_S2RAM
 
 config SOC_MCXW727C
 	select NXP_MULTICORE if NXP_NBU
@@ -22,6 +25,9 @@ config SOC_MCXW727C
 	select HAS_POWEROFF
 	select CPU_HAS_ICACHE
 	select HAS_MCUX_MCM_LPCAC
+	select HAS_PM_S2RAM_CUSTOM_MARKING if PM_S2RAM
+	select SOC_EARLY_RESET_HOOK if PM_S2RAM
+	select CRC if PM_S2RAM
 
 config SOC_MCXW70AC
 	bool
@@ -58,6 +64,15 @@ config SOC_SERIES_MCXW7XX_SHUTDOWN_UNUSED_RAM
 	  by declaring the region that uses it (for example an ECC region holding
 	  critical data declared as a zephyr,memory-region). No linker symbol is
 	  used, so the decision is not tied to any single linker region.
+
+	  Suspend-to-RAM additionally keeps the ROM workspace powered: the
+	  first 16 KiB of system SRAM on MCXW71, or 32 KiB on MCXW72, as
+	  described by the target's s2ram_reserved device tree node. Kernel
+	  SRAM must start above that workspace. The final ELF check rejects
+	  allocated sections in either ROM alias, in a powered-off bank, or
+	  outside supported local TCM and flash. Unused radio SMU2 must be
+	  disabled in the standalone S2RAM overlay; its shared-memory linker
+	  reservation is not covered by application SRAM retention.
 
 	  By default zephyr,sram spans the whole system SRAM, so only banks
 	  outside it (for example the Code-TCM banks in the common flash-execution

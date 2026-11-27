@@ -5,6 +5,22 @@
  */
 
 #include "nxp_mcxw7x_common.dtsi"
+#include "nxp_mcxw7x_s2ram.dtsi"
+
+/ {
+	reserved-memory {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* RM 15.2: ROM bootloader and APIs reserve the first 32 KiB. */
+		s2ram_reserved: memory@30000000 {
+			reg = <0x30000000 DT_SIZE_K(32)>,
+			      <0x20000000 DT_SIZE_K(32)>;
+			reg-names = "secure", "nonsecure";
+		};
+	};
+};
 
 /* TSTMR is removed from MCXW72 due to SIRC clock source instability. */
 /delete-node/ &tstmr0;

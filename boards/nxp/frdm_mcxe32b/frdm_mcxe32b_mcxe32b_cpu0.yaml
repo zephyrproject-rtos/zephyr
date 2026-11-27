@@ -16,4 +16,5 @@ supported:
   - arduino_gpio
   - can
   - gpio
+  - wuc
 vendor: nxp
