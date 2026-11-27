@@ -6,7 +6,8 @@ title: TI TPS65214 PMIC
 description: |
   TI TPS65214 PMIC: three buck converters and two LDOs.
 
-  Child nodes: "ti,tps6521x-regulator" for the regulators and
+  Child nodes: "ti,tps6521x-regulator" for the regulators,
+  "ti,tps6521x-gpio" for the GPO and GPIO pins and
   "ti,tps6521x-power-button" for the EN/PB/VSENSE pin in push-button mode.
 
 compatible: "ti,tps65214"
