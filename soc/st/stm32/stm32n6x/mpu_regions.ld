@@ -7,8 +7,6 @@
 
 #include <zephyr/devicetree/sram.h>
 
-#include <zephyr/devicetree/sram.h>
-
 /** \brief MPU Region Base Address Register Definitions */
 #define MPU_RBAR_BASE_Pos		5					/*!< MPU RBAR: BASE Position */
 #define MPU_RBAR_BASE_Msk		(0x7FFFFFF << MPU_RBAR_BASE_Pos)	/*!< MPU RBAR: BASE Mask */
