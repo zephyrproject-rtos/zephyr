@@ -422,7 +422,17 @@ static int set_cycles_single_output(const struct device *dev, uint32_t period_cy
 	const struct pwm_stm32_lptim_config *cfg = dev->config;
 	LPTIM_TypeDef *timer = cfg->timer;
 	bool constant = (pulse_cycles == 0U) || (pulse_cycles == period_cycles);
+	bool high = (pulse_cycles == period_cycles) != inverted;
 	int ret;
+
+	/*
+	 * A disabled timer that already holds the constant level is left as it is. A reset would
+	 * clear the polarity and drop a high level for a moment.
+	 */
+	if (constant && (LL_LPTIM_IsEnabled(timer) == 0U) &&
+	    (is_single_output_inverted(timer) == high)) {
+		return 0;
+	}
 
 	/*
 	 * A running waveform that keeps its polarity only gets a new compare and autoreload. The
@@ -459,8 +469,6 @@ static int set_cycles_single_output(const struct device *dev, uint32_t period_cy
 	}
 
 	if (constant) {
-		bool high = (pulse_cycles == period_cycles) != inverted;
-
 		set_single_output_polarity(timer, high);
 		return 0;
 	}
