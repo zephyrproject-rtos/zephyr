@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(spi_ti_unicomm, CONFIG_SPI_LOG_LEVEL);
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/mspm0_clock_control.h>
+#include <zephyr/drivers/dma.h>
 #include <zephyr/device.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/util.h>
@@ -30,6 +31,10 @@ LOG_MODULE_REGISTER(spi_ti_unicomm, CONFIG_SPI_LOG_LEVEL);
 #define UNICOMM_SPI_MIS   0x038
 #define UNICOMM_SPI_ISET  0x040
 #define UNICOMM_SPI_ICLR  0x048
+
+/* DMA trigger sub-block IMASK registers */
+#define UNICOMM_SPI_DMA_RX_IMASK 0x058
+#define UNICOMM_SPI_DMA_TX_IMASK 0x088
 
 #define UNICOMM_SPI_CTL0   0x100
 #define UNICOMM_SPI_STAT   0x108
@@ -80,6 +85,17 @@ LOG_MODULE_REGISTER(spi_ti_unicomm, CONFIG_SPI_LOG_LEVEL);
 #define UNICOMMSPI_INT_IDLE_MASK       BIT(8) /* SPI IDLE (BUSY went low) */
 #define UNICOMMSPI_INT_RTOUT_MASK      BIT(9) /* RX timeout */
 
+#ifdef CONFIG_SPI_TI_UNICOMM_DMA
+
+/* Sink/source for the direction that has no user buffer */
+static uint8_t spi_ti_unicomm_dma_sink;
+static const uint8_t spi_ti_unicomm_dma_zero;
+
+/* The DMA size register is 16 bits wide */
+#define UNICOMM_DMA_MAX_CHUNK 0xFFFFU
+
+#endif /* CONFIG_SPI_TI_UNICOMM_DMA */
+
 /*
  * Enabled interrupts during a controller-mode transfer:
  *  - RX: RX FIFO reached the configured threshold
@@ -121,6 +137,9 @@ LOG_MODULE_REGISTER(spi_ti_unicomm, CONFIG_SPI_LOG_LEVEL);
 #define UNICOMMSPI_IFLS_TXCLR_MASK    BIT(3)
 #define UNICOMMSPI_IFLS_RXIFLSEL_MASK GENMASK(6, 4)
 #define UNICOMMSPI_IFLS_RXCLR_MASK    BIT(7)
+/* "FIFO not empty" encodings from the TRM */
+#define UNICOMMSPI_IFLS_RXIFLSEL_NOT_EMPTY (4U << 4)
+#define UNICOMMSPI_IFLS_TXIFLSEL_EMPTY     5U
 
 /* Configuration Values */
 #define SPI_CLKDIV_DIVIDE_BY_1   0
@@ -169,6 +188,14 @@ struct spi_ti_unicomm_config {
 	uint8_t tx_fifo_threshold;
 	uint8_t rx_fifo_threshold;
 	uint8_t fifo_depth;
+
+#ifdef CONFIG_SPI_TI_UNICOMM_DMA
+	const struct device *dma_dev;
+	uint32_t dma_tx_channel;
+	uint32_t dma_rx_channel;
+	uint32_t dma_tx_slot;
+	uint32_t dma_rx_slot;
+#endif
 };
 
 struct spi_ti_unicomm_data {
@@ -184,6 +211,16 @@ struct spi_ti_unicomm_data {
 	 * new transfer but the TX FIFO is already empty from the previous one.
 	 */
 	bool transfer_active;
+#ifdef CONFIG_SPI_TI_UNICOMM_DMA
+	/* Set when both DMA channels were acquired and configured at init */
+	bool dma_ready;
+	/* Length in bytes of the chunk currently on DMA */
+	size_t dma_len;
+	/* 1 while an async transfer is running on DMA, cleared by whoever finishes it */
+	atomic_t dma_active;
+	/* DMA channels (TX, RX) still running for the current chunk */
+	atomic_t dma_pending;
+#endif
 };
 
 /*
@@ -424,6 +461,179 @@ static int spi_ti_unicomm_configure(const struct device *dev, const struct spi_c
 	return 0;
 }
 
+#ifdef CONFIG_SPI_TI_UNICOMM_DMA
+static void spi_ti_unicomm_dma_cb(const struct device *dma_dev, void *user_data, uint32_t channel,
+				  int status);
+
+static void spi_ti_unicomm_dma_cleanup(const struct device *dev, bool wait_idle)
+{
+	const struct spi_ti_unicomm_config *cfg = dev->config;
+	struct spi_ti_unicomm_data *data = dev->data;
+	uint32_t base = cfg->unicomm_spi_base;
+
+	sys_write32(0U, base + UNICOMM_SPI_DMA_RX_IMASK);
+	sys_write32(0U, base + UNICOMM_SPI_DMA_TX_IMASK);
+	(void)dma_stop(cfg->dma_dev, cfg->dma_tx_channel);
+	(void)dma_stop(cfg->dma_dev, cfg->dma_rx_channel);
+
+	/* Let the last frame leave the shift register */
+	for (uint32_t i = 0U; i < 1000U && wait_idle &&
+			      (sys_read32(base + UNICOMM_SPI_STAT) & UNICOMMSPI_STAT_BUSY_MASK);
+	     i++) {
+	}
+
+	sys_write32(0U, base + UNICOMM_SPI_IMASK);
+	sys_write32(0xFFFFFFFFU, base + UNICOMM_SPI_ICLR);
+	spi_ti_unicomm_flush_fifos(base);
+	/* Thresholds were forced for DMA, restore the devicetree ones */
+	UPDATE_REG(base + UNICOMM_SPI_IFLS,
+		   ((uint32_t)cfg->rx_fifo_threshold << 4) | cfg->tx_fifo_threshold,
+		   UNICOMMSPI_IFLS_RXIFLSEL_MASK | UNICOMMSPI_IFLS_TXIFLSEL_MASK);
+	spi_context_cs_control(&data->ctx, false);
+	data->transfer_active = false;
+}
+
+static void spi_ti_unicomm_dma_finish(const struct device *dev, int err)
+{
+	struct spi_ti_unicomm_data *data = dev->data;
+
+	/* Both the SPI ISR (overflow) and the DMA ISR may get here, only one may finish */
+	if (!atomic_cas(&data->dma_active, 1, 0)) {
+		return;
+	}
+
+	spi_ti_unicomm_dma_cleanup(dev, err == 0);
+	spi_context_complete(&data->ctx, dev, err);
+}
+
+static int spi_ti_unicomm_dma_chunk(const struct device *dev)
+{
+	const struct spi_ti_unicomm_config *cfg = dev->config;
+	struct spi_ti_unicomm_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
+	uint32_t base = cfg->unicomm_spi_base;
+	size_t len = MIN(spi_context_max_continuous_chunk(ctx), UNICOMM_DMA_MAX_CHUNK);
+	struct dma_block_config blk = {.block_size = len};
+	struct dma_config dcfg = {
+		.source_data_size = 1,
+		.dest_data_size = 1,
+		.block_count = 1,
+		.head_block = &blk,
+		.dma_callback = spi_ti_unicomm_dma_cb,
+		.user_data = (void *)dev,
+	};
+	int ret;
+
+	data->dma_len = len;
+	atomic_set(&data->dma_pending, 2);
+
+	/* RX: RXDATA -> rx buffer or sink */
+	blk.source_address = base + UNICOMM_SPI_RXDATA;
+	blk.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+	if (spi_context_rx_buf_on(ctx)) {
+		blk.dest_address = (uintptr_t)ctx->rx_buf;
+		blk.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+	} else {
+		blk.dest_address = (uintptr_t)&spi_ti_unicomm_dma_sink;
+		blk.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+	}
+	dcfg.channel_direction = PERIPHERAL_TO_MEMORY;
+	dcfg.dma_slot = cfg->dma_rx_slot;
+	ret = dma_config(cfg->dma_dev, cfg->dma_rx_channel, &dcfg);
+	if (ret != 0) {
+		return ret;
+	}
+
+	/* TX: tx buffer (or zeros) -> TXDATA */
+	if (spi_context_tx_buf_on(ctx)) {
+		blk.source_address = (uintptr_t)ctx->tx_buf;
+		blk.source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+	} else {
+		blk.source_address = (uintptr_t)&spi_ti_unicomm_dma_zero;
+		blk.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+	}
+	blk.dest_address = base + UNICOMM_SPI_TXDATA;
+	blk.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+	dcfg.channel_direction = MEMORY_TO_PERIPHERAL;
+	dcfg.dma_slot = cfg->dma_tx_slot;
+	ret = dma_config(cfg->dma_dev, cfg->dma_tx_channel, &dcfg);
+	if (ret != 0) {
+		return ret;
+	}
+
+	/* RX first so no incoming byte is ever missed, then TX which starts the clock */
+	ret = dma_start(cfg->dma_dev, cfg->dma_rx_channel);
+	if (ret == 0) {
+		ret = dma_start(cfg->dma_dev, cfg->dma_tx_channel);
+	}
+	return ret;
+}
+
+static void spi_ti_unicomm_dma_cb(const struct device *dma_dev, void *user_data, uint32_t channel,
+				  int status)
+{
+	const struct device *dev = user_data;
+	struct spi_ti_unicomm_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
+	int ret;
+
+	ARG_UNUSED(dma_dev);
+	ARG_UNUSED(channel);
+
+	if (status < 0) {
+		spi_ti_unicomm_dma_finish(dev, -EIO);
+		return;
+	}
+
+	if (status != DMA_STATUS_COMPLETE || atomic_dec(&data->dma_pending) != 1) {
+		return;
+	}
+
+	spi_context_update_tx(ctx, 1, data->dma_len);
+	spi_context_update_rx(ctx, 1, data->dma_len);
+
+	if (!spi_context_tx_on(ctx) && !spi_context_rx_on(ctx)) {
+		spi_ti_unicomm_dma_finish(dev, 0);
+		return;
+	}
+
+	ret = spi_ti_unicomm_dma_chunk(dev);
+	if (ret != 0) {
+		spi_ti_unicomm_dma_finish(dev, ret);
+	}
+}
+
+static int spi_ti_unicomm_dma_start(const struct device *dev)
+{
+	const struct spi_ti_unicomm_config *cfg = dev->config;
+	struct spi_ti_unicomm_data *data = dev->data;
+	uint32_t base = cfg->unicomm_spi_base;
+	int ret;
+
+	/* Trigger on any RX byte (not the devicetree threshold) so the tail bytes are not stranded */
+	UPDATE_REG(base + UNICOMM_SPI_IFLS,
+		   UNICOMMSPI_IFLS_RXIFLSEL_NOT_EMPTY | UNICOMMSPI_IFLS_TXIFLSEL_EMPTY,
+		   UNICOMMSPI_IFLS_RXIFLSEL_MASK | UNICOMMSPI_IFLS_TXIFLSEL_MASK);
+	sys_write32(0xFFFFFFFFU, base + UNICOMM_SPI_ICLR);
+
+	/* Only overflow is handled by the CPU, everything else is DMA driven */
+	sys_write32(UNICOMMSPI_INT_RXFIFO_OVF_MASK, base + UNICOMM_SPI_IMASK);
+	sys_write32(UNICOMMSPI_INT_RX_MASK, base + UNICOMM_SPI_DMA_RX_IMASK);
+	sys_write32(UNICOMMSPI_INT_TX_MASK, base + UNICOMM_SPI_DMA_TX_IMASK);
+
+	atomic_set(&data->dma_active, 1);
+	data->transfer_active = true;
+
+	ret = spi_ti_unicomm_dma_chunk(dev);
+	if (ret != 0 && atomic_cas(&data->dma_active, 1, 0)) {
+		/* Error is reported to the caller, so do not signal completion as well */
+		spi_ti_unicomm_dma_cleanup(dev, false);
+	}
+
+	return ret;
+}
+#endif /* CONFIG_SPI_TI_UNICOMM_DMA */
+
 static void spi_ti_unicomm_controller_isr(const struct device *dev)
 {
 	const struct spi_ti_unicomm_config *cfg = dev->config;
@@ -441,6 +651,17 @@ static void spi_ti_unicomm_controller_isr(const struct device *dev)
 	if (mis & UNICOMMSPI_INT_RXFIFO_OVF_MASK) {
 		data->isr_error = -EIO;
 	}
+
+#ifdef CONFIG_SPI_TI_UNICOMM_DMA
+	/* DMA owns the FIFOs, the only CPU job is to abort on overflow */
+	if (atomic_get(&data->dma_active) != 0) {
+		sys_write32(mis, base + UNICOMM_SPI_ICLR);
+		if (data->isr_error != 0) {
+			spi_ti_unicomm_dma_finish(dev, data->isr_error);
+		}
+		return;
+	}
+#endif
 
 	/* Drain everything that has arrived so the RX FIFO cannot overflow. */
 	spi_ti_unicomm_rx_drain(base, ctx);
@@ -603,6 +824,18 @@ static int spi_ti_unicomm_init(const struct device *dev)
 		return ret;
 	}
 
+#ifdef CONFIG_SPI_TI_UNICOMM_DMA
+	if (cfg->dma_dev != NULL) {
+		data->dma_ready = device_is_ready(cfg->dma_dev) &&
+				  dma_request_channel(cfg->dma_dev, (void *)&cfg->dma_tx_channel) >=
+					  0 &&
+				  dma_request_channel(cfg->dma_dev, (void *)&cfg->dma_rx_channel) >= 0;
+		if (!data->dma_ready) {
+			LOG_WRN("DMA setup failed, using interrupt-driven transfers");
+		}
+	}
+#endif
+
 	/* Connect and enable the peripheral IRQ */
 	cfg->irq_config_func(dev);
 
@@ -646,6 +879,15 @@ static int spi_ti_unicomm_transceive_call(const struct device *dev, const struct
 		spi_ti_unicomm_flush_fifos(base);
 
 		spi_context_cs_control(ctx, true);
+
+#ifdef CONFIG_SPI_TI_UNICOMM_DMA
+		if (asynchronous && data->dma_ready) {
+			ret = spi_ti_unicomm_dma_start(dev);
+			/* Completion is signalled from the DMA callback */
+			spi_context_release(ctx, ret);
+			return ret;
+		}
+#endif
 
 		spi_ti_unicomm_tx_fill(base, ctx, cfg->fifo_depth);
 
@@ -766,6 +1008,15 @@ static DEVICE_API(spi, spi_ti_unicomm_api) = {
 		irq_enable(DT_INST_IRQN(index));                                                   \
 	}
 
+#define SPI_TI_UNICOMM_DMA_CFG(index)                                                              \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(index, dmas),                                            \
+		    (.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(index, tx)),               \
+		     .dma_tx_channel = DT_INST_DMAS_CELL_BY_NAME(index, tx, channel),              \
+		     .dma_rx_channel = DT_INST_DMAS_CELL_BY_NAME(index, rx, channel),              \
+		     .dma_tx_slot = DT_INST_DMAS_CELL_BY_NAME(index, tx, trigger),                 \
+		     .dma_rx_slot = DT_INST_DMAS_CELL_BY_NAME(index, rx, trigger),),               \
+		    (.dma_dev = NULL,))
+
 #define SPI_TI_UNICOMM_INIT(index)                                                                 \
 	PINCTRL_DT_INST_DEFINE(index);                                                             \
                                                                                                    \
@@ -783,6 +1034,7 @@ static DEVICE_API(spi, spi_ti_unicomm_api) = {
 			     .tx_fifo_threshold = DT_INST_PROP(index, tx_fifo_threshold),  \
 			     .rx_fifo_threshold = DT_INST_PROP(index, rx_fifo_threshold),  \
 			     .fifo_depth = DT_INST_PROP(index, fifo_depth),                \
+			     IF_ENABLED(CONFIG_SPI_TI_UNICOMM_DMA, (SPI_TI_UNICOMM_DMA_CFG(index)))\
 	};                                                                                         \
                                                                                                    \
 	static struct spi_ti_unicomm_data spi_data_##index = {                                     \
