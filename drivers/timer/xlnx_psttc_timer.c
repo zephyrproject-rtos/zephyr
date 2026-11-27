@@ -33,6 +33,7 @@ const int32_t z_sys_timer_irq_for_test = DT_IRQN(DT_INST(0, xlnx_ttcps));
  */
 #define CYCLES_NEXT_MIN		(10000)
 #define CYCLES_NEXT_MAX		(XTTC_MAX_INTERVAL_COUNT)
+#define MAX_TICKS		((XTTC_MAX_INTERVAL_COUNT / 4U) / CYCLES_PER_TICK)
 
 BUILD_ASSERT(TIMER_CLOCK_FREQUECY ==
 			CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
@@ -106,12 +107,26 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 #ifdef CONFIG_TICKLESS_KERNEL
 	uint32_t cycles;
 	uint32_t next_cycles;
+	uint32_t elapsed;
 
 	/* Read counter value */
 	cycles = read_count();
 
-	/* Calculate timeout counter value, clamped to the hardware max */
-	next_cycles = cycles + MIN((uint32_t)ticks * CYCLES_PER_TICK, CYCLES_NEXT_MAX);
+	/* Clamp so the next announcement is at most MAX_TICKS after the last
+	 * one, not after now: when every timeout is re-armed before it
+	 * expires, the match must still be hit before the 32-bit distance
+	 * from last_cycles wraps (42.9 s), or elapsed time is lost.
+	 */
+	elapsed = (cycles - last_cycles) / CYCLES_PER_TICK;
+	ticks = MAX(ticks, 1U);
+	if (elapsed >= MAX_TICKS) {
+		ticks = 1U;
+	} else if (ticks > (MAX_TICKS - elapsed)) {
+		ticks = MAX_TICKS - elapsed;
+	}
+
+	/* Next announcement on a tick boundary counted from the last one */
+	next_cycles = last_cycles + (elapsed + ticks) * CYCLES_PER_TICK;
 
 	/* Set match value for the next interrupt */
 	update_match(cycles, next_cycles);
