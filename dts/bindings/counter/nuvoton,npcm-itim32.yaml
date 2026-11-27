@@ -1,0 +1,31 @@
+# Copyright (c) 2026 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nuvoton NPCM internal 32-bit timer (ITIM32).
+
+  The timer counts down from a programmed value and reloads when it reaches
+  zero, which raises an interrupt and, with the 32 kHz input clock, a wake-up
+  event. The input clock is the one the clock controller reports for the
+  module, divided by the prescaler.
+
+compatible: "nuvoton,npcm-itim32"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  interrupts:
+    required: true
+
+  prescaler:
+    type: int
+    default: 1
+    description: |
+      Divider of the input clock, from 1 to 256. The counter frequency is the
+      input clock frequency divided by this value.

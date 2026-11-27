@@ -184,6 +184,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_ITE_IT8XXX2
 	DEVS_FOR_DT_COMPAT(ite_it8xxx2_counter)
 #endif
+#ifdef CONFIG_COUNTER_NPCM_ITIM32
+	DEVS_FOR_DT_COMPAT(nuvoton_npcm_itim32)
+#endif
 #ifdef CONFIG_COUNTER_NEORV32_GPTMR
 	DEVS_FOR_DT_COMPAT(neorv32_gptmr)
 #endif
