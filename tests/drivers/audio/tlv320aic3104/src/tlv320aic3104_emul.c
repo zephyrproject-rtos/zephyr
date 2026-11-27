@@ -12,10 +12,14 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/i2c_emul.h>
 
-#define DT_DRV_COMPAT ti_tlv320aic3104
+struct tlv320aic3104_emul_cfg {
+	bool is_aic3106;
+};
 
 static uint8_t s_page;
 static uint8_t s_regs[2][128];
+static bool s_written[2][128];
+static unsigned int s_reserved_writes;
 
 static uint8_t s_pending_reg;
 static bool s_pending_reg_valid;
@@ -41,9 +45,44 @@ void tlv320aic3104_emul_fail_write_at(uint8_t page, uint8_t addr)
 	s_fail_armed = true;
 }
 
+bool tlv320aic3104_emul_was_written(uint8_t page, uint8_t addr)
+{
+	return s_written[page & 1][addr & 0x7F];
+}
+
+unsigned int tlv320aic3104_emul_reserved_writes(void)
+{
+	return s_reserved_writes;
+}
+
+static bool aic3104_page0_reserved(uint8_t reg)
+{
+	switch (reg) {
+	case 20:
+	case 23:
+	case 39:
+	case 45:
+	case 48:
+	case 52:
+	case 55:
+	case 59:
+	case 62:
+	case 66:
+	case 69:
+	case 83:
+	case 87:
+	case 90:
+		return true;
+	default:
+		return (reg >= 73 && reg <= 80) || (reg >= 98 && reg <= 100) || reg >= 110;
+	}
+}
+
 void tlv320aic3104_emul_reset(void)
 {
 	memset(s_regs, 0, sizeof(s_regs));
+	memset(s_written, 0, sizeof(s_written));
+	s_reserved_writes = 0;
 	s_page = 0;
 	s_pending_reg = 0;
 	s_pending_reg_valid = false;
@@ -53,7 +92,8 @@ void tlv320aic3104_emul_reset(void)
 static int tlv320aic3104_emul_transfer(const struct emul *target, struct i2c_msg *msgs,
 				       int num_msgs, int addr)
 {
-	ARG_UNUSED(target);
+	const struct tlv320aic3104_emul_cfg *cfg = target->cfg;
+
 	ARG_UNUSED(addr);
 
 	for (int i = 0; i < num_msgs; i++) {
@@ -92,7 +132,11 @@ static int tlv320aic3104_emul_transfer(const struct emul *target, struct i2c_msg
 		if (s_fail_armed && s_page == s_fail_page && (reg & 0x7F) == s_fail_addr) {
 			return -EIO;
 		}
+		if (!cfg->is_aic3106 && s_page == 0 && aic3104_page0_reserved(reg & 0x7F)) {
+			s_reserved_writes++;
+		}
 		s_regs[s_page][reg & 0x7F] = val;
+		s_written[s_page][reg & 0x7F] = true;
 	}
 	return 0;
 }
@@ -106,6 +150,17 @@ static int tlv320aic3104_emul_init(const struct emul *target, const struct devic
 	return 0;
 }
 
-#define TLV320AIC3104_EMUL(n)                                                                     \
-	EMUL_DT_INST_DEFINE(n, tlv320aic3104_emul_init, NULL, NULL, &tlv320aic3104_emul_api, NULL);
-DT_INST_FOREACH_STATUS_OKAY(TLV320AIC3104_EMUL)
+#define TLV320AIC3104_EMUL(n, part, aic3106)                                                       \
+	static const struct tlv320aic3104_emul_cfg tlv320aic3104_emul_cfg_##part##_##n = {         \
+		.is_aic3106 = aic3106,                                                             \
+	};                                                                                         \
+	EMUL_DT_INST_DEFINE(n, tlv320aic3104_emul_init, NULL,                                      \
+			    &tlv320aic3104_emul_cfg_##part##_##n, &tlv320aic3104_emul_api, NULL);
+
+#define DT_DRV_COMPAT ti_tlv320aic3104
+DT_INST_FOREACH_STATUS_OKAY_VARGS(TLV320AIC3104_EMUL, aic3104, false)
+#undef DT_DRV_COMPAT
+
+#define DT_DRV_COMPAT ti_tlv320aic3106
+DT_INST_FOREACH_STATUS_OKAY_VARGS(TLV320AIC3104_EMUL, aic3106, true)
+#undef DT_DRV_COMPAT

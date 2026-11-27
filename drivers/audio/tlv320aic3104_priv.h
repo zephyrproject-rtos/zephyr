@@ -127,6 +127,12 @@ extern "C" {
 #define LINE1_TO_ADC_CONNECT_0DB         0x00U
 #define LINE1_TO_ADC_DISCONNECT          0x78U
 
+#define LINE2L_TO_LADC_CTRL     0x14U
+#define LINE2R_TO_RADC_CTRL     0x17U
+#define LINE2_LEVEL_FIELD_MASK  0x78U
+#define LINE2_LEVEL_CONNECT_0DB 0x00U
+#define LINE2_LEVEL_DISCONNECT  0x78U
+
 #define MICBIAS_CTRL 0x19U
 #define MICBIAS_OFF  0x00U
 #define MICBIAS_2V   0x40U
@@ -172,11 +178,19 @@ enum tlv320aic3104_channel_mode {
 	TLV320AIC3104_CHANNEL_MONO = 1,
 };
 
+struct tlv320aic3104_variant {
+	bool has_line2_adc;
+};
+
 struct tlv320aic3104_config {
+	const struct tlv320aic3104_variant *variant;
 	struct i2c_dt_spec bus;
 	struct gpio_dt_spec reset_gpio;
 
 	uint8_t mic_bias_level;
+
+	uint8_t default_input_left;
+	uint8_t default_input_right;
 
 	uint8_t adc_hpf;
 
@@ -261,7 +275,12 @@ int tlv320aic3104_fault_get_errors(const struct device *dev, uint32_t *out_error
 enum tlv320aic3104_input {
 	TLV320AIC3104_INPUT_LINE1 = 0,
 	TLV320AIC3104_INPUT_LINE2 = 1,
+	TLV320AIC3106_INPUT_LINE1 = TLV320AIC3104_INPUT_LINE1,
+	TLV320AIC3106_INPUT_MIC3 = TLV320AIC3104_INPUT_LINE2,
+	TLV320AIC3106_INPUT_LINE2 = 2,
 };
+
+int tlv320aic3104_in_init_routing(const struct device *dev);
 
 int tlv320aic3104_in_set_line2_routing(const struct device *dev, bool is_mono);
 

@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <stdbool.h>
 #include <stdint.h>
 
 uint8_t tlv320aic3104_emul_last_val(uint8_t page, uint8_t addr);
@@ -14,3 +15,7 @@ void tlv320aic3104_emul_set_val(uint8_t page, uint8_t addr, uint8_t val);
 void tlv320aic3104_emul_fail_write_at(uint8_t page, uint8_t addr);
 
 void tlv320aic3104_emul_reset(void);
+
+bool tlv320aic3104_emul_was_written(uint8_t page, uint8_t addr);
+
+unsigned int tlv320aic3104_emul_reserved_writes(void);

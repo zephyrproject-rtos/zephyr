@@ -1,0 +1,43 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Texas Instruments TLV320AIC3106 stereo audio codec
+
+description: |
+  Texas Instruments TLV320AIC3106 low-power stereo audio codec.
+  Datasheet: https://www.ti.com/product/TLV320AIC3106
+
+  The TLV320AIC3106 uses the TLV320AIC3104 register map and adds the
+  MIC3L/MIC3R and LINE2L/LINE2R inputs, so it shares the TLV320AIC3104
+  driver and properties. Only I2C control is supported (SELECT pin low);
+  the I2C address is 0x18 to 0x1b, set by the MFP0/MFP1 pins.
+
+compatible: "ti,tlv320aic3106"
+
+include: ti,tlv320aic3104.yaml
+
+properties:
+  left-capture-input:
+    type: string
+    default: "mic3"
+    enum:
+      - "line1"
+      - "mic3"
+      - "line2"
+    description: |
+      Input routed to the left ADC by audio_codec_configure().
+      "line1": LINE1L (page 0, register 19). "mic3": MIC3L (register 17).
+      "line2": LINE2L (register 20). The default, "mic3", uses the same
+      registers as the TLV320AIC3104 default capture input.
+
+  right-capture-input:
+    type: string
+    default: "mic3"
+    enum:
+      - "line1"
+      - "mic3"
+      - "line2"
+    description: |
+      Input routed to the right ADC by audio_codec_configure().
+      "line1": LINE1R (page 0, register 22). "mic3": MIC3R (register 18).
+      "line2": LINE2R (register 23).

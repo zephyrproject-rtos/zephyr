@@ -513,8 +513,21 @@ static int set_line1_field(const struct device *dev, uint8_t addr, bool connect)
 		connect ? LINE1_TO_ADC_CONNECT_0DB : LINE1_TO_ADC_DISCONNECT);
 }
 
+static int set_line2_adc_field(const struct device *dev, uint8_t addr, bool connect)
+{
+	const struct tlv320aic3104_config *cfg = dev->config;
+
+	if (!cfg->variant->has_line2_adc) {
+		return 0;
+	}
+
+	return tlv320aic3104_bus_update_reg(dev, 0, addr, LINE2_LEVEL_FIELD_MASK,
+					    connect ? LINE2_LEVEL_CONNECT_0DB
+						    : LINE2_LEVEL_DISCONNECT);
+}
+
 static int route_adc_side(const struct device *dev, uint32_t input, uint8_t line2_reg,
-			  uint8_t line2_connect_val, uint8_t line1_reg)
+			  uint8_t line2_connect_val, uint8_t line1_reg, uint8_t line2_adc_reg)
 {
 	const bool line2 = (input == TLV320AIC3104_INPUT_LINE2);
 	int ret;
@@ -525,7 +538,55 @@ static int route_adc_side(const struct device *dev, uint32_t input, uint8_t line
 		return ret;
 	}
 
-	return set_line1_field(dev, line1_reg, !line2);
+	ret = set_line1_field(dev, line1_reg, input == TLV320AIC3104_INPUT_LINE1);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return set_line2_adc_field(dev, line2_adc_reg, input == TLV320AIC3106_INPUT_LINE2);
+}
+
+static bool input_supported(const struct device *dev, uint32_t input)
+{
+	const struct tlv320aic3104_config *cfg = dev->config;
+
+	switch (input) {
+	case TLV320AIC3104_INPUT_LINE1:
+	case TLV320AIC3104_INPUT_LINE2:
+		return true;
+	case TLV320AIC3106_INPUT_LINE2:
+		return cfg->variant->has_line2_adc;
+	default:
+		return false;
+	}
+}
+
+int tlv320aic3104_in_init_routing(const struct device *dev)
+{
+	const struct tlv320aic3104_data *data = dev->data;
+	int ret;
+
+	if (data->input_left == TLV320AIC3104_INPUT_LINE1) {
+		ret = set_line1_field(dev, LINE1L_TO_LADC_CTRL, true);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+	if (data->input_right == TLV320AIC3104_INPUT_LINE1) {
+		ret = set_line1_field(dev, LINE1R_TO_RADC_CTRL, true);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	ret = set_line2_adc_field(dev, LINE2L_TO_LADC_CTRL,
+				  data->input_left == TLV320AIC3106_INPUT_LINE2);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return set_line2_adc_field(dev, LINE2R_TO_RADC_CTRL,
+				   data->input_right == TLV320AIC3106_INPUT_LINE2);
 }
 
 int tlv320aic3104_in_route_input(const struct device *dev, audio_channel_t channel, uint32_t input)
@@ -535,7 +596,7 @@ int tlv320aic3104_in_route_input(const struct device *dev, audio_channel_t chann
 	bool do_right;
 	int ret;
 
-	if (input != TLV320AIC3104_INPUT_LINE1 && input != TLV320AIC3104_INPUT_LINE2) {
+	if (!input_supported(dev, input)) {
 		return -ENOTSUP;
 	}
 
@@ -546,7 +607,7 @@ int tlv320aic3104_in_route_input(const struct device *dev, audio_channel_t chann
 
 	if (do_left) {
 		ret = route_adc_side(dev, input, MIC2_LINE2_TO_LADC, LINE2_TO_ADC_STEREO_L,
-				     LINE1L_TO_LADC_CTRL);
+				     LINE1L_TO_LADC_CTRL, LINE2L_TO_LADC_CTRL);
 		if (ret < 0) {
 			return ret;
 		}
@@ -554,7 +615,7 @@ int tlv320aic3104_in_route_input(const struct device *dev, audio_channel_t chann
 	}
 	if (do_right) {
 		ret = route_adc_side(dev, input, MIC2_LINE2_TO_RADC, LINE2_TO_ADC_STEREO_R,
-				     LINE1R_TO_RADC_CTRL);
+				     LINE1R_TO_RADC_CTRL, LINE2R_TO_RADC_CTRL);
 		if (ret < 0) {
 			return ret;
 		}
@@ -944,8 +1005,8 @@ static int codec_initialize(const struct device *dev)
 		return -ENODEV;
 	}
 
-	data->input_left = TLV320AIC3104_INPUT_LINE2;
-	data->input_right = TLV320AIC3104_INPUT_LINE2;
+	data->input_left = cfg->default_input_left;
+	data->input_right = cfg->default_input_right;
 
 	return 0;
 }
@@ -1012,8 +1073,8 @@ static int codec_configure(const struct device *dev, struct audio_codec_cfg *cfg
 		return ret;
 	}
 
-	data->input_left = TLV320AIC3104_INPUT_LINE2;
-	data->input_right = TLV320AIC3104_INPUT_LINE2;
+	data->input_left = dev_cfg->default_input_left;
+	data->input_right = dev_cfg->default_input_right;
 	data->output_running = false;
 
 	ret = apply_channel_mode_regs(dev, data->channel_mode);
@@ -1040,6 +1101,11 @@ static int codec_configure(const struct device *dev, struct audio_codec_cfg *cfg
 		if (ret < 0) {
 			return ret;
 		}
+	}
+
+	ret = tlv320aic3104_in_init_routing(dev);
+	if (ret < 0) {
+		return ret;
 	}
 
 	ret = tlv320aic3104_fault_init(dev);
@@ -1287,17 +1353,40 @@ static DEVICE_API(audio_codec, codec_driver_api) = {
 	.register_error_callback = tlv320aic3104_fault_register_callback,
 };
 
-#define TLV320AIC3104_DEFINE(inst)                                                                 \
-	static struct tlv320aic3104_data tlv320aic3104_data_##inst;                                \
-	static const struct tlv320aic3104_config tlv320aic3104_config_##inst = {                   \
+#define TLV320AIC3104_DEFAULT_INPUT(inst, prop)                                                    \
+	((uint8_t)DT_INST_ENUM_IDX_OR(inst, prop, TLV320AIC3104_INPUT_LINE2))
+
+#define TLV320AIC3104_DEFINE(inst, part)                                                           \
+	static struct tlv320aic3104_data tlv320aic3104_data_##part##_##inst;                       \
+	static const struct tlv320aic3104_config tlv320aic3104_config_##part##_##inst = {          \
+		.variant = &tlv320aic3104_variant_##part,                                          \
 		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET(inst, reset_gpios),                            \
 		.mic_bias_level = (uint8_t)DT_INST_PROP(inst, mic_bias_level),                     \
+		.default_input_left = TLV320AIC3104_DEFAULT_INPUT(inst, left_capture_input),       \
+		.default_input_right = TLV320AIC3104_DEFAULT_INPUT(inst, right_capture_input),     \
 		.adc_hpf = (uint8_t)DT_INST_PROP(inst, adc_high_pass_filter),                      \
 		.hprcom_vcm_output = DT_INST_PROP(inst, hprcom_vcm_output),                        \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, codec_initialize, NULL, &tlv320aic3104_data_##inst,            \
-			      &tlv320aic3104_config_##inst, POST_KERNEL,                           \
+	DEVICE_DT_INST_DEFINE(inst, codec_initialize, NULL, &tlv320aic3104_data_##part##_##inst,   \
+			      &tlv320aic3104_config_##part##_##inst, POST_KERNEL,                  \
 			      CONFIG_AUDIO_CODEC_INIT_PRIORITY, &codec_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(TLV320AIC3104_DEFINE)
+#if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
+static const struct tlv320aic3104_variant tlv320aic3104_variant_aic3104 = {
+	.has_line2_adc = false,
+};
+
+DT_INST_FOREACH_STATUS_OKAY_VARGS(TLV320AIC3104_DEFINE, aic3104)
+#endif
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT ti_tlv320aic3106
+
+#if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
+static const struct tlv320aic3104_variant tlv320aic3104_variant_aic3106 = {
+	.has_line2_adc = true,
+};
+
+DT_INST_FOREACH_STATUS_OKAY_VARGS(TLV320AIC3104_DEFINE, aic3106)
+#endif

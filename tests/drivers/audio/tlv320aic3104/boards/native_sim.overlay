@@ -114,5 +114,37 @@
 			reset-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
 			status = "okay";
 		};
+
+		tlv320aic3104_variant: tlv320aic3104@26 {
+			compatible = "ti,tlv320aic3104";
+			reg = <0x26>;
+			reset-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			status = "okay";
+		};
+
+		tlv320aic3106_default: tlv320aic3106@27 {
+			compatible = "ti,tlv320aic3106";
+			reg = <0x27>;
+			reset-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			status = "okay";
+		};
+
+		tlv320aic3106_line2_mic3: tlv320aic3106@28 {
+			compatible = "ti,tlv320aic3106";
+			reg = <0x28>;
+			reset-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			left-capture-input = "line2";
+			right-capture-input = "mic3";
+			status = "okay";
+		};
+
+		tlv320aic3106_line1: tlv320aic3106@29 {
+			compatible = "ti,tlv320aic3106";
+			reg = <0x29>;
+			reset-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			left-capture-input = "line1";
+			right-capture-input = "line1";
+			status = "okay";
+		};
 	};
 };
