@@ -159,6 +159,10 @@ static uint8_t gcm_ciphertext[58] = {
 	0x2e, 0x1c, 0x9b, 0x72, 0xee, 0xe7, 0xc9, 0xde, 0x7d, 0x52, 0xb3, 0xf3, 0xd6, 0xa5, 0x28,
 	0x4f, 0x4a, 0x6d, 0x3f, 0xe2, 0x2a, 0x5d, 0x6c, 0x2b, 0x96, 0x04, 0x94, 0xc3};
 
+/* Tag of the same message authenticated with only the first 13 bytes of gcm_hdr */
+static uint8_t gcm_tag_hdr13[16] = {0x2d, 0x85, 0x8a, 0x56, 0xcf, 0xc8, 0x68, 0x05,
+				    0xc5, 0x15, 0xda, 0x90, 0x63, 0x3f, 0xf4, 0x38};
+
 static inline const struct device *get_crypto_dev(void)
 {
 #ifdef CRYPTO_DRV_NAME
@@ -882,6 +886,66 @@ ZTEST(crypto_aes, test_gcm_encrypt)
 	rc = memcmp(encrypted, gcm_ciphertext, sizeof(gcm_ciphertext));
 	cipher_free_session(crypto_dev, &ctx);
 	zassert_equal(rc, 0, "GCM encrypt output mismatch");
+}
+
+ZTEST(crypto_aes, test_gcm_encrypt_ad_not_word_multiple)
+{
+	uint8_t encrypted[BUFFER_PAD(60)] __aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t plaintext_buf[BUFFER_PAD(sizeof(gcm_plaintext))]
+		__aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t hdr_buf[BUFFER_PAD(13)] __aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t nonce_copy[12];
+
+	memcpy(nonce_copy, gcm_nonce, sizeof(gcm_nonce));
+	memcpy(plaintext_buf, gcm_plaintext, sizeof(gcm_plaintext));
+	memcpy(hdr_buf, gcm_hdr, 13);
+
+	struct cipher_ctx ctx = {
+		.keylen = sizeof(gcm_key),
+		.key.bit_stream = gcm_key,
+		.mode_params.gcm_info = {
+			.nonce_len = sizeof(gcm_nonce),
+			.tag_len = 16,
+		},
+		.flags = CAP_RAW_KEY | CAP_SYNC_OPS | CAP_SEPARATE_IO_BUFS,
+	};
+
+	struct cipher_pkt pkt = {
+		.in_buf = plaintext_buf,
+		.in_len = sizeof(gcm_plaintext),
+		.out_buf_max = sizeof(encrypted),
+		.out_buf = encrypted,
+	};
+
+	struct cipher_aead_pkt aead_pkt = {
+		.ad = hdr_buf,
+		.ad_len = 13,
+		.pkt = &pkt,
+		.tag = encrypted + sizeof(gcm_plaintext),
+	};
+
+	int rc = cipher_begin_session(crypto_dev, &ctx, CRYPTO_CIPHER_ALGO_AES,
+				      CRYPTO_CIPHER_MODE_GCM, CRYPTO_CIPHER_OP_ENCRYPT);
+
+	if (rc == -ENOTSUP) {
+		ztest_test_skip();
+		return;
+	}
+
+	rc = cipher_gcm_op(&ctx, &aead_pkt, nonce_copy);
+	cipher_free_session(crypto_dev, &ctx);
+
+	/* Some backends only accept an AAD length that is a multiple of 4 bytes */
+	if (rc == -EINVAL || rc == -ENOTSUP) {
+		ztest_test_skip();
+		return;
+	}
+
+	zassert_equal(rc, 0, "GCM encrypt failed (rc=%d)", rc);
+	zassert_mem_equal(encrypted, gcm_ciphertext, sizeof(gcm_plaintext),
+			  "GCM encrypt output mismatch");
+	zassert_mem_equal(encrypted + sizeof(gcm_plaintext), gcm_tag_hdr13, sizeof(gcm_tag_hdr13),
+			  "GCM tag mismatch");
 }
 
 ZTEST(crypto_aes, test_gcm_decrypt)
