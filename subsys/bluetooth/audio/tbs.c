@@ -3168,16 +3168,20 @@ int bt_tbs_remote_incoming(uint8_t bearer_index, const char *to, const char *fro
 		return -EINVAL;
 	}
 
-	call = call_alloc(inst, BT_TBS_CALL_STATE_INCOMING, (uint8_t *)from, strlen(from));
-	if (call == NULL) {
-		return -ENOMEM;
-	}
-
 	err = k_mutex_lock(&tbs_mutex, K_NO_WAIT);
 	if (err != 0) {
 		LOG_DBG("Failed to lock mutex");
 		return -EBUSY;
 	}
+
+	call = call_alloc(inst, BT_TBS_CALL_STATE_INCOMING, (uint8_t *)from, strlen(from));
+	if (call == NULL) {
+		err = k_mutex_unlock(&tbs_mutex);
+		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+
+		return -ENOMEM;
+	}
+
 	BT_TBS_CALL_FLAG_SET_INCOMING(call->flags);
 
 	/* Notify TBS*/
