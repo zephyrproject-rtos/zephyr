@@ -446,7 +446,7 @@ static int bt_hci_stm32wba_close(const struct device *dev)
 	/* No radio event scheduled : inform LL to enter in deep sleep */
 	(void)ll_sys_dp_slp_enter(LL_DP_SLP_NO_WAKEUP);
 
-	link_layer_disable_isr();
+	uint32_t saved_basepri = link_layer_disable_isr();
 
 	/* Disable the clock sources used for the radio */
 	LINKLAYER_PLAT_AclkCtrl(0);
@@ -458,6 +458,7 @@ static int bt_hci_stm32wba_close(const struct device *dev)
 	if (IS_ENABLED(CONFIG_FLASH)) {
 		FD_SetStatus(FD_FLASHACCESS_RFTS_BYPASS, LL_FLASH_ENABLE);
 	}
+	__set_BASEPRI(saved_basepri);
 #endif
 
 	return 0;
