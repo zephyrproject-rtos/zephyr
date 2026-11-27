@@ -178,6 +178,23 @@
 	interrupt-parent = <&gic>;
 };
 
+&main_gpio2_0 {
+	interrupts = <GIC_SPI 280 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+		     <GIC_SPI 281 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
+
+&main_gpio2_1 {
+	interrupts = <GIC_SPI 282 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+		     <GIC_SPI 283 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
+
+&main_gpio2_2 {
+	interrupts = <GIC_SPI 284 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
+
 &main_timer0 {
 	interrupts = <GIC_SPI 170 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&gic>;

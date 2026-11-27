@@ -80,6 +80,12 @@
 			#power-domain-cells = <0>;
 		};
 
+		main_gpio2_pd: power-domain@23 {
+			compatible = "arm,scmi-power-domain";
+			reg = <35>;
+			#power-domain-cells = <0>;
+		};
+
 		main_epwm0_pd: power-domain@28 {
 			compatible = "arm,scmi-power-domain";
 			reg = <40>;
