@@ -10,7 +10,8 @@ config DMA_TI_AM62L_BCDMA
 	select CACHE_MANAGEMENT
 	help
 	  Driver for the Block Copy DMA (BCDMA) of the TI AM62L main DMSS.
-	  Supports memory to memory transfers on the block-copy channels.
+	  Supports memory to memory transfers on the block-copy channels and
+	  peripheral transfers on the split channels paired with the PDMA.
 	  The driver keeps its own descriptors and rings coherent; callers
 	  maintain the cache for their data buffers unless the channel uses
 	  ASEL 14 or 15 (ACP).
@@ -25,6 +26,26 @@ config DMA_TI_AM62L_BCDMA_MEMCPY_CHANNELS
 	  Number of block-copy channels, starting at channel 128, that get
 	  ring and descriptor memory. Each costs RING_SIZE descriptors of
 	  about 64 bytes per TR plus 64.
+
+config DMA_TI_AM62L_BCDMA_SPLIT_CHANNELS
+	int "Split channels with descriptor memory"
+	default 2
+	range 1 16
+	help
+	  Number of split TX/RX channels (0-127) that can be configured at
+	  the same time. A channel takes a slot on its first dma_config()
+	  and keeps it. Each costs as much memory as a block-copy channel.
+
+config DMA_TI_AM62L_BCDMA_SPLIT_TEARDOWN_TIMEOUT_US
+	int "Teardown wait of a split channel, in microseconds"
+	default 20000
+	range 1000 1000000
+	help
+	  How long dma_stop() busy-waits for each teardown stage (normal,
+	  then forced) of a split channel. A split channel ends its teardown
+	  at the end of the current TR, and a TX TR ends only when the
+	  peripheral has taken its data, so this should cover the longest
+	  block in flight. The wait runs with the driver lock held.
 
 config DMA_TI_AM62L_BCDMA_RING_SIZE
 	int "Descriptors per channel"

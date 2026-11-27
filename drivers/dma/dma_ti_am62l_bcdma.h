@@ -39,6 +39,8 @@
 
 /* TR FLAGS word (TRM Table 11-16) */
 #define BCDMA_TR_FLAGS_TYPE          GENMASK(3, 0)
+#define BCDMA_TR_TYPE1               1U
+#define BCDMA_TR_FLAGS_EOP           BIT(31)
 #define BCDMA_TR_TYPE15              15U
 
 /* TR response STATUS_TYPE and STATUS_INFO (TRM 11.3.2.5, Table 11-24) */
@@ -149,28 +151,86 @@ static inline void bcdma_tr15_fill(struct bcdma_tr15 *tr, uint64_t src, uint64_t
 	tr->dicnt3 = 1U;
 }
 
-static inline size_t bcdma_trpd_size(uint32_t tr_count)
+static inline void bcdma_tr1_fill(struct bcdma_tr15 *tr, uint64_t addr,
+				  const struct bcdma_piece *piece, uint8_t asel, bool eop)
+{
+	(void)memset(tr, 0, sizeof(*tr));
+	tr->flags =
+		FIELD_PREP(BCDMA_TR_FLAGS_TYPE, BCDMA_TR_TYPE1) | (eop ? BCDMA_TR_FLAGS_EOP : 0U);
+	tr->icnt0 = piece->icnt0;
+	tr->icnt1 = piece->icnt1;
+	tr->addr = bcdma_addr(addr + piece->offset, asel);
+	tr->dim1 = piece->icnt0;
+}
+
+#define BCDMA_STATIC_XY_BURST BIT(31)
+#define BCDMA_STATIC_XY_ACC32 BIT(30)
+#define BCDMA_STATIC_XY_X     GENMASK(26, 24)
+#define BCDMA_STATIC_XY_Y     GENMASK(11, 0)
+
+static inline int bcdma_static_xy(uint32_t elem_size, uint32_t burst_bytes, bool acc32_burst,
+				  uint32_t *xy)
+{
+	static const uint8_t code[] = {0xFFU, 0U, 1U, 2U, 3U, 0xFFU, 0xFFU, 0xFFU, 4U};
+	uint32_t y;
+
+	if (elem_size >= ARRAY_SIZE(code) || code[elem_size] == 0xFFU || burst_bytes == 0U ||
+	    (burst_bytes % elem_size) != 0U) {
+		return -EINVAL;
+	}
+
+	y = burst_bytes / elem_size;
+	if (y > FIELD_GET(BCDMA_STATIC_XY_Y, BCDMA_STATIC_XY_Y)) {
+		return -EINVAL;
+	}
+
+	*xy = FIELD_PREP(BCDMA_STATIC_XY_X, code[elem_size]) | FIELD_PREP(BCDMA_STATIC_XY_Y, y) |
+	      (acc32_burst ? (BCDMA_STATIC_XY_ACC32 | BCDMA_STATIC_XY_BURST) : 0U);
+
+	return 0;
+}
+
+#define BCDMA_TR_REC_32       32U
+#define BCDMA_TRPD_TR_SIZE_32 1U
+
+static inline size_t bcdma_trpd_size_rec(uint32_t tr_count, uint32_t rec)
 {
 	/*
 	 * Packet info, padded to the TR record size so the TR array is
 	 * naturally aligned (TRM Figure 11-6), then the TRs, then one
 	 * response word per TR.
 	 */
-	return BCDMA_TR15_SIZE * (tr_count + 1U) + BCDMA_TR_RESP_SIZE * tr_count;
+	return rec * (tr_count + 1U) + BCDMA_TR_RESP_SIZE * tr_count;
+}
+
+static inline size_t bcdma_trpd_size(uint32_t tr_count)
+{
+	return bcdma_trpd_size_rec(tr_count, BCDMA_TR15_SIZE);
+}
+
+static inline struct bcdma_tr15 *bcdma_trpd_tr_rec(void *desc, uint32_t idx, uint32_t rec)
+{
+	return (struct bcdma_tr15 *)((uint8_t *)desc + rec * (idx + 1U));
 }
 
 static inline struct bcdma_tr15 *bcdma_trpd_tr(void *desc, uint32_t idx)
 {
-	return (struct bcdma_tr15 *)((uint8_t *)desc + BCDMA_TR15_SIZE * (idx + 1U));
+	return bcdma_trpd_tr_rec(desc, idx, BCDMA_TR15_SIZE);
+}
+
+static inline volatile uint32_t *bcdma_trpd_resp_rec(void *desc, uint32_t tr_count, uint32_t idx,
+						     uint32_t rec)
+{
+	return (volatile uint32_t *)((uint8_t *)desc + rec * (tr_count + 1U) +
+				     BCDMA_TR_RESP_SIZE * idx);
 }
 
 static inline volatile uint32_t *bcdma_trpd_resp(void *desc, uint32_t tr_count, uint32_t idx)
 {
-	return (volatile uint32_t *)((uint8_t *)desc + BCDMA_TR15_SIZE * (tr_count + 1U) +
-				     BCDMA_TR_RESP_SIZE * idx);
+	return bcdma_trpd_resp_rec(desc, tr_count, idx, BCDMA_TR15_SIZE);
 }
 
-static inline void bcdma_trpd_init(void *desc, uint32_t tr_count, bool cyclic)
+static inline void bcdma_trpd_init_rec(void *desc, uint32_t tr_count, bool cyclic, uint32_t rec)
 {
 	uint32_t *w = desc;
 
@@ -178,9 +238,15 @@ static inline void bcdma_trpd_init(void *desc, uint32_t tr_count, bool cyclic)
 	       FIELD_PREP(BCDMA_TRPD_W0_RELOAD_CNT, cyclic ? BCDMA_TRPD_RELOAD_FOREVER : 0U) |
 	       FIELD_PREP(BCDMA_TRPD_W0_RELOAD_IDX, 0U) |
 	       FIELD_PREP(BCDMA_TRPD_W0_LAST_ENTRY, tr_count - 1U);
-	w[1] = FIELD_PREP(BCDMA_TRPD_W1_TR_SIZE, BCDMA_TRPD_TR_SIZE_64);
+	w[1] = FIELD_PREP(BCDMA_TRPD_W1_TR_SIZE,
+			  rec == BCDMA_TR_REC_32 ? BCDMA_TRPD_TR_SIZE_32 : BCDMA_TRPD_TR_SIZE_64);
 	w[2] = 0U;
 	w[3] = 0U;
+}
+
+static inline void bcdma_trpd_init(void *desc, uint32_t tr_count, bool cyclic)
+{
+	bcdma_trpd_init_rec(desc, tr_count, cyclic, BCDMA_TR15_SIZE);
 }
 
 #endif /* ZEPHYR_DRIVERS_DMA_DMA_TI_AM62L_BCDMA_H_ */
