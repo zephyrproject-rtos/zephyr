@@ -1816,6 +1816,27 @@ static int sdhc_stm32_set_io(const struct device *dev, struct sdhc_io *ios)
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 	k_mutex_lock(&data->bus_mutex, K_FOREVER);
 
+	if ((ios->timing != 0) && (host_io->timing != ios->timing)) {
+		switch (ios->timing) {
+		case SDHC_TIMING_LEGACY:
+		case SDHC_TIMING_HS:
+			/*
+			 * Default and High Speed (up to 50 MHz) need no register
+			 * change: they use the internal receive clock
+			 * sdmmc_io_in_ck, no BUSSPEED and no delay block. Only
+			 * the clock differs, which the stack sets separately.
+			 */
+			host_io->timing = ios->timing;
+			LOG_DBG("Timing set to %s",
+				(ios->timing == SDHC_TIMING_HS) ? "High Speed" : "Legacy");
+			break;
+		default:
+			LOG_ERR("Unsupported timing %d", ios->timing);
+			res = -ENOTSUP;
+			goto end;
+		}
+	}
+
 	if ((ios->clock != 0) && (host_io->clock != ios->clock)) {
 		if ((ios->clock > props->f_max) || (ios->clock < props->f_min)) {
 			LOG_ERR("Invalid clock frequency, domain (%u, %u)", props->f_min,
@@ -1906,6 +1927,8 @@ static void sdhc_stm32_init_props(const struct device *dev)
 	props->host_caps.vol_330_support = true;
 	props->host_caps.vol_180_support = sdhc_config->support_1_8_v;
 	props->host_caps.bus_8_bit_support = (sdhc_config->bus_width == SDHC_BUS_WIDTH8BIT);
+	/* Boards opt in to High Speed with a max-bus-freq above Default Speed */
+	props->host_caps.high_spd_support = (sdhc_config->max_freq > SD_CLOCK_25MHZ);
 	props->bus_4_bit_support = (sdhc_config->bus_width == SDHC_BUS_WIDTH4BIT);
 }
 
