@@ -202,6 +202,12 @@ static int sys_clock_driver_init(void)
 	sys_write32(0, TIMER_BASE_ADDR + XTTCPS_MATCH_2_OFFSET);
 	sys_write32(0, TIMER_BASE_ADDR + XTTCPS_IER_OFFSET);
 	sys_write32(XTTCPS_IXR_ALL_MASK, TIMER_BASE_ADDR + XTTCPS_ISR_OFFSET);
+	/*
+	 * The interrupt register clears on read, as the ISR relies on. The
+	 * write above does not clear a match latched before init, which would
+	 * raise one timer interrupt as soon as the interrupt is enabled.
+	 */
+	(void)sys_read32(TIMER_BASE_ADDR + XTTCPS_ISR_OFFSET);
 
 	/* Reset counter value */
 	reg_val = sys_read32(TIMER_BASE_ADDR + XTTCPS_CNT_CNTRL_OFFSET);
