@@ -1105,6 +1105,8 @@
 					compatible = "zephyr,memory-region", "mmio-sram";
 					zephyr,memory-region = "AXISRAM3";
 					zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
+					reg = <0x34200000 DT_SIZE_K(448)>;
+					status = "disabled";
 				};
 			};
 
@@ -1121,6 +1123,8 @@
 					compatible = "zephyr,memory-region", "mmio-sram";
 					zephyr,memory-region = "AXISRAM4";
 					zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
+					reg = <0x34270000 DT_SIZE_K(448)>;
+					status = "disabled";
 				};
 			};
 
@@ -1137,6 +1141,8 @@
 					compatible = "zephyr,memory-region", "mmio-sram";
 					zephyr,memory-region = "AXISRAM5";
 					zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
+					reg = <0x342e0000 DT_SIZE_K(448)>;
+					status = "disabled";
 				};
 			};
 
@@ -1153,6 +1159,8 @@
 					compatible = "zephyr,memory-region", "mmio-sram";
 					zephyr,memory-region = "AXISRAM6";
 					zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
+					reg = <0x34350000 DT_SIZE_K(448)>;
+					status = "disabled";
 				};
 			};
 
@@ -1754,11 +1762,16 @@
 		axisram1: memory@34000000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			zephyr,memory-region = "AXISRAM1";
+			/* This section is the RAM available to the chainloaded application */
+			/* 400 kB of FLEXRAM followed by 624 kB of AXISRAM1 + AXISRAM2 */
+			reg = <0x34000000 (DT_SIZE_K(400) + DT_SIZE_K(624) + DT_SIZE_M(1))>;
 		};
 
 		axisram2: memory@34180400 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			zephyr,memory-region = "AXISRAM2";
+			/* This section is the RAM available to FSBL application */
+			reg = <0x34180400 DT_SIZE_K(511)>;
 		};
 	};
 
