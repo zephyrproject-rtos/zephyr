@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/devicetree/sram.h>
+
 /** \brief MPU Region Base Address Register Definitions */
 #define MPU_RBAR_BASE_Pos		5					/*!< MPU RBAR: BASE Position */
 #define MPU_RBAR_BASE_Msk		(0x7FFFFFF << MPU_RBAR_BASE_Pos)	/*!< MPU RBAR: BASE Mask */
@@ -18,4 +20,9 @@
 #define RAM_LIMIT_SIZE DT_CHOSEN_SRAM_SIZE
 
 PROVIDE(__rom_region_limit = REGION_LIMIT_ADDR(__rom_region_start, __rom_region_size));
-PROVIDE(__image_ram_limit = REGION_LIMIT_ADDR(_image_ram_start, RAM_LIMIT_SIZE));
+/* SRAM_RW region spans from SRAM start to SRAM end, covering all kernel-writable
+ * memory including code, initialized data, heap, and stack. Use DT_CHOSEN_SRAM_ADDR
+ * (device tree SRAM address) instead of __rom_region_start to explicitly reference
+ * SRAM boundaries and avoid ROM/RAM naming confusion in RAM-loaded images.
+ */
+PROVIDE(__image_ram_limit = REGION_LIMIT_ADDR(DT_CHOSEN_SRAM_ADDR, DT_CHOSEN_SRAM_SIZE));
