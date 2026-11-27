@@ -1,0 +1,15 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright 2026 NXP
+ */
+
+/* Odd layout: hardware channels 0, 1 and 2 enabled. 0/1 form a stereo
+ * pair and 2 can be used as the trailing unpaired channel, so three
+ * channels are usable.
+ */
+&dmic0 {
+	dmic-channel@3 {
+		status = "disabled";
+	};
+};
