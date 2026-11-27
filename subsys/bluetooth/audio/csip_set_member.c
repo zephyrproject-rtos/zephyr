@@ -199,11 +199,19 @@ static int sirk_encrypt(struct bt_conn *conn, const struct bt_csip_sirk *sirk,
 		LOG_DBG("Encrypting test SIRK");
 		k = test_k;
 	} else {
+		const struct bt_keys *keys;
+
 		if (conn == NULL) {
 			return -EINVAL;
 		}
 
-		k = conn->le.keys->ltk.val;
+		/* The keys can be gone, for example after bt_unpair() */
+		keys = conn->le.keys;
+		if (keys == NULL) {
+			return -ENOENT;
+		}
+
+		k = keys->ltk.val;
 	}
 
 	err = bt_csip_sef(k, sirk->value, enc_sirk->value);

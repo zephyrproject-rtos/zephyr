@@ -116,6 +116,11 @@ struct bt_conn_le {
 	uint8_t  conn_param_retry_countdown;
 #endif
 
+	/* Count of the LTKs derived from a BR/EDR link key when this ACL was
+	 * created. It fits in the same gap.
+	 */
+	uint16_t ltk_derive_cnt;
+
 	uint32_t interval_us;
 	uint16_t interval_min;
 	uint16_t interval_max;
