@@ -104,6 +104,10 @@ struct eic_mchp_dev_data {
 	 * Each bit correspond to an eic line
 	 */
 	uint16_t line_busy;
+	/* Lines acknowledged by the shared ISR and not yet dispatched (single IRQ SoCs only).
+	 * Disabling or reconfiguring a line clears its bit.
+	 */
+	uint16_t isr_pending;
 	/* It contains the address of gpio isr function */
 	mchp_eic_callback_t eic_line_callback;
 	/* This will contain the address of data structure of gpio peripheral. It is used
@@ -338,6 +342,7 @@ int eic_mchp_disable_interrupt(struct eic_config_params *eic_pin_config)
 	}
 
 	disable_interrupt_line(eic_cfg->regs, eic_line);
+	eic_data->isr_pending &= ~BIT(eic_line);
 
 	/*Remove the connection from EIC peripheral*/
 	eic_pin_config->port_addr->PORT_PINCFG[eic_pin_config->pin_num] &=
@@ -436,6 +441,7 @@ int eic_mchp_config_interrupt(struct eic_config_params *eic_pin_config)
 		LOG_ERR("EIC Line for port %d : %d is busy", eic_pin_config->port_id, pin);
 		return -EBUSY;
 	}
+	eic_data->isr_pending &= ~BIT(eic_line);
 	eic_disable(eic_cfg->regs);
 	eic_sync_wait(eic_cfg->regs);
 
@@ -545,8 +551,16 @@ static void eic_mchp_isr(const struct device *dev)
 	struct eic_mchp_dev_data *eic_data = dev->data;
 	uint16_t eic_int_flag = eic_cfg->regs->EIC_INTFLAG;
 	uint8_t eic_line = 0;
+	unsigned int key;
 
+	/* Acknowledge on entry so that an edge arriving during the callbacks is latched */
 	eic_cfg->regs->EIC_INTFLAG = eic_int_flag;
+
+	/* Keep only the assigned lines */
+	key = irq_lock();
+	eic_data->isr_pending = eic_int_flag & eic_data->line_busy;
+	irq_unlock(key);
+
 	/* Divides the interrupt flag into nibbles and
 	 *checks whether it has a set bit inside it
 	 */
@@ -559,7 +573,7 @@ static void eic_mchp_isr(const struct device *dev)
 		 * and call the callback as expected
 		 */
 		for (int i = 0; i < EIC_NIBS_BIT_COUNT; i++) {
-			if ((eic_int_flag & BIT(eic_line)) == 0) {
+			if ((eic_data->isr_pending & BIT(eic_line)) == 0) {
 				eic_line++;
 				continue;
 			}
@@ -570,7 +584,6 @@ static void eic_mchp_isr(const struct device *dev)
 
 				eic_data->eic_line_callback(pins, eic_data->gpio_data[port_id]);
 			}
-			eic_int_flag &= ~BIT(eic_line);
 			eic_line++;
 		}
 	}
@@ -589,14 +602,23 @@ static void eic_mchp_isr(const struct device *dev)
 #else
 
 #define EIC_MCHP_CREATE_HANDLERS(n)  LISTIFY(DT_NUM_IRQS(DT_DRV_INST(n)), EIC_MCHP_CB_INIT, (;),)
+/* The NVIC can hold an IRQ that was pended before its line was reconfigured or
+ * disabled, after the EIC flag was cleared. The handler only reports an interrupt
+ * that is flagged on an enabled line.
+ */
 #define EIC_MCHP_CB_INIT(eic_line, _)							\
 	static void eic_mchp_isr_##eic_line(const struct device *dev)			\
 	{										\
 		const struct eic_mchp_dev_cfg *eic_cfg = dev->config;			\
 		struct eic_mchp_dev_data *eic_data = dev->data;				\
 		uint8_t port_id = eic_data->lines[EIC_LINE_##eic_line].port ;		\
+		uint16_t line_mask = BIT(EIC_LINE_##eic_line);				\
 											\
-		eic_cfg->regs->EIC_INTFLAG = BIT(EIC_LINE_##eic_line);			\
+		if ((eic_cfg->regs->EIC_INTFLAG & eic_cfg->regs->EIC_INTENSET &	\
+		     line_mask) == 0) {							\
+			return;								\
+		}									\
+		eic_cfg->regs->EIC_INTFLAG = line_mask;					\
 		if (eic_data->eic_line_callback != NULL) {				\
 			uint32_t pins = BIT(eic_data->lines[EIC_LINE_##eic_line].pin);	\
 			eic_data->eic_line_callback(pins, eic_data->gpio_data[port_id]);\
