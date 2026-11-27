@@ -10,7 +10,8 @@ menuconfig I2S_TI_MCASP
 	help
 	  Enable the I2S driver for the TI Multichannel Audio Serial Port
 	  (McASP) of the TI AM62L, whose clock is an SCMI clock with one cell.
-	  The CPU moves the data from interrupts; no DMA is used.
+	  By default the CPU moves the data from interrupts; I2S_TI_MCASP_DMA
+	  moves it with the DMA instead.
 
 if I2S_TI_MCASP
 
@@ -24,6 +25,21 @@ config I2S_TI_MCASP_AFIFO
 	  one serializer). A frame may hold at most 32 words. Without it, the
 	  data-ready interrupt of every slot moves one word, and a delay of one
 	  slot is an underrun or overrun.
+
+config I2S_TI_MCASP_DMA
+	bool "Move data with the DMA [EXPERIMENTAL]"
+	depends on I2S_TI_MCASP_AFIFO
+	select DMA
+	select EXPERIMENTAL
+	help
+	  Move the blocks between memory and the audio FIFO with the DMA
+	  channels named "tx" and "rx" in the dmas property, one AFIFO event
+	  per frame. A direction uses DMA when it starts together with the
+	  serial port; a direction started while the other one runs, and the
+	  tail after the last DMA block, use the interrupt path. Instances
+	  without dmas use the interrupt path, and so does RX when its slab
+	  blocks are not aligned to the 64-byte cache line, because the
+	  driver invalidates them.
 
 config I2S_TI_MCASP_TX_BLOCK_COUNT
 	int "TX queue length"

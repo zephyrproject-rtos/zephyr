@@ -25,7 +25,11 @@
 
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/cache.h>
 #include <zephyr/drivers/clock_control.h>
+#ifdef CONFIG_I2S_TI_MCASP_DMA
+#include <zephyr/drivers/dma.h>
+#endif
 #include <zephyr/drivers/i2s.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
@@ -152,6 +156,14 @@ LOG_MODULE_REGISTER(i2s_ti_mcasp, CONFIG_I2S_LOG_LEVEL);
 #define MCASP_SERDIR_RX     2U
 /* Zero slots sent after the last word before the hardware stops */
 #define MCASP_TX_TAIL_SLOTS 2U
+#define MCASP_DMA_DEPTH      2U
+#define MCASP_DMA_DEPTH_TX   1U
+#define MCASP_DMA_TX_LEAD_US 250U
+#define MCASP_DMA_BCNT_MASK  GENMASK(30, 0)
+#define MCASP_DMA_ALIGN      64U
+#define MCASP_DMA_ASEL_ACP0  14U
+#define MCASP_DMA_ASEL_ACP1  15U
+#define MCASP_DMA_LEAD_FRAMES_MIN 2U
 
 struct mcasp_block {
 	void *buf;
@@ -174,6 +186,12 @@ struct mcasp_stream {
 	bool drain;
 	/* RX of a DIR_BOTH DRAIN: end with the block holding the last TX slot */
 	bool follow_tx;
+	bool dma;
+	bool dma_used;
+	uint8_t dma_head;
+	uint8_t dma_n;
+	uint32_t dma_sub;
+	struct mcasp_block dma_q[MCASP_DMA_DEPTH];
 };
 
 struct mcasp_config {
@@ -187,6 +205,11 @@ struct mcasp_config {
 	void (*irq_config)(void);
 	const uint8_t *serial_dir;
 	uint8_t serial_dir_len;
+#ifdef CONFIG_I2S_TI_MCASP_DMA
+	const struct device *dma_dev;
+	uint32_t dma_ch[2];
+	uint8_t dma_asel[2];
+#endif
 };
 
 struct mcasp_data {
@@ -215,6 +238,7 @@ struct mcasp_data {
 	uint8_t wsize;
 	uint32_t frame_hz;
 	uint32_t fck_rate;
+	bool dma_ok;
 };
 
 static inline uint32_t mcasp_read(const struct device *dev, uint32_t reg)
@@ -230,6 +254,13 @@ static inline void mcasp_write(const struct device *dev, uint32_t reg, uint32_t 
 static inline bool use_fifo(void)
 {
 	return IS_ENABLED(CONFIG_I2S_TI_MCASP_AFIFO);
+}
+
+static inline bool use_dma(const struct device *dev)
+{
+	const struct mcasp_data *data = dev->data;
+
+	return IS_ENABLED(CONFIG_I2S_TI_MCASP_DMA) && data->dma_ok;
 }
 
 /*
@@ -379,10 +410,71 @@ static int gblctl_set(const struct device *dev, uint32_t bits)
 	return gblctl_write(dev, data->gblctl | bits);
 }
 
+#ifdef CONFIG_I2S_TI_MCASP_DMA
+static inline bool dma_is_tx(const struct device *dev, const struct mcasp_stream *s)
+{
+	const struct mcasp_data *data = dev->data;
+
+	return s == &data->tx;
+}
+
+static void dma_handover(const struct device *dev, struct mcasp_stream *s)
+{
+	struct mcasp_data *data = dev->data;
+	uint32_t reg = dma_is_tx(dev, s) ? MCASP_XINTCTL : MCASP_RINTCTL;
+
+	s->dma = false;
+	s->slot = 0U;
+	if (data->hw_running) {
+		mcasp_write(dev, reg, mcasp_read(dev, reg) | INT_STAFRM);
+	}
+}
+
+static void dma_abort(const struct device *dev, struct mcasp_stream *s)
+{
+	const struct mcasp_config *cfg = dev->config;
+	bool tx = dma_is_tx(dev, s);
+	bool stopped = true;
+	int ret;
+
+	if (s->dma_used) {
+		ret = dma_stop(cfg->dma_dev, cfg->dma_ch[tx ? 0 : 1]);
+		if (ret < 0) {
+			LOG_ERR("%s DMA stop: %d", tx ? "TX" : "RX", ret);
+			stopped = false;
+		}
+		s->dma_used = false;
+	}
+	if (!stopped && s->dma_n > 0U) {
+		LOG_ERR("%s DMA may still run: %u block(s) are not returned to the slab",
+			tx ? "TX" : "RX", (unsigned int)s->dma_n);
+	}
+	while (s->dma_n > 0U) {
+		if (stopped) {
+			k_mem_slab_free(s->cfg.mem_slab, s->dma_q[s->dma_head].buf);
+		}
+		s->dma_head = (s->dma_head + 1U) % MCASP_DMA_DEPTH;
+		s->dma_n--;
+	}
+	if (s->dma) {
+		dma_handover(dev, s);
+	}
+}
+#else
+static inline void dma_abort(const struct device *dev, struct mcasp_stream *s)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(s);
+}
+#endif
+
 /* Lock held */
 static void hw_stop(const struct device *dev)
 {
 	struct mcasp_data *data = dev->data;
+
+	dma_abort(dev, &data->tx);
+	dma_abort(dev, &data->rx);
 
 	mcasp_write(dev, MCASP_XINTCTL, 0U);
 	mcasp_write(dev, MCASP_RINTCTL, 0U);
@@ -647,6 +739,8 @@ static void maybe_stop(const struct device *dev)
 	}
 }
 
+static void tx_dma_step(const struct device *dev);
+
 static void mcasp_tx_isr(const struct device *dev)
 {
 	struct mcasp_data *data = dev->data;
@@ -666,8 +760,10 @@ static void mcasp_tx_isr(const struct device *dev)
 
 	if (use_fifo()) {
 		/* Start of frame: top the FIFO up whatever the delay was */
-		if (data->num_tx > 0U) {
+		if (data->num_tx > 0U && !data->tx.dma) {
 			tx_fill(dev);
+		} else if (data->tx.dma) {
+			tx_dma_step(dev);
 		}
 	} else if ((stat & STAT_DATA) != 0U && data->num_tx > 0U &&
 		   (mcasp_read(dev, MCASP_SRCTL(data->tx_ser[0])) & SRCTL_XRDY) != 0U) {
@@ -700,7 +796,7 @@ static void mcasp_rx_isr(const struct device *dev)
 	}
 
 	if (use_fifo()) {
-		if (data->num_rx > 0U) {
+		if (data->num_rx > 0U && !data->rx.dma) {
 			rx_drain(dev);
 		}
 	} else if ((stat & STAT_DATA) != 0U && data->num_rx > 0U &&
@@ -794,6 +890,386 @@ static uint8_t dir_serializers(const struct mcasp_data *data, enum i2s_dir dir)
 	return dir == I2S_DIR_TX ? data->num_tx : data->num_rx;
 }
 
+#ifdef CONFIG_I2S_TI_MCASP_DMA
+static uint32_t dma_event_words(const struct mcasp_data *data, bool tx)
+{
+	return (uint32_t)data->slots * (tx ? data->num_tx : data->num_rx);
+}
+
+static inline bool dma_asel_coherent(uint8_t asel)
+{
+	return asel == MCASP_DMA_ASEL_ACP0 || asel == MCASP_DMA_ASEL_ACP1;
+}
+
+static int dma_cache_out(const struct device *dev, bool tx, void *buf, size_t size)
+{
+	const struct mcasp_config *cfg = dev->config;
+
+	if (dma_asel_coherent(cfg->dma_asel[tx ? 0 : 1])) {
+		return 0;
+	}
+
+	return tx ? sys_cache_data_flush_range(buf, size)
+		  : sys_cache_data_flush_and_invd_range(buf, size);
+}
+
+static int dma_cache_in(const struct device *dev, void *buf, size_t size)
+{
+	const struct mcasp_config *cfg = dev->config;
+
+	if (dma_asel_coherent(cfg->dma_asel[1])) {
+		return 0;
+	}
+
+	return sys_cache_data_invd_range(buf, size);
+}
+
+static int dma_tx_flush(const struct device *dev, void *buf, size_t size)
+{
+	const struct mcasp_config *cfg = dev->config;
+	int ret;
+
+	if (cfg->dma_dev == NULL) {
+		return 0;
+	}
+
+	ret = dma_cache_out(dev, true, buf, size);
+	if (ret < 0) {
+		LOG_ERR("TX DMA cache maintenance: %d", ret);
+	}
+
+	return ret;
+}
+
+static void mcasp_dma_cb(const struct device *dma_dev, void *arg, uint32_t channel, int status);
+
+static int dma_submit(const struct device *dev, struct mcasp_stream *s, void *buf, size_t size)
+{
+	const struct mcasp_config *cfg = dev->config;
+	struct mcasp_data *data = dev->data;
+	bool tx = dma_is_tx(dev, s);
+	uint32_t ch = cfg->dma_ch[tx ? 0 : 1];
+	uintptr_t mem = (uintptr_t)buf;
+	int ret;
+
+	if (!tx) {
+		ret = dma_cache_out(dev, false, buf, size);
+		if (ret < 0) {
+			LOG_ERR("RX DMA cache maintenance: %d", ret);
+			return ret;
+		}
+	}
+
+	if (!s->dma_used) {
+		uint32_t burst = dma_event_words(data, tx) * data->wsize;
+		struct dma_block_config blk = {
+			.source_address = tx ? mem : cfg->dat_phys,
+			.dest_address = tx ? cfg->dat_phys : mem,
+			.source_addr_adj = tx ? DMA_ADDR_ADJ_INCREMENT : DMA_ADDR_ADJ_NO_CHANGE,
+			.dest_addr_adj = tx ? DMA_ADDR_ADJ_NO_CHANGE : DMA_ADDR_ADJ_INCREMENT,
+			.block_size = size,
+		};
+		struct dma_config dc = {
+			.channel_direction = tx ? MEMORY_TO_PERIPHERAL : PERIPHERAL_TO_MEMORY,
+			.dma_slot = cfg->dma_asel[tx ? 0 : 1],
+			.source_data_size = data->wsize,
+			.dest_data_size = data->wsize,
+			.source_burst_length = burst,
+			.dest_burst_length = burst,
+			.block_count = 1U,
+			.head_block = &blk,
+			.user_data = (void *)dev,
+			.dma_callback = mcasp_dma_cb,
+		};
+
+		ret = dma_config(cfg->dma_dev, ch, &dc);
+		if (ret == 0) {
+			s->dma_used = true;
+			s->dma_head = 0U;
+			s->dma_n = 0U;
+			s->dma_sub = 0U;
+		}
+	} else {
+		ret = dma_reload(cfg->dma_dev, ch, tx ? mem : cfg->dat_phys,
+				 tx ? cfg->dat_phys : mem, size);
+	}
+	if (ret == 0) {
+		ret = dma_start(cfg->dma_dev, ch);
+	}
+	if (ret < 0) {
+		LOG_ERR("%s DMA chan %u: %d", tx ? "TX" : "RX", ch, ret);
+		return ret;
+	}
+
+	s->dma_q[(s->dma_head + s->dma_n) % MCASP_DMA_DEPTH] =
+		(struct mcasp_block){.buf = buf, .size = size};
+	s->dma_n++;
+	if (tx) {
+		data->tx_slots += size / ((size_t)data->wsize * data->num_tx);
+		data->tx_data_end = data->tx_slots;
+		s->dma_sub += (uint32_t)size;
+	}
+
+	return 0;
+}
+
+static void tx_dma_refill(const struct device *dev)
+{
+	struct mcasp_data *data = dev->data;
+	struct mcasp_stream *tx = &data->tx;
+	struct mcasp_block blk;
+
+	while (tx->dma && stream_active(tx) && !tx->stop && tx->dma_n < MCASP_DMA_DEPTH_TX &&
+	       k_msgq_get(tx->msgq, &blk, K_NO_WAIT) == 0) {
+		if (dma_submit(dev, tx, blk.buf, blk.size) < 0) {
+			k_mem_slab_free(tx->cfg.mem_slab, blk.buf);
+			hw_error(dev, true, 0U);
+			return;
+		}
+	}
+}
+
+static void rx_dma_refill(const struct device *dev)
+{
+	struct mcasp_data *data = dev->data;
+	struct mcasp_stream *rx = &data->rx;
+	void *buf;
+
+	while (rx->dma && stream_active(rx) && rx->dma_n < MCASP_DMA_DEPTH &&
+	       k_mem_slab_alloc(rx->cfg.mem_slab, &buf, K_NO_WAIT) == 0) {
+		if (dma_submit(dev, rx, buf, rx->cfg.block_size) < 0) {
+			k_mem_slab_free(rx->cfg.mem_slab, buf);
+			hw_error(dev, false, 0U);
+			return;
+		}
+	}
+}
+
+static void tx_stafrm(const struct device *dev, bool on)
+{
+	struct mcasp_data *data = dev->data;
+	uint32_t reg;
+
+	if (!data->hw_running) {
+		return;
+	}
+	reg = mcasp_read(dev, MCASP_XINTCTL);
+	mcasp_write(dev, MCASP_XINTCTL, on ? reg | INT_STAFRM : reg & ~INT_STAFRM);
+}
+
+static uint32_t tx_dma_left(const struct device *dev)
+{
+	const struct mcasp_config *cfg = dev->config;
+	struct mcasp_data *data = dev->data;
+	struct dma_status st;
+
+	if (dma_get_status(cfg->dma_dev, cfg->dma_ch[0], &st) < 0) {
+		return 0U;
+	}
+
+	return (data->tx.dma_sub - (uint32_t)st.total_copied) & MCASP_DMA_BCNT_MASK;
+}
+
+static uint32_t tx_dma_lead(const struct mcasp_data *data)
+{
+	uint32_t frame = (uint32_t)data->slots * data->num_tx;
+	uint32_t frames =
+		DIV_ROUND_UP(data->tx.cfg.frame_clk_freq * MCASP_DMA_TX_LEAD_US, USEC_PER_SEC);
+
+	return MIN(MAX(frames, MCASP_DMA_LEAD_FRAMES_MIN) * frame, AFIFO_WORDS);
+}
+
+static void tx_dma_step(const struct device *dev)
+{
+	struct mcasp_data *data = dev->data;
+	struct mcasp_stream *tx = &data->tx;
+	bool more = k_msgq_num_used_get(tx->msgq) > 0U;
+	bool wait = false;
+	uint32_t left;
+
+	if (!tx->dma) {
+		return;
+	}
+
+	left = tx_dma_left(dev);
+	if (stream_active(tx) && !tx->stop && more && tx->dma_n < MCASP_DMA_DEPTH_TX) {
+		uint32_t unplayed = left / data->wsize + fifo_level(dev, MCASP_WFIFOSTS);
+
+		if (unplayed < tx_dma_lead(data)) {
+			tx_dma_refill(dev);
+			if (!tx->dma) {
+				return;
+			}
+		} else {
+			wait = true;
+		}
+	} else if (tx->dma_n == 0U && (!stream_active(tx) || tx->stop || (tx->drain && !more))) {
+		if (left == 0U) {
+			if (stream_active(tx)) {
+				tx->state = I2S_STATE_READY;
+			}
+			data->tail = MCASP_TX_TAIL_SLOTS;
+			dma_handover(dev, tx);
+			return;
+		}
+		wait = true;
+	}
+	tx_stafrm(dev, wait);
+}
+
+static void tx_dma_done(const struct device *dev, struct mcasp_block *blk)
+{
+	struct mcasp_data *data = dev->data;
+	struct mcasp_stream *tx = &data->tx;
+
+	k_mem_slab_free(tx->cfg.mem_slab, blk->buf);
+	tx_dma_step(dev);
+}
+
+static void rx_dma_done(const struct device *dev, struct mcasp_block *blk)
+{
+	struct mcasp_data *data = dev->data;
+	struct mcasp_stream *rx = &data->rx;
+	bool end;
+	int ret;
+
+	ret = dma_cache_in(dev, blk->buf, blk->size);
+	if (ret < 0) {
+		LOG_ERR("RX DMA: cache invalidate failed (%d)", ret);
+		k_mem_slab_free(rx->cfg.mem_slab, blk->buf);
+		rx->state = I2S_STATE_ERROR;
+	} else if (k_msgq_put(rx->msgq, blk, K_NO_WAIT) != 0) {
+		LOG_DBG("RX DMA: queue full");
+		k_mem_slab_free(rx->cfg.mem_slab, blk->buf);
+		rx->state = I2S_STATE_ERROR;
+	} else {
+		data->rx_slots += blk->size / ((size_t)data->wsize * data->num_rx);
+		if (rx->stop || (rx->follow_tx && rx_follow_done(data))) {
+			rx->state = I2S_STATE_READY;
+		}
+	}
+
+	end = !stream_active(rx);
+	if (!end) {
+		rx_dma_refill(dev);
+		if (rx->dma_n == 0U && rx->dma) {
+			LOG_DBG("RX DMA: overrun");
+			rx->state = I2S_STATE_ERROR;
+			end = true;
+		}
+	}
+	if (end && rx->dma) {
+		dma_abort(dev, rx);
+	}
+}
+
+static void mcasp_dma_cb(const struct device *dma_dev, void *arg, uint32_t channel, int status)
+{
+	const struct device *dev = arg;
+	const struct mcasp_config *cfg = dev->config;
+	struct mcasp_data *data = dev->data;
+	bool tx = channel == cfg->dma_ch[0];
+	struct mcasp_stream *s = tx ? &data->tx : &data->rx;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+	struct mcasp_block blk;
+
+	ARG_UNUSED(dma_dev);
+
+	if (!s->dma || s->dma_n == 0U || status > 0) {
+		goto out;
+	}
+
+	if (status < 0) {
+		LOG_ERR("%s DMA error %d", tx ? "TX" : "RX", status);
+		hw_error(dev, tx, 0U);
+		goto out;
+	}
+
+	blk = s->dma_q[s->dma_head];
+	s->dma_head = (s->dma_head + 1U) % MCASP_DMA_DEPTH;
+	s->dma_n--;
+	if (tx) {
+		tx_dma_done(dev, &blk);
+	} else {
+		rx_dma_done(dev, &blk);
+	}
+out:
+	k_spin_unlock(&data->lock, key);
+}
+
+static int dma_go(const struct device *dev, struct mcasp_stream *s)
+{
+	int ret = dma_submit(dev, s, s->buf, s->size);
+
+	if (ret < 0) {
+		return ret;
+	}
+	s->buf = NULL;
+	if (dma_is_tx(dev, s)) {
+		tx_dma_step(dev);
+	} else {
+		rx_dma_refill(dev);
+	}
+
+	return s->dma ? 0 : -EIO;
+}
+
+static bool dma_rx_blocks_ok(const struct device *dev, const void *first)
+{
+	const struct mcasp_config *cfg = dev->config;
+	const struct mcasp_data *data = dev->data;
+
+	if (dma_asel_coherent(cfg->dma_asel[1])) {
+		return true;
+	}
+	if ((((uintptr_t)first | data->rx.cfg.mem_slab->info.block_size) &
+	     (MCASP_DMA_ALIGN - 1U)) != 0U) {
+		LOG_WRN_ONCE("RX blocks not aligned to %u bytes, RX uses interrupts",
+			     MCASP_DMA_ALIGN);
+		return false;
+	}
+
+	return true;
+}
+#else
+static inline int dma_tx_flush(const struct device *dev, void *buf, size_t size)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(buf);
+	ARG_UNUSED(size);
+	return 0;
+}
+
+static inline void tx_dma_refill(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+
+static inline void tx_dma_step(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+
+static inline int dma_go(const struct device *dev, struct mcasp_stream *s)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(s);
+	return -ENOTSUP;
+}
+
+static inline uint32_t dma_event_words(const struct mcasp_data *data, bool tx)
+{
+	return tx ? data->num_tx : data->num_rx;
+}
+
+static inline bool dma_rx_blocks_ok(const struct device *dev, const void *first)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(first);
+	return false;
+}
+#endif
+
 /* Program and start the serial port; lock held */
 static int hw_start(const struct device *dev)
 {
@@ -815,6 +1291,11 @@ static int hw_start(const struct device *dev)
 	data->slots = c->channels / nser;
 	data->wsize = word_bytes(c->word_size);
 	data->frame_hz = c->frame_clk_freq;
+
+	data->tx.dma = data->tx.dma && stream_active(&data->tx) &&
+		       dma_event_words(data, true) <= AFIFO_WORDS;
+	data->rx.dma = data->rx.dma && stream_active(&data->rx) &&
+		       dma_event_words(data, false) <= AFIFO_WORDS;
 
 	ret = format_regs(c, data->slots, &f);
 	if (ret < 0) {
@@ -843,14 +1324,27 @@ static int hw_start(const struct device *dev)
 	 */
 	mcasp_write(dev, MCASP_WFIFOCTL, 0U);
 	mcasp_write(dev, MCASP_RFIFOCTL, 0U);
+	data->tx_slots = 0U;
+	data->tx_data_end = 0U;
+	data->rx_slots = 0U;
 	if (use_fifo() && data->num_tx > 0U) {
-		uint32_t v = FIFOCTL_NUMDMA(data->num_tx) | FIFOCTL_NUMEVT(data->num_tx);
+		uint32_t v =
+			FIFOCTL_NUMDMA(data->num_tx) |
+			FIFOCTL_NUMEVT(data->tx.dma ? dma_event_words(data, true) : data->num_tx);
 
 		mcasp_write(dev, MCASP_WFIFOCTL, v);
+		if (data->tx.dma) {
+			ret = dma_go(dev, &data->tx);
+			if (ret < 0) {
+				goto fail;
+			}
+		}
 		mcasp_write(dev, MCASP_WFIFOCTL, v | FIFOCTL_ENA);
 	}
 	if (use_fifo() && data->num_rx > 0U) {
-		uint32_t v = FIFOCTL_NUMDMA(data->num_rx) | FIFOCTL_NUMEVT(data->num_rx);
+		uint32_t v =
+			FIFOCTL_NUMDMA(data->num_rx) |
+			FIFOCTL_NUMEVT(data->rx.dma ? dma_event_words(data, false) : data->num_rx);
 
 		mcasp_write(dev, MCASP_RFIFOCTL, v);
 		mcasp_write(dev, MCASP_RFIFOCTL, v | FIFOCTL_ENA);
@@ -859,7 +1353,7 @@ static int hw_start(const struct device *dev)
 	if (loopback_enabled(data)) {
 		ret = loopback_dlbctl(dev);
 		if (ret < 0) {
-			return ret;
+			goto fail;
 		}
 		mcasp_write(dev, MCASP_DLBCTL, (uint32_t)ret);
 	} else {
@@ -910,9 +1404,6 @@ static int hw_start(const struct device *dev)
 	data->tx.slot = 0U;
 	data->rx.slot = 0U;
 	data->tail = 0U;
-	data->tx_slots = 0U;
-	data->tx_data_end = 0U;
-	data->rx_slots = 0U;
 
 	/* TRM Table 12-18 and Figure 12-28: clocks, serializers, state machines, frame sync */
 	if (data->num_rx > 0U) {
@@ -936,15 +1427,24 @@ static int hw_start(const struct device *dev)
 		 * Preload so the state machine starts without an underrun. With
 		 * the AFIFO, fill it; it answers the McASP request on its own.
 		 */
-		if (use_fifo()) {
+		if (!data->tx.dma && use_fifo()) {
 			tx_fill(dev);
-		} else {
+		} else if (!data->tx.dma) {
 			tx_service(dev);
 		}
 		if (!WAIT_FOR((mcasp_read(dev, MCASP_XSTAT) & STAT_DATA) == 0U, MCASP_POLL_US,
 			      k_busy_wait(1))) {
-			LOG_ERR("TX buffers not loaded");
+			LOG_ERR("TX buffers not loaded: XSTAT 0x%08x WFIFOSTS %u words",
+				mcasp_read(dev, MCASP_XSTAT),
+				use_fifo() ? fifo_level(dev, MCASP_WFIFOSTS) : 0U);
 			ret = -EIO;
+			goto fail;
+		}
+	}
+
+	if (data->rx.dma) {
+		ret = dma_go(dev, &data->rx);
+		if (ret < 0) {
 			goto fail;
 		}
 	}
@@ -964,7 +1464,7 @@ static int hw_start(const struct device *dev)
 		mcasp_write(dev, MCASP_XINTCTL, ints);
 	}
 	if (data->num_rx > 0U) {
-		mcasp_write(dev, MCASP_RINTCTL, ints);
+		mcasp_write(dev, MCASP_RINTCTL, data->rx.dma ? ints & ~INT_STAFRM : ints);
 	}
 	data->hw_running = true;
 
@@ -1180,7 +1680,18 @@ static int mcasp_write_block(const struct device *dev, void *mem_block, size_t s
 		return -EINVAL;
 	}
 
+	ret = dma_tx_flush(dev, mem_block, size);
+	if (ret < 0) {
+		return ret;
+	}
+
 	ret = k_msgq_put(tx->msgq, &blk, SYS_TIMEOUT_MS(tx->cfg.timeout));
+	if (ret == 0 && tx->dma) {
+		k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+		tx_dma_step(dev);
+		k_spin_unlock(&data->lock, key);
+	}
 
 	return ret == -ENOMSG ? -EBUSY : ret;
 }
@@ -1285,6 +1796,7 @@ static int start_streams(const struct device *dev, bool tx, bool rx)
 		data->tx.pos = 0U;
 		data->tx.stop = false;
 		data->tx.drain = false;
+		data->tx.dma = use_dma(dev) && !data->hw_running;
 		data->tx.state = I2S_STATE_RUNNING;
 	}
 	if (rx) {
@@ -1293,6 +1805,7 @@ static int start_streams(const struct device *dev, bool tx, bool rx)
 		data->rx.pos = 0U;
 		data->rx.stop = false;
 		data->rx.follow_tx = false;
+		data->rx.dma = use_dma(dev) && !data->hw_running && dma_rx_blocks_ok(dev, rx_buf);
 		data->rx.state = I2S_STATE_RUNNING;
 	}
 
@@ -1365,6 +1878,7 @@ static void stream_reset(const struct device *dev, struct mcasp_stream *s)
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 	void *buf = s->buf;
 
+	dma_abort(dev, s);
 	s->buf = NULL;
 	s->stop = false;
 	s->drain = false;
@@ -1405,6 +1919,9 @@ static int stream_stop(const struct device *dev, struct mcasp_stream *s, bool dr
 			s->follow_tx = true;
 		} else {
 			s->stop = true;
+		}
+		if (s == &data->tx) {
+			tx_dma_step(dev);
 		}
 	}
 	k_spin_unlock(&data->lock, key);
@@ -1538,13 +2055,45 @@ static int mcasp_init(const struct device *dev)
 
 	cfg->irq_config();
 
+#ifdef CONFIG_I2S_TI_MCASP_DMA
+	if (cfg->dma_dev == NULL) {
+		LOG_WRN("no DMA controller, using interrupts");
+	} else if (!device_is_ready(cfg->dma_dev)) {
+		LOG_WRN("DMA controller not ready, using interrupts");
+	} else {
+		data->dma_ok = true;
+		LOG_DBG("DMA %s, TX chan %u, RX chan %u", cfg->dma_dev->name, cfg->dma_ch[0],
+			cfg->dma_ch[1]);
+	}
+#endif
+
 	LOG_DBG("PID 0x%08x, AUXCLK %u Hz, %u TX / %u RX serializers", mcasp_read(dev, MCASP_PID),
 		data->fck_rate, data->num_tx, data->num_rx);
 
 	return 0;
 }
 
+#ifdef CONFIG_I2S_TI_MCASP_DMA
+#define MCASP_DMA_CELL(n, name, cell) DT_INST_DMAS_CELL_BY_NAME(n, name, cell)
+#define MCASP_DMA_INIT(n)                                                                          \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas),                                                \
+		    (.dma_dev = DEVICE_DT_GET_OR_NULL(DT_INST_DMAS_CTLR_BY_NAME(n, tx)),           \
+		     .dma_ch = {MCASP_DMA_CELL(n, tx, channel_id),                                 \
+				MCASP_DMA_CELL(n, rx, channel_id)},                                \
+		     .dma_asel = {MCASP_DMA_CELL(n, tx, asel), MCASP_DMA_CELL(n, rx, asel)},),     \
+		    (.dma_dev = NULL,))
+#define MCASP_DMA_CHECK(n)                                                                         \
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, dmas),                                                 \
+		   (BUILD_ASSERT(DT_SAME_NODE(DT_INST_DMAS_CTLR_BY_NAME(n, tx),                    \
+					      DT_INST_DMAS_CTLR_BY_NAME(n, rx)),                   \
+				 "McASP tx and rx DMA channels must share a controller");))
+#else
+#define MCASP_DMA_INIT(n)
+#define MCASP_DMA_CHECK(n)
+#endif
+
 #define MCASP_INIT(n)                                                                              \
+	MCASP_DMA_CHECK(n)                                                                         \
 	BUILD_ASSERT(DT_INST_PROP_LEN(n, serial_dir) <= MCASP_MAX_SER,                             \
 		     "serial-dir has more than 16 entries");                                       \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
@@ -1574,7 +2123,7 @@ static int mcasp_init(const struct device *dev)
 		.irq_config = mcasp_irq_config_##n,                                                \
 		.serial_dir = mcasp_serial_dir_##n,                                                \
 		.serial_dir_len = ARRAY_SIZE(mcasp_serial_dir_##n),                                \
-	};                                                                                         \
+		MCASP_DMA_INIT(n)};                                                                \
 	static struct mcasp_data mcasp_data_##n = {                                                \
 		.tx = {.msgq = &mcasp_txq_##n},                                                    \
 		.rx = {.msgq = &mcasp_rxq_##n},                                                    \
