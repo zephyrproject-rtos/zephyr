@@ -34,7 +34,7 @@
 #define REJECT_AFTER_TIME          180U /* seconds */
 #define REJECT_AFTER_MESSAGES      (0xFFFFFFFFFFFFFFFFULL - (1ULL << 13))
 
-#define KEEPALIVE_TIMEOUT          25U /* seconds */
+#define KEEPALIVE_TIMEOUT          10U /* seconds */
 #define KEEPALIVE_DEFAULT          0U
 
 #define MESSAGE_INVALID               0
@@ -215,6 +215,12 @@ struct wg_peer {
 	/* Keepalive interval (in seconds). Set 0 is disable it. */
 	uint16_t keepalive_interval;
 	k_timepoint_t keepalive_expires;
+
+	/* Data received and nothing sent since: send a keepalive at
+	 * passive_keepalive_at if that is still so.
+	 */
+	bool passive_keepalive;
+	k_timepoint_t passive_keepalive_at;
 
 	int id;
 

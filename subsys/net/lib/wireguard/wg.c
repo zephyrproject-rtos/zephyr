@@ -270,6 +270,12 @@ static bool should_destroy_keypair(struct wg_keypair *keypair)
 
 static bool should_send_keepalive(struct wg_peer *peer)
 {
+	if (peer->passive_keepalive &&
+	    sys_timepoint_expired(peer->passive_keepalive_at) &&
+	    peer->session.keypair.current.is_valid) {
+		return true;
+	}
+
 	if (peer->keepalive_interval > 0) {
 		if (peer->session.keypair.current.is_valid ||
 		    peer->session.keypair.prev.is_valid) {
@@ -1446,6 +1452,7 @@ static int interface_send(struct net_if *iface, struct net_pkt *pkt)
 	vpn_stats_update_valid_tx(ctx);
 
 	peer->last_tx = keypair->last_tx = sys_clock_tick_get_32();
+	peer->passive_keepalive = false;
 
 	if (peer->keepalive_interval > 0) {
 		peer->keepalive_expires =
