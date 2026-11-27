@@ -746,9 +746,13 @@ static void net_buf_put_uri_scheme_list(const struct tbs_inst *inst, struct net_
 	}
 
 	for (size_t i = 0U; i < ARRAY_SIZE(svc_insts); i++) {
+		/* strtok() modifies the string it splits, so split a copy of the bearer's list */
+		char uri_scheme_list[sizeof(svc_insts[i].uri_scheme_list)];
 		char *uri_to_search = NULL;
 
-		uri_to_search = strtok(svc_insts[i].uri_scheme_list, ",");
+		(void)memcpy(uri_scheme_list, svc_insts[i].uri_scheme_list,
+			     sizeof(uri_scheme_list));
+		uri_to_search = strtok(uri_scheme_list, ",");
 		/* append only unique URI prefix from all TBS instances in GTBS instance */
 		while (uri_to_search != NULL) {
 			if (!is_tbs_uri_unique((char *)buf->data, uri_to_search)) {
