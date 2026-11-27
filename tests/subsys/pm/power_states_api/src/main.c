@@ -54,6 +54,21 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	ARG_UNUSED(substate_id);
 }
 
+static void *power_states_setup(void)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(test_dev));
+
+	test_driver_release_init_constraints(dev);
+	return NULL;
+}
+
+ZTEST(power_states_1cpu, test_device_constraints_during_init)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(test_dev));
+
+	test_driver_check_init_constraints(dev);
+}
+
 ZTEST(power_states_1cpu, test_power_states)
 {
 	uint8_t ret;
@@ -107,5 +122,5 @@ ZTEST(power_states_1cpu, test_device_power_state_constraints)
 	zassert(suspend_to_ram_count != 0, "Not suspended to ram");
 }
 
-ZTEST_SUITE(power_states_1cpu, NULL, NULL, ztest_simple_1cpu_before,
+ZTEST_SUITE(power_states_1cpu, NULL, power_states_setup, ztest_simple_1cpu_before,
 			ztest_simple_1cpu_after, NULL);
