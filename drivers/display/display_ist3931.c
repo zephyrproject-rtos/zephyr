@@ -205,13 +205,19 @@ static int ist3931_init(const struct device *dev)
 	return 0;
 }
 
+static const pixel_format_t ist3931_supported_pixel_formats[] = {
+	PIXEL_FORMAT_MONO10,
+	PIXEL_FORMAT_MONO01,
+	0,
+};
+
 static void ist3931_get_capabilities(const struct device *dev, struct display_capabilities *caps)
 {
 	const struct ist3931_config *config = dev->config;
 
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
-	caps->supported_pixel_formats = PIXEL_FORMAT_MONO10 | PIXEL_FORMAT_MONO01;
+	caps->supported_pixel_formats = ist3931_supported_pixel_formats;
 	caps->current_pixel_format = PIXEL_FORMAT_MONO01;
 	caps->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }

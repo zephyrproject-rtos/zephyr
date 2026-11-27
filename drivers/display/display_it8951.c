@@ -775,18 +775,23 @@ static int it8951_blanking_off(const struct device *dev)
 	return it8951_flush_dirty(dev);
 }
 
+static const pixel_format_t it8951_supported_pixel_formats[] = {
+	PIXEL_FORMAT_L_4,
+	0,
+};
+
 static void it8951_get_capabilities(const struct device *dev, struct display_capabilities *caps)
 {
 	const struct it8951_config *config = dev->config;
 
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
-	caps->supported_pixel_formats = PIXEL_FORMAT_L_4;
+	caps->supported_pixel_formats = it8951_supported_pixel_formats;
 	caps->current_pixel_format = PIXEL_FORMAT_L_4;
 	caps->screen_info = SCREEN_INFO_EPD;
 }
 
-static int it8951_set_pixel_format(const struct device *dev, const enum display_pixel_format pf)
+static int it8951_set_pixel_format(const struct device *dev, const pixel_format_t pf)
 {
 	ARG_UNUSED(dev);
 

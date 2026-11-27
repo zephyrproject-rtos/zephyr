@@ -98,7 +98,7 @@ struct ssd1322_config {
 };
 
 struct ssd1322_data {
-	int current_pixel_format;
+	pixel_format_t current_pixel_format;
 };
 
 static inline int ssd1322_write_command(const struct device *dev, uint8_t cmd, const uint8_t *buf,
@@ -322,6 +322,12 @@ static int ssd1322_set_contrast(const struct device *dev, const uint8_t contrast
 	return ssd1322_write_command(dev, SSD1322_SET_CONTRAST, &contrast, 1);
 }
 
+static const pixel_format_t ssd1322_supported_pixel_formats[] = {
+	PIXEL_FORMAT_MONO01,
+	PIXEL_FORMAT_L_8,
+	0,
+};
+
 static void ssd1322_get_capabilities(const struct device *dev, struct display_capabilities *caps)
 {
 	const struct ssd1322_config *config = dev->config;
@@ -329,7 +335,7 @@ static void ssd1322_get_capabilities(const struct device *dev, struct display_ca
 
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
-	caps->supported_pixel_formats = PIXEL_FORMAT_MONO01 | PIXEL_FORMAT_L_8;
+	caps->supported_pixel_formats = ssd1322_supported_pixel_formats;
 	caps->current_pixel_format = data->current_pixel_format;
 	caps->screen_info = 0;
 }
@@ -471,7 +477,7 @@ static int ssd1322_init_device(const struct device *dev)
 }
 
 static int ssd1322_set_pixel_format(const struct device *dev,
-				    const enum display_pixel_format pixel_format)
+				    const pixel_format_t pixel_format)
 {
 	struct ssd1322_data *data = dev->data;
 

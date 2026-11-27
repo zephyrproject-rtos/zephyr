@@ -36,6 +36,7 @@ struct ek79007_config {
 	const struct device *mipi_dsi;
 	const struct gpio_dt_spec reset_gpio;
 	const struct gpio_dt_spec bl_gpio;
+	const pixel_format_t *supported_pixel_formats;
 	uint8_t num_of_lanes;
 	uint8_t pixel_format;
 	uint16_t panel_width;
@@ -72,7 +73,7 @@ static int ek79007_blanking_on(const struct device *dev)
 /* The devicetree carries the MIPI DSI pixel format, which the display API
  * reports under its own enumeration.
  */
-static enum display_pixel_format ek79007_display_format(uint8_t pixfmt)
+static pixel_format_t ek79007_display_format(uint8_t pixfmt)
 {
 	switch (pixfmt) {
 	case MIPI_DSI_PIXFMT_RGB565:
@@ -87,17 +88,17 @@ static void ek79007_get_capabilities(const struct device *dev,
 				     struct display_capabilities *capabilities)
 {
 	const struct ek79007_config *config = dev->config;
-	enum display_pixel_format format = ek79007_display_format(config->pixel_format);
+	pixel_format_t format = ek79007_display_format(config->pixel_format);
 
 	capabilities->x_resolution = config->panel_width;
 	capabilities->y_resolution = config->panel_height;
-	capabilities->supported_pixel_formats = format;
+	capabilities->supported_pixel_formats = config->supported_pixel_formats;
 	capabilities->current_pixel_format = format;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
 
 static int ek79007_set_pixel_format(const struct device *dev,
-				    const enum display_pixel_format pixel_format)
+				    const pixel_format_t pixel_format)
 {
 	const struct ek79007_config *config = dev->config;
 
@@ -216,7 +217,11 @@ static int ek79007_init(const struct device *dev)
 }
 
 #define EK79007_PANEL(id)                                                                          \
+	static const pixel_format_t ek79007_formats_##id[] = { \
+		(DT_INST_PROP(id, pixel_format) == MIPI_DSI_PIXFMT_RGB565) ? \
+			PIXEL_FORMAT_RGB_565 : PIXEL_FORMAT_RGB_888, 0}; \
 	static const struct ek79007_config ek79007_config_##id = {                                 \
+		.supported_pixel_formats = ek79007_formats_##id,                                   \
 		.mipi_dsi = DEVICE_DT_GET(DT_INST_BUS(id)),                                        \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(id, reset_gpios, {0}),                      \
 		.bl_gpio = GPIO_DT_SPEC_INST_GET_OR(id, bl_gpios, {0}),                            \

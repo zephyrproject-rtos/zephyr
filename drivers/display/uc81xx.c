@@ -681,6 +681,16 @@ static int uc81xx_write(const struct device *dev, const uint16_t x, const uint16
 	return 0;
 }
 
+static const pixel_format_t uc81xx_alternative_supported_pixel_formats[] = {
+	PIXEL_FORMAT_MONO01,
+	0,
+};
+
+static const pixel_format_t uc81xx_supported_pixel_formats[] = {
+	PIXEL_FORMAT_L_8,
+	0,
+};
+
 static void uc81xx_get_capabilities(const struct device *dev,
 				    struct display_capabilities *caps)
 {
@@ -690,21 +700,21 @@ static void uc81xx_get_capabilities(const struct device *dev,
 	caps->y_resolution = config->height;
 
 	if (config->grayscale) {
-		caps->supported_pixel_formats = PIXEL_FORMAT_L_8;
+		caps->supported_pixel_formats = uc81xx_supported_pixel_formats;
 		caps->current_pixel_format = PIXEL_FORMAT_L_8;
 		caps->screen_info = SCREEN_INFO_EPD;
 	} else {
-		caps->supported_pixel_formats = PIXEL_FORMAT_MONO01;
+		caps->supported_pixel_formats = uc81xx_alternative_supported_pixel_formats;
 		caps->current_pixel_format = PIXEL_FORMAT_MONO01;
 		caps->screen_info = SCREEN_INFO_MONO_MSB_FIRST | SCREEN_INFO_EPD;
 	}
 }
 
 static int uc81xx_set_pixel_format(const struct device *dev,
-				   const enum display_pixel_format pf)
+				   const pixel_format_t pf)
 {
 	const struct uc81xx_config *config = dev->config;
-	const enum display_pixel_format expected =
+	const pixel_format_t expected =
 		config->grayscale ? PIXEL_FORMAT_L_8 : PIXEL_FORMAT_MONO01;
 
 	if (pf == expected) {

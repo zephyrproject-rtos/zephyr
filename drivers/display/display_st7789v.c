@@ -61,7 +61,8 @@ struct st7789v_config {
 	uint16_t height;
 	uint16_t width;
 	uint8_t ready_time_ms;
-	uint32_t pixel_format;
+	pixel_format_t pixel_format;
+	const pixel_format_t *supported_pixel_formats;
 };
 
 struct st7789v_data {
@@ -180,7 +181,7 @@ static int st7789v_write(const struct device *dev,
 	const uint8_t *write_data_start = (uint8_t *) buf;
 	uint16_t nbr_of_writes;
 	uint16_t write_h;
-	enum display_pixel_format pixfmt = config->pixel_format;
+	pixel_format_t pixfmt = config->pixel_format;
 	uint8_t pixel_size = ST7789V_PIXEL_SIZE(config->pixel_format);
 	int ret;
 
@@ -237,13 +238,12 @@ static void st7789v_get_capabilities(const struct device *dev,
 
 	capabilities->x_resolution = config->width;
 	capabilities->y_resolution = config->height;
-
-	capabilities->supported_pixel_formats = config->pixel_format;
+	capabilities->supported_pixel_formats = config->supported_pixel_formats;
 	capabilities->current_pixel_format = config->pixel_format;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
 
-static inline uint8_t st7789v_get_colmod(enum display_pixel_format fmt)
+static inline uint8_t st7789v_get_colmod(pixel_format_t fmt)
 {
 	switch (fmt) {
 	case PIXEL_FORMAT_RGB_888:
@@ -257,7 +257,7 @@ static inline uint8_t st7789v_get_colmod(enum display_pixel_format fmt)
 }
 
 static int st7789v_set_pixel_format(const struct device *dev,
-			     const enum display_pixel_format pixel_format)
+			     const pixel_format_t pixel_format)
 {
 	const struct st7789v_config *config = dev->config;
 
@@ -480,6 +480,8 @@ static DEVICE_API(display, st7789v_api) = {
 	((DT_INST_STRING_UPPER_TOKEN(inst, mipi_mode) == MIPI_DBI_MODE_SPI_4WIRE) ?     \
 	SPI_WORD_SET(8) : SPI_WORD_SET(9))
 #define ST7789V_INIT(inst)								\
+	static const pixel_format_t st7789v_supported_pixel_formats_ ## inst[] = {	\
+		DT_INST_PROP(inst, pixel_format), 0};					\
 	static const struct st7789v_config st7789v_config_ ## inst = {			\
 		.mipi_dbi = DEVICE_DT_GET(DT_INST_PARENT(inst)),                        \
 		.dbi_config = MIPI_DBI_CONFIG_DT_INST(inst,                             \
@@ -519,6 +521,7 @@ static DEVICE_API(display, st7789v_api) = {
 		.height = DT_INST_PROP(inst, height),					\
 		.ready_time_ms = DT_INST_PROP(inst, ready_time_ms),			\
 		.pixel_format = DT_INST_PROP(inst, pixel_format),			\
+		.supported_pixel_formats = st7789v_supported_pixel_formats_ ## inst,	\
 	};										\
 											\
 	static struct st7789v_data st7789v_data_ ## inst = {				\

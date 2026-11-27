@@ -166,7 +166,7 @@ struct ssd1306_config {
 };
 
 struct ssd1306_data {
-	enum display_pixel_format pf;
+	pixel_format_t pf;
 	enum display_orientation orientation;
 	struct k_mutex i2c_buf_lock;
 };
@@ -574,6 +574,12 @@ static int ssd1306_set_contrast(const struct device *dev, const uint8_t contrast
 	return ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
 }
 
+static const pixel_format_t ssd1306_supported_pixel_formats[] = {
+	PIXEL_FORMAT_MONO10,
+	PIXEL_FORMAT_MONO01,
+	0,
+};
+
 static void ssd1306_get_capabilities(const struct device *dev,
 				     struct display_capabilities *caps)
 {
@@ -582,7 +588,7 @@ static void ssd1306_get_capabilities(const struct device *dev,
 
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
-	caps->supported_pixel_formats = PIXEL_FORMAT_MONO10 | PIXEL_FORMAT_MONO01;
+	caps->supported_pixel_formats = ssd1306_supported_pixel_formats;
 	caps->current_pixel_format = data->pf;
 	caps->screen_info = SCREEN_INFO_MONO_VTILED;
 	caps->current_orientation = data->orientation;
@@ -617,7 +623,7 @@ static int ssd1306_set_orientation(const struct device *dev,
 }
 
 static int ssd1306_set_pixel_format(const struct device *dev,
-				    const enum display_pixel_format pf)
+				    const pixel_format_t pf)
 {
 	struct ssd1306_data *data = dev->data;
 	uint8_t cmd;

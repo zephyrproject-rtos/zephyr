@@ -19,7 +19,7 @@ struct dummy_display_config {
 };
 
 struct dummy_display_data {
-	enum display_pixel_format current_pixel_format;
+	pixel_format_t current_pixel_format;
 };
 
 static int dummy_display_init(const struct device *dev)
@@ -79,6 +79,14 @@ static int dummy_display_set_contrast(const struct device *dev,
 	return 0;
 }
 
+static const pixel_format_t dummy_display_supported_pixel_formats[] = {
+	PIXEL_FORMAT_ARGB_8888,
+	PIXEL_FORMAT_RGB_888,
+	PIXEL_FORMAT_MONO01,
+	PIXEL_FORMAT_MONO10,
+	0,
+};
+
 static void dummy_display_get_capabilities(const struct device *dev,
 		struct display_capabilities *capabilities)
 {
@@ -87,17 +95,14 @@ static void dummy_display_get_capabilities(const struct device *dev,
 
 	capabilities->x_resolution = config->width;
 	capabilities->y_resolution = config->height;
-	capabilities->supported_pixel_formats = PIXEL_FORMAT_ARGB_8888 |
-		PIXEL_FORMAT_RGB_888 |
-		PIXEL_FORMAT_MONO01 |
-		PIXEL_FORMAT_MONO10;
+	capabilities->supported_pixel_formats = dummy_display_supported_pixel_formats;
 	capabilities->current_pixel_format = disp_data->current_pixel_format;
 	capabilities->screen_info = SCREEN_INFO_MONO_VTILED |
 		SCREEN_INFO_MONO_MSB_FIRST;
 }
 
 static int dummy_display_set_pixel_format(const struct device *dev,
-		const enum display_pixel_format pixel_format)
+		const pixel_format_t pixel_format)
 {
 	struct dummy_display_data *disp_data = dev->data;
 

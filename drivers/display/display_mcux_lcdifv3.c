@@ -21,6 +21,13 @@ LOG_MODULE_REGISTER(display_mcux_lcdifv3, CONFIG_DISPLAY_LOG_LEVEL);
 
 static const uint32_t mcux_lcdifv3_supported_fmts = PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_ARGB_8888 |
 						    PIXEL_FORMAT_RGB_888 | PIXEL_FORMAT_ABGR_8888;
+static const pixel_format_t mcux_lcdifv3_supported_pixel_formats[] = {
+	PIXEL_FORMAT_RGB_565,
+	PIXEL_FORMAT_ARGB_8888,
+	PIXEL_FORMAT_RGB_888,
+	PIXEL_FORMAT_ABGR_8888,
+	0,
+};
 
 /* Required by DEVICE_MMIO_NAMED_* macros */
 #define DEV_CFG(_dev)  ((const struct mcux_lcdifv3_config *)(_dev)->config)
@@ -51,7 +58,7 @@ struct mcux_lcdifv3_data {
 	/* DT value: PANEL_PIXEL_FORMAT_* */
 	uint32_t panel_pixel_format;
 	/* Runtime/Zephyr value: PIXEL_FORMAT_* */
-	enum display_pixel_format pixel_format;
+	pixel_format_t pixel_format;
 	lcdifv3_buffer_config_t buffer_config;
 	uint8_t *fb[CONFIG_MCUX_LCDIFV3_FB_NUM];
 	uint8_t pixel_bytes;
@@ -168,13 +175,13 @@ static void mcux_lcdifv3_get_capabilities(const struct device *dev,
 
 	capabilities->x_resolution = config->display_config.panelWidth;
 	capabilities->y_resolution = config->display_config.panelHeight;
-	capabilities->supported_pixel_formats = mcux_lcdifv3_supported_fmts;
+	capabilities->supported_pixel_formats = mcux_lcdifv3_supported_pixel_formats;
 	capabilities->current_pixel_format = dev_data->pixel_format;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
 
 static int mcux_lcdifv3_set_pixel_format(const struct device *dev,
-					 const enum display_pixel_format pixel_format)
+					 const pixel_format_t pixel_format)
 {
 	const struct mcux_lcdifv3_config *config = dev->config;
 	struct mcux_lcdifv3_data *dev_data = dev->data;

@@ -340,6 +340,24 @@ Comparator
   :zephyr_file:`tests/drivers/comparator/gpio_loopback` test provides an example of the comparator
   API. (:github:`124232`).
 
+Display
+=======
+
+* The ``enum display_pixel_format`` type has been removed and display pixel formats are now typed
+  as ``pixel_format_t``.
+
+* :c:member:`display_capabilities.supported_pixel_formats` is no longer a bitmask but a pointer
+  to a zero-terminated, constant table of ``pixel_format_t`` with static storage duration.
+  Applications can use :c:func:`display_is_pixel_format_supported` to test for a format
+  support.
+
+* :c:func:`display_color_dither_patch_caps` no longer adds the RGB input formats enabled by
+  :kconfig:option:`CONFIG_DISPLAY_COLOR_DITHER_INPUT_RGB565` and
+  :kconfig:option:`CONFIG_DISPLAY_COLOR_DITHER_INPUT_RGB888` to the supported pixel formats; it
+  only updates the current pixel format while the helper is converting. Drivers using the color
+  dithering helper must add ``COLOR_DITHER_SUPPORTED_FORMATS`` to their supported pixel format
+  table, before the terminating ``0``.
+
 Entropy
 =======
 
@@ -602,6 +620,17 @@ Timers
 * The ``CONFIG_MCUX_OS_TIMER_MIN_DELAY`` Kconfig option has been removed. The NXP OS Timer driver
   now uses the generic system timer core, which keeps the match value at least 16 timer cycles
   ahead of the counter. Remove the option from application and board configurations.
+
+Video
+=====
+
+* The video pixel formats have moved to the shared pixel format headers
+  :zephyr_file:`include/zephyr/dt-bindings/media/pixel_formats.h` and
+  :zephyr_file:`include/zephyr/media/pixel_format_helpers.h`, also used by the display API. The
+  ``VIDEO_PIX_FMT_*``, ``VIDEO_FOURCC*()`` and ``VIDEO_FMT_IS_*()`` macros and
+  :c:func:`video_bits_per_pixel` in :zephyr_file:`include/zephyr/video/formats.h` are deprecated
+  and map to their ``PIX_FMT_*``, ``PIX_FMT_FOURCC*()``, ``PIX_FMT_IS_*()`` and
+  ``pix_fmt_bpp()`` replacements.
 
 W1
 ==
