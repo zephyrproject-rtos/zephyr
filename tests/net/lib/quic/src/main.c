@@ -10409,4 +10409,80 @@ ZTEST(net_socket_quic, test_569_server_certificate_chain_is_verified)
 	zassert_ok(ret, "Failed to close the server socket (%d)", ret);
 }
 
+ZTEST(net_socket_quic, test_570_reconnect_after_a_failed_handshake)
+{
+	int bad_server;
+	int good_server;
+	int client_sock;
+	int stream;
+	int ret;
+
+	/* The handshake with a server that sends no intermediate certificate
+	 * fails. A connection opened right after it, to a server that does,
+	 * is not disturbed by what is left of the first one.
+	 */
+	stream = open_stream_to_chain_server(&bad_server, &client_sock, "127.0.0.1:54371",
+					     "127.0.0.1:19971", false);
+	zassert_true(stream < 0, "Handshake passed without the intermediate certificate");
+
+	ret = quic_connection_close(client_sock);
+	zassert_ok(ret, "Failed to close the client connection (%d)", ret);
+
+	stream = open_stream_to_chain_server(&good_server, &client_sock, "127.0.0.1:54372",
+					     "127.0.0.1:19972", true);
+	zassert_true(stream >= 0, "Handshake after a failed one failed (%d)", stream);
+
+	ret = zsock_close(stream);
+	zassert_ok(ret, "Failed to close the stream (%d)", -errno);
+	ret = quic_connection_close(client_sock);
+	zassert_ok(ret, "Failed to close the client connection (%d)", ret);
+	ret = quic_connection_close(good_server);
+	zassert_ok(ret, "Failed to close the server socket (%d)", ret);
+	ret = quic_connection_close(bad_server);
+	zassert_ok(ret, "Failed to close the server socket (%d)", ret);
+}
+
+ZTEST(net_socket_quic, test_575_failed_connection_is_over_with_its_socket_open)
+{
+	struct zsock_pollfd pfd = {
+		.events = ZSOCK_POLLIN,
+	};
+	struct test_config cfg;
+	int server_sock;
+	int client_sock;
+	int stream;
+	int ret;
+
+	stream = open_stream_to_chain_server(&server_sock, &client_sock, "127.0.0.1:54375",
+					     "127.0.0.1:19975", false);
+	zassert_true(stream < 0, "Handshake passed without the intermediate certificate");
+
+	/* The connection is over although the application has not closed its
+	 * socket: the endpoints of both ends are released, which leaves the
+	 * one of the listening socket, and the socket of the client hangs up.
+	 */
+	for (int i = 0; i < 100; i++) {
+		memset(&cfg, 0, sizeof(cfg));
+		quic_endpoint_foreach(test_endpoint_cb, &cfg);
+		if (cfg.endpoint_count == 1) {
+			break;
+		}
+
+		k_msleep(10);
+	}
+
+	zassert_equal(cfg.endpoint_count, 1, "%d endpoints after a failed handshake",
+		      cfg.endpoint_count);
+
+	pfd.fd = client_sock;
+	ret = zsock_poll(&pfd, 1, 0);
+	zassert_true(ret > 0 && (pfd.revents & ZSOCK_POLLHUP) != 0,
+		     "The failed connection did not hang up (revents 0x%x)", pfd.revents);
+
+	ret = quic_connection_close(client_sock);
+	zassert_ok(ret, "Failed to close the client connection (%d)", ret);
+	ret = quic_connection_close(server_sock);
+	zassert_ok(ret, "Failed to close the server socket (%d)", ret);
+}
+
 ZTEST_SUITE(net_socket_quic, NULL, setup, before, after, NULL);
