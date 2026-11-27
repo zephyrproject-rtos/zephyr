@@ -83,6 +83,17 @@ config ZVFS_POLL_MAX
 	help
 	  Maximum number of entries supported for poll() call.
 
+config ZVFS_POLL_EXTRA_EVENTS
+	int
+	default NET_SOCKETS_TLS_MAX_CONTEXTS if NET_SOCKETS_ENABLE_DTLS && MBEDTLS_SSL_SRV_C
+	default 0
+	help
+	  Number of k_poll_event entries zvfs_poll() has room for beyond one
+	  per descriptor, for the descriptors whose poll() takes a second
+	  entry, such as DTLS server sockets. At most CONFIG_ZVFS_POLL_MAX of
+	  them are used, each one more struct k_poll_event on the stack of
+	  each poll() and select() caller.
+
 config ZVFS_SELECT
 	bool "ZVFS select"
 	help

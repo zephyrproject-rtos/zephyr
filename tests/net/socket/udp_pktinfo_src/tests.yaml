@@ -1,0 +1,18 @@
+common:
+  depends_on: netif
+  tags:
+    - net
+    - socket
+    - udp
+  min_ram: 21
+tests:
+  net.socket.udp.pktinfo_src:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_COOPERATIVE=y
+  net.socket.udp.pktinfo_src.preempt:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_PREEMPTIVE=y
+  net.socket.udp.pktinfo_src.ipv4_route:
+    extra_configs:
+      - CONFIG_NET_IPV4_NBR_CACHE=y
+      - CONFIG_NET_IPV4_ROUTE=y

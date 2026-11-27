@@ -17,13 +17,16 @@ bool net_socket_is_tls(void *obj);
 #define net_socket_is_tls(obj) false
 #endif
 
+#define ZVFS_POLL_EVENTS_MAX \
+	(CONFIG_ZVFS_POLL_MAX + MIN(CONFIG_ZVFS_POLL_MAX, CONFIG_ZVFS_POLL_EXTRA_EVENTS))
+
 int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 {
 	bool retry;
 	int ret = 0;
 	int i;
 	struct zvfs_pollfd *pfd;
-	struct k_poll_event poll_events[CONFIG_ZVFS_POLL_MAX];
+	struct k_poll_event poll_events[ZVFS_POLL_EVENTS_MAX];
 	struct k_poll_event *pev;
 	struct k_poll_event *pev_end = poll_events + ARRAY_SIZE(poll_events);
 	const struct fd_op_vtable *vtable;

@@ -23,6 +23,8 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/sys/byteorder.h>
 
+#include "conn_meta.h"
+
 static struct bt_conn *default_conn;
 
 static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
@@ -264,6 +266,21 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 	}
 
 	printk("Connected: %s\n", bt_conn_dst_str(conn));
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_CONN_META)) {
+		uint16_t handle;
+
+		err = bt_hci_get_conn_handle(conn, &handle);
+		if (err != 0) {
+			FAIL("Failed to get connection handle (err %d)\n", err);
+			return;
+		}
+
+		if (!conn_meta_initialized(handle)) {
+			FAIL("Connection meta data not initialized\n");
+			return;
+		}
+	}
 
 	if (conn != default_conn) {
 		return;

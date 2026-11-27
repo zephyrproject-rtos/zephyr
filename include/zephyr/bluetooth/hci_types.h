@@ -3384,6 +3384,16 @@ struct bt_hci_evt_data_buf_overflow {
 	uint8_t  link_type;
 } __packed;
 
+/** HCI Max Slots Change event. */
+#define BT_HCI_EVT_MAX_SLOTS_CHANGE             0x1b
+/** HCI Max Slots Change event parameters. */
+struct bt_hci_evt_max_slots_change {
+	/** ACL connection handle. */
+	uint16_t handle;
+	/** Maximum number of slots for locally transmitted Baseband packets: 1, 3 or 5. */
+	uint8_t lmp_max_slots;
+} __packed;
+
 /** HCI Connection Packet Type Changed event. */
 #define BT_HCI_EVT_CONN_PKT_TYPE_CHANGED        0x1d
 /** HCI Connection Packet Type Changed event parameters. */
@@ -4573,6 +4583,8 @@ struct bt_hci_evt_le_conn_rate_change {
 #define BT_EVT_MASK_LINK_KEY_REQ                 BT_EVT_BIT(22)
 #define BT_EVT_MASK_LINK_KEY_NOTIFY              BT_EVT_BIT(23)
 #define BT_EVT_MASK_DATA_BUFFER_OVERFLOW         BT_EVT_BIT(25)
+/** Event mask bit for Max Slots Change event. */
+#define BT_EVT_MASK_MAX_SLOTS_CHANGE             BT_EVT_BIT(26)
 /** Event mask bit for Connection Packet Type Changed event. */
 #define BT_EVT_MASK_CONN_PKT_TYPE_CHANGED        BT_EVT_BIT(28)
 #define BT_EVT_MASK_INQUIRY_RESULT_WITH_RSSI     BT_EVT_BIT(33)

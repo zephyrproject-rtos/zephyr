@@ -65,6 +65,7 @@ struct mcux_rtc_jdp_config {
 	uint8_t clock_source;
 	rtc_clock_divide_t clock_divide;
 	uint8_t irqn;
+	bool run_in_debug;
 };
 
 static int mcux_rtc_jdp_start(const struct device *dev)
@@ -476,6 +477,7 @@ static int mcux_rtc_jdp_init(const struct device *dev)
 	/* Override with device-specific configuration */
 	rtc_config.clockSource = (rtc_clock_source_t)config->clock_source;
 	rtc_config.clockDivide = config->clock_divide;
+	rtc_config.freezeCounterInDebugMode = !config->run_in_debug;
 
 	/* Initialize RTC */
 	RTC_Init(config->base, &rtc_config);
@@ -522,6 +524,7 @@ static DEVICE_API(counter, mcux_rtc_jdp_driver_api) = {
 		.clock_source = DT_INST_PROP(n, clock_source),                     \
 		.clock_divide = RTC_JDP_DIV_ENUM(n),                               \
 		.irqn = DT_INST_IRQN(n),                                           \
+		.run_in_debug = DT_INST_PROP(n, run_in_debug),                     \
 		.info =                                                            \
 			{                                                              \
 				.max_top_value = UINT32_MAX,                               \

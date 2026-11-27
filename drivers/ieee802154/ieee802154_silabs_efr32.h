@@ -77,6 +77,11 @@ struct sl_802154_mac_data {
 
 	uint8_t ack_key_id;
 
+	/* Bumped on each pending-data arm so a stale multi-timer callback can
+	 * tell it no longer owns the hold.
+	 */
+	uint8_t pending_data_seq;
+
 	bool em_pending_data;
 
 	bool ack_fpb;
@@ -120,6 +125,9 @@ struct sl_802154_radio_data {
 
 	/* Timer for energy scan operations */
 	sl_rail_multi_timer_t rail_timer;
+
+	/* Timer for the post-poll pending-data wait. */
+	sl_rail_multi_timer_t pending_data_timer;
 
 	atomic_t state;
 

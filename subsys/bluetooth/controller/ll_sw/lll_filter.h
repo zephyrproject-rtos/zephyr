@@ -115,6 +115,7 @@ extern bool ull_filter_lll_rl_addr_allowed(uint8_t id_addr_type,
 extern bool ull_filter_lll_rl_addr_resolve(uint8_t id_addr_type,
 					   const uint8_t *id_addr,
 					   uint8_t rl_idx);
+extern bool ull_filter_lll_local_irk_resolve(uint8_t addr_type, const uint8_t *addr);
 extern bool ull_filter_lll_rl_enabled(void);
 #if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
 extern const struct lll_prpa_cache *ull_filter_lll_prpa_cache_get(void);

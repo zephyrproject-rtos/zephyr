@@ -71,6 +71,11 @@ static int gpio_mcux_lpc_configure(const struct device *dev, gpio_pin_t pin,
 		return -ENOTSUP;
 	}
 
+	/* The pins support open drain but not open source */
+	if (((flags & GPIO_SINGLE_ENDED) != 0) && ((flags & GPIO_LINE_OPEN_DRAIN) == 0)) {
+		return -ENOTSUP;
+	}
+
 #ifdef IOPCTL /* RT600 and RT500 series */
 	IOPCTL_Type *pinmux_base = config->pinmux_base;
 	volatile uint32_t *pinconfig = (volatile uint32_t *)&(pinmux_base->PIO[port][pin]);
@@ -99,6 +104,8 @@ static int gpio_mcux_lpc_configure(const struct device *dev, gpio_pin_t pin,
 	if ((flags & GPIO_SINGLE_ENDED) != 0) {
 		/* Set ODE bit. */
 		*pinconfig |= IOCON_PIO_OD_MASK;
+	} else {
+		*pinconfig &= ~IOCON_PIO_OD_MASK;
 	}
 
 	/* Set DIGIMODE bit */
@@ -287,6 +294,11 @@ static int gpio_mcux_lpc_pint_interrupt_cfg(const struct device *dev,
 		}
 		break;
 	default:
+		return -ENOTSUP;
+	}
+
+	/* The PINT input mux only reaches the first num-inputs pins */
+	if (((port * 32U) + pin) >= DT_PROP(DT_INST(0, nxp_pint), num_inputs)) {
 		return -ENOTSUP;
 	}
 

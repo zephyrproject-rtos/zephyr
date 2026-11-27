@@ -11,6 +11,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	compatible = "nxp,mcxe32b";
@@ -21,6 +22,8 @@
 		led1 = &green_led;
 		led2 = &blue_led;
 		sw0 = &user_button;
+		rtc = &counter_rtc;
+		die-temp0 = &tempsense;
 	};
 
 	chosen {
@@ -31,6 +34,7 @@
 		zephyr,code-partition = &code_partition;
 		zephyr,console = &lpuart_5;
 		zephyr,canbus = &flexcan_0;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -203,5 +207,50 @@
 };
 
 &adc_0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	/*
+	 * Conversion clock = module clock / 8. The ETS output has a high source
+	 * impedance and needs the longer sampling window to settle.
+	 */
+	conv-clk-freq-div-factor = <3>;
+	status = "okay";
+
+	/* Logical channel 0 => physical channel 49 (internal ETS input) */
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,vref-mv = <3300>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <15>;
+		zephyr,input-positive = <49>;
+	};
+};
+
+&wkpu {
+	status = "okay";
+};
+
+&trgmux {
+	status = "okay";
+};
+
+&crc {
+	status = "okay";
+};
+
+&rtc {
+	run-in-debug;
+	status = "okay";
+};
+
+&counter_rtc {
+	status = "okay";
+};
+
+&tempsense {
+	io-channels = <&adc_0 0>;
 	status = "okay";
 };
