@@ -6,6 +6,7 @@ Storage & Configuration
 .. toctree::
    :maxdepth: 1
 
+   boot_mode/index.rst
    disk/access.rst
    fcb/fcb.rst
    file_system/index.rst
