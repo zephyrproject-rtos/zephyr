@@ -43,6 +43,15 @@ properties:
   clock-names:
     description: Should be "fck".
 
+  dmas:
+    description: |
+      Transmit and receive DMA channels. On the AM62L these are BCDMA split
+      channels paired with the PDMA that serves the McASP audio FIFO.
+
+  dma-names:
+    description: DMA channel names, "tx" and "rx".
+    enum: [tx, rx]
+
   serial-dir:
     type: array
     required: true
