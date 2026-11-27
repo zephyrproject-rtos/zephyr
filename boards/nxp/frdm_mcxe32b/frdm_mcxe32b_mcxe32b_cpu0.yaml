@@ -15,5 +15,8 @@ supported:
   - adc
   - arduino_gpio
   - can
+  - counter
+  - dma
   - gpio
+  - watchdog
 vendor: nxp

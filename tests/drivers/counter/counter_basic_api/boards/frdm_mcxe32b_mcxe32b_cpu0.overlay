@@ -18,3 +18,19 @@
 	prescaler = <1>;
 	status = "okay";
 };
+
+&pit_0_channel0 {
+	status = "okay";
+};
+
+&pit_0_channel1 {
+	status = "okay";
+};
+
+&pit_0_channel2 {
+	status = "okay";
+};
+
+&pit_0_channel3 {
+	status = "okay";
+};
