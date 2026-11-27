@@ -38,13 +38,14 @@ struct ov767x_config {
 #endif
 };
 
-struct ov767x_ctrls {
-	struct video_ctrl hflip;
-	struct video_ctrl vflip;
+enum ov767x_ctrl_idx {
+	OV767X_CTRL_HFLIP,
+	OV767X_CTRL_VFLIP,
+	OV767X_CTRL_COUNT,
 };
 
 struct ov767x_data {
-	struct ov767x_ctrls ctrls;
+	struct video_ctrl ctrls[OV767X_CTRL_COUNT];
 	struct video_format fmt;
 };
 
@@ -663,18 +664,9 @@ static int ov767x_get_fmt(const struct device *dev, struct video_format *fmt)
 
 static int ov767x_init_controls(const struct device *dev)
 {
-	int ret;
 	struct ov767x_data *drv_data = dev->data;
-	struct ov767x_ctrls *ctrls = &drv_data->ctrls;
 
-	ret = video_init_ctrl(&ctrls->hflip, dev, VIDEO_CID_HFLIP,
-			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
-	if (ret) {
-		return ret;
-	}
-
-	return video_init_ctrl(&ctrls->vflip, dev, VIDEO_CID_VFLIP,
-			       (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
+	return video_register_ctrls(drv_data->ctrls, ARRAY_SIZE(drv_data->ctrls), dev);
 }
 
 static int ov767x_init(const struct device *dev)
@@ -812,15 +804,15 @@ static int ov767x_set_ctrl(const struct device *dev, uint32_t id)
 {
 	const struct ov767x_config *config = dev->config;
 	struct ov767x_data *drv_data = dev->data;
-	struct ov767x_ctrls *ctrls = &drv_data->ctrls;
+	struct video_ctrl *ctrls = drv_data->ctrls;
 
 	switch (id) {
 	case VIDEO_CID_HFLIP:
 		return i2c_reg_update_byte_dt(&config->bus, OV767X_MVFP, OV767X_MVFP_HFLIP,
-					      ctrls->hflip.val ? OV767X_MVFP_HFLIP : 0);
+					      ctrls[OV767X_CTRL_HFLIP].val ? OV767X_MVFP_HFLIP : 0);
 	case VIDEO_CID_VFLIP:
 		return i2c_reg_update_byte_dt(&config->bus, OV767X_MVFP, OV767X_MVFP_VFLIP,
-					      ctrls->vflip.val ? OV767X_MVFP_VFLIP : 0);
+					      ctrls[OV767X_CTRL_VFLIP].val ? OV767X_MVFP_VFLIP : 0);
 	default:
 		return -ENOTSUP;
 	}
@@ -860,6 +852,13 @@ static DEVICE_API(video, ov767x_api) = {
 #define OV767X_CLOCK(inst)
 #endif
 
+/* Defined outside of OV767X_INIT() as its id parameter would replace the .id designators */
+#define OV767X_CTRLS_INIT                                                                          \
+	{                                                                                          \
+		[OV767X_CTRL_HFLIP] = {.id = VIDEO_CID_HFLIP},                                     \
+		[OV767X_CTRL_VFLIP] = {.id = VIDEO_CID_VFLIP},                                     \
+	}
+
 #define OV767X_INIT(inst, id)                                                                      \
 	static const struct ov767x_config ov##id##_config##inst = {                                \
 		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
@@ -868,7 +867,9 @@ static DEVICE_API(video, ov767x_api) = {
 		.pclk_hb_disable = DT_INST_PROP(inst, pclk_hb_disable),                            \
 		OV767X_RESET_GPIO(inst) OV767X_PWDN_GPIO(inst) OV767X_CLOCK(inst)};                \
                                                                                                    \
-	static struct ov767x_data ov##id##_data##inst;                                             \
+	static struct ov767x_data ov##id##_data##inst = {                                          \
+		.ctrls = OV767X_CTRLS_INIT,                                                        \
+	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, ov767x_init, NULL, &ov##id##_data##inst,                       \
 			      &ov##id##_config##inst, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,     \

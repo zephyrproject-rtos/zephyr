@@ -90,17 +90,18 @@ static const int64_t imx219_2dl_link_frequency[] = {
 	IMX219_2DL_LINK_FREQ,
 };
 
-struct imx219_ctrls {
-	struct video_ctrl exposure;
-	struct video_ctrl brightness;
-	struct video_ctrl analogue_gain;
-	struct video_ctrl digital_gain;
-	struct video_ctrl linkfreq;
-	struct video_ctrl test_pattern;
+enum imx219_ctrl_idx {
+	IMX219_CTRL_EXPOSURE,
+	IMX219_CTRL_BRIGHTNESS,
+	IMX219_CTRL_ANALOGUE_GAIN,
+	IMX219_CTRL_DIGITAL_GAIN,
+	IMX219_CTRL_LINKFREQ,
+	IMX219_CTRL_TEST_PATTERN,
+	IMX219_CTRL_COUNT,
 };
 
 struct imx219_data {
-	struct imx219_ctrls ctrls;
+	struct video_ctrl ctrls[IMX219_CTRL_COUNT];
 	struct video_format fmt;
 	uint32_t fps;
 };
@@ -409,25 +410,25 @@ static int imx219_set_ctrl(const struct device *dev, unsigned int cid)
 {
 	const struct imx219_config *cfg = dev->config;
 	struct imx219_data *drv_data = dev->data;
-	struct imx219_ctrls *ctrls = &drv_data->ctrls;
+	struct video_ctrl *ctrls = drv_data->ctrls;
 
 	switch (cid) {
 	case VIDEO_CID_EXPOSURE:
 		/* Values for normal frame rate, different range for low frame rate mode */
 		return video_write_cci_reg(&cfg->i2c, IMX219_CCI_INTEGRATION_TIME,
-					   ctrls->exposure.val);
+					   ctrls[IMX219_CTRL_EXPOSURE].val);
 	case VIDEO_CID_ANALOGUE_GAIN:
 		return video_write_cci_reg(&cfg->i2c, IMX219_CCI_ANALOG_GAIN,
-					   ctrls->analogue_gain.val);
+					   ctrls[IMX219_CTRL_ANALOGUE_GAIN].val);
 	case VIDEO_CID_GAIN:
 		return video_write_cci_reg(&cfg->i2c, IMX219_CCI_DIGITAL_GAIN,
-					   ctrls->digital_gain.val);
+					   ctrls[IMX219_CTRL_DIGITAL_GAIN].val);
 	case VIDEO_CID_BRIGHTNESS:
 		return video_write_cci_reg(&cfg->i2c, IMX219_CCI_DT_PEDESTAL,
-					   ctrls->brightness.val);
+					   ctrls[IMX219_CTRL_BRIGHTNESS].val);
 	case VIDEO_CID_TEST_PATTERN:
 		return video_write_cci_reg(&cfg->i2c, IMX219_CCI_TESTPATTERN,
-					   ctrls->test_pattern.val);
+					   ctrls[IMX219_CTRL_TEST_PATTERN].val);
 	default:
 		LOG_WRN("Control not supported");
 		return -ENOTSUP;
@@ -462,54 +463,8 @@ static const char *const imx219_test_pattern_menu[] = {
 static int imx219_init_ctrls(const struct device *dev)
 {
 	struct imx219_data *drv_data = dev->data;
-	struct imx219_ctrls *ctrls = &drv_data->ctrls;
-	int ret;
 
-	ret = video_init_ctrl(
-		&ctrls->exposure, dev, VIDEO_CID_EXPOSURE,
-		(struct video_ctrl_range){.min = 0x0000, .max = 0xffff, .step = 1,
-					  .def = IMX219_INTEGRATION_TIME_DEFAULT});
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(
-		&ctrls->brightness, dev, VIDEO_CID_BRIGHTNESS,
-		(struct video_ctrl_range){.min = 0x00, .max = 0x3ff, .step = 1,
-					  .def = IMX219_DT_PEDESTAL_DEFAULT});
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(
-		&ctrls->analogue_gain, dev, VIDEO_CID_ANALOGUE_GAIN,
-		(struct video_ctrl_range){.min = IMX219_ANALOG_GAIN_MIN,
-					  .max = IMX219_ANALOG_GAIN_MAX,
-					  .step = 1,
-					  .def = IMX219_ANALOG_GAIN_DEFAULT});
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(
-		&ctrls->digital_gain, dev, VIDEO_CID_DIGITAL_GAIN,
-		(struct video_ctrl_range){.min = 0x000, .max = 0xfff, .step = 1,
-					  .def = IMX219_DIGITAL_GAIN_DEFAULT});
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = video_init_int_menu_ctrl(&ctrls->linkfreq, dev, VIDEO_CID_LINK_FREQ,
-				       0, imx219_2dl_link_frequency,
-				       ARRAY_SIZE(imx219_2dl_link_frequency));
-	if (ret < 0) {
-		return ret;
-	}
-
-	ctrls->linkfreq.flags |= VIDEO_CTRL_FLAG_READ_ONLY;
-
-	return video_init_menu_ctrl(&ctrls->test_pattern, dev, VIDEO_CID_TEST_PATTERN, 0,
-				   imx219_test_pattern_menu);
+	return video_register_ctrls(drv_data->ctrls, ARRAY_SIZE(drv_data->ctrls), dev);
 }
 
 static int imx219_set_input_clk(const struct device *dev, uint32_t rate_hz)
@@ -633,6 +588,27 @@ static int imx219_init(const struct device *dev)
 #define IMX219_INIT(n)                                                                             \
 	static struct imx219_data imx219_data_##n = {                                              \
 		.fps = IMX219_30FPS,                                                               \
+		.ctrls = {                                                                         \
+			[IMX219_CTRL_EXPOSURE] = {.id = VIDEO_CID_EXPOSURE,                        \
+				.range = {.max = 0xffff,                                           \
+					  .def = IMX219_INTEGRATION_TIME_DEFAULT}},                \
+			[IMX219_CTRL_BRIGHTNESS] = {.id = VIDEO_CID_BRIGHTNESS,                    \
+				.range = {.max = 0x3ff,                                            \
+					  .def = IMX219_DT_PEDESTAL_DEFAULT}},                     \
+			[IMX219_CTRL_ANALOGUE_GAIN] = {.id = VIDEO_CID_ANALOGUE_GAIN,              \
+				.range = {.min = IMX219_ANALOG_GAIN_MIN,                           \
+					  .max = IMX219_ANALOG_GAIN_MAX,                           \
+					  .def = IMX219_ANALOG_GAIN_DEFAULT}},                     \
+			[IMX219_CTRL_DIGITAL_GAIN] = {.id = VIDEO_CID_DIGITAL_GAIN,                \
+				.range = {.max = 0xfff,                                            \
+					  .def = IMX219_DIGITAL_GAIN_DEFAULT}},                    \
+			[IMX219_CTRL_LINKFREQ] = {.id = VIDEO_CID_LINK_FREQ,                       \
+				.flags = VIDEO_CTRL_FLAG_READ_ONLY,                                \
+				.range = {.max = ARRAY_SIZE(imx219_2dl_link_frequency) - 1},       \
+				.int_menu = imx219_2dl_link_frequency},                            \
+			[IMX219_CTRL_TEST_PATTERN] = {.id = VIDEO_CID_TEST_PATTERN,                \
+				.menu = imx219_test_pattern_menu},                                 \
+		},                                                                                 \
 	};                                                                                         \
                                                                                                    \
 	static const struct imx219_config imx219_cfg_##n = {                                       \

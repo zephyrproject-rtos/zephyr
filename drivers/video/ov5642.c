@@ -143,20 +143,21 @@ struct ov5642_mode_config {
 	const struct video_reg16 *res_params;
 };
 
-struct ov5642_ctrls {
-	struct video_ctrl auto_gain;
-	struct video_ctrl brightness;
-	struct video_ctrl contrast;
-	struct video_ctrl hue;
-	struct video_ctrl saturation;
-	struct video_ctrl hflip;
-	struct video_ctrl vflip;
-	struct video_ctrl ae;
-	struct video_ctrl awb;
+enum ov5642_ctrl_idx {
+	OV5642_CTRL_AUTO_GAIN,
+	OV5642_CTRL_BRIGHTNESS,
+	OV5642_CTRL_CONTRAST,
+	OV5642_CTRL_HUE,
+	OV5642_CTRL_SATURATION,
+	OV5642_CTRL_HFLIP,
+	OV5642_CTRL_VFLIP,
+	OV5642_CTRL_AE,
+	OV5642_CTRL_AWB,
+	OV5642_CTRL_COUNT,
 };
 
 struct ov5642_data {
-	struct ov5642_ctrls ctrls;
+	struct video_ctrl ctrls[OV5642_CTRL_COUNT];
 	struct video_format fmt;
 };
 
@@ -717,32 +718,32 @@ static int ov5642_set_ctrl_exposure(const struct device *dev, int value)
 static int ov5642_set_ctrl(const struct device *dev, uint32_t id)
 {
 	struct ov5642_data *drv_data = dev->data;
-	struct ov5642_ctrls *ctrls = &drv_data->ctrls;
+	struct video_ctrl *ctrls = drv_data->ctrls;
 	const struct ov5642_config *cfg = dev->config;
 
 	switch (id) {
 	case VIDEO_CID_HFLIP:
 		return video_modify_cci_reg(&cfg->i2c, TIMING_TC_REG18_CCI,
-					    BIT(6), ctrls->hflip.val ? BIT(6) : 0);
+					    BIT(6), ctrls[OV5642_CTRL_HFLIP].val ? BIT(6) : 0);
 	case VIDEO_CID_VFLIP:
 		return video_modify_cci_reg(&cfg->i2c, TIMING_TC_REG18_CCI, BIT(5),
-					    ctrls->vflip.val ? BIT(5) : 0);
+					    ctrls[OV5642_CTRL_VFLIP].val ? BIT(5) : 0);
 	case VIDEO_CID_EXPOSURE_AUTO:
-		return ov5642_set_ctrl_exposure(dev, ctrls->ae.val);
+		return ov5642_set_ctrl_exposure(dev, ctrls[OV5642_CTRL_AE].val);
 	case VIDEO_CID_AUTO_WHITE_BALANCE:
 		return video_modify_cci_reg(&cfg->i2c, ISP_CTRL01_CCI, BIT(0),
-					    ctrls->awb.val ? BIT(0) : 0);
+					    ctrls[OV5642_CTRL_AWB].val ? BIT(0) : 0);
 	case VIDEO_CID_AUTOGAIN:
 		return video_modify_cci_reg(&cfg->i2c, AEC_PK_CCI, BIT(1),
-					    ctrls->auto_gain.val ? 0 : BIT(1));
+					    ctrls[OV5642_CTRL_AUTO_GAIN].val ? 0 : BIT(1));
 	case VIDEO_CID_BRIGHTNESS:
-		return ov5642_set_ctrl_brightness(dev, ctrls->brightness.val);
+		return ov5642_set_ctrl_brightness(dev, ctrls[OV5642_CTRL_BRIGHTNESS].val);
 	case VIDEO_CID_CONTRAST:
-		return ov5642_set_ctrl_contrast(dev, ctrls->contrast.val);
+		return ov5642_set_ctrl_contrast(dev, ctrls[OV5642_CTRL_CONTRAST].val);
 	case VIDEO_CID_SATURATION:
-		return ov5642_set_ctrl_saturation(dev, ctrls->saturation.val);
+		return ov5642_set_ctrl_saturation(dev, ctrls[OV5642_CTRL_SATURATION].val);
 	case VIDEO_CID_HUE:
-		return ov5642_set_ctrl_hue(dev, ctrls->hue.val);
+		return ov5642_set_ctrl_hue(dev, ctrls[OV5642_CTRL_HUE].val);
 	default:
 		CODE_UNREACHABLE;
 	}
@@ -758,100 +759,9 @@ static DEVICE_API(video, ov5642_driver_api) = {
 
 static int ov5642_init_controls(const struct device *dev)
 {
-	int ret;
 	struct ov5642_data *drv_data = dev->data;
-	struct ov5642_ctrls *ctrls = &drv_data->ctrls;
 
-	ret = video_init_ctrl(&ctrls->hflip, dev, VIDEO_CID_HFLIP,
-			      (struct video_ctrl_range){
-			      .min = 0,
-			      .max = 1,
-			      .step = 1,
-			      .def = 0
-			      });
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(&ctrls->vflip, dev, VIDEO_CID_VFLIP,
-			      (struct video_ctrl_range){
-			      .min = 0,
-			      .max = 1,
-			      .step = 1,
-			      .def = 0
-			      });
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = video_init_menu_ctrl(&ctrls->ae, dev, VIDEO_CID_EXPOSURE_AUTO,
-				   VIDEO_EXPOSURE_AUTO, NULL);
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(&ctrls->awb, dev, VIDEO_CID_AUTO_WHITE_BALANCE,
-			      (struct video_ctrl_range){
-			      .min = 0,
-			      .max = 1,
-			      .step = 1,
-			      .def = 1
-			      });
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(&ctrls->auto_gain, dev, VIDEO_CID_AUTOGAIN,
-			      (struct video_ctrl_range){
-			      .min = 0,
-			      .max = 1,
-			      .step = 1,
-			      .def = 1
-			      });
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(&ctrls->brightness, dev, VIDEO_CID_BRIGHTNESS,
-			      (struct video_ctrl_range){
-			      .min = -15,
-			      .max = 15,
-			      .step = 1,
-			      .def = 0
-			      });
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(&ctrls->contrast, dev, VIDEO_CID_CONTRAST,
-			      (struct video_ctrl_range){
-			      .min = 0,
-			      .max = 255,
-			      .step = 1,
-			      .def = 0
-			      });
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(&ctrls->saturation, dev, VIDEO_CID_SATURATION,
-			      (struct video_ctrl_range){
-			      .min = 0,
-			      .max = 255,
-			      .step = 1,
-			      .def = 64
-			      });
-	if (ret < 0) {
-		return ret;
-	}
-
-	return video_init_ctrl(&ctrls->hue, dev, VIDEO_CID_HUE,
-			       (struct video_ctrl_range){
-			       .min = 0,
-			       .max = 359,
-			       .step = 1,
-			       .def = 0
-			       });
+	return video_register_ctrls(drv_data->ctrls, ARRAY_SIZE(drv_data->ctrls), dev);
 }
 
 static int ov5642_init(const struct device *dev)
@@ -937,7 +847,25 @@ static int ov5642_init(const struct device *dev)
 #endif
 
 #define OV5642_INIT(n)								\
-	static struct ov5642_data ov5642_data_##n;				\
+	static struct ov5642_data ov5642_data_##n = {						\
+		.ctrls = {									\
+			[OV5642_CTRL_AUTO_GAIN] = {.id = VIDEO_CID_AUTOGAIN,			\
+				.range = {.def = 1}},						\
+			[OV5642_CTRL_BRIGHTNESS] = {.id = VIDEO_CID_BRIGHTNESS,			\
+				.range = {.min = -15, .max = 15}},				\
+			[OV5642_CTRL_CONTRAST] = {.id = VIDEO_CID_CONTRAST,			\
+				.range = {.max = 255}},						\
+			[OV5642_CTRL_HUE] = {.id = VIDEO_CID_HUE, .range = {.max = 359}},	\
+			[OV5642_CTRL_SATURATION] = {.id = VIDEO_CID_SATURATION,			\
+				.range = {.max = 255, .def = 64}},				\
+			[OV5642_CTRL_HFLIP] = {.id = VIDEO_CID_HFLIP},				\
+			[OV5642_CTRL_VFLIP] = {.id = VIDEO_CID_VFLIP},				\
+			[OV5642_CTRL_AE] = {.id = VIDEO_CID_EXPOSURE_AUTO,			\
+				.range = {.def = VIDEO_EXPOSURE_AUTO}},				\
+			[OV5642_CTRL_AWB] = {.id = VIDEO_CID_AUTO_WHITE_BALANCE,		\
+				.range = {.def = 1}},						\
+		},										\
+	};											\
 										\
 	static const struct ov5642_config ov5642_cfg_##n = {			\
 		.i2c = I2C_DT_SPEC_INST_GET(n),					\

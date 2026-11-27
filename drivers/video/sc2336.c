@@ -88,19 +88,20 @@ struct sc2336_mode {
 	uint8_t fps;
 };
 
-struct sc2336_ctrls {
-	struct video_ctrl linkfreq;
-	struct video_ctrl pixel_rate;
-	struct video_ctrl test_pattern;
-	struct video_ctrl hflip;
-	struct video_ctrl vflip;
-	struct video_ctrl exposure;
-	struct video_ctrl analogue_gain;
-	struct video_ctrl digital_gain;
+enum sc2336_ctrl_idx {
+	SC2336_CTRL_LINKFREQ,
+	SC2336_CTRL_PIXEL_RATE,
+	SC2336_CTRL_TEST_PATTERN,
+	SC2336_CTRL_HFLIP,
+	SC2336_CTRL_VFLIP,
+	SC2336_CTRL_EXPOSURE,
+	SC2336_CTRL_ANALOGUE_GAIN,
+	SC2336_CTRL_DIGITAL_GAIN,
+	SC2336_CTRL_COUNT,
 };
 
 struct sc2336_data {
-	struct sc2336_ctrls ctrls;
+	struct video_ctrl ctrls[SC2336_CTRL_COUNT];
 	struct video_format fmt;
 	size_t mode;
 	uint16_t vts;
@@ -587,7 +588,7 @@ static int sc2336_set_pll(const struct device *dev, uint8_t pll_ctrl0, uint8_t p
 
 static void sc2336_update_vts(struct sc2336_data *drv_data, uint16_t vts)
 {
-	struct video_ctrl *exposure = &drv_data->ctrls.exposure;
+	struct video_ctrl *exposure = &drv_data->ctrls[SC2336_CTRL_EXPOSURE];
 
 	drv_data->vts = vts;
 	exposure->range.max = vts - SC2336_EXPOSURE_MAX_OFFSET;
@@ -599,7 +600,7 @@ static int sc2336_set_exposure(const struct device *dev)
 {
 	const struct sc2336_config *cfg = dev->config;
 	struct sc2336_data *drv_data = dev->data;
-	uint32_t lines = drv_data->ctrls.exposure.val;
+	uint32_t lines = drv_data->ctrls[SC2336_CTRL_EXPOSURE].val;
 	struct video_reg regs[] = {
 		{SC2336_CCI_GROUP_HOLD, SC2336_GROUP_HOLD_START},
 		{SC2336_CCI_VTS, drv_data->vts},
@@ -616,29 +617,30 @@ static int sc2336_set_ctrl(const struct device *dev, uint32_t cid)
 {
 	const struct sc2336_config *cfg = dev->config;
 	struct sc2336_data *drv_data = dev->data;
-	struct sc2336_ctrls *ctrls = &drv_data->ctrls;
+	struct video_ctrl *ctrls = drv_data->ctrls;
 
 	switch (cid) {
 	case VIDEO_CID_TEST_PATTERN:
 		return video_modify_cci_reg(
 			&cfg->i2c, SC2336_CCI_TEST_PATTERN, SC2336_TEST_PATTERN_ENABLE,
-			ctrls->test_pattern.val != 0 ? SC2336_TEST_PATTERN_ENABLE : 0);
+			ctrls[SC2336_CTRL_TEST_PATTERN].val != 0 ? SC2336_TEST_PATTERN_ENABLE : 0);
 	case VIDEO_CID_HFLIP:
-		return video_modify_cci_reg(&cfg->i2c, SC2336_CCI_FLIP_MIRROR,
-					    SC2336_FLIP_MIRROR_HFLIP,
-					    ctrls->hflip.val != 0 ? SC2336_FLIP_MIRROR_HFLIP : 0);
+		return video_modify_cci_reg(
+			&cfg->i2c, SC2336_CCI_FLIP_MIRROR, SC2336_FLIP_MIRROR_HFLIP,
+			ctrls[SC2336_CTRL_HFLIP].val != 0 ? SC2336_FLIP_MIRROR_HFLIP : 0);
 	case VIDEO_CID_VFLIP:
-		return video_modify_cci_reg(&cfg->i2c, SC2336_CCI_FLIP_MIRROR,
-					    SC2336_FLIP_MIRROR_VFLIP,
-					    ctrls->vflip.val != 0 ? SC2336_FLIP_MIRROR_VFLIP : 0);
+		return video_modify_cci_reg(
+			&cfg->i2c, SC2336_CCI_FLIP_MIRROR, SC2336_FLIP_MIRROR_VFLIP,
+			ctrls[SC2336_CTRL_VFLIP].val != 0 ? SC2336_FLIP_MIRROR_VFLIP : 0);
 	case VIDEO_CID_EXPOSURE:
 		return sc2336_set_exposure(dev);
 	case VIDEO_CID_ANALOGUE_GAIN:
-		return video_write_cci_reg(&cfg->i2c, SC2336_CCI_ANA_GAIN,
-					   sc2336_ana_gain_regs[ctrls->analogue_gain.val]);
+		return video_write_cci_reg(
+			&cfg->i2c, SC2336_CCI_ANA_GAIN,
+			sc2336_ana_gain_regs[ctrls[SC2336_CTRL_ANALOGUE_GAIN].val]);
 	case VIDEO_CID_DIGITAL_GAIN:
 		return video_write_cci_reg(&cfg->i2c, SC2336_CCI_DIG_GAIN_FINE,
-					   ctrls->digital_gain.val);
+					   ctrls[SC2336_CTRL_DIGITAL_GAIN].val);
 	default:
 		return -ENOTSUP;
 	}
@@ -715,8 +717,8 @@ static int sc2336_set_fmt(const struct device *dev, struct video_format *fmt)
 
 	drv_data->mode = idx;
 	drv_data->fps = mode->fps;
-	drv_data->ctrls.linkfreq.val = idx;
-	drv_data->ctrls.pixel_rate.val64 = sc2336_pixel_rate[idx];
+	drv_data->ctrls[SC2336_CTRL_LINKFREQ].val = idx;
+	drv_data->ctrls[SC2336_CTRL_PIXEL_RATE].val64 = sc2336_pixel_rate[idx];
 	drv_data->fmt = *fmt;
 
 	return 0;
@@ -787,7 +789,7 @@ static int sc2336_set_frmival(const struct device *dev, struct video_frmival *fr
 		.discrete = *frmival,
 	};
 	uint16_t old_vts = drv_data->vts;
-	int32_t old_exposure = drv_data->ctrls.exposure.val;
+	int32_t old_exposure = drv_data->ctrls[SC2336_CTRL_EXPOSURE].val;
 	uint16_t vts;
 	int ret;
 
@@ -807,7 +809,7 @@ static int sc2336_set_frmival(const struct device *dev, struct video_frmival *fr
 	ret = sc2336_set_exposure(dev);
 	if (ret < 0) {
 		sc2336_update_vts(drv_data, old_vts);
-		drv_data->ctrls.exposure.val = old_exposure;
+		drv_data->ctrls[SC2336_CTRL_EXPOSURE].val = old_exposure;
 		return ret;
 	}
 
@@ -854,77 +856,21 @@ static const char *const sc2336_test_pattern_menu[] = {
 static int sc2336_init_ctrls(const struct device *dev)
 {
 	struct sc2336_data *drv_data = dev->data;
-	struct sc2336_ctrls *ctrls = &drv_data->ctrls;
-	int ret;
+	struct video_ctrl *ctrls = drv_data->ctrls;
 
-	ret = video_init_int_menu_ctrl(&ctrls->linkfreq, dev, VIDEO_CID_LINK_FREQ,
-				       SC2336_MODE_1024X600_RAW8, sc2336_link_frequency,
-				       ARRAY_SIZE(sc2336_link_frequency));
-	if (ret < 0) {
-		return ret;
-	}
+	/* The mode tables are not constant expressions, so these ranges are set at runtime */
+	ctrls[SC2336_CTRL_PIXEL_RATE].range = (struct video_ctrl_range){
+		.min64 = sc2336_pixel_rate[SC2336_MODE_640X480_RAW10],
+		.max64 = sc2336_pixel_rate[SC2336_MODE_1920X1080_RAW8],
+		.def64 = sc2336_pixel_rate[SC2336_MODE_1024X600_RAW8],
+	};
+	ctrls[SC2336_CTRL_EXPOSURE].range = (struct video_ctrl_range){
+		.min = SC2336_EXPOSURE_MIN,
+		.max = sc2336_modes[SC2336_MODE_1920X1080_RAW8].vts - SC2336_EXPOSURE_MAX_OFFSET,
+		.def = SC2336_EXPOSURE_DEFAULT,
+	};
 
-	ctrls->linkfreq.flags |= VIDEO_CTRL_FLAG_READ_ONLY;
-
-	ret = video_init_ctrl(&ctrls->pixel_rate, dev, VIDEO_CID_PIXEL_RATE,
-			      (struct video_ctrl_range){
-				      .min64 = sc2336_pixel_rate[SC2336_MODE_640X480_RAW10],
-				      .max64 = sc2336_pixel_rate[SC2336_MODE_1920X1080_RAW8],
-				      .step64 = 1,
-				      .def64 = sc2336_pixel_rate[SC2336_MODE_1024X600_RAW8],
-			      });
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = video_init_menu_ctrl(&ctrls->test_pattern, dev, VIDEO_CID_TEST_PATTERN, 0,
-				   sc2336_test_pattern_menu);
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(&ctrls->hflip, dev, VIDEO_CID_HFLIP,
-			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(&ctrls->vflip, dev, VIDEO_CID_VFLIP,
-			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(&ctrls->exposure, dev, VIDEO_CID_EXPOSURE,
-			      (struct video_ctrl_range){
-				      .min = SC2336_EXPOSURE_MIN,
-				      .max = sc2336_modes[SC2336_MODE_1920X1080_RAW8].vts -
-					     SC2336_EXPOSURE_MAX_OFFSET,
-				      .step = 1,
-				      .def = SC2336_EXPOSURE_DEFAULT,
-			      });
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(&ctrls->analogue_gain, dev, VIDEO_CID_ANALOGUE_GAIN,
-			      (struct video_ctrl_range){
-				      .min = 0,
-				      .max = ARRAY_SIZE(sc2336_ana_gain_regs) - 1,
-				      .step = 1,
-				      .def = 0,
-			      });
-	if (ret < 0) {
-		return ret;
-	}
-
-	return video_init_ctrl(&ctrls->digital_gain, dev, VIDEO_CID_DIGITAL_GAIN,
-			       (struct video_ctrl_range){
-				       .min = SC2336_DIG_GAIN_MIN,
-				       .max = SC2336_DIG_GAIN_MAX,
-				       .step = 4,
-				       .def = SC2336_DIG_GAIN_MIN,
-			       });
+	return video_register_ctrls(ctrls, ARRAY_SIZE(drv_data->ctrls), dev);
 }
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios) ||                                               \
@@ -1046,7 +992,28 @@ static int sc2336_init(const struct device *dev)
 	BUILD_ASSERT(DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency) == SC2336_INPUT_CLK_HZ,   \
 		     "SC2336 mode tables require a 24 MHz input clock");                           \
                                                                                                    \
-	static struct sc2336_data sc2336_data_##n;                                                 \
+	static struct sc2336_data sc2336_data_##n = {                                              \
+		.ctrls = {                                                                         \
+			[SC2336_CTRL_LINKFREQ] = {.id = VIDEO_CID_LINK_FREQ,                       \
+				.flags = VIDEO_CTRL_FLAG_READ_ONLY,                                \
+				.range = {.max = ARRAY_SIZE(sc2336_link_frequency) - 1,            \
+					  .def = SC2336_MODE_1024X600_RAW8},                       \
+				.int_menu = sc2336_link_frequency},                                \
+			[SC2336_CTRL_PIXEL_RATE] = {.id = VIDEO_CID_PIXEL_RATE},                   \
+			[SC2336_CTRL_TEST_PATTERN] = {.id = VIDEO_CID_TEST_PATTERN,                \
+				.menu = sc2336_test_pattern_menu},                                 \
+			[SC2336_CTRL_HFLIP] = {.id = VIDEO_CID_HFLIP},                             \
+			[SC2336_CTRL_VFLIP] = {.id = VIDEO_CID_VFLIP},                             \
+			[SC2336_CTRL_EXPOSURE] = {.id = VIDEO_CID_EXPOSURE},                       \
+			[SC2336_CTRL_ANALOGUE_GAIN] = {.id = VIDEO_CID_ANALOGUE_GAIN,              \
+				.range = {.max = ARRAY_SIZE(sc2336_ana_gain_regs) - 1}},           \
+			[SC2336_CTRL_DIGITAL_GAIN] = {.id = VIDEO_CID_DIGITAL_GAIN,                \
+				.range = {.min = SC2336_DIG_GAIN_MIN,                              \
+					  .max = SC2336_DIG_GAIN_MAX,                              \
+					  .step = 4,                                               \
+					  .def = SC2336_DIG_GAIN_MIN}},                            \
+		},                                                                                 \
+	};                                                                                         \
                                                                                                    \
 	static const struct sc2336_config sc2336_cfg_##n = {                                       \
 		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \

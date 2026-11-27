@@ -50,15 +50,16 @@ struct imx335_config {
 	uint32_t input_clk;
 };
 
-struct imx335_ctrls {
-	struct video_ctrl gain;
-	struct video_ctrl exposure;
-	struct video_ctrl link_freq;
-	struct video_ctrl test_pattern;
+enum imx335_ctrl_idx {
+	IMX335_CTRL_GAIN,
+	IMX335_CTRL_EXPOSURE,
+	IMX335_CTRL_LINK_FREQ,
+	IMX335_CTRL_TEST_PATTERN,
+	IMX335_CTRL_COUNT,
 };
 
 struct imx335_data {
-	struct imx335_ctrls ctrls;
+	struct video_ctrl ctrls[IMX335_CTRL_COUNT];
 	struct video_format fmt;
 	uint32_t frame_rate;
 	bool enabled;
@@ -410,7 +411,7 @@ static int imx335_set_ctrl_gain(const struct device *dev)
 {
 	const struct imx335_config *cfg = dev->config;
 	struct imx335_data *drv_data = dev->data;
-	struct imx335_ctrls *ctrls = &drv_data->ctrls;
+	struct video_ctrl *ctrls = drv_data->ctrls;
 	int ret;
 
 	ret = video_write_cci_reg(&cfg->i2c, IMX335_REGHOLD, 1);
@@ -419,7 +420,8 @@ static int imx335_set_ctrl_gain(const struct device *dev)
 	}
 
 	/* Apply gain upon conversion to gain unit */
-	ret = video_write_cci_reg(&cfg->i2c, IMX335_GAIN, ctrls->gain.val / IMX335_GAIN_UNIT_MDB);
+	ret = video_write_cci_reg(&cfg->i2c, IMX335_GAIN,
+				  ctrls[IMX335_CTRL_GAIN].val / IMX335_GAIN_UNIT_MDB);
 	if (ret < 0) {
 		return ret;
 	}
@@ -431,7 +433,7 @@ static int imx335_set_ctrl_exposure(const struct device *dev)
 {
 	const struct imx335_config *cfg = dev->config;
 	struct imx335_data *drv_data = dev->data;
-	struct imx335_ctrls *ctrls = &drv_data->ctrls;
+	struct video_ctrl *ctrls = drv_data->ctrls;
 	int ret;
 
 	ret = video_write_cci_reg(&cfg->i2c, IMX335_REGHOLD, 1);
@@ -441,7 +443,7 @@ static int imx335_set_ctrl_exposure(const struct device *dev)
 
 	/* Since we never update VMAX, we can use the default value directly */
 	ret = video_write_cci_reg(&cfg->i2c, IMX335_SHR0,
-				  IMX335_VMAX_DEFAULT - ctrls->exposure.val);
+				  IMX335_VMAX_DEFAULT - ctrls[IMX335_CTRL_EXPOSURE].val);
 	if (ret < 0) {
 		return ret;
 	}
@@ -453,16 +455,17 @@ static int imx335_set_ctrl_test_pattern(const struct device *dev)
 {
 	const struct imx335_config *cfg = dev->config;
 	struct imx335_data *drv_data = dev->data;
-	struct imx335_ctrls *ctrls = &drv_data->ctrls;
+	struct video_ctrl *ctrls = drv_data->ctrls;
 	const struct video_reg16 *regs;
 	size_t regs_len;
 	int ret;
 
-	if (ctrls->test_pattern.val > 0) {
+	if (ctrls[IMX335_CTRL_TEST_PATTERN].val > 0) {
 		regs = imx335_test_pattern_enable;
 		regs_len = ARRAY_SIZE(imx335_test_pattern_enable);
 
-		ret = video_write_cci_reg(&cfg->i2c, IMX335_TPG, ctrls->test_pattern.val - 1);
+		ret = video_write_cci_reg(&cfg->i2c, IMX335_TPG,
+					  ctrls[IMX335_CTRL_TEST_PATTERN].val - 1);
 		if (ret < 0) {
 			return ret;
 		}
@@ -551,7 +554,7 @@ static int imx335_set_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct imx335_data *drv_data = dev->data;
 	const struct imx335_config *cfg = dev->config;
-	struct imx335_ctrls *ctrls = &drv_data->ctrls;
+	struct video_ctrl *exposure = &drv_data->ctrls[IMX335_CTRL_EXPOSURE];
 	int ret;
 	size_t fmt_idx;
 
@@ -576,8 +579,8 @@ static int imx335_set_fmt(const struct device *dev, struct video_format *fmt)
 			return ret;
 		}
 
-		ctrls->exposure.range.max = IMX335_VMAX_DEFAULT - IMX335_SHR0_MIN;
-		ctrls->exposure.range.def = IMX335_VMAX_DEFAULT - IMX335_SHR0_MIN;
+		exposure->range.max = IMX335_VMAX_DEFAULT - IMX335_SHR0_MIN;
+		exposure->range.def = IMX335_VMAX_DEFAULT - IMX335_SHR0_MIN;
 	} else if (fmt_idx == IMX335_RES_1296x972) {
 		/* 2x2 binning mode */
 
@@ -589,11 +592,11 @@ static int imx335_set_fmt(const struct device *dev, struct video_format *fmt)
 			return ret;
 		}
 
-		ctrls->exposure.range.max = IMX335_VMAX_DEFAULT - IMX335_SHR0_MIN_BINNING;
-		ctrls->exposure.range.def = IMX335_VMAX_DEFAULT - IMX335_SHR0_MIN_BINNING;
+		exposure->range.max = IMX335_VMAX_DEFAULT - IMX335_SHR0_MIN_BINNING;
+		exposure->range.def = IMX335_VMAX_DEFAULT - IMX335_SHR0_MIN_BINNING;
 
 		/* update exposure, since the upper limit is lower if binning is active */
-		ctrls->exposure.val = MIN(ctrls->exposure.range.max, ctrls->exposure.val);
+		exposure->val = MIN(exposure->range.max, exposure->val);
 		ret = imx335_set_ctrl_exposure(dev);
 		if (ret < 0) {
 			LOG_ERR("Failed to update exposure while enabling binning");
@@ -708,42 +711,9 @@ static const char *const imx335_test_pattern_menu[] = {
 
 static int imx335_init_controls(const struct device *dev)
 {
-	int ret;
 	struct imx335_data *drv_data = dev->data;
-	struct imx335_ctrls *ctrls = &drv_data->ctrls;
 
-	ret = video_init_ctrl(
-		&ctrls->gain, dev, VIDEO_CID_ANALOGUE_GAIN,
-		(struct video_ctrl_range){
-			.min = IMX335_GAIN_MIN,
-			.max = IMX335_GAIN_MAX,
-			.step = IMX335_GAIN_UNIT_MDB,
-			.def = 0});
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(
-		&ctrls->exposure, dev, VIDEO_CID_EXPOSURE,
-		(struct video_ctrl_range){
-			.min = 1,
-			.max = IMX335_VMAX_DEFAULT - IMX335_SHR0_MIN,
-			.step = 1,
-			.def = IMX335_VMAX_DEFAULT - IMX335_SHR0_MIN});
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = video_init_int_menu_ctrl(&ctrls->link_freq, dev, VIDEO_CID_LINK_FREQ, 0,
-				       imx335_2dl_link_frequency,
-				       ARRAY_SIZE(imx335_2dl_link_frequency));
-	if (ret < 0) {
-		return ret;
-	}
-	ctrls->link_freq.flags |= VIDEO_CTRL_FLAG_READ_ONLY;
-
-	return video_init_menu_ctrl(&ctrls->test_pattern, dev, VIDEO_CID_TEST_PATTERN, 0,
-				   imx335_test_pattern_menu);
+	return video_register_ctrls(drv_data->ctrls, ARRAY_SIZE(drv_data->ctrls), dev);
 }
 
 static int imx335_init(const struct device *dev)
@@ -826,6 +796,21 @@ static int imx335_init(const struct device *dev)
 
 #define IMX335_INIT(n)										\
 	static struct imx335_data imx335_data_##n = {						\
+		.ctrls = {									\
+			[IMX335_CTRL_GAIN] = {.id = VIDEO_CID_ANALOGUE_GAIN,			\
+				.range = {.min = IMX335_GAIN_MIN, .max = IMX335_GAIN_MAX,	\
+					  .step = IMX335_GAIN_UNIT_MDB}},			\
+			[IMX335_CTRL_EXPOSURE] = {.id = VIDEO_CID_EXPOSURE,			\
+				.range = {.min = 1,						\
+					  .max = IMX335_VMAX_DEFAULT - IMX335_SHR0_MIN,		\
+					  .def = IMX335_VMAX_DEFAULT - IMX335_SHR0_MIN}},	\
+			[IMX335_CTRL_LINK_FREQ] = {.id = VIDEO_CID_LINK_FREQ,			\
+				.flags = VIDEO_CTRL_FLAG_READ_ONLY,				\
+				.range = {.max = ARRAY_SIZE(imx335_2dl_link_frequency) - 1},	\
+				.int_menu = imx335_2dl_link_frequency},				\
+			[IMX335_CTRL_TEST_PATTERN] = {.id = VIDEO_CID_TEST_PATTERN,		\
+				.menu = imx335_test_pattern_menu},				\
+		},										\
 		.fmt = {									\
 			.pixelformat = VIDEO_PIX_FMT_SRGGB10P,					\
 			.width = IMX335_NATIVE_WIDTH,						\

@@ -65,13 +65,14 @@ struct mt9m114_config {
 	struct i2c_dt_spec i2c;
 };
 
-struct mt9m114_ctrls {
-	struct video_ctrl hflip;
-	struct video_ctrl vflip;
+enum mt9m114_ctrl_idx {
+	MT9M114_CTRL_HFLIP,
+	MT9M114_CTRL_VFLIP,
+	MT9M114_CTRL_COUNT,
 };
 
 struct mt9m114_data {
-	struct mt9m114_ctrls ctrls;
+	struct video_ctrl ctrls[MT9M114_CTRL_COUNT];
 	struct video_format fmt;
 };
 
@@ -475,19 +476,20 @@ static int mt9m114_set_ctrl(const struct device *dev, uint32_t id)
 {
 	int ret = 0;
 	struct mt9m114_data *drv_data = dev->data;
+	struct video_ctrl *ctrls = drv_data->ctrls;
 
 	switch (id) {
 	case VIDEO_CID_HFLIP:
 		ret = mt9m114_modify_reg(
 			dev, MT9M114_CAM_SENSOR_CTRL_READ_MODE, 2,
 			MT9M114_CAM_SENSOR_CTRL_HORZ_FLIP_EN,
-			drv_data->ctrls.hflip.val ? MT9M114_CAM_SENSOR_CTRL_HORZ_FLIP_EN : 0);
+			ctrls[MT9M114_CTRL_HFLIP].val ? MT9M114_CAM_SENSOR_CTRL_HORZ_FLIP_EN : 0);
 		break;
 	case VIDEO_CID_VFLIP:
 		ret = mt9m114_modify_reg(
 			dev, MT9M114_CAM_SENSOR_CTRL_READ_MODE, 2,
 			MT9M114_CAM_SENSOR_CTRL_VERT_FLIP_EN,
-			drv_data->ctrls.vflip.val ? MT9M114_CAM_SENSOR_CTRL_VERT_FLIP_EN : 0);
+			ctrls[MT9M114_CTRL_VFLIP].val ? MT9M114_CAM_SENSOR_CTRL_VERT_FLIP_EN : 0);
 		break;
 	default:
 		return -ENOTSUP;
@@ -511,18 +513,9 @@ static DEVICE_API(video, mt9m114_driver_api) = {
 
 static int mt9m114_init_controls(const struct device *dev)
 {
-	int ret;
 	struct mt9m114_data *drv_data = dev->data;
-	struct mt9m114_ctrls *ctrls = &drv_data->ctrls;
 
-	ret = video_init_ctrl(&ctrls->hflip, dev, VIDEO_CID_HFLIP,
-			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
-	if (ret) {
-		return ret;
-	}
-
-	return video_init_ctrl(&ctrls->vflip, dev, VIDEO_CID_VFLIP,
-			       (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
+	return video_register_ctrls(drv_data->ctrls, ARRAY_SIZE(drv_data->ctrls), dev);
 }
 
 static int mt9m114_init(const struct device *dev)
@@ -579,7 +572,12 @@ static int mt9m114_init(const struct device *dev)
 }
 
 #define MT9M114_INIT(n)                                                                            \
-	static struct mt9m114_data mt9m114_data_##n;                                               \
+	static struct mt9m114_data mt9m114_data_##n = {                                            \
+		.ctrls = {                                                                         \
+			[MT9M114_CTRL_HFLIP] = {.id = VIDEO_CID_HFLIP},                            \
+			[MT9M114_CTRL_VFLIP] = {.id = VIDEO_CID_VFLIP},                            \
+		},                                                                                 \
+	};                                                                                         \
                                                                                                    \
 	static const struct mt9m114_config mt9m114_cfg_##n = {                                     \
 		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
