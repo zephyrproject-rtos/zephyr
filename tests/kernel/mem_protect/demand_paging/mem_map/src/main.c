@@ -5,10 +5,13 @@
  */
 
 #include <zephyr/ztest.h>
+#include <zephyr/app_memory/mem_domain.h>
 #include <zephyr/kernel/mm.h>
 #include <zephyr/kernel/mm/demand_paging.h>
+#include <zephyr/spinlock.h>
 #include <zephyr/timing/timing.h>
 #include <mmu.h>
+#include <kernel_arch_interface.h>
 #include <zephyr/linker/sections.h>
 
 #ifdef CONFIG_BACKING_STORE_RAM_PAGES
@@ -555,6 +558,683 @@ ZTEST(demand_paging_api, test_k_mem_unpin)
 	test_k_mem_page_out();
 }
 
+#if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS >= 2)
+#define SMP_RACE_STACK_SIZE    (2048 + CONFIG_TEST_EXTRA_STACK_SIZE)
+#define SMP_RACE_DURATION_MS   1500
+#define SMP_CONCURRENT_ITERS   200U
+#define MAX_ACTIVE_SMP_THREADS 2U
+
+static K_THREAD_STACK_DEFINE(smp_worker_0_stack, SMP_RACE_STACK_SIZE);
+static K_THREAD_STACK_DEFINE(smp_worker_1_stack, SMP_RACE_STACK_SIZE);
+
+static struct k_thread *active_smp_threads[MAX_ACTIVE_SMP_THREADS];
+static size_t active_smp_thread_count;
+static atomic_t *active_smp_stop;
+static struct k_sem *active_smp_sem;
+static unsigned int active_smp_sem_count;
+
+struct smp_race_ctx {
+	void *page;
+	atomic_t ready;
+	atomic_t stop;
+	atomic_t race_found;
+	atomic_t page_outs;
+	atomic_t writer_active;
+	atomic_t evictor_active;
+	atomic_t concurrent_overlaps;
+	atomic_t writer_cpu;
+	atomic_t evictor_cpu;
+};
+
+static void smp_writer_race_entry(void *p1, void *p2, void *p3)
+{
+	struct smp_race_ctx *ctx = p1;
+	volatile uint32_t *word = (volatile uint32_t *)ctx->page;
+	uint32_t iter = 0U;
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	atomic_set(&ctx->writer_cpu, (atomic_val_t)arch_curr_cpu()->id);
+	atomic_inc(&ctx->ready);
+
+	while (atomic_get(&ctx->ready) < 2) {
+		if (atomic_get(&ctx->stop) != 0) {
+			return;
+		}
+		arch_nop();
+	}
+
+	while ((atomic_get(&ctx->stop) == 0) && (atomic_get(&ctx->race_found) == 0)) {
+		atomic_set(&ctx->writer_active, 1);
+		if (atomic_get(&ctx->evictor_active) != 0) {
+			atomic_inc(&ctx->concurrent_overlaps);
+		}
+		*word = iter;
+		iter++;
+		atomic_set(&ctx->writer_active, 0);
+
+		if ((iter & 0x0fU) == 0U) {
+			k_spinlock_key_t mm_key = k_spin_lock(z_mm_lock_get());
+			uintptr_t phys = 0U;
+			uintptr_t flags = arch_page_info_get(ctx->page, &phys, false);
+			bool mismatch = false;
+
+			if ((flags & ARCH_DATA_PAGE_LOADED) != 0U) {
+				if (!k_mem_is_page_frame(phys)) {
+					mismatch = true;
+				} else {
+					struct k_mem_page_frame *pf =
+						k_mem_phys_to_page_frame(phys);
+
+					if (k_mem_page_frame_is_free(pf) ||
+					    !k_mem_page_frame_is_mapped(pf) ||
+					    (k_mem_page_frame_to_virt(pf) != ctx->page)) {
+						mismatch = true;
+					}
+				}
+			}
+			k_spin_unlock(z_mm_lock_get(), mm_key);
+
+			if (mismatch) {
+				atomic_set(&ctx->race_found, 1);
+				TC_PRINT("SMP race detected at iter=%u phys=0x%lx "
+					 "page_outs=%ld\n",
+					 iter, phys, (long)atomic_get(&ctx->page_outs));
+				break;
+			}
+		}
+	}
+}
+
+static void smp_evictor_entry(void *p1, void *p2, void *p3)
+{
+	struct smp_race_ctx *ctx = p1;
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	atomic_set(&ctx->evictor_cpu, (atomic_val_t)arch_curr_cpu()->id);
+	atomic_inc(&ctx->ready);
+
+	while (atomic_get(&ctx->ready) < 2) {
+		if (atomic_get(&ctx->stop) != 0) {
+			return;
+		}
+		arch_nop();
+	}
+
+	while ((atomic_get(&ctx->stop) == 0) && (atomic_get(&ctx->race_found) == 0)) {
+		k_spinlock_key_t mm_key = k_spin_lock(z_mm_lock_get());
+		uintptr_t flags_before = arch_page_info_get(ctx->page, NULL, false);
+
+		k_spin_unlock(z_mm_lock_get(), mm_key);
+
+		atomic_set(&ctx->evictor_active, 1);
+		if (atomic_get(&ctx->writer_active) != 0) {
+			atomic_inc(&ctx->concurrent_overlaps);
+		}
+		if ((k_mem_page_out(ctx->page, CONFIG_MMU_PAGE_SIZE) == 0) &&
+		    ((flags_before & ARCH_DATA_PAGE_LOADED) != 0U)) {
+			atomic_inc(&ctx->page_outs);
+		}
+		atomic_set(&ctx->evictor_active, 0);
+	}
+}
+
+#define SMP_FAULT_WAIT_TIMEOUT_MS 10000
+
+struct smp_fault_ctx {
+	volatile uint8_t *page;
+	struct k_sem start_sem;
+	struct k_sem ready_sem;
+	struct k_sem done_sem;
+	atomic_t stop;
+	atomic_t go;
+	atomic_t writer_cpu;
+	atomic_t reader_cpu;
+	atomic_t writer_active;
+	atomic_t reader_active;
+	atomic_t concurrent_overlaps;
+	uint8_t marker;
+	uint8_t read_val;
+};
+
+static void smp_writer_fault_entry(void *p1, void *p2, void *p3)
+{
+	struct smp_fault_ctx *ctx = p1;
+	atomic_val_t seq = 1;
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	atomic_set(&ctx->writer_cpu, (atomic_val_t)arch_curr_cpu()->id);
+
+	for (;;) {
+		(void)k_sem_take(&ctx->start_sem, K_FOREVER);
+		if (atomic_get(&ctx->stop) != 0) {
+			break;
+		}
+		k_sem_give(&ctx->ready_sem);
+		while (atomic_get(&ctx->go) < seq) {
+			if (atomic_get(&ctx->stop) != 0) {
+				return;
+			}
+			arch_nop();
+		}
+		atomic_set(&ctx->writer_active, 1);
+		if (atomic_get(&ctx->reader_active) != 0) {
+			atomic_inc(&ctx->concurrent_overlaps);
+		}
+		ctx->page[1] = ctx->marker;
+		atomic_set(&ctx->writer_active, 0);
+		k_sem_give(&ctx->done_sem);
+		seq++;
+	}
+}
+
+static void smp_reader_entry(void *p1, void *p2, void *p3)
+{
+	struct smp_fault_ctx *ctx = p1;
+	atomic_val_t seq = 1;
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	atomic_set(&ctx->reader_cpu, (atomic_val_t)arch_curr_cpu()->id);
+
+	for (;;) {
+		(void)k_sem_take(&ctx->start_sem, K_FOREVER);
+		if (atomic_get(&ctx->stop) != 0) {
+			break;
+		}
+		k_sem_give(&ctx->ready_sem);
+		while (atomic_get(&ctx->go) < seq) {
+			if (atomic_get(&ctx->stop) != 0) {
+				return;
+			}
+			arch_nop();
+		}
+		atomic_set(&ctx->reader_active, 1);
+		if (atomic_get(&ctx->writer_active) != 0) {
+			atomic_inc(&ctx->concurrent_overlaps);
+		}
+		ctx->read_val = ctx->page[0];
+		atomic_set(&ctx->reader_active, 0);
+		k_sem_give(&ctx->done_sem);
+		seq++;
+	}
+}
+
+static void pin_and_start_pair(struct k_thread *thread0, k_thread_stack_t *stack0,
+			       size_t stack0_size, k_thread_entry_t entry0, void *arg0,
+			       struct k_thread *thread1, k_thread_stack_t *stack1,
+			       size_t stack1_size, k_thread_entry_t entry1, void *arg1)
+{
+	(void)k_thread_create(thread0, stack0, stack0_size, entry0, arg0, NULL, NULL,
+			      K_PRIO_PREEMPT(0), 0U, K_FOREVER);
+	(void)k_thread_create(thread1, stack1, stack1_size, entry1, arg1, NULL, NULL,
+			      K_PRIO_PREEMPT(0), 0U, K_FOREVER);
+
+#if defined(CONFIG_SCHED_CPU_MASK)
+	zassert_ok(k_thread_cpu_pin(thread0, 0), "failed to pin worker 0 to CPU 0");
+	zassert_ok(k_thread_cpu_pin(thread1, 1), "failed to pin worker 1 to CPU 1");
+#endif
+
+	active_smp_threads[0] = thread0;
+	active_smp_threads[1] = thread1;
+	active_smp_thread_count = 2U;
+
+	k_thread_start(thread0);
+	k_thread_start(thread1);
+}
+
+static void cleanup_active_smp_threads(void)
+{
+	int first_err = 0;
+	size_t remaining = 0U;
+
+	if (active_smp_thread_count == 0U) {
+		return;
+	}
+
+	if (active_smp_stop != NULL) {
+		atomic_set(active_smp_stop, 1);
+	}
+	if (active_smp_sem != NULL) {
+		for (unsigned int i = 0U; i < active_smp_sem_count; i++) {
+			k_sem_give(active_smp_sem);
+		}
+	}
+
+	for (size_t i = 0U; i < active_smp_thread_count; i++) {
+		int ret = k_thread_join(active_smp_threads[i], K_SECONDS(10));
+
+		if (ret != 0) {
+			if (first_err == 0) {
+				first_err = ret;
+			}
+			active_smp_threads[remaining++] = active_smp_threads[i];
+		}
+	}
+
+	active_smp_thread_count = remaining;
+	if (remaining == 0U) {
+		active_smp_stop = NULL;
+		active_smp_sem = NULL;
+		active_smp_sem_count = 0U;
+	}
+	zassert_ok(first_err, "helper thread failed to join (%d)", first_err);
+}
+#endif
+
+/**
+ * @brief Verify SMP safety between demand paging faults and concurrent page-out.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * On SMP, a thread taking access-flag or dirty-tracking faults on a page must
+ * serialize properly with another CPU concurrently evicting the same page via
+ * k_mem_page_out(). Otherwise a stale descriptor write-back can resurrect a
+ * valid mapping to a freed page frame or trip page-frame ownership assertions.
+ *
+ * Test steps:
+ * - Spawn a helper thread that repeatedly calls k_mem_page_out() on a page.
+ * - Concurrently write to the same page from the main thread and verify
+ *   page-table and page-frame state consistency.
+ *
+ * Expected result:
+ * - No assertion failure and no resurrected mapping to an unmapped page frame.
+ *
+ * @see k_mem_page_out()
+ */
+ZTEST(demand_paging_api, test_smp_page_out_race)
+{
+#if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS >= 2)
+	static struct k_thread writer_thread;
+	static struct k_thread evictor_thread;
+	static struct smp_race_ctx ctx;
+	volatile uint32_t *word = (volatile uint32_t *)arena;
+	unsigned long faults_before;
+	int64_t deadline;
+
+	if (arch_num_cpus() < 2U) {
+		ztest_test_skip();
+	}
+
+	ctx.page = arena;
+	atomic_set(&ctx.ready, 0);
+	atomic_set(&ctx.stop, 0);
+	atomic_set(&ctx.race_found, 0);
+	atomic_set(&ctx.page_outs, 0);
+	atomic_set(&ctx.writer_active, 0);
+	atomic_set(&ctx.evictor_active, 0);
+	atomic_set(&ctx.concurrent_overlaps, 0);
+	atomic_set(&ctx.writer_cpu, -1);
+	atomic_set(&ctx.evictor_cpu, -1);
+
+	/* Ensure the victim page starts resident and a free backing slot exists. */
+	k_mem_page_in(arena, CONFIG_MMU_PAGE_SIZE);
+	*word = 0U;
+	faults_before = k_mem_num_pagefaults_get();
+
+	active_smp_stop = &ctx.stop;
+	active_smp_sem = NULL;
+	active_smp_sem_count = 0U;
+	pin_and_start_pair(&writer_thread, smp_worker_0_stack,
+			   K_THREAD_STACK_SIZEOF(smp_worker_0_stack), smp_writer_race_entry, &ctx,
+			   &evictor_thread, smp_worker_1_stack,
+			   K_THREAD_STACK_SIZEOF(smp_worker_1_stack), smp_evictor_entry, &ctx);
+
+	deadline = k_uptime_get() + SMP_FAULT_WAIT_TIMEOUT_MS;
+	while (atomic_get(&ctx.ready) < 2) {
+		if (k_uptime_get() >= deadline) {
+			zassert_unreachable("timed out waiting for SMP race threads to start");
+		}
+		k_msleep(1);
+	}
+
+	k_msleep(SMP_RACE_DURATION_MS);
+
+	cleanup_active_smp_threads();
+	zassert_equal(atomic_get(&ctx.race_found), 0, "stale PTE resurrected unmapped page frame");
+	zassert_not_equal(atomic_get(&ctx.writer_cpu), atomic_get(&ctx.evictor_cpu),
+			  "writer (CPU %ld) and evictor (CPU %ld) ran on same CPU",
+			  (long)atomic_get(&ctx.writer_cpu), (long)atomic_get(&ctx.evictor_cpu));
+	zassert_true(atomic_get(&ctx.page_outs) > 0, "no concurrent page_outs occurred");
+	zassert_true((k_mem_num_pagefaults_get() - faults_before) > 0UL,
+		     "no page faults triggered after concurrent page-out");
+	zassert_true(atomic_get(&ctx.concurrent_overlaps) > 0,
+		     "no cross-CPU overlap between writer and evictor observed");
+
+	/* Restore clean backing-store state for subsequent capacity tests. */
+	k_mem_page_in(arena, CONFIG_MMU_PAGE_SIZE);
+#else
+	ztest_test_skip();
+#endif
+}
+
+/**
+ * @brief Verify concurrent SMP read and write faults on the same paged-out page.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * Two CPUs faulting concurrently on the same paged-out page both take a
+ * translation fault; the second CPU to enter the handler sees the descriptor
+ * already paged in. Likewise, concurrent AF and dirty updates must preserve the
+ * dirty state across a subsequent page-out and page-in.
+ *
+ * Test steps:
+ * - Evict or clear AF on the target page, synchronize pinned writer and reader
+ *   threads on distinct CPUs at a barrier, then release them concurrently.
+ * - Directly verify ARCH_DATA_PAGE_DIRTY under z_mm_lock, then page out and
+ *   page back in to verify both persistence and that page-in clears dirty.
+ *
+ * Expected result:
+ * - Neither thread takes a fatal fault, ARCH_DATA_PAGE_DIRTY is set, and the
+ *   written byte survives eviction.
+ *
+ * @see k_mem_page_out()
+ * @see k_mem_page_in()
+ */
+ZTEST(demand_paging_api, test_smp_concurrent_fault_race)
+{
+#if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS >= 2)
+	static struct k_thread writer_thread;
+	static struct k_thread reader_thread;
+	static struct smp_fault_ctx ctx;
+	volatile uint8_t *page = (volatile uint8_t *)arena;
+
+	if (arch_num_cpus() < 2U) {
+		ztest_test_skip();
+	}
+
+	ctx.page = page;
+	k_sem_init(&ctx.start_sem, 0U, 2U);
+	k_sem_init(&ctx.ready_sem, 0U, 2U);
+	k_sem_init(&ctx.done_sem, 0U, 2U);
+	atomic_set(&ctx.stop, 0);
+	atomic_set(&ctx.go, 0);
+	atomic_set(&ctx.writer_cpu, -1);
+	atomic_set(&ctx.reader_cpu, -1);
+	atomic_set(&ctx.writer_active, 0);
+	atomic_set(&ctx.reader_active, 0);
+	atomic_set(&ctx.concurrent_overlaps, 0);
+	ctx.marker = 0U;
+	ctx.read_val = 0U;
+
+	active_smp_stop = &ctx.stop;
+	active_smp_sem = &ctx.start_sem;
+	active_smp_sem_count = 2U;
+	pin_and_start_pair(&writer_thread, smp_worker_0_stack,
+			   K_THREAD_STACK_SIZEOF(smp_worker_0_stack), smp_writer_fault_entry, &ctx,
+			   &reader_thread, smp_worker_1_stack,
+			   K_THREAD_STACK_SIZEOF(smp_worker_1_stack), smp_reader_entry, &ctx);
+
+	for (uint32_t i = 0U; i < SMP_CONCURRENT_ITERS; i++) {
+		atomic_val_t seq = (atomic_val_t)(i + 1U);
+		uint8_t marker = (uint8_t)(i + 1U);
+		k_spinlock_key_t mm_key;
+		uintptr_t flags;
+		uintptr_t flags_after;
+
+		page[0] = marker;
+		page[1] = 0U;
+		if ((i & 1U) == 0U) {
+			/* Alternate between paged-out translation faults and loaded AF faults. */
+			zassert_equal(k_mem_page_out(arena, CONFIG_MMU_PAGE_SIZE), 0,
+				      "k_mem_page_out failed at iter %u", i);
+		} else {
+			zassert_equal(k_mem_page_out(arena, CONFIG_MMU_PAGE_SIZE), 0,
+				      "k_mem_page_out failed at iter %u", i);
+			k_mem_page_in(arena, CONFIG_MMU_PAGE_SIZE);
+			mm_key = k_spin_lock(z_mm_lock_get());
+			flags = arch_page_info_get(arena, NULL, true);
+			flags_after = arch_page_info_get(arena, NULL, false);
+			k_spin_unlock(z_mm_lock_get(), mm_key);
+			zassert_true((flags & ARCH_DATA_PAGE_LOADED) != 0U,
+				     "page not loaded after page-in at iter %u", i);
+			zassert_equal(flags & ARCH_DATA_PAGE_DIRTY, 0U,
+				      "freshly paged-in page unexpectedly dirty at iter %u", i);
+			zassert_equal(flags_after & ARCH_DATA_PAGE_ACCESSED, 0U,
+				      "AF bit was not cleared at iter %u", i);
+		}
+
+		ctx.marker = marker;
+		ctx.read_val = 0U;
+		k_sem_give(&ctx.start_sem);
+		k_sem_give(&ctx.start_sem);
+
+		zassert_ok(k_sem_take(&ctx.ready_sem, K_MSEC(SMP_FAULT_WAIT_TIMEOUT_MS)),
+			   "workers ready timeout (1st) at iter %u", i);
+		zassert_ok(k_sem_take(&ctx.ready_sem, K_MSEC(SMP_FAULT_WAIT_TIMEOUT_MS)),
+			   "workers ready timeout (2nd) at iter %u", i);
+
+		atomic_set(&ctx.go, seq);
+
+		zassert_ok(k_sem_take(&ctx.done_sem, K_MSEC(SMP_FAULT_WAIT_TIMEOUT_MS)),
+			   "workers done timeout (1st) at iter %u", i);
+		zassert_ok(k_sem_take(&ctx.done_sem, K_MSEC(SMP_FAULT_WAIT_TIMEOUT_MS)),
+			   "workers done timeout (2nd) at iter %u", i);
+
+		zassert_equal(ctx.read_val, marker, "reader observed corrupted byte at iter %u", i);
+
+		mm_key = k_spin_lock(z_mm_lock_get());
+		flags = arch_page_info_get(arena, NULL, false);
+		k_spin_unlock(z_mm_lock_get(), mm_key);
+		zassert_true((flags & ARCH_DATA_PAGE_LOADED) != 0U,
+			     "page not loaded after concurrent fault at iter %u", i);
+		zassert_true((flags & ARCH_DATA_PAGE_DIRTY) != 0U,
+			     "dirty bit lost after concurrent write at iter %u", i);
+
+		zassert_equal(k_mem_page_out(arena, CONFIG_MMU_PAGE_SIZE), 0,
+			      "post-write k_mem_page_out failed at iter %u", i);
+		k_mem_page_in(arena, CONFIG_MMU_PAGE_SIZE);
+		zassert_equal(page[1], marker, "dirty write lost after page-out/in at iter %u", i);
+
+		mm_key = k_spin_lock(z_mm_lock_get());
+		flags = arch_page_info_get(arena, NULL, false);
+		k_spin_unlock(z_mm_lock_get(), mm_key);
+		zassert_equal(flags & ARCH_DATA_PAGE_DIRTY, 0U,
+			      "dirty bit not cleared after page-in at iter %u", i);
+	}
+
+	cleanup_active_smp_threads();
+	zassert_not_equal(atomic_get(&ctx.writer_cpu), atomic_get(&ctx.reader_cpu),
+			  "writer (CPU %ld) and reader (CPU %ld) ran on same CPU",
+			  (long)atomic_get(&ctx.writer_cpu), (long)atomic_get(&ctx.reader_cpu));
+	zassert_true(atomic_get(&ctx.concurrent_overlaps) > 0,
+		     "no cross-CPU overlap between concurrent fault workers observed");
+#else
+	ztest_test_skip();
+#endif
+}
+
+#if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS >= 2)
+#if defined(CONFIG_USERSPACE) && defined(CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT)
+#define HAS_SMP_PRIV_RACE 1
+#endif
+#endif
+
+#if defined(HAS_SMP_PRIV_RACE)
+struct smp_privatize_ctx {
+	volatile char *page;
+	struct k_mem_partition ptn;
+	atomic_t ready;
+	atomic_t stop;
+	atomic_t race_found;
+	atomic_t privatizes;
+	atomic_t page_cycles;
+	atomic_t domain_err;
+	atomic_t pager_cpu;
+	atomic_t domain_cpu;
+};
+
+static void smp_privatize_pager_entry(void *p1, void *p2, void *p3)
+{
+	struct smp_privatize_ctx *ctx = p1;
+	uint32_t iter = 0U;
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	atomic_set(&ctx->pager_cpu, (atomic_val_t)arch_curr_cpu()->id);
+	atomic_inc(&ctx->ready);
+
+	while (atomic_get(&ctx->ready) < 2) {
+		if (atomic_get(&ctx->stop) != 0) {
+			return;
+		}
+		arch_nop();
+	}
+
+	while ((atomic_get(&ctx->stop) == 0) && (atomic_get(&ctx->race_found) == 0)) {
+		k_spinlock_key_t mm_key;
+		uintptr_t phys = 0U;
+		uintptr_t flags;
+		char marker = (char)(iter & 0x7fU);
+		bool mismatch = false;
+
+		if (k_mem_page_out((void *)ctx->page, CONFIG_MMU_PAGE_SIZE) == 0) {
+			ctx->page[0] = marker;
+			if (ctx->page[0] != marker) {
+				mismatch = true;
+			}
+			atomic_inc(&ctx->page_cycles);
+		}
+		mm_key = k_spin_lock(z_mm_lock_get());
+		flags = arch_page_info_get((void *)ctx->page, &phys, true);
+		if ((flags & ARCH_DATA_PAGE_LOADED) != 0U) {
+			if (!k_mem_is_page_frame(phys)) {
+				mismatch = true;
+			} else {
+				struct k_mem_page_frame *pf = k_mem_phys_to_page_frame(phys);
+
+				if (k_mem_page_frame_is_free(pf) ||
+				    !k_mem_page_frame_is_mapped(pf) ||
+				    (k_mem_page_frame_to_virt(pf) != (void *)ctx->page)) {
+					mismatch = true;
+				}
+			}
+		}
+		k_spin_unlock(z_mm_lock_get(), mm_key);
+
+		if (mismatch) {
+			atomic_set(&ctx->race_found, 1);
+			break;
+		}
+		iter++;
+	}
+}
+
+static void smp_privatize_domain_entry(void *p1, void *p2, void *p3)
+{
+	struct smp_privatize_ctx *ctx = p1;
+	struct k_mem_partition *ptn_ptr = &ctx->ptn;
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	atomic_set(&ctx->domain_cpu, (atomic_val_t)arch_curr_cpu()->id);
+	atomic_inc(&ctx->ready);
+
+	while (atomic_get(&ctx->ready) < 2) {
+		if (atomic_get(&ctx->stop) != 0) {
+			return;
+		}
+		arch_nop();
+	}
+
+	while ((atomic_get(&ctx->stop) == 0) && (atomic_get(&ctx->race_found) == 0)) {
+		struct k_mem_domain dom;
+		int ret = k_mem_domain_init(&dom, 1U, &ptn_ptr);
+
+		if (ret != 0) {
+			atomic_set(&ctx->domain_err, ret);
+			break;
+		}
+		ret = k_mem_domain_deinit(&dom);
+		if (ret != 0) {
+			atomic_set(&ctx->domain_err, ret);
+			break;
+		}
+		atomic_inc(&ctx->privatizes);
+	}
+}
+#endif
+
+/**
+ * @brief Verify SMP safety between demand paging PTE updates and table privatization.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * Duplicating shared translation tables during memory-domain initialization or
+ * partition privatization updates source leaf descriptors (setting nG) under
+ * xlat_lock. Concurrent demand-paging PTE updates (page-out, page-in, AF
+ * clearing, and dirty updates) must serialize with the same lock so neither
+ * path overwrites the other.
+ */
+ZTEST(demand_paging_api, test_smp_privatize_page_out_race)
+{
+#if defined(HAS_SMP_PRIV_RACE)
+	static struct k_thread pager_thread;
+	static struct k_thread domain_thread;
+	static struct smp_privatize_ctx ctx;
+	int64_t deadline;
+
+	if (arch_num_cpus() < 2U) {
+		ztest_test_skip();
+	}
+
+	k_mem_page_in(arena, CONFIG_MMU_PAGE_SIZE);
+	arena[0] = 0x11;
+
+	ctx = (struct smp_privatize_ctx){0};
+	ctx.page = (volatile char *)arena;
+	ctx.ptn.start = (uintptr_t)arena;
+	ctx.ptn.size = CONFIG_MMU_PAGE_SIZE;
+	ctx.ptn.attr = K_MEM_PARTITION_P_RW_U_RW;
+	atomic_set(&ctx.pager_cpu, -1);
+	atomic_set(&ctx.domain_cpu, -1);
+
+	active_smp_stop = &ctx.stop;
+	active_smp_sem = NULL;
+	active_smp_sem_count = 0U;
+	pin_and_start_pair(
+		&pager_thread, smp_worker_0_stack, K_THREAD_STACK_SIZEOF(smp_worker_0_stack),
+		smp_privatize_pager_entry, &ctx, &domain_thread, smp_worker_1_stack,
+		K_THREAD_STACK_SIZEOF(smp_worker_1_stack), smp_privatize_domain_entry, &ctx);
+
+	deadline = k_uptime_get() + SMP_FAULT_WAIT_TIMEOUT_MS;
+	while (atomic_get(&ctx.ready) < 2) {
+		if (k_uptime_get() >= deadline) {
+			zassert_unreachable("timed out waiting for privatize race threads");
+		}
+		k_msleep(1);
+	}
+
+	k_msleep(SMP_RACE_DURATION_MS);
+	cleanup_active_smp_threads();
+
+	zassert_ok((int)atomic_get(&ctx.domain_err), "domain init/deinit failed (%ld)",
+		   (long)atomic_get(&ctx.domain_err));
+	zassert_equal(atomic_get(&ctx.race_found), 0,
+		      "PTE/page-frame ownership corrupted during concurrent privatization");
+	zassert_not_equal(atomic_get(&ctx.pager_cpu), atomic_get(&ctx.domain_cpu),
+			  "pager (CPU %ld) and domain (CPU %ld) ran on same CPU",
+			  (long)atomic_get(&ctx.pager_cpu), (long)atomic_get(&ctx.domain_cpu));
+	zassert_true(atomic_get(&ctx.page_cycles) > 0, "no demand-paging cycles ran");
+	zassert_true(atomic_get(&ctx.privatizes) > 0, "no domain privatizations ran");
+
+	k_mem_page_in(arena, CONFIG_MMU_PAGE_SIZE);
+#else
+	ztest_test_skip();
+#endif
+}
+
 /**
  * @brief Verify that paging still works with the backing store nearly full.
  *
@@ -757,9 +1437,17 @@ void *demand_paging_api_setup(void)
 	return NULL;
 }
 
+static void demand_paging_api_after(void *data)
+{
+	ARG_UNUSED(data);
+
+#if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS >= 2)
+	cleanup_active_smp_threads();
+#endif
+}
+
 ZTEST_SUITE(demand_paging, NULL, NULL, NULL, NULL, NULL);
 
-ZTEST_SUITE(demand_paging_api, NULL, demand_paging_api_setup,
-		NULL, NULL, NULL);
+ZTEST_SUITE(demand_paging_api, NULL, demand_paging_api_setup, NULL, demand_paging_api_after, NULL);
 
 ZTEST_SUITE(demand_paging_stat, NULL, NULL, NULL, NULL, NULL);
