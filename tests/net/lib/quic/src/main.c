@@ -24,6 +24,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_QUIC_LOG_LEVEL);
 #include "quic_stats.h"
 #include "quic_test.h"
 #include "certificate.h"
+#include "certificate_chain.h"
 
 #if defined(CONFIG_QUIC_LOG_LEVEL_DBG)
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
@@ -304,6 +305,29 @@ static void setup_certs(void)
 				 client_private_key, sizeof(client_private_key));
 	if (ret < 0) {
 		LOG_ERR("Failed to register client private key: %d", ret);
+	}
+
+	ret = tls_credential_add(INTERMEDIATE_CERTIFICATE_TAG,
+				 TLS_CREDENTIAL_CA_CERTIFICATE,
+				 intermediate_certificate,
+				 sizeof(intermediate_certificate));
+	if (ret < 0) {
+		LOG_ERR("Failed to register intermediate CA certificate: %d", ret);
+	}
+
+	ret = tls_credential_add(CHAIN_SERVER_CERTIFICATE_TAG,
+				 TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
+				 chain_server_certificate,
+				 sizeof(chain_server_certificate));
+	if (ret < 0) {
+		LOG_ERR("Failed to register chain server public certificate: %d", ret);
+	}
+
+	ret = tls_credential_add(CHAIN_SERVER_CERTIFICATE_TAG,
+				 TLS_CREDENTIAL_PRIVATE_KEY,
+				 chain_server_private_key, sizeof(chain_server_private_key));
+	if (ret < 0) {
+		LOG_ERR("Failed to register chain server private key: %d", ret);
 	}
 
 	ret = tls_credential_add(QUIC_EXTERNAL_PSK_TAG, TLS_CREDENTIAL_PSK,
@@ -10303,6 +10327,85 @@ ZTEST(net_socket_quic, test_568_handshake_packets_are_acknowledged)
 	ret = quic_connection_close(peers.client_sock);
 	zassert_ok(ret, "Failed to close the client connection (%d)", ret);
 	ret = quic_connection_close(peers.server_sock);
+	zassert_ok(ret, "Failed to close the server socket (%d)", ret);
+}
+
+/* Open a server whose certificate an intermediate CA signed and a client
+ * that trusts the CA above that one only, and open a stream of the client,
+ * which runs the handshake. The server sends the certificate of the
+ * intermediate CA along with its own when asked to.
+ */
+static int open_stream_to_chain_server(int *server_sock, int *client_sock, const char *server,
+				       const char *client, bool send_intermediate)
+{
+	static const char * const alpn_list[] = {
+		"test-quic",
+		NULL
+	};
+	sec_tag_t server_sec_tags[] = {
+		CHAIN_SERVER_CERTIFICATE_TAG,
+	};
+	sec_tag_t client_sec_tags[] = {
+		CA_CERTIFICATE_TAG,
+	};
+	sec_tag_t intermediate = INTERMEDIATE_CERTIFICATE_TAG;
+	struct net_sockaddr_storage server_addr;
+	struct net_sockaddr_storage client_addr;
+	bool ok;
+	int ret;
+
+	ok = net_ipaddr_parse(server, strlen(server), (struct net_sockaddr *)&server_addr);
+	zassert_true(ok, "Failed to parse server address %s", server);
+	ok = net_ipaddr_parse(client, strlen(client), (struct net_sockaddr *)&client_addr);
+	zassert_true(ok, "Failed to parse client address %s", client);
+
+	prepare_quic_socket(server_sock, NULL, (const struct net_sockaddr *)&server_addr);
+	setup_quic_certs(*server_sock, server_sec_tags, ARRAY_SIZE(server_sec_tags));
+	setup_alpn(*server_sock, alpn_list, ARRAY_SIZE(alpn_list));
+
+	if (send_intermediate) {
+		ret = zsock_setsockopt(*server_sock, ZSOCK_SOL_QUIC, ZSOCK_QUIC_SO_CERT_CHAIN_ADD,
+				       &intermediate, sizeof(intermediate));
+		zassert_ok(ret, "Failed to add the intermediate certificate (%d)", -errno);
+	}
+
+	prepare_quic_socket(client_sock, (const struct net_sockaddr *)&server_addr,
+			    (const struct net_sockaddr *)&client_addr);
+	setup_quic_certs(*client_sock, client_sec_tags, ARRAY_SIZE(client_sec_tags));
+	setup_alpn(*client_sock, alpn_list, ARRAY_SIZE(alpn_list));
+
+	return quic_stream_open(*client_sock, QUIC_STREAM_CLIENT, QUIC_STREAM_BIDIRECTIONAL, 0);
+}
+
+ZTEST(net_socket_quic, test_569_server_certificate_chain_is_verified)
+{
+	int server_sock;
+	int client_sock;
+	int stream;
+	int ret;
+
+	/* The certificate of the intermediate CA comes with the one of the
+	 * server, and leads from it to the CA that the client trusts.
+	 */
+	stream = open_stream_to_chain_server(&server_sock, &client_sock, "127.0.0.1:54369",
+					     "127.0.0.1:19969", true);
+	zassert_true(stream >= 0, "Handshake with a certificate chain failed (%d)", stream);
+
+	ret = zsock_close(stream);
+	zassert_ok(ret, "Failed to close the stream (%d)", -errno);
+	ret = quic_connection_close(client_sock);
+	zassert_ok(ret, "Failed to close the client connection (%d)", ret);
+	ret = quic_connection_close(server_sock);
+	zassert_ok(ret, "Failed to close the server socket (%d)", ret);
+
+	/* Without it nothing leads there, and the handshake fails */
+	stream = open_stream_to_chain_server(&server_sock, &client_sock, "127.0.0.1:54370",
+					     "127.0.0.1:19970", false);
+	zassert_true(stream < 0, "Handshake passed without the intermediate certificate");
+
+	ret = quic_connection_close(client_sock);
+	zassert_ok(ret, "Failed to close the client connection (%d)", ret);
+	ret = quic_connection_close(server_sock);
 	zassert_ok(ret, "Failed to close the server socket (%d)", ret);
 }
 

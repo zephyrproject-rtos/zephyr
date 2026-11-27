@@ -18,6 +18,9 @@ if(CONFIG_QUIC)
     server.key
     client.crt
     client.key
+    intermediate.crt
+    chain_server.crt
+    chain_server.key
   )
     generate_inc_file_for_target(app
       ${ZEPHYR_BASE}/tests/net/lib/quic/certs/${inc_file}
