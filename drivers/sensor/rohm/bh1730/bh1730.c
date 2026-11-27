@@ -51,7 +51,7 @@ struct bh1730_config {
 static int bh1730_reg_read_8(const struct device *dev, uint8_t reg, uint8_t *val);
 static int bh1730_reg_write_8(const struct device *dev, uint8_t reg, uint8_t val);
 static int bh1730_data_read(const struct device *dev, uint16_t *data0, uint16_t *data1);
-static uint32_t bh1730_get_integration_time_ms(uint8_t itime_reg);
+static uint32_t bh1730_get_measurement_time_ms(uint8_t itime_reg);
 static uint8_t bh1730_get_gain(uint8_t gain_reg_val);
 static uint32_t bh1730_calculate_lux(uint16_t data0, uint16_t data1, uint8_t itime_reg,
 				     uint8_t gain_reg);
@@ -112,15 +112,17 @@ static int bh1730_data_read(const struct device *dev, uint16_t *data0, uint16_t 
 	return 0;
 }
 
-static inline uint32_t bh1730_get_integration_time_ms(uint8_t itime_reg)
+static inline uint32_t bh1730_get_measurement_time_ms(uint8_t itime_reg)
 {
-	/* Convert register to integration time in ms */
-	const uint32_t K_scaled = 2699200; /* 2.8e-6 * 964 * 1000 * 1e6 */
-	uint32_t integration_time_ms;
+	/*
+	 * Datasheet: Tmt = Tint * (964 * (256 - ITIME) + 714),
+	 * Use max Tint (4 us) from the datasheet so the conversion is complete before reading.
+	 */
 
-	integration_time_ms = (K_scaled * (256 - itime_reg)) / 1000000;
+	const uint32_t tint_max_us = 4U;
+	uint32_t cycles = 964U * (256U - itime_reg) + 714U;
 
-	return integration_time_ms;
+	return DIV_ROUND_UP(cycles * tint_max_us, 1000U);
 }
 
 static inline uint8_t bh1730_get_gain(uint8_t gain_reg_val)
@@ -214,7 +216,7 @@ static int bh1730_sample_fetch(const struct device *dev, enum sensor_channel cha
 	}
 
 	/* Wait for conversion */
-	int32_t sleep_period_ms = bh1730_get_integration_time_ms(cfg->itime);
+	int32_t sleep_period_ms = bh1730_get_measurement_time_ms(cfg->itime);
 
 	k_msleep(sleep_period_ms);
 
