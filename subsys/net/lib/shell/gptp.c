@@ -8,6 +8,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_shell);
 
+#include <stdio.h>
 #include <stdlib.h>
 
 #if defined(CONFIG_NET_GPTP)
@@ -268,6 +269,29 @@ static const char *selected_role_str(int port)
 	return "<unknown>";
 }
 
+/*
+ * Format a ratio with six decimals using integer arithmetic only. For
+ * values in range the output matches the default "%f" format. Values
+ * outside the range, and NaN, print "n/a". This keeps floating point
+ * printf out of the net shell.
+ */
+static void gptp_fmt_ratio(double v, char *buf, size_t len)
+{
+	int32_t units;
+	uint32_t mag;
+
+	if (!(v > -2147.0 && v < 2147.0)) {
+		(void)snprintf(buf, len, "n/a");
+		return;
+	}
+
+	units = (int32_t)(v * 1000000.0 + (v < 0.0 ? -0.5 : 0.5));
+	mag = (units < 0) ? (uint32_t)(-units) : (uint32_t)units;
+
+	(void)snprintf(buf, len, "%s%u.%06u", (units < 0) ? "-" : "",
+		       mag / 1000000U, mag % 1000000U);
+}
+
 static void gptp_print_port_info(const struct shell *sh, int port)
 {
 	struct gptp_port_bmca_data *port_bmca_data;
@@ -276,6 +300,7 @@ static void gptp_print_port_info(const struct shell *sh, int port)
 	struct gptp_domain *domain;
 	struct gptp_port_ds *port_ds;
 	struct net_if *iface;
+	char ratio[16];
 	int ret, i;
 
 	domain = gptp_get_domain();
@@ -445,8 +470,9 @@ static void gptp_print_port_info(const struct shell *sh, int port)
 	PR("PortSyncSyncReceive state machine variables:\n");
 	PR("\tCurrent state                                    "
 	   ": %s\n", pss_rcv2str(port_state->pss_rcv.state));
+	gptp_fmt_ratio(port_state->pss_rcv.rate_ratio, ratio, sizeof(ratio));
 	PR("\tGrand Master / Local Clock frequency ratio       "
-	   ": %f\n", port_state->pss_rcv.rate_ratio);
+	   ": %s\n", ratio);
 	PR("\tA MDSyncReceive struct is ready to be processed  "
 	   ": %s\n", port_state->pss_rcv.rcvd_md_sync ? "yes" : "no");
 	PR("\tExpiry of SyncReceiptTimeoutTimer                : %s\n",
@@ -461,11 +487,12 @@ static void gptp_print_port_info(const struct shell *sh, int port)
 	   port_state->pss_send.last_follow_up_correction_field);
 	PR("\tUpstream Tx Time of the last recv PortSyncSync   "
 	   ": %" PRIu64 "\n", port_state->pss_send.last_upstream_tx_time);
+	gptp_fmt_ratio(port_state->pss_send.last_rate_ratio, ratio, sizeof(ratio));
 	PR("\tRate Ratio of the last received PortSyncSync     "
-	   ": %f\n",
-	   port_state->pss_send.last_rate_ratio);
+	   ": %s\n", ratio);
+	gptp_fmt_ratio(port_state->pss_send.last_gm_freq_change, ratio, sizeof(ratio));
 	PR("\tGM Freq Change of the last received PortSyncSync "
-	   ": %f\n", port_state->pss_send.last_gm_freq_change);
+	   ": %s\n", ratio);
 	PR("\tGM Time Base Indicator of last recv PortSyncSync "
 	   ": %d\n", port_state->pss_send.last_gm_time_base_indicator);
 	PR("\tReceived Port Number of last recv PortSyncSync   "
