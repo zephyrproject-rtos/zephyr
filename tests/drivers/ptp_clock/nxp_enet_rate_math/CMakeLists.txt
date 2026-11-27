@@ -6,7 +6,7 @@ project(ptp_clock_nxp_enet_rate_math)
 
 target_sources(app PRIVATE
   src/main.c
-  ${ZEPHYR_BASE}/drivers/ptp_clock/ptp_clock_nxp_enet_rate_math.c
+  ${ZEPHYR_BASE}/drivers/net/ptp_clock/ptp_clock_nxp_enet_rate_math.c
 )
 
-target_include_directories(app PRIVATE ${ZEPHYR_BASE}/drivers/ptp_clock)
+target_include_directories(app PRIVATE ${ZEPHYR_BASE}/drivers/net/ptp_clock)

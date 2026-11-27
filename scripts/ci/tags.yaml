@@ -70,11 +70,7 @@ net:
   files:
     - subsys/net/
     - include/zephyr/net/
-    - drivers/wifi/
     - drivers/net/
-    - drivers/ethernet/
-    - drivers/ieee802154/
-    - drivers/ptp_clock/
 
 posix:
   files:
@@ -93,7 +89,7 @@ wifi:
   files:
     - modules/hostap/
     - subsys/net/l2/wifi/
-    - drivers/wifi/
+    - drivers/net/wifi/
     - include/zephyr/net/wifi.h
     - include/zephyr/net/wifi_mgmt.h
     - include/zephyr/net/wifi_nm.h

@@ -60,7 +60,7 @@ Ethernet
 The board carries a Microchip LAN8720A 10/100 Mbit/s PHY on MDIO address 0,
 connected to the LPC54628 Ethernet MAC over RMII and to the RJ45 jack J4. The
 MAC is a Synopsys DesignWare Ethernet QoS core and is driven by the generic
-:zephyr_file:`drivers/ethernet/dwc_mac` driver. Jumpers JP11 and JP12 must be
+:zephyr_file:`drivers/net/ethernet/dwc_mac` driver. Jumpers JP11 and JP12 must be
 in their default Ethernet position; in the USB position they disconnect the
 RMII data lines.
 

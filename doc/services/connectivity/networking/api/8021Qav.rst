@@ -33,7 +33,7 @@ also priority queues ``ETHERNET_PRIORITY_QUEUES`` need to be supported.
 	}
 
 See ``sam-e70-xplained`` board Ethernet driver
-:zephyr_file:`drivers/ethernet/eth_sam_gmac.c` for an example.
+:zephyr_file:`drivers/net/ethernet/eth_sam_gmac.c` for an example.
 
 Configuring 802.1Qav
 ********************

@@ -36,7 +36,7 @@ zephyr_library_sources_ifdef(
 
 zephyr_include_directories_ifdef(
   CONFIG_USBD_CDC_ECM_CLASS
-  ${ZEPHYR_BASE}/drivers/ethernet
+  ${ZEPHYR_BASE}/drivers/net/ethernet
 )
 zephyr_library_sources_ifdef(
   CONFIG_USBD_CDC_ECM_CLASS
@@ -45,7 +45,7 @@ zephyr_library_sources_ifdef(
 
 zephyr_include_directories_ifdef(
   CONFIG_USBD_CDC_NCM_CLASS
-  ${ZEPHYR_BASE}/drivers/ethernet
+  ${ZEPHYR_BASE}/drivers/net/ethernet
 )
 zephyr_library_sources_ifdef(
   CONFIG_USBD_CDC_NCM_CLASS

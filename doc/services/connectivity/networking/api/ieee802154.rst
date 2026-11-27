@@ -131,7 +131,7 @@ Kconfig option used to enable each driver.
    radio hardware.
 
 For detailed configuration options of each driver, refer to the corresponding
-Kconfig file in :zephyr_file:`drivers/ieee802154/`.
+Kconfig file in :zephyr_file:`drivers/net/ieee802154/`.
 
 API Reference
 *************

@@ -1,0 +1,124 @@
+# Ethernet drivers configuration options
+
+# Copyright (c) 2015 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ETH_DRIVER
+	bool "Ethernet drivers"
+	depends on NETWORKING
+	depends on !NET_TEST
+
+if ETH_DRIVER
+
+config ETH_DRIVER_RAW_MODE
+	bool "Ethernet driver without the MAC stack"
+	select NET_RAW_MODE
+	depends on !NET_L2_ETHERNET
+	help
+	  This option enables using the drivers in a so-called "raw" mode,
+	  i.e. without a MAC stack (the net L2 layer for ethernet will not
+	  be built).
+
+module = ETHERNET
+module-dep = LOG
+module-str = Log level for Ethernet driver
+module-help = Sets log level for Ethernet Device Drivers.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config ETH_QEMU_IFACE_NAME
+	string "Network interface name for QEMU"
+	default "zeth"
+	depends on NET_QEMU_ETHERNET
+	help
+	  The network interface name for QEMU. This value is given as
+	  a parameter to -netdev qemu command line option. The network
+	  interface must be created before starting QEMU. The net-setup.sh
+	  script from net-tools project can be used to create the network
+	  interface.
+
+config ETH_QEMU_EXTRA_ARGS
+	string "Extra arguments to QEMU -netdev option"
+	depends on NET_QEMU_ETHERNET
+	default ""
+	help
+	  Extra arguments passed to QEMU -netdev option when Ethernet Networking
+	  is enabled. This option can contain multiple QEMU option
+	  arguments. Each QEMU argument must be separated by comma "," and no
+	  spaces between arguments. Example: "script=no" or
+	  "script=no,downscript=no".
+	  See https://www.qemu.org/docs/master/system/invocation.html#hxtool-5
+	  for the available options.
+
+config ETH_NIC_MODEL_ONBOARD
+	bool
+	help
+	  Selected by drivers whose QEMU NIC model (ETH_NIC_MODEL) is built
+	  into the emulated machine. Such a NIC cannot be created with the
+	  QEMU -device option, so it is configured with -nic instead.
+
+# zephyr-keep-sorted-start
+rsource "Kconfig.adin1140"
+rsource "Kconfig.adin2111"
+rsource "Kconfig.bcmgenet"
+rsource "Kconfig.cyclonev"
+rsource "Kconfig.dm9051"
+rsource "Kconfig.e1000"
+rsource "Kconfig.enc28j60"
+rsource "Kconfig.enc424j600"
+rsource "Kconfig.esp32"
+rsource "Kconfig.gecko"
+rsource "Kconfig.ivshmem"
+rsource "Kconfig.lan865x"
+rsource "Kconfig.lan9250"
+rsource "Kconfig.litex"
+rsource "Kconfig.mchp"
+rsource "Kconfig.native_tap"
+rsource "Kconfig.nxp_enet"
+rsource "Kconfig.nxp_s32_gmac"
+rsource "Kconfig.nxp_s32_netc"
+rsource "Kconfig.renesas_ra"
+rsource "Kconfig.renesas_ra_rmac"
+rsource "Kconfig.sam_gmac"
+rsource "Kconfig.smsc911x"
+rsource "Kconfig.smsc91x"
+rsource "Kconfig.stellaris"
+rsource "Kconfig.stm32_hal"
+rsource "Kconfig.sy1xx_mac"
+rsource "Kconfig.test"
+rsource "Kconfig.virtio_net"
+rsource "Kconfig.wch"
+rsource "Kconfig.xilinx_axi_ethernet_lite"
+rsource "Kconfig.xilinx_axienet"
+rsource "Kconfig.xlnx_gem"
+rsource "Kconfig.xmc4xxx"
+rsource "dwc_mac/Kconfig"
+rsource "dwc_xgmac/Kconfig"
+rsource "eth_nxp_enet_qos/Kconfig"
+rsource "intel/Kconfig"
+rsource "nxp_imx_netc/Kconfig"
+rsource "offload/Kconfig"
+rsource "wiznet/Kconfig"
+source "drivers/net/dsa/Kconfig"
+# zephyr-keep-sorted-stop
+
+endif # "Ethernet Drivers"
+
+config ETH_INIT_PRIORITY
+	int "Ethernet driver init priority"
+	default 60
+	depends on NET_L2_ETHERNET || ETH_DRIVER || MDIO
+	help
+	  Ethernet device driver initialization priority.
+	  Do not mess with it unless you know what you are doing.
+	  Note that the priority needs to be lower than the net stack
+	  so that it can start before the networking sub-system.
+
+config ETH_NET_IF_NO_AUTO_START
+	bool "Disable Ethernet interface auto-start"
+	depends on NET_L2_ETHERNET || ETH_DRIVER
+	help
+	  This option allows user to set any configuration before the interface
+	  becomes operational. For instance, the MAC address can be configured using
+	  net_if_set_link_addr(iface, mac, 6, NET_LINK_ETHERNET).
+	  When all configurations are done net_if_up() has to be invoked to
+	  bring the interface up.

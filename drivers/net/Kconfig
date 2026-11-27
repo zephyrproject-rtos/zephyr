@@ -328,3 +328,11 @@ config HEAP_MEM_POOL_ADD_SIZE_NET_NATIVE_SOCKETS_GETADDRINFO
 endif # NET_NATIVE_OFFLOADED_SOCKETS
 
 endif # NET_DRIVERS
+
+rsource "ethernet/Kconfig"
+rsource "hdlc_rcp_if/Kconfig"
+rsource "ieee802154/Kconfig"
+rsource "mdio/Kconfig"
+rsource "phy/Kconfig"
+rsource "ptp_clock/Kconfig"
+rsource "wifi/Kconfig"

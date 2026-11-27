@@ -234,9 +234,9 @@ ADI Platforms:
     - drivers/*/*max*
     - drivers/*/*max*/
     - drivers/dac/dac_ltc*
-    - drivers/ethernet/eth_adin*
-    - drivers/ethernet/phy/phy_adin*
-    - drivers/ethernet/mdio/mdio_adin*
+    - drivers/net/ethernet/eth_adin*
+    - drivers/net/phy/phy_adin*
+    - drivers/net/mdio/mdio_adin*
     - drivers/misc/tmc6460/
     - drivers/sensor/adi/
     - drivers/stepper/adi_tmc/
@@ -414,7 +414,7 @@ Alif Semiconductor Platforms:
   files:
     - boards/alif/
     - drivers/*/*alif*
-    - drivers/*/*/*alif*
+    - drivers/*/*/*/*alif*
     - dts/arm/alif/
     - dts/bindings/*/alif,*
     - include/zephyr/dt-bindings/*/alif*.h
@@ -978,7 +978,9 @@ Bouffalolab Platforms:
     - boards/sipeed/m1s_dock/
     - boards/sipeed/maix_m0s_dock/
     - drivers/**/*bflb*
+    - drivers/*/**/*bflb*
     - drivers/**/*bflb*/
+    - drivers/*/**/*bflb*/
     - dts/riscv/bflb/
     - dts/bindings/*/bflb,*
     - soc/bflb/
@@ -2079,7 +2081,10 @@ Documentation Infrastructure:
     - ClaCodes
     - tpambor
   files:
-    - drivers/ethernet/
+    - drivers/net/dsa/
+    - drivers/net/ethernet/
+    - drivers/net/mdio/
+    - drivers/net/phy/
     - include/zephyr/dt-bindings/ethernet/
     - tests/drivers/build_all/ethernet/
     - dts/bindings/ethernet/
@@ -2365,7 +2370,7 @@ Documentation Infrastructure:
     - cfriedt
     - jukkar
   files:
-    - drivers/ieee802154/
+    - drivers/net/ieee802154/
     - include/zephyr/drivers/ieee802154/
     - include/zephyr/net/ieee802154_radio.h
     - tests/drivers/build_all/ieee802154/
@@ -2728,7 +2733,7 @@ Documentation Infrastructure:
   maintainers:
     - yangbolu1991
   files:
-    - drivers/ptp_clock/
+    - drivers/net/ptp_clock/
     - dts/bindings/ptp_clock/
     - include/zephyr/drivers/ptp_clock.h
     - tests/drivers/ptp_clock/
@@ -3219,7 +3224,7 @@ Documentation Infrastructure:
     - MaochenWang1
     - maass-hamburg
   files:
-    - drivers/wifi/
+    - drivers/net/wifi/
     - dts/bindings/wifi/
     - tests/drivers/build_all/wifi/
     - include/zephyr/drivers/wifi/
@@ -3238,7 +3243,7 @@ Documentation Infrastructure:
   collaborators:
     - sachinthegreen
   files:
-    - drivers/wifi/nrf_wifi/
+    - drivers/net/wifi/nrf_wifi/
     - dts/bindings/wifi/nordic,nrf70.yaml
     - dts/bindings/wifi/nordic,nrf70-qspi.yaml
     - dts/bindings/wifi/nordic,nrf70-spi.yaml
@@ -3259,7 +3264,7 @@ Documentation Infrastructure:
   collaborators:
     - loicpoulain
   files:
-    - drivers/wifi/eswifi/
+    - drivers/net/wifi/eswifi/
   description: >-
     Inventek es-WiFi
   labels:
@@ -3371,6 +3376,7 @@ Espressif Platforms:
   files:
     - drivers/*/*esp32*
     - drivers/*/*/*esp32*
+    - drivers/*/*/*/*esp32*
     - boards/espressif/
     - cmake/emu/espressif_qemu.cmake
     - cmake/emu/espressif_qemu/
@@ -3379,24 +3385,24 @@ Espressif Platforms:
     - dts/bindings/*/*esp32*
     - samples/boards/espressif/
     - tests/boards/espressif/
-    - drivers/*/*esp32*/
-    - drivers/wifi/esp_hosted/
-    - drivers/wifi/esp_hosted_mcu/
-    - drivers/wifi/esp_at/
+    - drivers/*/*/*esp32*/
+    - drivers/net/wifi/esp_hosted/
+    - drivers/net/wifi/esp_hosted_mcu/
+    - drivers/net/wifi/esp_at/
     - drivers/misc/esp_hosted_mcu/
     - drivers/bluetooth/hci/hci_esp_hosted_mcu.c
   file-groups:
     - name: Espressif hosted Wi-Fi driver
       files:
-        - drivers/wifi/esp_hosted
+        - drivers/net/wifi/esp_hosted
     - name: Espressif esp-hosted transport core
       files:
         - drivers/misc/esp_hosted_mcu
-        - drivers/wifi/esp_hosted_mcu
+        - drivers/net/wifi/esp_hosted_mcu
         - drivers/bluetooth/hci/hci_esp_hosted_mcu.c
     - name: Espressif ESP-AT Wi-Fi driver
       files:
-        - drivers/wifi/esp_at
+        - drivers/net/wifi/esp_at
   labels:
     - "platform: ESP32"
 
@@ -3682,8 +3688,9 @@ Infineon Platforms:
     - drivers/*/*/*infineon*
     - drivers/*/*xmc*
     - drivers/*/*/*xmc*
+    - drivers/*/*/*/*xmc*
     - drivers/sensor/infineon/
-    - drivers/wifi/infineon/
+    - drivers/net/wifi/infineon/
     - dts/arm/infineon/
     - dts/bindings/*/*infineon*
     - soc/infineon/
@@ -4037,7 +4044,9 @@ LiteX Platforms:
   files:
     - boards/enjoydigital/litex_vexriscv/
     - drivers/*/*litex*
+    - drivers/*/*/*litex*
     - drivers/*/Kconfig.litex
+    - drivers/*/*/Kconfig.litex
     - dts/bindings/*/litex*
     - dts/riscv/riscv32-litex-vexriscv.dtsi
     - include/zephyr/drivers/*/*litex*
@@ -4291,6 +4300,7 @@ Microchip PIC32 Platforms:
     - dts/bindings/*/microchip,sam*
     - dts/bindings/*/microchip,*-g*
     - drivers/*/*mchp*
+    - drivers/*/*/*mchp*
     - include/zephyr/**/mchp*
     - samples/**/boards/sam_*
     - soc/microchip/pic32*/
@@ -4342,6 +4352,7 @@ Microchip SAM MCU Platforms:
     - soc/atmel/
     - soc/microchip/sam/sam_*/
     - drivers/*/*sam*
+    - drivers/*/*/*sam*
     - dts/bindings/*/atmel,*
     - include/zephyr/*/*/*sam*
     - include/zephyr/*/*/*atmel*
@@ -4388,7 +4399,7 @@ Microchip Standalone Devices:
     - NhMchp
   files:
     - drivers/bbram/*microchip*
-    - drivers/ethernet/phy/*microchip*
+    - drivers/net/phy/*microchip*
     - drivers/sensor/microchip/mcp9600/
     - drivers/sensor/microchip/mcp970x/
     - drivers/sensor/microchip/mtch9010/
@@ -4530,7 +4541,7 @@ NXP Platform Drivers:
     - arch/arm/core/mpu/nxp_mpu.c
     - dts/bindings/*/nxp*
   files-exclude:
-    - drivers/wifi/
+    - drivers/net/wifi/
     - drivers/bluetooth/
   files-regex-exclude:
     - .*s32.*
@@ -4552,10 +4563,11 @@ NXP Platform Wireless:
     - boards/nxp/*mcxw*/
     - boards/nxp/*rw*/
     - drivers/*/*mcxw*.c
+    - drivers/*/*/*mcxw*.c
     - drivers/bluetooth/hci/*nxp*
-    - drivers/hdlc_rcp_if/*nxp*
-    - drivers/ieee802154/ieee802154_kw41z.c
-    - drivers/wifi/nxp/
+    - drivers/net/hdlc_rcp_if/*nxp*
+    - drivers/net/ieee802154/ieee802154_kw41z.c
+    - drivers/net/wifi/nxp/
     - samples/bluetooth/**/*rw*
     - samples/net/**/*mcxw*
     - samples/net/**/*nxp*
@@ -4574,14 +4586,14 @@ NXP Platform Wireless:
         - MaochenWang1
       files:
         - boards/shields/nxp_m2_wifi_bt/
-        - drivers/wifi/
+        - drivers/net/wifi/
         - samples/net/
     - name: NXP IEEE802.15.4
       collaborators:
         - George-Stefan
       files:
-        - drivers/hdlc_rcp_if/
-        - drivers/ieee802154/
+        - drivers/net/hdlc_rcp_if/
+        - drivers/net/ieee802154/
         - soc/
     - name: MCXW platform
       collaborators:
@@ -4792,6 +4804,7 @@ NXP Platforms (S32):
     - boards/common/*nxp_s32*
     - soc/nxp/s32/
     - drivers/*/*nxp_s32*
+    - drivers/*/*/*nxp_s32*
     - drivers/misc/*nxp_s32*/
     - dts/bindings/*/nxp,s32*
     - dts/arm/nxp/s32/nxp_s32*
@@ -4831,6 +4844,7 @@ Native_sim and POSIX arch:
     - drivers/*/*native*
     - drivers/*/*/*posix*
     - drivers/*/*/*native*
+    - drivers/*/*/*/*native*
     - dts/posix/
     - include/zephyr/arch/posix/
     - scripts/native_simulator/
@@ -4877,6 +4891,14 @@ Networking:
     - doc/services/connectivity/networking/api/vlan.rst
     - doc/services/connectivity/networking/dsa*
     - doc/services/connectivity/networking/eth_*.rst
+    - drivers/net/dsa/
+    - drivers/net/ethernet/
+    - drivers/net/hdlc_rcp_if/
+    - drivers/net/ieee802154/
+    - drivers/net/mdio/
+    - drivers/net/phy/
+    - drivers/net/ptp_clock/
+    - drivers/net/wifi/
     - include/zephyr/net/gptp.h
     - include/zephyr/net/ieee802154*.h
     - include/zephyr/net/mcp/
@@ -5017,7 +5039,7 @@ Networking:
     - JiafeiPan
   files:
     - subsys/net/l2/ethernet/dsa/
-    - drivers/ethernet/dsa/
+    - drivers/net/dsa/
     - dts/bindings/dsa/
     - doc/services/connectivity/networking/dsa*
     - include/zephyr/net/dsa*.h
@@ -5317,6 +5339,7 @@ Nuvoton Numicro Numaker Platforms:
     - drivers/*/*numicro*
     - drivers/*/*numaker*
     - drivers/*/*/*numaker*
+    - drivers/*/*/*/*numaker*
   labels:
     - "platform: Nuvoton Numicro Numaker"
 
@@ -5494,7 +5517,7 @@ Peregrine Platforms:
   files:
     - boards/peregrine/
     - boards/shields/atmel_rf2xx/
-    - drivers/ieee802154/*rf2xx*
+    - drivers/net/ieee802154/*rf2xx*
   labels:
     - "platform: Peregrine"
 
@@ -5865,6 +5888,7 @@ Renesas RA Platforms:
     - boards/arduino/uno_r4/
     - boards/renesas/*ra*/
     - drivers/**/*renesas_ra*
+    - drivers/*/**/*renesas_ra*
     - drivers/pinctrl/renesas/ra/
     - dts/arm/renesas/ra/
     - dts/bindings/*/*renesas,ra*
@@ -5965,7 +5989,7 @@ Rockchip Platforms:
     - soc/rockchip/
     - drivers/*/*rk35*
     - drivers/*/*rockchip*
-    - drivers/*/*/*rockchip*
+    - drivers/*/*/*/*rockchip*
     - dts/bindings/*/rockchip,*
     - include/zephyr/dt-bindings/*/*rk35*
   labels:
@@ -6042,6 +6066,7 @@ STM32 Platforms:
     - drivers/*/*stm32*.c
     - drivers/*/*stm32*.h
     - drivers/*/*/*stm32*
+    - drivers/*/*/*/*stm32*
     - drivers/*/*stm32*
     - dts/arm/st/
     - dts/bindings/*/*stm32*
@@ -6052,7 +6077,7 @@ STM32 Platforms:
     - boards/st/stm32mp*/
     - drivers/bluetooth/hci/*stm32*.c
     - drivers/clock_control/clock_stm32_ll_mp*.c
-    - drivers/ieee802154/*stm32*.c
+    - drivers/net/ieee802154/*stm32*.c
     - soc/st/stm32/stm32mp*/
     - soc/st/stm32/stm32wb*/
   labels:
@@ -6099,7 +6124,7 @@ STM32 Platforms (Wireless):
     - boards/st/*wb*/
     - drivers/bluetooth/hci/*stm32*.c
     - drivers/bluetooth/hci/hci_spi_st.c
-    - drivers/ieee802154/*stm32*.c
+    - drivers/net/ieee802154/*stm32*.c
     - soc/st/stm32/stm32wb*/
   labels:
     - "platform: STM32"
@@ -6317,10 +6342,12 @@ Silabs Platforms:
     - dts/arm/silabs/
     - dts/bindings/*/silabs*
     - drivers/*/*gecko*
+    - drivers/*/*/*gecko*
     - drivers/*/*silabs*
     - drivers/*/*siwx91x*
     - drivers/*/*/*silabs*
     - drivers/*/*/*siwx91x*
+    - drivers/*/*/*/*siwx91x*
     - tests/boards/silabs/
     - snippets/*silabs*/
   file-groups:
@@ -6328,7 +6355,7 @@ Silabs Platforms:
       collaborators:
         - db00lean
       files:
-        - drivers/ieee802154/
+        - drivers/net/ieee802154/
   labels:
     - "platform: Silabs"
   tests:
@@ -6576,9 +6603,11 @@ TI SimpleLink Platforms:
     - boards/ti/cc*/
     - boards/ti/msp*/
     - drivers/*/*cc13*
+    - drivers/*/*/*cc13*
     - drivers/*/*cc23*
-    - drivers/*/*cc25*
+    - drivers/*/*/*cc25*
     - drivers/*/*cc26*
+    - drivers/*/*/*cc26*
     - drivers/*/*cc32*
     - dts/arm/ti/cc*
     - dts/bindings/*/ti,cc*
@@ -6596,6 +6625,7 @@ TI Stellaris Platforms:
     - dts/arm/ti/lm3s6965.dtsi
     - dts/bindings/*/*stellaris*
     - drivers/*/*stellaris*
+    - drivers/*/*/*stellaris*
   labels:
     - "platform: TI Stellaris"
 
@@ -7043,6 +7073,7 @@ WCH Platforms:
     - dts/riscv/wch/
     - soc/wch/
     - drivers/*/*wch*
+    - drivers/*/*/*wch*
     - dts/bindings/*/wch,*
   labels:
     - "platform: WinChipHead"
@@ -8122,7 +8153,9 @@ Xilinx Platforms:
   files:
     - boards/amd/
     - drivers/*/*xilinx*
+    - drivers/*/*/*xilinx*
     - drivers/*/*xlnx*
+    - drivers/*/*/*xlnx*
     - drivers/*/*zynq*
     - dts/*/xilinx/
     - dts/bindings/*/*xlnx*
@@ -8256,7 +8289,8 @@ nRF Platforms:
   files:
     - boards/nordic/
     - drivers/*/*nrf*.c
-    - drivers/*/*nrf*/
+    - drivers/*/*/*nrf*.c
+    - drivers/*/*/*nrf*/
     - drivers/*/*nordic*/
     - soc/nordic/
     - samples/boards/nordic/
@@ -8270,7 +8304,7 @@ nRF Platforms:
     - snippets/nordic*/
     - tests/boards/nrf/
   files-exclude:
-    - drivers/wifi/nrf_wifi/
+    - drivers/net/wifi/nrf_wifi/
     - dts/bindings/wifi/
   file-groups:
     - name: nRF boards

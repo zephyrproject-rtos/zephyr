@@ -6,5 +6,5 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(wifi_hwsim_test)
 
 target_sources(app PRIVATE src/main.c)
-target_include_directories(app PRIVATE ${ZEPHYR_BASE}/drivers/wifi/hwsim)
+target_include_directories(app PRIVATE ${ZEPHYR_BASE}/drivers/net/wifi/hwsim)
 target_include_directories(app PRIVATE ${ZEPHYR_BASE}/subsys/net/ip)

@@ -197,7 +197,7 @@ Wi-Fi Support
 The SimpleLink Host Driver, imported from the SimpleLink SDK, has been ported
 to Zephyr, and communicates over a dedicated SPI to the network co-processor.
 It is available as a Zephyr Wi-Fi device driver in
-:zephyr_file:`drivers/wifi/simplelink`.
+:zephyr_file:`drivers/net/wifi/simplelink`.
 
 Usage:
 ======

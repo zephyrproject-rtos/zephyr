@@ -4,8 +4,8 @@ cmake_minimum_required(VERSION 3.28.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(eth_ivshmem_queue)
 
-target_include_directories(app PRIVATE ${ZEPHYR_BASE}/drivers/ethernet)
-FILE(GLOB app_sources src/*.c)
+target_include_directories(app PRIVATE ${ZEPHYR_BASE}/drivers/net/ethernet)
+file(GLOB app_sources src/*.c)
 target_sources(app PRIVATE
     ${app_sources}
-    ${ZEPHYR_BASE}/drivers/ethernet/eth_ivshmem_queue.c)
+    ${ZEPHYR_BASE}/drivers/net/ethernet/eth_ivshmem_queue.c)
