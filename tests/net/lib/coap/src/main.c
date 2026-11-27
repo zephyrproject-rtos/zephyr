@@ -448,6 +448,39 @@ ZTEST(coap, test_parse_malformed_opt_len_ext)
 }
 
 /* 1 option, No payload (with payload marker) */
+/* RFC 7252, section 3.1: an extended option delta or length is a 16-bit
+ * value plus 269, which may exceed what 16 bits hold. Here it is 65547, which
+ * taken for 11 makes the option a Uri-Path one.
+ */
+ZTEST(coap, test_parse_malformed_opt_ext_overflow)
+{
+	uint8_t opt[] = { 0x40, 0x01, 0x12, 0x34, 0xE1, 0xFE, 0xFE, 'x' };
+	struct coap_packet cpkt;
+	uint8_t *data = data_buf[0];
+	int r;
+
+	memcpy(data, opt, sizeof(opt));
+
+	r = coap_packet_parse(&cpkt, data, sizeof(opt), NULL, 0);
+	zassert_equal(r, -EILSEQ, "Should've failed to parse a packet");
+}
+
+/* A Uri-Host option of 65537 bytes with a single one in the message, which
+ * taken for a length of 1 makes the message a valid one.
+ */
+ZTEST(coap, test_parse_malformed_opt_len_ext_overflow)
+{
+	uint8_t opt[] = { 0x40, 0x01, 0x12, 0x34, 0x3E, 0xFE, 0xF4, 'x' };
+	struct coap_packet cpkt;
+	uint8_t *data = data_buf[0];
+	int r;
+
+	memcpy(data, opt, sizeof(opt));
+
+	r = coap_packet_parse(&cpkt, data, sizeof(opt), NULL, 0);
+	zassert_equal(r, -EILSEQ, "Should've failed to parse a packet");
+}
+
 ZTEST(coap, test_parse_malformed_marker)
 {
 	uint8_t pdu[] = { 0x40, 0x01, 0, 0, 0x40, 0xFF};
