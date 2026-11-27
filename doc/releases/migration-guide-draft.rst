@@ -603,6 +603,13 @@ Timers
   now uses the generic system timer core, which keeps the match value at least 16 timer cycles
   ahead of the counter. Remove the option from application and board configurations.
 
+Video
+=====
+
+* The helper function ``video_get_csi_link_freq()`` got replaced by a more generic
+  :c:func:`video_get_link_freq` that takes the same parameters with one more to specify the type
+  of link as before.
+
 W1
 ==
 
