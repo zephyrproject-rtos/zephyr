@@ -21,3 +21,10 @@ tests:
     extra_args: EXTRA_DTC_OVERLAY_FILE=wuc.overlay
     extra_configs:
       - CONFIG_WUC=y
+      - CONFIG_GPIO=y
+  drivers.interrupt_controller.wkpu_nxp.wuc.pm_device:
+    extra_args: EXTRA_DTC_OVERLAY_FILE=wuc.overlay
+    extra_configs:
+      - CONFIG_WUC=y
+      - CONFIG_GPIO=y
+      - CONFIG_PM_DEVICE=y

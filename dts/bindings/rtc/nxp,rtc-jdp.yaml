@@ -1,4 +1,4 @@
-# Copyright 2025 NXP
+# Copyright 2025-2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
@@ -13,8 +13,15 @@ compatible: "nxp,rtc-jdp"
 include:
   - rtc.yaml
   - rtc-device.yaml
+  - wuc-device.yaml
 
 properties:
+  wakeup-ctrls:
+    description: |
+      Wake-up routes for the counter alarm channels, in channel order:
+      RTC timeout (RTCVAL, channel 0), then API timeout (APIVAL, channel 1).
+      The second route may be omitted if only the RTC timeout can wake the SoC.
+
   reg:
     required: true
 

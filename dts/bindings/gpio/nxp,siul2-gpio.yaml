@@ -1,4 +1,4 @@
-# Copyright 2022-2023, 2025 NXP
+# Copyright 2022-2023, 2025-2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
@@ -34,6 +34,13 @@ description: |
   as the interrupt controller for the corresponding GPIO. It's worth noting that
   despite being named WKPU, the flag is not meant to configure GPIOs as wake-up
   sources.
+
+  GPIO_INT_WAKEUP requests wake-up routing separately when configuring an edge
+  interrupt on a WKPU-routed input. This requires an enabled "nxp,s32-wkpu-wuc"
+  child of the controller referenced by nxp,wkpu. The GPIO driver uses the
+  existing pin-to-source map to address that WUC; the application does not need
+  to call a WKPU-specific wake-up API. Disabling the interrupt, removing
+  GPIO_INT_WAKEUP, or switching away from WKPU routing disarms that request.
 
 compatible: "nxp,siul2-gpio"
 
