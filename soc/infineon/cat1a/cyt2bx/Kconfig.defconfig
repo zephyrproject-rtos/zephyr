@@ -56,8 +56,8 @@ config NUM_IRQS
 	default 3136 if SOC_DIE_CYT2BL
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if SOC_CYT2BX_CORE_M0PLUS
-	default $(dt_node_int_prop_int,/cpus/cpu@1,clock-frequency) if SOC_CYT2BX_CORE_M4
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if SOC_SERIES_CYT2BX_M0P
+	default $(dt_node_int_prop_int,/cpus/cpu@1,clock-frequency) if SOC_SERIES_CYT2BX_M4
 
 config MULTI_LEVEL_INTERRUPTS
 	default y

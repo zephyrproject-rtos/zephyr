@@ -4,7 +4,7 @@
 
 if SOC_SERIES_CYT2BX
 
-config SOC_CYT2BX_CORE_M0PLUS
+config SOC_SERIES_CYT2BX_M0P
 	bool
 	select ARM
 	select CPU_CORTEX_M0PLUS
