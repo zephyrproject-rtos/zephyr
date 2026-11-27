@@ -5,4 +5,4 @@ description: NXP HDLC RCP interface node
 
 compatible: "nxp,hdlc-rcp-if"
 
-include: base.yaml
+include: [base.yaml, hdlc-rcp-if.yaml]

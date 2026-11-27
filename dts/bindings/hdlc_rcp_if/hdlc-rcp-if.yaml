@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for HDLC RCP interface devices
+
+class:
+  - net_if
+  - hdlc
