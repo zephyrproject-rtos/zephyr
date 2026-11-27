@@ -8,56 +8,90 @@
 #include <zephyr/sys/time_units.h>
 #include <zephyr/ztest.h>
 
-/* The div64 helpers must agree with plain C division for every conversion
- * form and rounding.
+/* (t * to + off) / from, exactly, for the expected results */
+static uint64_t ref(uint64_t t, uint64_t from, uint64_t to, bool up, bool near)
+{
+	uint64_t off = near ? (from / 2U) : (up ? (from - 1U) : 0U);
+
+	return ((t / from) * to) + ((((t % from) * to) + off) / from);
+}
+
+/* A conversion is exact as long as t * to + from fits in 64 bits, whatever
+ * the path: constant t, run-time t with constant rates, or run-time rates.
  */
-#define CHECK_RATES(from, to, t)                                                                   \
+#define CHECK_ONE(from, to, t, up, near)                                                           \
 	do {                                                                                       \
-		for (int r = 0; r < 3; r++) {                                                      \
-			bool up = (r == 1);                                                        \
-			bool off = (r == 2);                                                       \
-			uint64_t t32 = (t) & 0xffffffffU;                                          \
+		volatile uint64_t vt = (t);                                                        \
+		volatile uint32_t vfrom = (from);                                                  \
+		volatile uint32_t vto = (to);                                                      \
+		uint64_t e = ref((t), (from), (to), (up), (near));                                 \
                                                                                                    \
-			zassert_equal(z_tmcvt_gen_64_slow(z_tmcvt_r, t, from, to, up, off),        \
-				      z_tmcvt_gen_64_slow(z_tmcvt_c, t, from, to, up, off));       \
-			zassert_equal(z_tmcvt_gen_32(z_tmcvt_r, t32, from, to, up, off),           \
-				      z_tmcvt_gen_32(z_tmcvt_c, t32, from, to, up, off));          \
-			if (z_tmcvt_use_fast_algo(from, to)) {                                     \
-				zassert_equal(                                                     \
-					z_tmcvt_gen_64_fast(z_tmcvt_r, t32, from, to, up, off),    \
-					z_tmcvt_gen_64_fast(z_tmcvt_c, t32, from, to, up, off));   \
-			}                                                                          \
-			if (z_tmcvt_is_int_div(from, to)) {                                        \
-				zassert_equal(                                                     \
-					z_tmcvt_int_div_64(z_tmcvt_r, t, from, to, up, off),       \
-					z_tmcvt_int_div_64(z_tmcvt_c, t, from, to, up, off));      \
-				zassert_equal(                                                     \
-					z_tmcvt_int_div_32(z_tmcvt_r, t, from, to, up, off),       \
-					z_tmcvt_int_div_32(z_tmcvt_c, t, from, to, up, off));      \
-			}                                                                          \
+		if ((uint64_t)(t) > ((UINT64_MAX - (from)) / (to))) {                              \
+			break;                                                                     \
 		}                                                                                  \
+		zassert_equal(z_tmcvt_64(t, from, to, true, up, near), e);                         \
+		zassert_equal(z_tmcvt_32(t, from, to, true, up, near), (uint32_t)e);               \
+		zassert_equal(z_tmcvt_64(vt, from, to, true, up, near), e);                        \
+		zassert_equal(z_tmcvt_32(vt, from, to, true, up, near), (uint32_t)e);              \
+		zassert_equal(z_tmcvt_64(vt, vfrom, vto, false, up, near), e);                     \
+		zassert_equal(z_tmcvt_32(vt, vfrom, vto, false, up, near), (uint32_t)e);           \
 	} while (false)
 
-ZTEST(time_units, test_z_tmcvt_reciprocal)
+#define CHECK_T(from, to, t)                                                                       \
+	do {                                                                                       \
+		CHECK_ONE(from, to, t, false, false);                                              \
+		CHECK_ONE(from, to, t, true, false);                                               \
+		CHECK_ONE(from, to, t, false, true);                                               \
+	} while (false)
+
+/* Constant inputs on both sides of the 32-bit and 64-bit limits */
+#define CHECK_RATES(from, to)                                                                      \
+	do {                                                                                       \
+		CHECK_T(from, to, 0U);                                                             \
+		CHECK_T(from, to, 1U);                                                             \
+		CHECK_T(from, to, 9U);                                                             \
+		CHECK_T(from, to, 999U);                                                           \
+		CHECK_T(from, to, 32767U);                                                         \
+		CHECK_T(from, to, 86399U);                                                         \
+		CHECK_T(from, to, 0xfffffff5U);                                                    \
+		CHECK_T(from, to, 0xffffffffU);                                                    \
+		CHECK_T(from, to, 0x100000000ULL);                                                 \
+		CHECK_T(from, to, 0x9ffffffffULL);                                                 \
+		CHECK_T(from, to, 0x123456789abcdefULL);                                           \
+		CHECK_T(from, to, UINT64_MAX - 1U);                                                \
+		CHECK_T(from, to, UINT64_MAX);                                                     \
+	} while (false)
+
+ZTEST(time_units, test_z_tmcvt_exact)
 {
-	static const uint64_t values[] = {
-		0U, 1U, 999U, 1000U, 32767U, 32768U, 86399U, 0xffffffffU, 0x100000000ULL,
-		0x123456789abcdefULL, 0xfedcba9876543210ULL, UINT64_MAX - 1U, UINT64_MAX,
-	};
+	CHECK_RATES(32768U, 1000U);
+	CHECK_RATES(1000U, 32768U);
+	CHECK_RATES(1000000U, 32768U);
+	CHECK_RATES(32768U, 1000000000U);
+	CHECK_RATES(10000U, 1000U);
+	CHECK_RATES(1000U, 10000U);
+	CHECK_RATES(1000000U, 10000U);
+	CHECK_RATES(19200000U, 1000000U);
+	CHECK_RATES(24000000U, 1000000000U);
+	CHECK_RATES(1000000000U, 32768U);
+	CHECK_RATES(12000000U, 1000U);
+	CHECK_RATES(3000000000U, 1000U);
+	CHECK_RATES(1000U, 100U);
+	CHECK_RATES(1000U, 1000U);
+	CHECK_RATES(30000U, 48000U);
+	CHECK_RATES(7U, 3U);
+}
 
-	ARRAY_FOR_EACH(values, i) {
-		uint64_t t = values[i];
+/* The maximum timeout at 2^22 Hz times 1000001, the target rate divided by
+ * its greatest common divisor with the source rate, does not fit in 64 bits.
+ */
+ZTEST(time_units, test_z_tmcvt_max_timeout_reduced)
+{
+	uint64_t secs = (uint64_t)CONFIG_SYS_CLOCK_MAX_TIMEOUT_DAYS * 24U * 3600U;
+	volatile uint64_t t = secs * 4194304U;
 
-		CHECK_RATES(32768U, 1000U, t);
-		CHECK_RATES(1000U, 32768U, t);
-		CHECK_RATES(10000U, 1000U, t);
-		CHECK_RATES(1000000U, 10000U, t);
-		CHECK_RATES(19200000U, 1000000U, t);
-		CHECK_RATES(24000000U, 1000000000U, t);
-		CHECK_RATES(1000000000U, 32768U, t);
-		CHECK_RATES(12000000U, 1000U, t);
-		CHECK_RATES(1000U, 100U, t);
-	}
+	zassert_equal(z_tmcvt_64(t, 4194304U, 4096004096U, true, false, false),
+		      secs * 4096004096U);
 }
 
 /* A conversion cast to bool must build without -Wint-in-bool-context. */
@@ -69,28 +103,14 @@ ZTEST(time_units, test_z_tmcvt_bool)
 	zassert_true((bool)z_tmcvt_64(t, 100U, 1000U, true, false, false));
 }
 
-/* The 32-bit integer division path must give the exact result on both sides
- * of the input range where it divides in 32 bits, and a 32-bit result even
- * when the rates are 64-bit constants.
- */
-ZTEST(time_units, test_z_tmcvt_int_div_32)
+/* The result of a 32-bit conversion is 32-bit, even with 64-bit rates. */
+BUILD_ASSERT(sizeof(z_tmcvt_32(1U, 3000000000ULL, 1000ULL, true, false, false)) ==
+	     sizeof(uint32_t));
+
+/* A constant conversion is a constant expression. */
+static const uint32_t static_init = z_tmcvt_32(5U, 32768U, 1000U, true, true, false);
+
+ZTEST(time_units, test_z_tmcvt_static)
 {
-	static const uint64_t values[] = {
-		0U,          1U,          9U,          10U,         0xfffffff5U,
-		0xfffffff6U, 0xfffffff7U, 0xffffffffU, 0x100000000ULL, 0x9ffffffffULL,
-	};
-
-	BUILD_ASSERT(sizeof(z_tmcvt_int_div_32(z_tmcvt_c, 1U, 3000000000ULL, 1000ULL, false,
-					       false)) == sizeof(uint32_t));
-
-	ARRAY_FOR_EACH(values, i) {
-		uint64_t t = values[i];
-
-		zassert_equal(z_tmcvt_int_div_32(z_tmcvt_r, t, 10000U, 1000U, true, false),
-			      (uint32_t)((t + 9U) / 10U));
-		zassert_equal(z_tmcvt_int_div_32(z_tmcvt_r, t, 10000U, 1000U, false, false),
-			      (uint32_t)(t / 10U));
-		zassert_equal(z_tmcvt_int_div_32(z_tmcvt_r, t, 3000000000ULL, 1000ULL, true, false),
-			      (uint32_t)((t + 2999999U) / 3000000U));
-	}
+	zassert_equal(static_init, 1U);
 }
