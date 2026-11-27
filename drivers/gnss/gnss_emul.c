@@ -13,6 +13,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/sys/printk.h>
 
 #include <string.h>
 #include <time.h>
@@ -29,6 +30,8 @@ LOG_MODULE_REGISTER(gnss_emul, CONFIG_GNSS_LOG_LEVEL);
 #define GNSS_EMUL_SUPPORTED_SYSTEMS_MASK       0xFF
 #define GNSS_EMUL_SUPPORTED_SYSTEMS_COUNT      8
 #define GNSS_EMUL_DEFAULT_ENABLED_SYSTEMS_MASK GNSS_EMUL_SUPPORTED_SYSTEMS_MASK
+#define GNSS_EMUL_FW_VERSION                   "1.0.0"
+#define GNSS_EMUL_MANUFACTURER                 "Zephyr"
 
 struct gnss_emul_data {
 	const struct device *dev;
@@ -352,6 +355,28 @@ static int gnss_emul_api_get_supported_systems(const struct device *dev, gnss_sy
 	return 0;
 }
 
+static int gnss_emul_api_get_device_info(const struct device *dev,
+					 enum gnss_device_info_type type, char *info, size_t size)
+{
+	const char *str;
+
+	ARG_UNUSED(dev);
+
+	switch (type) {
+	case GNSS_DEVICE_INFO_FW_VERSION:
+		str = GNSS_EMUL_FW_VERSION;
+		break;
+	case GNSS_DEVICE_INFO_MANUFACTURER:
+		str = GNSS_EMUL_MANUFACTURER;
+		break;
+	default:
+		return -ENODATA;
+	}
+
+	(void)snprintk(info, size, "%s", str);
+	return 0;
+}
+
 static DEVICE_API(gnss, api) = {
 	.start = gnss_emul_api_start,
 	.stop = gnss_emul_api_stop,
@@ -362,6 +387,7 @@ static DEVICE_API(gnss, api) = {
 	.set_enabled_systems = gnss_emul_api_set_enabled_systems,
 	.get_enabled_systems = gnss_emul_api_get_enabled_systems,
 	.get_supported_systems = gnss_emul_api_get_supported_systems,
+	.get_device_info = gnss_emul_api_get_device_info,
 };
 
 void gnss_emul_clear_data(const struct device *dev)

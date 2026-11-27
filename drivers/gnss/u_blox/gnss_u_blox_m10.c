@@ -367,6 +367,7 @@ static DEVICE_API(gnss, ublox_m10_driver_api) = {
 	.set_enabled_systems = ubx_m10_set_enabled_systems,
 	.get_enabled_systems = ubx_m10_get_enabled_systems,
 	.get_supported_systems = ubx_m10_get_supported_systems,
+	.get_device_info = u_blox_iface_get_device_info,
 };
 
 #define UBX_M10(inst)										\

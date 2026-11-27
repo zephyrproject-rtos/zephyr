@@ -81,6 +81,12 @@ Libraries / Subsystems
   * Added a PSA Protected Storage backend, enabled with
     :kconfig:option:`CONFIG_FIDO2_STORAGE_PSA_PROTECTED_STORAGE`.
 
+* GNSS
+
+  * Added :c:func:`gnss_get_device_info` to read a receiver's firmware version, hardware version
+    and manufacturer as strings. The u-blox M8, F9P and M10 drivers and the GNSS emulator
+    support it.
+
 * I3C
 
   * The requested tCAS (clock after START) is configurable through

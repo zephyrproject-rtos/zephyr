@@ -392,6 +392,7 @@ static DEVICE_API(gnss, ublox_f9p_driver_api) = {
 	.set_enabled_systems = ubx_f9p_set_enabled_systems,
 	.get_enabled_systems = ubx_f9p_get_enabled_systems,
 	.get_supported_systems = ubx_f9p_get_supported_systems,
+	.get_device_info = u_blox_iface_get_device_info,
 };
 
 

@@ -11,6 +11,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/printk.h>
 #include <zephyr/modem/ubx/protocol.h>
 #include <zephyr/modem/ubx/keys.h>
 
@@ -330,4 +331,39 @@ int u_blox_iface_msg_payload_send(const struct device *dev, uint8_t class_id, ui
 	k_sem_give(&data->script.req_buf_lock);
 
 	return err;
+}
+
+int u_blox_iface_get_device_info(const struct device *dev, enum gnss_device_info_type type,
+				 char *info, size_t size)
+{
+	static const struct ubx_frame version_get = UBX_FRAME_GET_INITIALIZER(
+						UBX_CLASS_ID_MON, UBX_MSG_ID_MON_VER);
+	struct ubx_mon_ver ver;
+	int err;
+
+	switch (type) {
+	case GNSS_DEVICE_INFO_MANUFACTURER:
+		(void)snprintk(info, size, "u-blox");
+		return 0;
+	case GNSS_DEVICE_INFO_FW_VERSION:
+	case GNSS_DEVICE_INFO_HW_VERSION:
+		break;
+	default:
+		return -ENODATA;
+	}
+
+	err = u_blox_iface_msg_get(dev, &version_get, UBX_FRAME_SZ(version_get.payload_size),
+				   (void *)&ver, sizeof(ver));
+	if (err != 0) {
+		return err;
+	}
+
+	/* The receiver's strings are zero-terminated only if shorter than their fields */
+	if (type == GNSS_DEVICE_INFO_FW_VERSION) {
+		(void)snprintk(info, size, "%.*s", (int)sizeof(ver.sw_ver), ver.sw_ver);
+	} else {
+		(void)snprintk(info, size, "%.*s", (int)sizeof(ver.hw_ver), ver.hw_ver);
+	}
+
+	return 0;
 }
