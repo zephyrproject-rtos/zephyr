@@ -49,6 +49,12 @@
 		};
 	};
 
+	tlv320_mclk: tlv320-mclk {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <12288000>;
+	};
+
 	ddr0: memory@82000000 {
 		reg = <0x82000000 (DT_SIZE_G(2) - DT_SIZE_M(32))>;
 	};
@@ -140,12 +146,34 @@
 	pinctrl-names = "default";
 	status = "okay";
 
+	audio_codec: audio-codec@1b {
+		compatible = "ti,tlv320aic3106";
+		reg = <0x1b>;
+		reset-gpios = <&gpio_expander2 21 GPIO_ACTIVE_LOW>;
+		clocks = <&tlv320_mclk>;
+		clock-names = "mclk";
+		mic-bias-level = <1>;
+		hp-single-ended;
+		left-capture-input = "line2";
+		right-capture-input = "mic3";
+		status = "disabled";
+	};
+
 	gpio_expander: tca6424a@22 {
 		compatible = "ti,tca6424a";
 		reg = <0x22>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		ngpios = <24>;
+	};
+
+	gpio_expander2: tca6424a@23 {
+		compatible = "ti,tca6424a";
+		reg = <0x23>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <24>;
+		status = "disabled";
 	};
 };
 
