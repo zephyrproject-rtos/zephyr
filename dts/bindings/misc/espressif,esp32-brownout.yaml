@@ -1,0 +1,97 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Espressif VDD brown-out detector.
+
+  The threshold is the supply voltage below which the detector fires. The
+  values are the ESP-IDF levels for the SoC; a value that the SoC does not
+  implement fails the build. On ESP32-P4 revision 0.x the hardware ignores
+  the programmed level and uses a fixed threshold of about 2.52 V.
+
+  The action selects a hardware reset or an interrupt that resets from
+  software. Flash suspend and RF power-down are enabled by default and
+  can each be disabled. The detector does not cover the ESP32-P4 VBAT
+  monitor.
+
+compatible: "espressif,esp32-brownout"
+
+include: base.yaml
+
+properties:
+  brownout-threshold-microvolt:
+    type: int
+    required: true
+    enum:
+      - 2400000
+      - 2420000
+      - 2430000
+      - 2440000
+      - 2480000
+      - 2510000
+      - 2520000
+      - 2560000
+      - 2570000
+      - 2580000
+      - 2600000
+      - 2620000
+      - 2640000
+      - 2650000
+      - 2670000
+      - 2700000
+      - 2730000
+      - 2760000
+      - 2770000
+      - 2780000
+      - 2790000
+      - 2800000
+      - 2830000
+      - 2840000
+      - 2880000
+      - 2920000
+      - 2940000
+      - 2950000
+      - 2980000
+      - 3100000
+      - 3140000
+      - 3190000
+      - 3270000
+      - 3300000
+    description: |
+      Brown-out threshold in microvolts. The register code is selected from
+      the level table of the SoC.
+
+  espressif,brownout-action:
+    type: string
+    default: "reset"
+    enum:
+      - "reset"
+      - "interrupt"
+    description: |
+      Action taken when the supply drops below the threshold. "reset" uses
+      the hardware brown-out reset. "interrupt" disables that reset and
+      resets from the brown-out interrupt. On ESP32 chip revision 1 the
+      hardware reset does not work, so "reset" uses the interrupt path.
+
+  espressif,flash-power-down:
+    type: string
+    default: "enabled"
+    enum:
+      - "enabled"
+      - "disabled"
+    description: |
+      Suspend flash when the supply drops below the threshold. "enabled"
+      suspends flash. "disabled" leaves flash running.
+
+  espressif,rf-power-down:
+    type: string
+    default: "enabled"
+    enum:
+      - "enabled"
+      - "disabled"
+    description: |
+      Power down the RF when the supply drops below the threshold.
+      "enabled" powers the RF down. "disabled" leaves the RF powered.
+
+  interrupts:
+    required: true

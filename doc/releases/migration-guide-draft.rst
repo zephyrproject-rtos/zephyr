@@ -211,6 +211,18 @@ Boards
   ``Kconfig.defconfig`` files must drop their ``choice SPIRAM_TYPE`` overrides. The flash size
   comes from the ``zephyr,flash`` devicetree node.
 
+* Espressif SoCs enable the VDD brown-out detector from the ``brownout`` devicetree node
+  (:dtcompatible:`espressif,esp32-brownout`). The node is enabled in the SoC devicetree and uses
+  the ESP-IDF default threshold. While the node is enabled, the analog brown-out reset
+  configured during early boot is replaced by this detector. By default the detector suspends
+  flash and powers down the RF when the threshold is crossed. ``espressif,flash-power-down``
+  and ``espressif,rf-power-down`` select ``enabled`` or ``disabled`` for each. ESP32 and
+  ESP32-S2, which previously left the detector unconfigured, now reset at that threshold. Set
+  ``status = "disabled"`` on ``brownout`` to keep the previous behavior. The threshold and the
+  action (``reset`` or ``interrupt``) come from the node. On ESP32 chip revision 1, a request
+  for a hardware reset uses the interrupt path instead, because the hardware reset does not
+  work on that revision.
+
 * On LiteX SoCs, :kconfig:option:`CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC` no longer falls back to the
   CPU ``clock-frequency`` when ``/cpus`` has no ``timebase-frequency``. Out-of-tree boards must
   set ``timebase-frequency`` on the ``/cpus`` node. (:github:`124446`)

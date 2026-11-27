@@ -161,6 +161,7 @@ else()
   set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/../${CONFIG_SOC}/default.ld CACHE INTERNAL "")
 endif()
 
+zephyr_sources_ifdef(CONFIG_SOC_FAMILY_ESPRESSIF_BROWNOUT esp_brownout.c)
 zephyr_sources_ifdef(CONFIG_SOC_FAMILY_ESPRESSIF_LCD_CAM esp_lcd_cam.c)
 zephyr_sources_ifdef(CONFIG_SOC_FAMILY_ESPRESSIF_ETM esp_etm_alloc.c)
 if(NOT CONFIG_SOC_FAMILY_ESPRESSIF_LPCORE_TARGET)
