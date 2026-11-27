@@ -208,4 +208,20 @@
 	main_mcan0_tx: mcan0_tx_default {
 		pinmux = <K3_PINMUX(0x01c4, PIN_OUTPUT, MUX_MODE_0)>; /* (B16) MCAN0_TX */
 	};
+
+	main_mcan1_rx: mcan1_rx_default {
+		pinmux = <K3_PINMUX(0x0180, PIN_INPUT, MUX_MODE_5)>;
+	};
+
+	main_mcan1_tx: mcan1_tx_default {
+		pinmux = <K3_PINMUX(0x0184, PIN_OUTPUT, MUX_MODE_5)>;
+	};
+
+	main_mcan2_rx: mcan2_rx_default {
+		pinmux = <K3_PINMUX(0x01bc, PIN_INPUT, MUX_MODE_6)>;
+	};
+
+	main_mcan2_tx: mcan2_tx_default {
+		pinmux = <K3_PINMUX(0x01c0, PIN_OUTPUT, MUX_MODE_6)>;
+	};
 };

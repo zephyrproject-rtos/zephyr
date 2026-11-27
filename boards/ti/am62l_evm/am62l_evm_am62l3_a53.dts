@@ -281,3 +281,15 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&main_mcan1 {
+	pinctrl-0 = <&main_mcan1_rx>, <&main_mcan1_tx>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+&main_mcan2 {
+	pinctrl-0 = <&main_mcan2_rx>, <&main_mcan2_tx>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
