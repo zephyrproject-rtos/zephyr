@@ -766,7 +766,7 @@ static int compare_strings(const char *path, const char *resource)
 	return 1; /* Strings are not equal */
 }
 
-static int path_len_without_query(const char *path)
+int http_server_path_len_without_query(const char *path)
 {
 	int len = 0;
 
@@ -792,16 +792,25 @@ static bool skip_this(const struct http_resource_detail *detail, bool is_websock
 	return false;
 }
 
-/* Resolves '.' / '..' in the path portion of the URL (everything before the first '?' or '#')
- * so the caller-visible buffer holds a canonical form. The query/fragment portion is preserved
- * unchanged. The output is always shorter or equal in length, so the in-place rewrite is safe.
+/* Drops a fragment, which is not part of a request target (RFC 9112 section 3.2.1), and resolves
+ * '.' / '..' in the path portion of the URL (everything before the first '?') so the
+ * caller-visible buffer holds a canonical form. The query portion is preserved unchanged. The
+ * output is always shorter or equal in length, so the in-place rewrite is safe.
  */
 void http_server_remove_dot_segments(char *path)
 {
+	char *fragment = strchr(path, '#');
 	char *in = path;
 	char *out = path;
-	char *query = strpbrk(path, "?#");
-	size_t qtail_len = (query != NULL) ? strlen(query) : 0;
+	char *query;
+	size_t qtail_len;
+
+	if (fragment != NULL) {
+		*fragment = '\0';
+	}
+
+	query = strchr(path, '?');
+	qtail_len = (query != NULL) ? strlen(query) : 0;
 
 	while ((*in != '\0') && (in != query)) {
 		if (in[0] == '.') {
@@ -891,14 +900,14 @@ struct http_resource_detail *get_resource_detail(const struct http_service_desc 
 
 			ret = fnmatch(resource->resource, path, (FNM_PATHNAME | FNM_LEADING_DIR));
 			if (ret == 0) {
-				*path_len = path_len_without_query(path);
+				*path_len = http_server_path_len_without_query(path);
 				return resource->detail;
 			}
 		}
 	}
 
 	if (service->res_fallback != NULL && !skip_this(service->res_fallback, is_websocket)) {
-		*path_len = path_len_without_query(path);
+		*path_len = http_server_path_len_without_query(path);
 		return service->res_fallback;
 	}
 
@@ -972,7 +981,7 @@ return_filename:
 void http_server_get_content_type_from_extension(char *url, char *content_type,
 						 size_t content_type_size)
 {
-	size_t url_len = strlen(url);
+	size_t url_len = http_server_path_len_without_query(url);
 
 	HTTP_SERVER_CONTENT_TYPE_FOREACH(ct) {
 		char *ext;
