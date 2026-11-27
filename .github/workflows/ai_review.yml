@@ -45,7 +45,7 @@ jobs:
 
       - name: Review
         id: review
-        uses: zephyrproject-rtos/zephyr-review-agent@1661510516f3ff52ca4377b040176c793d789b47 # v0.6
+        uses: zephyrproject-rtos/zephyr-review-agent@f28f3e38b338792b15034c126ae17ac684136393 # v0.7.0
         with:
           openrouter_api_key: ${{ secrets.OPENROUTER_API_KEY }}
           pipeline: multi-stage
