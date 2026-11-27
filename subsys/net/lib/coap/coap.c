@@ -545,7 +545,9 @@ static int decode_delta(uint8_t *data, uint16_t offset, uint16_t *pos, uint16_t 
 			return -EINVAL;
 		}
 
-		opt = val + COAP_OPTION_EXT_269;
+		if (u16_add_overflow(val, COAP_OPTION_EXT_269, &opt)) {
+			return -EINVAL;
+		}
 	} else if (opt == COAP_OPTION_EXT_15) {
 		return -EINVAL;
 	}
