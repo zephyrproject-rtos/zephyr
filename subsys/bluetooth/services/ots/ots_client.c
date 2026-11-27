@@ -1606,6 +1606,11 @@ static int decode_record(struct net_buf_simple *buf,
 {
 	uint16_t start_len = buf->len;
 
+	/* The fields that the record leaves out are reported as zero, not as the values of the
+	 * previous record
+	 */
+	memset(rec, 0, sizeof(*rec));
+
 	rec->len = net_buf_simple_pull_le16(buf);
 
 	/* The Record Length includes the Record Length field itself */
@@ -1662,7 +1667,6 @@ static int decode_record(struct net_buf_simple *buf,
 	}
 
 	rec->metadata.name_c[rec->name_len] = '\0';
-	rec->flags = 0;
 
 	if ((start_len - buf->len) + sizeof(uint8_t) > rec->len) {
 		LOG_WRN("incorrect DirListing record, reclen %u too short, "

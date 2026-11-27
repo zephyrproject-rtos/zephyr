@@ -1102,6 +1102,7 @@ int bt_ots_client_get_object_checksum(struct bt_ots_client *otc_inst, struct bt_
  *
  * If a directory listing is decoded using bt_ots_client_decode_dirlisting(),
  * this callback will be called for each object in the directory listing.
+ * The fields of @p meta that the record of the object does not include are zero.
  *
  *  @param meta The metadata of the decoded object
  *
