@@ -11,6 +11,7 @@
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/tls_credentials.h>
+#include <zephyr/sys/byteorder.h>
 
 static int coap_method1(struct coap_resource *resource, struct coap_packet *request,
 			struct net_sockaddr *addr, net_socklen_t addr_len)
@@ -637,5 +638,63 @@ ZTEST(coap_service, test_dtls_service_in_full_poll_set)
 	zexpect_ok(restart_ret);
 }
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
+
+/* RFC 7252, section 3: a message with an unknown version number is silently
+ * ignored. The same request with version 1 is answered.
+ */
+ZTEST(coap_service, test_unknown_version_ignored)
+{
+	static const uint8_t versions[] = { 0U, 2U, 3U, COAP_VERSION_1 };
+	struct net_sockaddr_in dst = {
+		.sin_family = NET_AF_INET,
+		.sin_port = net_htons(5700),
+	};
+	struct zsock_pollfd pfd;
+	struct coap_packet request;
+	uint8_t buf[64];
+	uint8_t rsp[64];
+	int sock;
+	ssize_t len;
+
+	zassert_equal(zsock_inet_pton(NET_AF_INET, "127.0.0.1", &dst.sin_addr), 1);
+
+	for (int i = 0; i < 100 && coap_service_is_running(&service_D) != 1; i++) {
+		k_sleep(K_MSEC(10));
+	}
+	zassert_equal(coap_service_is_running(&service_D), 1);
+
+	sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(sock >= 0);
+
+	pfd.fd = sock;
+	pfd.events = ZSOCK_POLLIN;
+
+	ARRAY_FOR_EACH(versions, i) {
+		zassert_ok(coap_packet_init(&request, buf, sizeof(buf), versions[i],
+					    COAP_TYPE_CON, 0, NULL, COAP_METHOD_GET,
+					    coap_next_id()));
+		zassert_ok(coap_packet_append_option(&request, COAP_OPTION_URI_PATH, "ping", 4));
+
+		len = zsock_sendto(sock, request.data, request.offset, 0,
+				   (struct net_sockaddr *)&dst, sizeof(dst));
+		zassert_equal(len, request.offset);
+
+		if (versions[i] != COAP_VERSION_1) {
+			zexpect_equal(zsock_poll(&pfd, 1, 200), 0,
+				      "reply to a request with version %u", versions[i]);
+			continue;
+		}
+
+		zassert_equal(zsock_poll(&pfd, 1, 1000), 1, "no reply to a request");
+
+		len = zsock_recv(sock, rsp, sizeof(rsp), 0);
+		zassert_true(len >= 4, "short reply");
+		zexpect_equal(rsp[1], COAP_RESPONSE_CODE_CONTENT);
+		zexpect_equal(sys_get_be16(&rsp[2]), coap_header_get_id(&request),
+			      "reply is not for the version 1 request");
+	}
+
+	zsock_close(sock);
+}
 
 ZTEST_SUITE(coap_service, NULL, NULL, NULL, NULL, NULL);
