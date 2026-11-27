@@ -5,7 +5,7 @@ description: SMSC (now Microchip) LAN9220 Ethernet controller
 
 compatible: "smsc,lan9220"
 
-include: base.yaml
+include: ethernet-controller.yaml
 
 properties:
   reg:

@@ -5,7 +5,7 @@ description: Intel E1000 Ethernet controller
 
 compatible: "intel,e1000"
 
-include: [base.yaml, pcie-device.yaml]
+include: [ethernet-controller.yaml, pcie-device.yaml]
 
 properties:
   interrupts:
