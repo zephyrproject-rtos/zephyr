@@ -402,6 +402,17 @@ PTP Clock
   addend register from its nominal value. All in-tree drivers have been converted.
   (:github:`120828`)
 
+STM32
+=====
+
+* STM32N6 :dtcompatible:`st,stm32n6-pwr` driver now allows users to configure the Vcore regulator.
+  Either an external or an internal regulator can be used. The default specified in the SoC DTS
+  is the internal SMPS. Previously, startup configured the internal SMPS for VOS0.
+  It now configures the regulator based on the selected option and the configured system frequency.
+  Users must ensure that the configuration matches the board hardware.
+  Refer to :zephyr_file:`dts/bindings/power/st,stm32n6-pwr.yaml` for detailed information.
+  (:github:`119588`)
+
 Timers
 ======
 
