@@ -12,3 +12,12 @@ description: |
 compatible: "ti,tps65215"
 
 include: i2c-device.yaml
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      Host GPIO wired to the open-drain nINT output. nINT is active low, so
+      the flags must include GPIO_ACTIVE_LOW. Without it the driver has no
+      interrupt support and children that need interrupts, such as the power
+      button, are not available.
