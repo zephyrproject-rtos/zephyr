@@ -405,6 +405,11 @@ static int i2s_ambiq_configure(const struct device *dev, enum i2s_dir dir,
 		return 0;
 	}
 
+	if (i2s_config_in->tdm.channel_disable_mask != 0U) {
+		LOG_ERR("TDM channel masking is not supported");
+		return -EINVAL;
+	}
+
 	ret = am_hal_i2s_power_control(data->i2s_handler, AM_HAL_I2S_POWER_ON, false);
 	if (ret != AM_HAL_STATUS_SUCCESS) {
 		LOG_ERR("i2s_configure: failed to power on I2S (status %d)", ret);
