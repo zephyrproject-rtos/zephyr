@@ -49,6 +49,7 @@ CREATE_FLAG(uri_list);
 CREATE_FLAG(current_calls);
 CREATE_FLAG(uri_inc);
 CREATE_FLAG(term_reason);
+CREATE_FLAG(disconnecting);
 
 static void tbs_client_call_states_cb(struct bt_conn *conn, int err,
 				      uint8_t index, uint8_t call_count,
@@ -99,6 +100,12 @@ static void tbs_client_discover_cb(struct bt_conn *conn, int err,
 	LOG_DBG("");
 
 	if (err != 0) {
+		if (TEST_FLAG(disconnecting)) {
+			/* A discovery that the disconnection ends may fail */
+			LOG_DBG("Discovery ended by the disconnection (%d)", err);
+			return;
+		}
+
 		FAIL("TBS_CLIENT could not be discovered (%d)\n", err);
 		return;
 	}
@@ -522,6 +529,7 @@ static void discover_tbs(void)
 static void test_main(void)
 {
 	struct bt_le_ext_adv *ext_adv;
+	bt_addr_le_t peer_addr;
 	int err;
 	int index = 0;
 
@@ -604,6 +612,35 @@ static void test_main(void)
 	test_technology(index);
 	test_status_flags(index);
 	test_signal_interval(index);
+
+	/* Discover again and end the connection before the discovery completes. The subscriptions
+	 * of the earlier discoveries are still on the GATT subscription list, which the host walks
+	 * when the connection ends and, as the peer is bonded, when it is unpaired.
+	 */
+	bt_addr_le_copy(&peer_addr, bt_conn_get_dst(default_conn));
+
+	LOG_INF("Disconnecting during discovery");
+	SET_FLAG(disconnecting);
+	UNSET_FLAG(flag_disconnected);
+	err = bt_tbs_client_discover(default_conn);
+	if (err != 0) {
+		FAIL("Failed to discover TBS: %d", err);
+		return;
+	}
+
+	err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	if (err != 0) {
+		FAIL("Failed to disconnect (%d)\n", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_disconnected);
+
+	err = bt_unpair(BT_ID_DEFAULT, &peer_addr);
+	if (err != 0) {
+		FAIL("Failed to unpair (%d)\n", err);
+		return;
+	}
 
 	PASS("TBS_CLIENT Passed\n");
 }
