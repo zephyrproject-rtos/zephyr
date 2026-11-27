@@ -3,15 +3,11 @@
 
 config ZEPHYR_XENLIB_MODULE
 	bool
-
-config XENLIB
-	bool "xenlib library"
-	depends on ZEPHYR_XENLIB_MODULE
-	depends on XEN
 	help
-	  xenlib library
+	  Indicates that the xenlib module is available.
+	  Used as a dependency by Xen support (CONFIG_XEN).
 
-if XENLIB
+if XEN
 
 config XEN_STORE_COMMON
 	bool
@@ -157,4 +153,4 @@ config XEN_DOM0LESS_BOOT
 
 	  This is EXPERIMENTAL and depends on work in Xen mainline.
 
-endif # XENLIB
+endif # XEN
