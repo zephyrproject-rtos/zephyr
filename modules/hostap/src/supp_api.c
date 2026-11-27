@@ -85,6 +85,8 @@ struct wpa_supp_api_ctrl {
 	enum requested_ops requested_op;
 	enum status_thread_state status_thread_state;
 	int connection_timeout; /* in seconds */
+	/* Reported instead of a plain timeout, WIFI_STATUS_CONN_SUCCESS if none */
+	enum wifi_conn_status deferred_conn_status;
 	struct k_work_sync sync;
 	bool terminate;
 #if defined(CONFIG_WIFI_MGMT_PMKSA_IMPORT)
@@ -202,6 +204,7 @@ static void supp_shell_connect_status(struct k_work *work)
 {
 	static int seconds_counter;
 	int status = CONNECTION_SUCCESS;
+	enum wifi_conn_status conn_status;
 	struct wpa_supplicant *wpa_s;
 	struct wpa_supp_api_ctrl *ctrl = &wpas_api_ctrl;
 
@@ -225,11 +228,13 @@ static void supp_shell_connect_status(struct k_work *work)
 				goto out;
 			}
 
+			conn_status = ctrl->deferred_conn_status != WIFI_STATUS_CONN_SUCCESS
+					      ? ctrl->deferred_conn_status
+					      : WIFI_STATUS_CONN_TIMEOUT;
 #if defined(CONFIG_WIFI_MGMT_PMKSA_IMPORT) && defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_PMKSA_CACHE)
-			supplicant_pmksa_connection_result_locked(wpa_s, WIFI_STATUS_CONN_TIMEOUT);
+			supplicant_pmksa_connection_result_locked(wpa_s, conn_status);
 #endif
-			supplicant_send_wifi_mgmt_conn_status(wpa_s,
-							      WIFI_STATUS_CONN_TIMEOUT);
+			supplicant_send_wifi_mgmt_conn_status(wpa_s, conn_status);
 			status = CONNECTION_FAILURE;
 			goto out;
 		}
@@ -242,9 +247,47 @@ static void supp_shell_connect_status(struct k_work *work)
 	}
 out:
 	seconds_counter = 0;
+	ctrl->deferred_conn_status = WIFI_STATUS_CONN_SUCCESS;
 
 	ctrl->status_thread_state = STATUS_THREAD_STOPPED;
 	k_mutex_unlock(&wpa_supplicant_mutex);
+}
+
+/*
+ * The helpers below run in the supplicant thread and must not take
+ * wpa_supplicant_mutex: API calls hold it across synchronous wpa_cli requests
+ * to that thread.
+ */
+static bool supp_connect_pending(struct wpa_supplicant *wpa_s)
+{
+	struct wpa_supp_api_ctrl *ctrl = &wpas_api_ctrl;
+
+	return ctrl->requested_op == CONNECT && ctrl->iface != NULL &&
+	       ctrl->iface == net_if_get_by_index(net_if_get_by_name(wpa_s->ifname)) &&
+	       k_work_delayable_busy_get(&wpa_supp_status_work) != 0;
+}
+
+void supplicant_notify_ap_not_found(void *ctx)
+{
+	struct wpa_supplicant *wpa_s = ctx;
+
+	if (wpa_s == NULL || !supp_connect_pending(wpa_s)) {
+		wpa_printf(MSG_DEBUG, "No connect request pending, AP not found not reported");
+		return;
+	}
+
+	/* A timed connect keeps scanning, report only its final outcome */
+	if (wpas_api_ctrl.connection_timeout > 0) {
+		wpas_api_ctrl.deferred_conn_status = WIFI_STATUS_CONN_AP_NOT_FOUND;
+		return;
+	}
+
+	supplicant_send_wifi_mgmt_conn_status(wpa_s, WIFI_STATUS_CONN_AP_NOT_FOUND);
+}
+
+void supplicant_connect_result_sent(void)
+{
+	wpas_api_ctrl.deferred_conn_status = WIFI_STATUS_CONN_SUCCESS;
 }
 
 static struct hostapd_hw_modes *get_mode_by_band(struct wpa_supplicant *wpa_s, uint8_t band)
@@ -1693,6 +1736,7 @@ int supplicant_connect(const struct device *dev __unused, struct net_if *iface,
 	wpas_api_ctrl.iface = iface;
 	wpas_api_ctrl.requested_op = CONNECT;
 	wpas_api_ctrl.connection_timeout = params->timeout;
+	wpas_api_ctrl.deferred_conn_status = WIFI_STATUS_CONN_SUCCESS;
 #if defined(CONFIG_WIFI_MGMT_PMKSA_IMPORT)
 	wpas_api_ctrl.pmksa_entries_supplied = params->pmksa_entry_count != 0U;
 	wpas_api_ctrl.pmksa_cache_usage = wpas_api_ctrl.pmksa_entries_supplied

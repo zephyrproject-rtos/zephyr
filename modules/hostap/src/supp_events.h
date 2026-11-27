@@ -69,6 +69,25 @@ int supplicant_send_wifi_mgmt_conn_event(void *ctx, int status_code);
 int supplicant_send_wifi_mgmt_conn_status(void *ctx, enum wifi_conn_status conn_status);
 int supplicant_send_wifi_mgmt_disc_event(void *ctx, int reason_code);
 
+/**
+ * @brief Report that a connect scan found no suitable network
+ *
+ * Only a connect request in progress on the same interface is told: right
+ * away when it has no timeout, otherwise once, as its result at the timeout.
+ * Misses while the supplicant reconnects on its own are not reported, the
+ * disconnect event already told the application.
+ *
+ * @param ctx wpa_supplicant interface that ran the scan
+ */
+void supplicant_notify_ap_not_found(void *ctx);
+
+/**
+ * @brief Note that a connect result was sent to the application
+ *
+ * Drops any AP not found status held back for the connect timeout.
+ */
+void supplicant_connect_result_sent(void);
+
 #ifdef CONFIG_AP
 int supplicant_send_wifi_mgmt_ap_status(void *ctx,
 					enum net_event_wifi_cmd event,
