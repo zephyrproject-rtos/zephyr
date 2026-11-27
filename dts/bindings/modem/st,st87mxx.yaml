@@ -5,7 +5,7 @@ description: ST87MXX NBIoT modem
 
 compatible: "st,st87mxx"
 
-include: uart-device.yaml
+include: [uart-device.yaml, offloaded-netdev.yaml]
 
 properties:
   mdm-reset-gpios:

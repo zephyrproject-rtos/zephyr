@@ -5,7 +5,7 @@ description: quectel BG9x modem
 
 compatible: "quectel,bg9x"
 
-include: zephyr,cellular-modem-device.yaml
+include: ["zephyr,cellular-modem-device.yaml", offloaded-netdev.yaml]
 
 properties:
   mdm-power-gpios:
