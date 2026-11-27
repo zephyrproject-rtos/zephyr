@@ -33,8 +33,10 @@ static struct k_spinlock lock;
 
 static cycle_t announced_cycles;
 static cycle_t cycle_count;
+static cycle_t last_get;
 static uint32_t last_load;
 static uint32_t overflow;
+static bool cycle_updated;
 
 const int32_t z_sys_timer_irq_for_test = DT_INST_IRQN(0);
 
@@ -48,9 +50,10 @@ static uint32_t cycles_elapsed(void)
 	uint32_t ctrl = pit64b_cfg.reg->PIT64B_ISR;
 	uint32_t val2 = pit64b_cfg.reg->PIT64B_TLSBR;
 
-	if ((ctrl & PIT64B_IER_PERIOD_Msk) || (val1 > val2)) {
+	if (ctrl & PIT64B_ISR_PERIOD_Msk) {
 		overflow += last_load;
-		(void)PIT64B0_REGS->PIT64B_TLSBR;
+	} else if (val1 > val2) {
+		return val1 + overflow;
 	}
 
 	return val2 + overflow;
@@ -68,6 +71,7 @@ static void pit64b_isr(const void *arg)
 	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		cycle_count += overflow;
 		overflow = 0;
+		cycle_updated = true;
 
 		dcycles = cycle_count - announced_cycles;
 		delta_ticks = dcycles / CYCLES_PER_TICK;
@@ -127,6 +131,8 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 		cycle_count += (val2 - val1);
 	}
 
+	cycle_updated = true;
+
 	k_spin_unlock(&lock, key);
 }
 
@@ -149,9 +155,27 @@ uint32_t sys_clock_elapsed(void)
 
 uint32_t sys_clock_cycle_get_32(void)
 {
+	uint32_t cycles;
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	uint32_t cycles = cycles_elapsed();
+	if (arch_irq_unlocked(key.key)) {
+		cycles = cycle_count + overflow + pit64b_cfg.reg->PIT64B_TLSBR;
+
+		if (cycle_updated) {
+			cycle_updated = false;
+		} else {
+			if (cycles < last_get) {
+				cycles = last_get;
+			}
+		}
+		last_get = cycles;
+
+		k_spin_unlock(&lock, key);
+
+		return cycles;
+	}
+
+	cycles = cycles_elapsed();
 
 	k_spin_unlock(&lock, key);
 
@@ -180,7 +204,9 @@ static int sys_clock_driver_init(void)
 	last_load = CYCLES_PER_TICK;
 	announced_cycles = 0;
 	cycle_count = 0;
+	last_get = 0;
 	overflow = 0;
+	cycle_updated = false;
 	pit64b_cfg.reg->PIT64B_MSBPR = 0;
 	pit64b_cfg.reg->PIT64B_LSBPR = last_load;
 	pit64b_cfg.reg->PIT64B_CR |= PIT64B_CR_START_Msk;
