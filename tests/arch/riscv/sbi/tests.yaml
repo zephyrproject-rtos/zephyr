@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  arch.riscv.sbi.base:
+    tags: riscv
+    platform_allow:
+      - qemu_riscv64/qemu_virt_riscv64/smode
+      - qemu_riscv64/qemu_virt_riscv64/opensbi
+    integration_platforms:
+      - qemu_riscv64/qemu_virt_riscv64/smode
+      - qemu_riscv64/qemu_virt_riscv64/opensbi

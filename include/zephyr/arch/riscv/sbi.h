@@ -181,6 +181,48 @@ static inline struct sbiret sbi_ecall(unsigned long arg0, unsigned long arg1, un
 	return ret;
 }
 
+/** Return the SBI specification version in the value field. */
+static inline struct sbiret sbi_get_spec_version(void)
+{
+	return sbi_ecall(0, 0, 0, 0, 0, 0, SBI_FUNC_GET_SPEC_VERSION, SBI_EXT_BASE);
+}
+
+/** Return the SBI provider's implementation ID. */
+static inline struct sbiret sbi_get_impl_id(void)
+{
+	return sbi_ecall(0, 0, 0, 0, 0, 0, SBI_FUNC_GET_IMPL_ID, SBI_EXT_BASE);
+}
+
+/** Return the SBI provider's implementation-specific version. */
+static inline struct sbiret sbi_get_impl_version(void)
+{
+	return sbi_ecall(0, 0, 0, 0, 0, 0, SBI_FUNC_GET_IMPL_VERSION, SBI_EXT_BASE);
+}
+
+/** On success, a nonzero value indicates that the extension is available. */
+static inline struct sbiret sbi_probe_extension(unsigned long eid)
+{
+	return sbi_ecall(eid, 0, 0, 0, 0, 0, SBI_FUNC_PROBE_EXTENSION, SBI_EXT_BASE);
+}
+
+/** Return the machine vendor ID visible to the supervisor. */
+static inline struct sbiret sbi_get_mvendorid(void)
+{
+	return sbi_ecall(0, 0, 0, 0, 0, 0, SBI_FUNC_GET_MVENDORID, SBI_EXT_BASE);
+}
+
+/** Return the machine architecture ID visible to the supervisor. */
+static inline struct sbiret sbi_get_marchid(void)
+{
+	return sbi_ecall(0, 0, 0, 0, 0, 0, SBI_FUNC_GET_MARCHID, SBI_EXT_BASE);
+}
+
+/** Return the machine implementation ID visible to the supervisor. */
+static inline struct sbiret sbi_get_mimpid(void)
+{
+	return sbi_ecall(0, 0, 0, 0, 0, 0, SBI_FUNC_GET_MIMPID, SBI_EXT_BASE);
+}
+
 /** Program the absolute 64-bit timer deadline, split across a0/a1 on RV32. */
 static inline struct sbiret sbi_set_timer(uint64_t deadline)
 {
