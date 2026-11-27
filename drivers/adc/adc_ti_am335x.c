@@ -106,6 +106,7 @@ struct ti_adc_cfg {
 	uint8_t oversampling[TI_ADC_TOTAL_CHANNELS];
 	uint8_t resolution[TI_ADC_TOTAL_CHANNELS];
 	uint8_t fifo;
+	uint8_t channel_count;
 };
 
 struct ti_adc_data {
@@ -205,8 +206,8 @@ static int ti_adc_channel_setup(const struct device *dev, const struct adc_chann
 	struct ti_adc_regs *regs = DEV_REGS(dev);
 	const uint8_t chan = chan_cfg->channel_id;
 
-	if (chan >= TI_ADC_TOTAL_CHANNELS) {
-		LOG_ERR("Channel %d invalid, must be less than %d", chan, TI_ADC_TOTAL_CHANNELS);
+	if (chan >= cfg->channel_count) {
+		LOG_ERR("Channel %d invalid, must be less than %d", chan, cfg->channel_count);
 		return -EINVAL;
 	}
 
@@ -237,6 +238,12 @@ static int ti_adc_channel_setup(const struct device *dev, const struct adc_chann
 	}
 
 #ifdef CONFIG_ADC_CONFIGURABLE_INPUTS
+	if (chan_cfg->input_positive >= cfg->channel_count ||
+	    (chan_cfg->differential && chan_cfg->input_negative >= cfg->channel_count)) {
+		LOG_ERR("Inputs must be less than %d", cfg->channel_count);
+		return -EINVAL;
+	}
+
 	if (!chan_cfg->differential && chan_cfg->input_negative != TI_ADC_STEPCONFIG_SEL_INM_REFN) {
 		LOG_ERR("For single ended input, negative input must be REFN");
 		return -EINVAL;
@@ -283,6 +290,12 @@ static int ti_adc_read_start(const struct device *dev, const struct adc_sequence
 
 	if (sequence->channels == 0) {
 		LOG_ERR("Invalid channel mask 0x%x", sequence->channels);
+		return -EINVAL;
+	}
+
+	if ((sequence->channels & ~BIT_MASK(DEV_CFG(dev)->channel_count)) != 0) {
+		LOG_ERR("Channel mask 0x%x selects inputs beyond %d", sequence->channels,
+			DEV_CFG(dev)->channel_count);
 		return -EINVAL;
 	}
 
@@ -450,7 +463,12 @@ static void ti_adc_isr(const struct device *dev)
 
 #define CHAN_PROP_LIST(n, prop) {DT_INST_FOREACH_CHILD_SEP_VARGS(n, EXPLICIT_CHAN_PROP, (,), prop)}
 
+#define TI_ADC_CHECK_CHANNEL(node, n)                                                              \
+	BUILD_ASSERT(DT_REG_ADDR(node) < DT_INST_PROP(n, channel_count),                           \
+		     "channel reg must be less than channel-count");
+
 #define TI_ADC_INIT(n)                                                                             \
+	DT_INST_FOREACH_CHILD_VARGS(n, TI_ADC_CHECK_CHANNEL, n)                                    \
 	static DEVICE_API(adc, ti_adc_driver_api_##n) = {                                          \
 		.channel_setup = ti_adc_channel_setup,                                             \
 		.read = ti_adc_read,                                                               \
@@ -473,6 +491,7 @@ static void ti_adc_isr(const struct device *dev)
 		.oversampling = CHAN_PROP_LIST(n, zephyr_oversampling),                            \
 		.resolution = CHAN_PROP_LIST(n, zephyr_resolution),                                \
 		.fifo = DT_INST_PROP(n, ti_fifo),                                                  \
+		.channel_count = DT_INST_PROP(n, channel_count),                                   \
 	};                                                                                         \
                                                                                                    \
 	static struct ti_adc_data ti_adc_data_##n = {                                              \
