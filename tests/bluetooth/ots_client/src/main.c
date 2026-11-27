@@ -30,6 +30,16 @@
 		BT_UUID_OTS_TYPE_UNSPECIFIED_VAL & 0xFFU, BT_UUID_OTS_TYPE_UNSPECIFIED_VAL >> 8,   \
 		OBJ_SIZE, 0x00, 0x00, 0x00, OBJ_PROPS, 0x00, 0x00, 0x00
 
+/* A record with only the fields that every record has: Record Length, Object ID, Name Length,
+ * Name, Flags (all clear) and 16-bit Object Type
+ */
+#define BARE_RECORD_LEN(name_len) (2U + 6U + 1U + (name_len) + 1U + 2U)
+
+#define BARE_RECORD(id, name_len, ...)                                                             \
+	BARE_RECORD_LEN(name_len), 0x00, (id), 0x00, 0x00, 0x00, 0x00, 0x00, (name_len),           \
+		__VA_ARGS__, 0x00, BT_UUID_OTS_TYPE_UNSPECIFIED_VAL & 0xFFU,                       \
+		BT_UUID_OTS_TYPE_UNSPECIFIED_VAL >> 8
+
 static struct bt_ots_obj_metadata decoded[2];
 static size_t decoded_count;
 
@@ -111,6 +121,25 @@ ZTEST(ots_client_dir_list, test_record_extension)
 	zassert_str_equal(decoded[1].name_c, "bc");
 	zassert_equal(decoded[1].size.cur, OBJ_SIZE);
 	zassert_equal(decoded[1].props, OBJ_PROPS);
+}
+
+/* A record without the optional fields does not report the values of the record before it */
+ZTEST(ots_client_dir_list, test_optional_fields_absent)
+{
+	uint8_t listing[] = {RECORD(0x01, 1, 'a'), BARE_RECORD(0x02, 1, 'b')};
+	int count;
+
+	count = bt_ots_client_decode_dirlisting(listing, sizeof(listing), dirlisting_cb);
+
+	zassert_equal(count, 2, "decode returned %d", count);
+	zassert_equal(decoded_count, 2);
+	zassert_equal(decoded[0].size.cur, OBJ_SIZE);
+	zassert_equal(decoded[0].props, OBJ_PROPS);
+	zassert_equal(decoded[1].id, 0x02);
+	zassert_str_equal(decoded[1].name_c, "b");
+	zassert_equal(decoded[1].size.cur, 0U, "size.cur %u", decoded[1].size.cur);
+	zassert_equal(decoded[1].size.alloc, 0U, "size.alloc %u", decoded[1].size.alloc);
+	zassert_equal(decoded[1].props, 0U, "props 0x%x", decoded[1].props);
 }
 
 /* A record that claims more octets than the listing holds is still rejected */
