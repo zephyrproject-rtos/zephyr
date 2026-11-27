@@ -395,6 +395,7 @@ ZTESTABLE_STATIC int quic_send_packet(struct quic_endpoint *ep,
 				      enum quic_secret_level level,
 				      const uint8_t *payload,
 				      size_t payload_len);
+static int quic_send_streams_blocked(struct quic_endpoint *ep, bool bidi, uint64_t limit);
 static int quic_send_stop_sending(struct quic_endpoint *ep,
 				  uint64_t stream_id,
 				  uint64_t error_code);
@@ -5031,7 +5032,7 @@ static bool quic_recovery_take_pending_retransmit(struct quic_endpoint *ep,
 static struct quic_stream *quic_readvertise_snapshot[ARRAY_SIZE(streams)];
 static K_MUTEX_DEFINE(quic_readvertise_lock);
 
-static void quic_readvertise_flow_control(struct quic_endpoint *ep)
+ZTESTABLE_STATIC void quic_readvertise_flow_control(struct quic_endpoint *ep)
 {
 	size_t count = 0;
 	struct quic_context *ctx;
@@ -5062,6 +5063,15 @@ static void quic_readvertise_flow_control(struct quic_endpoint *ep)
 		}
 
 		if (stream->ep != ep) {
+			continue;
+		}
+
+		/* We receive nothing on a send-only stream, so there is no
+		 * limit to advertise, and the peer would take a
+		 * MAX_STREAM_DATA for it as a connection error (RFC 9000
+		 * ch. 19.10).
+		 */
+		if (quic_stream_id_is_send_only(ep, stream->id)) {
 			continue;
 		}
 
@@ -5594,6 +5604,8 @@ static void quic_endpoint_init(struct quic_endpoint *ep)
 	ep->rx_sl.max_uni = CONFIG_QUIC_INITIAL_MAX_STREAMS_UNI;
 	ep->rx_sl.open_bidi = 0;
 	ep->rx_sl.open_uni = 0;
+	ep->tx_sl.blocked_sent_bidi = UINT64_MAX;
+	ep->tx_sl.blocked_sent_uni = UINT64_MAX;
 	ep->peer_params.max_udp_payload_size = UINT16_MAX;
 	ep->peer_params.parsed = false;
 
@@ -5840,6 +5852,8 @@ static struct quic_endpoint *quic_endpoint_create(struct quic_endpoint *ep,
 			ep->peer_params.initial_max_streams_bidi;
 		new_ep->peer_params.initial_max_streams_uni =
 			ep->peer_params.initial_max_streams_uni;
+		new_ep->peer_params.max_streams_bidi = ep->peer_params.initial_max_streams_bidi;
+		new_ep->peer_params.max_streams_uni = ep->peer_params.initial_max_streams_uni;
 		new_ep->peer_params.max_idle_timeout = ep->peer_params.max_idle_timeout;
 		new_ep->peer_params.max_udp_payload_size =
 			ep->peer_params.max_udp_payload_size;
@@ -6194,6 +6208,10 @@ static struct quic_stream *quic_stream_init(struct quic_stream *stream)
 	stream->stop_sending_error_code = QUIC_ERROR_NO_ERROR;
 	stream->tx_reset = false;
 	stream->tx_final_size = 0;
+	stream->rx_reset = false;
+	stream->final_size_known = false;
+	stream->peer_reset_error_code = QUIC_ERROR_NO_ERROR;
+	stream->peer_final_size = 0;
 
 	return stream;
 }
@@ -7259,10 +7277,12 @@ ZTESTABLE_STATIC int parse_peer_transport_params(struct quic_endpoint *ep)
 			break;
 		case QUIC_INITIAL_MAX_STREAMS_BIDI:
 			ep->peer_params.initial_max_streams_bidi = value;
+			ep->peer_params.max_streams_bidi = value;
 			NET_DBG("  initial_max_streams_bidi: %" PRIu64, value);
 			break;
 		case QUIC_INITIAL_MAX_STREAMS_UNI:
 			ep->peer_params.initial_max_streams_uni = value;
+			ep->peer_params.max_streams_uni = value;
 			NET_DBG("  initial_max_streams_uni: %" PRIu64, value);
 			break;
 		case QUIC_MAX_IDLE_TIMEOUT:
@@ -7779,6 +7799,35 @@ ZTESTABLE_STATIC int quic_stream_receive_data(struct quic_stream *stream,
 	size_t available;
 	int ret = 0;
 
+	if (len > UINT64_MAX - offset) {
+		NET_ERR("[ST:%p/%d] Stream offset overflow: offset=%" PRIu64
+			" len=%zu", stream, quic_get_by_stream(stream), offset, len);
+		ret = -EPROTO;
+		goto connection_error;
+	}
+
+	end = offset + len;
+
+	/* RFC 9000 ch. 4.5: the final size cannot be below the data received
+	 * and, once known, cannot change, nor does any data lie beyond it.
+	 * Checked before anything is discarded, so that it holds after a
+	 * reset too.
+	 */
+	if ((is_fin && end < stream->highest_offset_received) ||
+	    (stream->final_size_known &&
+	     (end > stream->peer_final_size || (is_fin && end != stream->peer_final_size)))) {
+		NET_ERR("[ST:%p/%d] Stream data against the final size: "
+			"end=%" PRIu64 " received=%" PRIu64 " final=%" PRIu64,
+			stream, quic_get_by_stream(stream), end, stream->highest_offset_received,
+			stream->final_size_known ? stream->peer_final_size : 0);
+		if (ep != NULL && ep->sock >= 0) {
+			quic_endpoint_send_connection_close(ep, QUIC_ERROR_FINAL_SIZE_ERROR,
+							    "stream data against the final size");
+		}
+
+		return -EPROTO;
+	}
+
 	/*
 	 * If the application shut down the read half (SHUT_RD), discard
 	 * incoming data silently. We have already sent STOP_SENDING so the
@@ -7794,14 +7843,6 @@ ZTESTABLE_STATIC int quic_stream_receive_data(struct quic_stream *stream,
 
 	k_mutex_lock(&stream->cond.data_available, K_FOREVER);
 
-	if (len > UINT64_MAX - offset) {
-		NET_ERR("[ST:%p/%d] Stream offset overflow: offset=%" PRIu64
-			" len=%zu", stream, quic_get_by_stream(stream), offset, len);
-		ret = -EPROTO;
-		goto flow_control_error;
-	}
-
-	end = offset + len;
 	if (end > stream->local_max_data) {
 		NET_ERR("[ST:%p/%d] Stream data exceeds MAX_STREAM_DATA: "
 			"end=%" PRIu64 " limit=%" PRIu64,
@@ -8013,6 +8054,8 @@ ZTESTABLE_STATIC int quic_stream_receive_data(struct quic_stream *stream,
 
 	if (is_fin) {
 		buf->fin_received = true;
+		stream->peer_final_size = end;
+		stream->final_size_known = true;
 
 		/* Mark stream as having received all data */
 		smf_set_state(SMF_CTX(&stream->state.ctx),
@@ -8031,6 +8074,15 @@ unlock:
 flow_control_error:
 	k_mutex_unlock(&stream->cond.data_available);
 
+	if (ep != NULL && ep->sock >= 0) {
+		quic_endpoint_send_connection_close(ep,
+						    QUIC_ERROR_FLOW_CONTROL_ERROR,
+						    "stream data exceeds flow control");
+	}
+
+	return ret;
+
+connection_error:
 	if (ep != NULL && ep->sock >= 0) {
 		quic_endpoint_send_connection_close(ep,
 						    QUIC_ERROR_FLOW_CONTROL_ERROR,

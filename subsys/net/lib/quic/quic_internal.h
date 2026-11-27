@@ -925,6 +925,15 @@ struct quic_endpoint {
 		struct quic_stream_seq_set opened_uni;
 	} rx_sl;
 
+	/** The limits the peer set on the streams opened here, kept in
+	 * peer_params, as far as the peer was told that they block us
+	 * (RFC 9000 ch. 4.6).
+	 */
+	struct {
+		uint64_t blocked_sent_bidi; /* bidi limit STREAMS_BLOCKED was last sent for */
+		uint64_t blocked_sent_uni;  /* uni limit STREAMS_BLOCKED was last sent for */
+	} tx_sl;
+
 	/** Peer's transport parameters */
 	struct {
 		uint64_t initial_max_data;
@@ -1187,6 +1196,12 @@ __net_socket struct quic_stream {
 	 */
 	uint64_t stop_sending_error_code;
 
+	/** Error code of the RESET_STREAM received from the peer */
+	uint64_t peer_reset_error_code;
+
+	/** Final size of the receiving half, from the peer's FIN or RESET_STREAM */
+	uint64_t peer_final_size;
+
 	/** BSD socket private data */
 	void *socket_data;
 
@@ -1234,6 +1249,12 @@ __net_socket struct quic_stream {
 
 	/** Read half shut down via shutdown(SHUT_RD), discard incoming data */
 	bool read_closed : 1;
+
+	/** RX side reset by a RESET_STREAM from the peer */
+	bool rx_reset : 1;
+
+	/** peer_final_size is known (RFC 9000 ch. 4.5) */
+	bool final_size_known : 1;
 
 	/** A rejected 0-RTT FIN must be replayed after queued data is resent. */
 	bool replay_fin_pending : 1;
@@ -1364,6 +1385,37 @@ __net_socket struct quic_context {
 static inline uint64_t *quic_stream_id_counter(struct quic_context *ctx, uint64_t id_or_type)
 {
 	return &ctx->stream_id_counter[(id_or_type & 2U) != 0U ? 1 : 0];
+}
+
+/**
+ * Tell whether a stream is send-only for this endpoint. Bit 0 of a stream
+ * ID is the initiator, 0 for the client and 1 for the server, and bit 1 is
+ * set for a unidirectional stream (RFC 9000 ch. 2.1). A unidirectional
+ * stream is send-only for the endpoint that opened it.
+ */
+static inline bool quic_stream_id_is_send_only(const struct quic_endpoint *ep,
+					       uint64_t stream_id)
+{
+	return (stream_id & 2U) != 0U && ((stream_id & 1U) != 0U) == ep->is_server;
+}
+
+/**
+ * Tell whether a stream is receive-only for this endpoint: a
+ * unidirectional stream that the peer opened.
+ */
+static inline bool quic_stream_id_is_receive_only(const struct quic_endpoint *ep,
+						  uint64_t stream_id)
+{
+	return (stream_id & 2U) != 0U && ((stream_id & 1U) != 0U) != ep->is_server;
+}
+
+/**
+ * Tell whether a stream was opened by this endpoint, from bit 0 of its ID
+ * (RFC 9000 ch. 2.1).
+ */
+static inline bool quic_stream_id_is_local(const struct quic_endpoint *ep, uint64_t stream_id)
+{
+	return ((stream_id & 1U) != 0U) == ep->is_server;
 }
 
 #if defined(CONFIG_QUIC_STATS_HISTORY)
@@ -1637,6 +1689,8 @@ int quic_build_connection_close(uint8_t *frame, size_t frame_len,
 void quic_close_frame_at_level(enum quic_secret_level level, uint8_t *type,
 			       uint64_t *error_code, uint64_t *frame_type,
 			       const char **reason);
+int quic_stream_recv(struct quic_stream *stream, uint8_t *buf,
+		     size_t buf_len, int32_t timeout);
 int process_handshake_message(struct quic_tls_context *ctx,
 			      uint8_t msg_type,
 			      const uint8_t *msg, size_t msg_len,
@@ -1710,6 +1764,7 @@ struct quic_endpoint *quic_test_endpoint_alloc(void);
 void quic_test_endpoint_unref(struct quic_endpoint *ep);
 void quic_test_check_idle_timeouts(void);
 void quic_test_receive_data(int sock, struct quic_endpoint *ep_hint);
+void quic_readvertise_flow_control(struct quic_endpoint *ep);
 
 bool stream_seq_was_opened(const struct quic_stream_seq_set *set, uint64_t seq);
 bool stream_seq_gaps_fit(const struct quic_stream_seq_set *set, uint64_t seq);

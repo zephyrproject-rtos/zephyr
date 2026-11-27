@@ -1446,6 +1446,16 @@ static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 		return -ENOTCONN;
 	}
 
+	/* A unidirectional stream of the peer has no sending part on our
+	 * side, and the peer would take any STREAM frame on it as a
+	 * connection error (RFC 9000 ch. 19.8).
+	 */
+	if (quic_stream_id_is_receive_only(ep, stream->id)) {
+		NET_DBG("[ST:%p/%d] Stream %" PRIu64 " is receive-only", stream,
+			quic_get_by_stream(stream), stream->id);
+		return -EPIPE;
+	}
+
 	/* Check if the stream is in a state that allows sending */
 	state = quic_stream_get_state(stream);
 	if (state == STATE_RESET_SENT || state == STATE_DATA_READ) {
@@ -1673,8 +1683,8 @@ static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 	return (ssize_t)to_send;
 }
 
-static int quic_stream_recv(struct quic_stream *stream, uint8_t *buf,
-			    size_t buf_len, int32_t timeout)
+ZTESTABLE_STATIC int quic_stream_recv(struct quic_stream *stream, uint8_t *buf,
+				      size_t buf_len, int32_t timeout)
 {
 	struct quic_stream_rx_buffer *rx = &stream->rx_buf;
 	struct quic_endpoint *ep;
@@ -1725,9 +1735,13 @@ static int quic_stream_recv(struct quic_stream *stream, uint8_t *buf,
 		}
 	}
 
-	/* Check for end of data */
+	/* End of data: what the peer sent is read. A stream the peer reset
+	 * is reported as an error once the data received before the reset
+	 * is read, so that it is not taken for a complete one (RFC 9000
+	 * ch. 3.2, the reset is read).
+	 */
 	if (quic_stream_is_eof(stream)) {
-		ret = 0;   /* EOF */
+		ret = stream->rx_reset ? -ECONNRESET : 0;
 		goto out;
 	}
 
@@ -2151,7 +2165,10 @@ static int quic_stream_getsockopt_ctx(void *obj, int level, int optname,
 				return -1;
 			}
 
-			*(int *)optval = 0; /* TODO: FIXME */
+			/* The connection is gone, or nothing is wrong: a reset
+			 * of the stream itself is read from it.
+			 */
+			*(int *)optval = stream->ep == NULL ? ECONNRESET : 0;
 			return 0;
 		}
 
@@ -2343,8 +2360,10 @@ static int quic_stream_close_vmeth(void *obj)
 	 *   - No endpoint (connection already gone)
 	 *   - Stream was reset (RESET_STREAM already sent/received)
 	 *   - FIN was already sent (DATA_SENT or DATA_RECVD)
+	 *   - The stream is receive-only, a unidirectional stream of the peer
 	 */
-	if (ep != NULL && ep->crypto.application.initialized) {
+	if (ep != NULL && ep->crypto.application.initialized &&
+	    !quic_stream_id_is_receive_only(ep, stream->id)) {
 		state = quic_stream_get_state(stream);
 
 		if (state != STATE_RESET_SENT &&
@@ -2403,8 +2422,12 @@ static int quic_stream_shutdown_vmeth(void *obj, int how)
 	/*
 	 * SHUT_WR (or SHUT_RDWR): send a STREAM+FIN to close our sending half.
 	 * RFC 9000 ch. 2.4.
+	 *
+	 * A receive-only stream has no sending half to close, and the peer
+	 * would take a FIN on it as a connection error (ch. 19.8).
 	 */
-	if (how == ZSOCK_SHUT_WR || how == ZSOCK_SHUT_RDWR) {
+	if ((how == ZSOCK_SHUT_WR || how == ZSOCK_SHUT_RDWR) &&
+	    !quic_stream_id_is_receive_only(ep, stream->id)) {
 		int state;
 
 		state = quic_stream_get_state(stream);
@@ -2450,8 +2473,12 @@ static int quic_stream_shutdown_vmeth(void *obj, int how)
 	 *
 	 * Skip if the peer already sent FIN (stream is in SIZE_KNOWN or later),
 	 * all data has already arrived so there is nothing left to stop.
+	 *
+	 * A send-only stream has no receiving half, and the peer would take a
+	 * STOP_SENDING on it as a connection error (ch. 19.5).
 	 */
-	if (how == ZSOCK_SHUT_RD || how == ZSOCK_SHUT_RDWR) {
+	if ((how == ZSOCK_SHUT_RD || how == ZSOCK_SHUT_RDWR) &&
+	    !quic_stream_id_is_send_only(ep, stream->id)) {
 		int state;
 
 		state = quic_stream_get_state(stream);
@@ -2747,6 +2774,33 @@ have_endpoint:
 		} else if (!ep->handshake.completed) {
 			NET_DBG("[EP:%p/%d] Allowing client stream open with 0-RTT armed",
 				ep, quic_get_by_ep(ep));
+		}
+	}
+
+	/* RFC 9000 ch. 4.6: no more streams of a type than the peer allows.
+	 * It raises the limit with a MAX_STREAMS frame; tell it once per
+	 * limit that we are waiting for one.
+	 */
+	if (ep->peer_params.parsed) {
+		bool bidi = direction == QUIC_STREAM_BIDIRECTIONAL;
+		uint64_t limit = bidi ? ep->peer_params.max_streams_bidi
+				      : ep->peer_params.max_streams_uni;
+		uint64_t opened = *quic_stream_id_counter(ctx, direction);
+		uint64_t *blocked_sent = bidi ? &ep->tx_sl.blocked_sent_bidi
+					      : &ep->tx_sl.blocked_sent_uni;
+
+		if (opened >= limit) {
+			NET_DBG("[EP:%p/%d] Peer allows no more than %" PRIu64 " %s streams",
+				ep, quic_get_by_ep(ep), limit, bidi ? "bidi" : "uni");
+
+			if (*blocked_sent != limit) {
+				if (quic_send_streams_blocked(ep, bidi, limit) == 0) {
+					*blocked_sent = limit;
+				}
+			}
+
+			quic_stats_update_stream_open_failed();
+			return -EAGAIN;
 		}
 	}
 
