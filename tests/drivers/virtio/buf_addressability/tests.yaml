@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - virtio
+  timeout: 120
+
+tests:
+  # x86_64, mapped stacks disabled: static RAM and the thread stack are in the
+  # boot window; runtime mappings are not.
+  drivers.virtio.buf_addressability.stack_unmapped:
+    platform_allow:
+      - qemu_x86_64
+    extra_configs:
+      - CONFIG_THREAD_STACK_MEM_MAPPED=n
+      - CONFIG_KERNEL_VM_SIZE=0x10000000
+
+  # x86_64, mapped stacks enabled: the running stack is a runtime mapping.
+  drivers.virtio.buf_addressability.stack_mapped:
+    platform_allow:
+      - qemu_x86_64
+    extra_configs:
+      - CONFIG_THREAD_STACK_MEM_MAPPED=y
+
+  # x86_64 with all RAM mapped at boot: the accepted window ends at the end of
+  # SRAM instead of the end of the kernel image.
+  drivers.virtio.buf_addressability.maps_all_ram:
+    platform_allow:
+      - qemu_x86_64
+    extra_configs:
+      - CONFIG_TEST_VIRTIO_MAPS_ALL_RAM=y
+      - CONFIG_THREAD_STACK_MEM_MAPPED=n
+      - CONFIG_KERNEL_VM_SIZE=0x10000000
+
+  # Demand paging: every range, including zero-length, is rejected.
+  drivers.virtio.buf_addressability.demand_paging:
+    platform_allow:
+      - qemu_cortex_a53
+    extra_configs:
+      - CONFIG_DEMAND_PAGING=y
+      - CONFIG_BACKING_STORE_RAM=y
+      - CONFIG_BACKING_STORE_RAM_PAGES=24
+
+  # Non-MMU board with a chosen SRAM node.
+  drivers.virtio.buf_addressability.no_mmu:
+    platform_allow:
+      - qemu_cortex_m3
