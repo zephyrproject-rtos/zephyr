@@ -930,6 +930,11 @@ static int quic_stream_poll_prepare(struct quic_stream *stream,
 		(*pev)->state = K_POLL_STATE_NOT_READY;
 		(*pev)++;
 
+		/* A send on a stream that was reset fails at once */
+		if (stream->tx_reset) {
+			ret = -EALREADY;
+		}
+
 		NET_DBG("[%p] POLLOUT prepare: tx_free=%zu, can_send=%d",
 			stream, sizeof(stream->tx_buf.data) - stream->tx_buf.len,
 			quic_stream_can_send(stream));
@@ -974,9 +979,10 @@ static int quic_stream_poll_update(struct quic_stream *stream,
 
 		/* Only report POLLOUT if we can actually send data.
 		 * The signal being raised just means space became available at some
-		 * point, but we need to verify current state.
+		 * point, but we need to verify current state. A stream that was
+		 * reset is reported too, as a send on it does not block: it fails.
 		 */
-		if (can_send) {
+		if (can_send || stream->tx_reset) {
 			pfd->revents |= ZSOCK_POLLOUT;
 		}
 		(*pev)++;

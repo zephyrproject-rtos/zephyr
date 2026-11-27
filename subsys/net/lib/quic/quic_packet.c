@@ -781,18 +781,15 @@ static int handle_stop_sending_frame(struct quic_endpoint *ep,
 		/* Send RESET_STREAM, our TX side is being abandoned */
 		quic_send_reset_stream(ep, stream_id, error_code, final_size);
 
-		/*
-		 * Wake any thread blocked in zsock_recv() or waiting on
-		 * POLLIN so the HTTP layer sees the stream is done and calls
-		 * zsock_close().  Reuse the fin_received flag so
-		 * quic_stream_recv() returns 0 (EOF) rather than blocking.
+		/* Only the sending part is stopped, the peer may go on
+		 * sending (RFC 9000 ch. 3.5), so the receiving part is left
+		 * alone. A sender that waits for room is woken up: its next
+		 * send fails.
 		 */
-		stream->rx_buf.fin_received = true;
-		k_poll_signal_raise(&stream->recv.signal, 0);
-		k_condvar_signal(&stream->cond.recv);
+		k_poll_signal_raise(&stream->send.signal, 0);
 
 		NET_DBG("[ST:%p/%d] STOP_SENDING: sent RESET_STREAM and woke "
-			"stream %" PRIu64,
+			"the sender of stream %" PRIu64,
 			stream, quic_get_by_stream(stream), stream_id);
 	}
 

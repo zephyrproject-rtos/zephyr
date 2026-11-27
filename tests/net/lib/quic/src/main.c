@@ -7084,6 +7084,7 @@ static void link_test_stream(struct quic_stream *stream, struct quic_context *ct
 	k_mutex_init(&stream->cond.data_available);
 	k_condvar_init(&stream->cond.recv);
 	k_poll_signal_init(&stream->recv.signal);
+	k_poll_signal_init(&stream->send.signal);
 	k_mutex_init(&stream->tx_lock);
 
 	sys_slist_append(&ctx->streams, &stream->node);
