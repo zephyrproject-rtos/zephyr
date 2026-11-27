@@ -272,6 +272,8 @@ struct bt_avdtp {
 	struct net_buf *reasm_buf;
 	uint8_t num_of_signal_pkts;
 	uint8_t tid_sent;
+	/* L2CAP clears chan.conn only after the disconnected callback returns. */
+	bool connected;
 };
 
 struct bt_avdtp_event_cb {
