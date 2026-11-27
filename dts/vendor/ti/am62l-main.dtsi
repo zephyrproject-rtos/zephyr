@@ -324,6 +324,7 @@
 		status = "disabled";
 		power-domains = <&main_adc0_pd>;
 		clocks = <&scmi_clk 4>;
+		channel-count = <4>;
 		#io-channel-cells = <1>;
 		#address-cells = <1>;
 		#size-cells = <0>;
