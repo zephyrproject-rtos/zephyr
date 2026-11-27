@@ -763,7 +763,13 @@ static uint8_t discover_func(struct bt_conn *conn,
 			client->cur_inst->rank_handle = chrc->value_handle;
 		}
 
-		if (sub_params != NULL && notify_handler != NULL) {
+		if (sub_params != NULL && notify_handler != NULL &&
+		    sub_params->disc_params->func != NULL) {
+			/* A repeated declaration of the characteristic, in a malformed service. The
+			 * CCC discovery for the earlier one still uses the subscribe parameters.
+			 */
+			LOG_DBG("Ignoring repeated declaration at handle 0x%04X", attr->handle);
+		} else if (sub_params != NULL && notify_handler != NULL) {
 			sub_params->value = 0U;
 			if ((chrc->properties & BT_GATT_CHRC_NOTIFY) != 0) {
 				sub_params->value = BT_GATT_CCC_NOTIFY;
@@ -783,6 +789,9 @@ static uint8_t discover_func(struct bt_conn *conn,
 				err = bt_gatt_subscribe(conn, sub_params);
 				if (err != 0 && err != -EALREADY) {
 					LOG_DBG("Failed to subscribe (err %d)", err);
+					/* A CCC discovery that failed to start left them set */
+					(void)memset(sub_params->disc_params, 0,
+						     sizeof(*sub_params->disc_params));
 					discover_complete(client, err);
 
 					return BT_GATT_ITER_STOP;
