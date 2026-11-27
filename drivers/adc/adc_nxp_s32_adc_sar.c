@@ -225,7 +225,7 @@ static int adc_nxp_s32_start_read_async(const struct device *dev,
 	error = adc_nxp_s32_validate_buffer_size(dev, sequence);
 	if (error) {
 		LOG_ERR("Buffer size isn't enough");
-		return -EINVAL;
+		return error;
 	}
 
 #if FEATURE_ADC_HAS_AVERAGING
