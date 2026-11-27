@@ -5,6 +5,7 @@
  */
 
 #include <pthread.h>
+#include <sched.h>
 
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
@@ -147,6 +148,7 @@ ZTEST(pthread_attr, test_pthread_attr_init_destroy)
 	/* note: attr is still valid and is destroyed in after() */
 }
 
+#if defined(_POSIX_THREAD_PRIORITY_SCHEDULING)
 ZTEST(pthread_attr, test_pthread_attr_getschedparam)
 {
 	struct sched_param param = {
@@ -393,6 +395,7 @@ ZTEST(pthread_attr, test_pthread_attr_setinheritsched)
 	test_pthread_attr_setinheritsched_common(PTHREAD_INHERIT_SCHED);
 	test_pthread_attr_setinheritsched_common(PTHREAD_EXPLICIT_SCHED);
 }
+#endif
 
 ZTEST(pthread_attr, test_pthread_attr_large_stacksize)
 {

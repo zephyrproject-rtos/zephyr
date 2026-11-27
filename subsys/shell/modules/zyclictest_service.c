@@ -15,7 +15,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(zyclictest, LOG_LEVEL_INF);
 
-#include <zephyr/posix/unistd.h>
+#include <getopt.h>
+#include <unistd.h>
 #include <zephyr/shell/shell.h>
 
 #include <zephyr/sys/atomic.h>

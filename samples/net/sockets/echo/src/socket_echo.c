@@ -7,25 +7,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-
-#ifndef __ZEPHYR__
-
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <poll.h>
 
-#else
-
-#include <zephyr/posix/netinet/in.h>
-#include <zephyr/posix/sys/socket.h>
-#include <zephyr/posix/arpa/inet.h>
-#include <zephyr/posix/unistd.h>
-#include <zephyr/posix/poll.h>
-
+#ifdef __ZEPHYR__
 #include <zephyr/net/socket.h>
 #include <zephyr/kernel.h>
-
 #endif
 
 #define BIND_PORT 4242

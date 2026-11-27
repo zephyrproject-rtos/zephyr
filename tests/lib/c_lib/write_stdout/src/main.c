@@ -7,7 +7,7 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/sys/libc-hooks.h>
-#include <zephyr/posix/unistd.h>
+#include <unistd.h>
 
 #define STDOUT_FD 1
 

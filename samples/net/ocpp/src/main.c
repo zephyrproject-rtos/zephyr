@@ -9,11 +9,11 @@
 #include <stdio.h>
 #include <time.h>
 
-#include <zephyr/posix/sys/socket.h>
-#include <zephyr/posix/arpa/inet.h>
-#include <zephyr/posix/netinet/in.h>
-#include <zephyr/posix/unistd.h>
-#include <zephyr/posix/netdb.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <netdb.h>
 
 #include <zephyr/logging/log.h>
 #include <zephyr/net/net_if.h>

@@ -11,9 +11,9 @@
 #include <zephyr/net/coap_client.h>
 #include <inttypes.h>
 #include <errno.h>
-#include <zephyr/posix/sys/socket.h>
-#include <zephyr/posix/unistd.h>
-#include <zephyr/posix/arpa/inet.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <arpa/inet.h>
 
 LOG_MODULE_REGISTER(coap_download, LOG_LEVEL_INF);
 

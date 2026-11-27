@@ -10,11 +10,11 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net/socket.h>
-#include <zephyr/posix/arpa/inet.h>
-#include <zephyr/posix/netinet/in.h>
-#include <zephyr/posix/poll.h>
-#include <zephyr/posix/sys/socket.h>
-#include <zephyr/posix/unistd.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <poll.h>
+#include <sys/socket.h>
+#include <unistd.h>
 #include <zephyr/video/video.h>
 
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);

@@ -10,12 +10,12 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/modbus/modbus.h>
 
-#include <zephyr/posix/netinet/in.h>
-#include <zephyr/posix/sys/socket.h>
-#include <zephyr/posix/arpa/inet.h>
-#include <zephyr/posix/unistd.h>
-#include <zephyr/posix/poll.h>
-#include <zephyr/posix/netdb.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <poll.h>
+#include <netdb.h>
 
 #include <zephyr/net/socket.h>
 

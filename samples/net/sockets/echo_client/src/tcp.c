@@ -14,9 +14,9 @@ LOG_MODULE_DECLARE(net_echo_client_sample, LOG_LEVEL_DBG);
 #include <errno.h>
 #include <stdio.h>
 
-#include <zephyr/posix/sys/socket.h>
-#include <zephyr/posix/arpa/inet.h>
-#include <zephyr/posix/unistd.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
 
 #include <zephyr/net/socket.h>
 #include <zephyr/net/tls_credentials.h>
