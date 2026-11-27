@@ -21,9 +21,9 @@ LOG_MODULE_REGISTER(ICM40627, CONFIG_SENSOR_LOG_LEVEL);
  * See datasheet section 3.1 for details
  */
 static const uint16_t icm40627_gyro_sensitivity_x10[] = {
-	[BIT_GYRO_UI_FS_2000] 164, [BIT_GYRO_UI_FS_1000] 328, [BIT_GYRO_UI_FS_500] 655,
-	[BIT_GYRO_UI_FS_250] 1310, [BIT_GYRO_UI_FS_125] 2620, [BIT_GYRO_UI_FS_62] 5243,
-	[BIT_GYRO_UI_FS_31] 10486, [BIT_GYRO_UI_FS_15] 20972,
+	[BIT_GYRO_UI_FS_2000] = 164, [BIT_GYRO_UI_FS_1000] = 328, [BIT_GYRO_UI_FS_500] = 655,
+	[BIT_GYRO_UI_FS_250] = 1310, [BIT_GYRO_UI_FS_125] = 2620, [BIT_GYRO_UI_FS_62] = 5243,
+	[BIT_GYRO_UI_FS_31] = 10486, [BIT_GYRO_UI_FS_15] = 20972,
 };
 
 static int icm40627_set_accel_fs(const struct device *dev, uint16_t fs)
