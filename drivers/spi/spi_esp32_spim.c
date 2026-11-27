@@ -186,7 +186,8 @@ static void spi_esp32_dma_rx_start(const struct device *dev, uint8_t *buf, size_
 	struct spi_esp32_data *data = dev->data;
 	spi_dev_t *hw = cfg->spi;
 
-	spi_esp32_dma_desc_setup(&data->dma_desc_rx, buf, len, true);
+	/* RX descriptor size must be a multiple of 4 bytes */
+	spi_esp32_dma_desc_setup(&data->dma_desc_rx, buf, ROUND_UP(len, 4U), true);
 
 	/* Reset DMA channel, prepare SPI HW for RX, then start DMA */
 	spi_dma_ll_rx_reset((spi_dma_dev_t *)hw, 0);
