@@ -183,12 +183,68 @@ static int quic_tls_effective_verify_level(const struct quic_tls_context *ctx)
 	return MBEDTLS_SSL_VERIFY_NONE;
 }
 
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
+/* Add the certificates that follow the first one in the certificate list of
+ * a Certificate message to the chain of the peer: they are what leads from
+ * its certificate to a trusted one. The message was checked by
+ * parse_certificate(). The certificates are read in place, so the chain is
+ * freed before the message goes away. One that cannot be read ends the chain
+ * there, and the verification decides whether what there is will do.
+ */
+static void add_peer_chain_certificates(mbedtls_x509_crt *chain, const uint8_t *msg,
+					size_t msg_len)
+{
+	size_t pos = 1U + msg[0]; /* Request context */
+	size_t list_end;
+	int i = 0;
+
+	list_end = pos + 3U + sys_get_be24(&msg[pos]);
+	if (list_end > msg_len) {
+		return;
+	}
+
+	pos += 3U;
+
+	while (pos + 3U <= list_end) {
+		size_t cert_len = sys_get_be24(&msg[pos]);
+		int ret;
+
+		pos += 3U;
+		if (cert_len + 2U > list_end - pos) {
+			return;
+		}
+
+		/* The first certificate is the one of the peer itself, which
+		 * the limit does not count, as for a chain of our own.
+		 */
+		if (i > CONFIG_QUIC_TLS_MAX_CERT_CHAIN_DEPTH) {
+			NET_DBG("Peer certificate chain cut after %d certificates", i - 1);
+			return;
+		}
+
+		if (i > 0) {
+			ret = mbedtls_x509_crt_parse_der_nocopy(chain, &msg[pos], cert_len);
+			if (ret != 0) {
+				NET_DBG("Failed to parse certificate %d of the peer: -0x%04x",
+					i, -ret);
+				return;
+			}
+		}
+
+		pos += cert_len;
+		pos += 2U + sys_get_be16(&msg[pos]); /* Extensions */
+		i++;
+	}
+}
+#endif /* MBEDTLS_X509_CRT_PARSE_C */
+
 /*
  * Verify peer certificate using mbedtls
  * Called when processing Certificate message from peer
  */
 static int verify_peer_certificate(struct quic_tls_context *ctx,
-				   const uint8_t *cert_data, size_t cert_len)
+				   const uint8_t *cert_data, size_t cert_len,
+				   const uint8_t *msg, size_t msg_len)
 {
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 	mbedtls_x509_crt peer_crt;
@@ -209,6 +265,8 @@ static int verify_peer_certificate(struct quic_tls_context *ctx,
 		ret = -EINVAL;
 		goto out;
 	}
+
+	add_peer_chain_certificates(&peer_crt, msg, msg_len);
 
 	/* Verify against CA chain if available */
 	if (ctx->ca_cert) {
@@ -4947,7 +5005,8 @@ ZTESTABLE_STATIC int process_handshake_message(struct quic_tls_context *ctx,
 
 		/* Verify the peer certificate against CA chain if configured */
 		if (ctx->peer_cert_len > 0) {
-			ret = verify_peer_certificate(ctx, ctx->peer_cert, ctx->peer_cert_len);
+			ret = verify_peer_certificate(ctx, ctx->peer_cert, ctx->peer_cert_len,
+						      msg, msg_len);
 			if (ret != 0) {
 				NET_DBG("Peer certificate verification failed: %d", ret);
 				return ret;
