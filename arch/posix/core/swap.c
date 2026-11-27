@@ -34,7 +34,14 @@ int arch_swap(unsigned int key)
 	z_thread_mark_switched_out();
 #endif
 	_current->callee_saved.key = key;
-	_current->callee_saved.retval = -EAGAIN;
+
+	/* A waker that readied this thread before the swap has already stored
+	 * its result in retval; a plain -EAGAIN seed would turn that wake into
+	 * a timeout. Default only when no waker has run.
+	 */
+	if (!z_is_thread_queued(_current)) {
+		_current->callee_saved.retval = -EAGAIN;
+	}
 
 	/* retval may be modified with a call to
 	 * arch_thread_return_value_set()
