@@ -1,0 +1,8 @@
+tests:
+  arch.posix.swap:
+    arch_allow: posix
+    integration_platforms:
+      - native_sim
+    tags:
+      - arch
+      - posix
