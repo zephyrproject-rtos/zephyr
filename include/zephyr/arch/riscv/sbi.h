@@ -27,6 +27,16 @@
 #include <zephyr/sys/util_macro.h>
 #endif /* _ASMLANGUAGE */
 
+/** @brief SBI Base extension and its function IDs. */
+#define SBI_EXT_BASE			0x10
+#define SBI_FUNC_GET_SPEC_VERSION	0
+#define SBI_FUNC_GET_IMPL_ID		1
+#define SBI_FUNC_GET_IMPL_VERSION	2
+#define SBI_FUNC_PROBE_EXTENSION	3
+#define SBI_FUNC_GET_MVENDORID		4
+#define SBI_FUNC_GET_MARCHID		5
+#define SBI_FUNC_GET_MIMPID		6
+
 /** @brief SBI extension ID for the Timer extension (TIME) */
 #define SBI_EXT_TIME			0x54494D45
 
