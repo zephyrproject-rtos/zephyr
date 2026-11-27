@@ -1,0 +1,93 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/3dr-control-n1-connector.h>
+#include <zephyr/dt-bindings/gpio/pixhawk-connector.h>
+
+/ {
+	pixhawk_telem1_connector: sg1-connector {
+		compatible = "pixhawk-telem-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <PIXHAWK_TELEM_TX 0 &cn1_connector CN1_SG1_TX 0>,
+			   <PIXHAWK_TELEM_RX 0 &cn1_connector CN1_SG1_RX 0>,
+			   <PIXHAWK_TELEM_CTS 0 &cn1_connector CN1_SG1_CTS 0>,
+			   <PIXHAWK_TELEM_RTS 0 &cn1_connector CN1_SG1_RTS 0>;
+	};
+
+	pixhawk_telem2_connector: sg2-connector {
+		compatible = "pixhawk-telem-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <PIXHAWK_TELEM_TX 0 &cn1_connector CN1_SG2_TX 0>,
+			   <PIXHAWK_TELEM_RX 0 &cn1_connector CN1_SG2_RX 0>,
+			   <PIXHAWK_TELEM_CTS 0 &cn1_connector CN1_SG2_CTS 0>,
+			   <PIXHAWK_TELEM_RTS 0 &cn1_connector CN1_SG2_RTS 0>;
+	};
+
+	pixhawk_telem3_connector: sg3-connector {
+		compatible = "pixhawk-telem-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <PIXHAWK_TELEM_TX 0 &cn1_connector CN1_SG3_TX 0>,
+			   <PIXHAWK_TELEM_RX 0 &cn1_connector CN1_SG3_RX 0>,
+			   <PIXHAWK_TELEM_CTS 0 &cn1_connector CN1_SG3_CTS 0>,
+			   <PIXHAWK_TELEM_RTS 0 &cn1_connector CN1_SG3_RTS 0>;
+	};
+
+	pixhawk_gps1_connector: gps1-connector {
+		compatible = "pixhawk-gps-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <PIXHAWK_GPS_TX 0 &cn1_connector CN1_SG7_TX 0>,
+			   <PIXHAWK_GPS_RX 0 &cn1_connector CN1_SG7_RX 0>,
+			   <PIXHAWK_GPS_SCL 0 &cn1_connector CN1_I2C1_SCL 0>,
+			   <PIXHAWK_GPS_SDA 0 &cn1_connector CN1_I2C1_SDA 0>;
+	};
+
+	pixhawk_gps2_connector: gps2-connector {
+		compatible = "pixhawk-gps-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <PIXHAWK_GPS_TX 0 &cn1_connector CN1_SG4_TX 0>,
+			   <PIXHAWK_GPS_RX 0 &cn1_connector CN1_SG4_RX 0>,
+			   <PIXHAWK_GPS_SCL 0 &cn1_connector CN1_I2C2_SCL 0>,
+			   <PIXHAWK_GPS_SDA 0 &cn1_connector CN1_I2C2_SDA 0>;
+	};
+
+	pixhawk_i2c2_connector: i2c2-connector {
+		compatible = "pixhawk-i2c-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <PIXHAWK_I2C_SCL 0 &cn1_connector CN1_I2C2_SCL 0>,
+			   <PIXHAWK_I2C_SDA 0 &cn1_connector CN1_I2C2_SDA 0>;
+	};
+};
+
+pixhawk_telem1: &cn1_sg1_serial {};
+
+pixhawk_telem2: &cn1_sg2_serial {};
+
+pixhawk_telem3: &cn1_sg3_serial {};
+
+pixhawk_gps1_serial: &cn1_sg7_serial {};
+
+pixhawk_gps1_i2c: &cn1_i2c1 {};
+
+pixhawk_gps2_serial: &cn1_sg4_serial {};
+
+pixhawk_gps2_i2c: &cn1_i2c2 {};
+
+pixhawk_i2c2: &cn1_i2c2 {};
+
+pixhawk_can1: &cn1_can1 {};
+
+pixhawk_can2: &cn1_can2 {};
