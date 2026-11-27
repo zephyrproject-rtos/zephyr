@@ -1147,6 +1147,8 @@ static void send_state_machine(struct isotp_send_ctx *sctx)
 		LOG_DBG("SM finish");
 		k_timer_stop(&sctx->timer);
 
+		sctx->state = ISOTP_TX_STATE_RESET;
+
 		if (sctx->has_callback) {
 			sctx->fin_cb.cb(sctx->error_nr, sctx->fin_cb.arg);
 			free_send_ctx(&sctx);
@@ -1154,7 +1156,6 @@ static void send_state_machine(struct isotp_send_ctx *sctx)
 			k_sem_give(&sctx->fin_sem);
 		}
 
-		sctx->state = ISOTP_TX_STATE_RESET;
 		break;
 
 	default:
