@@ -376,6 +376,7 @@ struct btp_gap_big_create_sync_cmd {
 
 #define BTP_GAP_CREATE_BIG_ENC_DISABLE		0x00
 #define BTP_GAP_CREATE_BIG_ENC_ENABLE		0x01
+#define BTP_GAP_CREATE_BIG_ENC_ENABLE_AUTH	0x02
 
 #define BTP_GAP_CREATE_BIG			0x2d
 struct btp_gap_create_big_cmd {
@@ -460,6 +461,8 @@ struct btp_gap_pawr_configure_cmd {
 #define BTP_GAP_SEC_MODE_1			0x01
 #define BTP_GAP_SEC_MODE_3			0x03
 #define BTP_GAP_SEC_MODE_3_LEVEL_1		0x01
+#define BTP_GAP_SEC_MODE_3_LEVEL_2		0x02
+#define BTP_GAP_SEC_MODE_3_LEVEL_3		0x03
 #define BTP_GAP_SEC_MODE_FLAG_SC_ONLY		BIT(0)
 
 #define BTP_GAP_CONFIGURE_SECURITY_MODE		0x35
