@@ -10142,4 +10142,168 @@ ZTEST(net_socket_quic, test_566_stop_sending_stops_only_the_sending_part)
 	zassert_ok(ret, "Failed to close the server socket (%d)", ret);
 }
 
+ZTEST(net_socket_quic, test_567_handshake_payloads_that_ask_for_an_ack)
+{
+	static const uint8_t crypto[] = {
+		QUIC_FRAME_TYPE_CRYPTO, 0x00, 0x01, 0xaa,
+	};
+	static const uint8_t padded_ping[] = {
+		QUIC_FRAME_TYPE_PADDING, QUIC_FRAME_TYPE_PADDING, QUIC_FRAME_TYPE_PING,
+	};
+	static const uint8_t padding[] = {
+		QUIC_FRAME_TYPE_PADDING, QUIC_FRAME_TYPE_PADDING,
+	};
+	static const uint8_t ack[] = {
+		QUIC_FRAME_TYPE_ACK, 0x05, 0x00, 0x00, 0x00,
+	};
+	/* Two further ranges, each a gap and a length */
+	static const uint8_t ack_then_crypto[] = {
+		QUIC_FRAME_TYPE_ACK, 0x09, 0x00, 0x02, 0x00, 0x01, 0x00, 0x01, 0x00,
+		QUIC_FRAME_TYPE_CRYPTO, 0x00, 0x01, 0xaa,
+	};
+	/* One further range and the three ECN counts, one of them two bytes */
+	static const uint8_t ack_ecn_then_ping[] = {
+		QUIC_FRAME_TYPE_ACK_ECN, 0x09, 0x00, 0x01, 0x00, 0x01, 0x00,
+		0x00, 0x40, 0x01, 0x00,
+		QUIC_FRAME_TYPE_PING,
+	};
+	static const uint8_t ack_ecn[] = {
+		QUIC_FRAME_TYPE_ACK_ECN, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	};
+	static const uint8_t close[] = {
+		QUIC_FRAME_TYPE_CONNECTION_CLOSE_TRANSPORT, 0x0a, 0x00, 0x00,
+	};
+	/* The range count says more than the payload holds */
+	static const uint8_t short_ack[] = {
+		QUIC_FRAME_TYPE_ACK, 0x05, 0x00, 0x04, 0x00, 0x01,
+	};
+
+	zexpect_true(quic_handshake_payload_is_ack_eliciting(crypto, sizeof(crypto)),
+		     "CRYPTO asks for an acknowledgment");
+	zexpect_true(quic_handshake_payload_is_ack_eliciting(padded_ping, sizeof(padded_ping)),
+		     "PING after PADDING asks for an acknowledgment");
+	zexpect_true(quic_handshake_payload_is_ack_eliciting(ack_then_crypto,
+							     sizeof(ack_then_crypto)),
+		     "CRYPTO after an ACK asks for an acknowledgment");
+	zexpect_true(quic_handshake_payload_is_ack_eliciting(ack_ecn_then_ping,
+							     sizeof(ack_ecn_then_ping)),
+		     "PING after an ACK with ECN counts asks for an acknowledgment");
+
+	zexpect_false(quic_handshake_payload_is_ack_eliciting(padding, sizeof(padding)),
+		      "PADDING asks for no acknowledgment");
+	zexpect_false(quic_handshake_payload_is_ack_eliciting(ack, sizeof(ack)),
+		      "An ACK asks for no acknowledgment");
+	zexpect_false(quic_handshake_payload_is_ack_eliciting(ack_ecn, sizeof(ack_ecn)),
+		      "An ACK with ECN counts asks for no acknowledgment");
+	zexpect_false(quic_handshake_payload_is_ack_eliciting(close, sizeof(close)),
+		      "CONNECTION_CLOSE asks for no acknowledgment");
+	zexpect_false(quic_handshake_payload_is_ack_eliciting(short_ack, sizeof(short_ack)),
+		      "An ACK that is cut short asks for no acknowledgment");
+	zexpect_false(quic_handshake_payload_is_ack_eliciting(crypto, 0),
+		      "An empty payload asks for no acknowledgment");
+}
+
+ZTEST(net_socket_quic, test_574_handshake_ack_rides_on_a_reply)
+{
+	static const uint8_t ack_of_5[] = {
+		QUIC_FRAME_TYPE_ACK, 0x05, 0x00, 0x00, 0x00,
+	};
+	/* Packet number 300 takes two bytes */
+	static const uint8_t ack_of_300[] = {
+		QUIC_FRAME_TYPE_ACK, 0x41, 0x2c, 0x00, 0x00, 0x00,
+	};
+	static const uint8_t tls_data[] = { 0x01, 0x02, 0x03, 0x04 };
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	uint8_t buf[16];
+	size_t len;
+	int ret;
+
+	len = quic_take_handshake_ack(ep, QUIC_SECRET_LEVEL_INITIAL, buf, sizeof(buf));
+	zassert_equal(len, 0, "An acknowledgment was written with none pending (%zu)", len);
+
+	/* A pending acknowledgment is written once, at its own level */
+	ep->handshake_ack[QUIC_SECRET_LEVEL_INITIAL].pkt_num = 5;
+	ep->handshake_ack[QUIC_SECRET_LEVEL_INITIAL].pending = true;
+
+	len = quic_take_handshake_ack(ep, QUIC_SECRET_LEVEL_HANDSHAKE, buf, sizeof(buf));
+	zassert_equal(len, 0, "An acknowledgment was written at another level (%zu)", len);
+
+	len = quic_take_handshake_ack(ep, QUIC_SECRET_LEVEL_INITIAL, buf, sizeof(buf));
+	zassert_equal(len, sizeof(ack_of_5), "Unexpected ACK frame length %zu", len);
+	zassert_mem_equal(buf, ack_of_5, sizeof(ack_of_5), "Unexpected ACK frame");
+
+	len = quic_take_handshake_ack(ep, QUIC_SECRET_LEVEL_INITIAL, buf, sizeof(buf));
+	zassert_equal(len, 0, "An acknowledgment was written twice (%zu)", len);
+
+	/* One that does not fit stays pending, for a packet of its own */
+	ep->handshake_ack[QUIC_SECRET_LEVEL_HANDSHAKE].pkt_num = 300;
+	ep->handshake_ack[QUIC_SECRET_LEVEL_HANDSHAKE].pending = true;
+
+	len = quic_take_handshake_ack(ep, QUIC_SECRET_LEVEL_HANDSHAKE, buf,
+				      sizeof(ack_of_300) - 1);
+	zassert_equal(len, 0, "An acknowledgment was written past the buffer (%zu)", len);
+	zassert_true(ep->handshake_ack[QUIC_SECRET_LEVEL_HANDSHAKE].pending,
+		     "An acknowledgment that did not fit was dropped");
+
+	len = quic_take_handshake_ack(ep, QUIC_SECRET_LEVEL_HANDSHAKE, buf, sizeof(buf));
+	zassert_equal(len, sizeof(ack_of_300), "Unexpected ACK frame length %zu", len);
+	zassert_mem_equal(buf, ack_of_300, sizeof(ack_of_300), "Unexpected ACK frame");
+
+	/* Packets with the 1-RTT keys are acknowledged on their own path */
+	len = quic_take_handshake_ack(ep, QUIC_SECRET_LEVEL_APPLICATION, buf, sizeof(buf));
+	zassert_equal(len, 0, "An acknowledgment was written at the 1-RTT level (%zu)", len);
+
+	/* A reply that cannot be sent, here for want of keys, does not take
+	 * the acknowledgment with it.
+	 */
+	ep->handshake_ack[QUIC_SECRET_LEVEL_INITIAL].pkt_num = 7;
+	ep->handshake_ack[QUIC_SECRET_LEVEL_INITIAL].pending = true;
+
+	ret = quic_tls_send_callback(ep, QUIC_SECRET_LEVEL_INITIAL, tls_data, sizeof(tls_data));
+	zassert_true(ret < 0, "A reply without keys was sent (%d)", ret);
+	zassert_true(ep->handshake_ack[QUIC_SECRET_LEVEL_INITIAL].pending,
+		     "The acknowledgment was lost with a reply that was not sent");
+}
+
+ZTEST(net_socket_quic, test_568_handshake_packets_are_acknowledged)
+{
+	struct reset_test_peers peers;
+	struct quic_endpoint *client_ep;
+	struct quic_endpoint *server_ep;
+	int ret;
+
+	reset_test_connect(&peers, "127.0.0.1:54368", "127.0.0.1:19968");
+
+	client_ep = quic_test_sock_endpoint(peers.client_sock);
+	server_ep = quic_test_sock_endpoint(peers.server_conn);
+
+	/* The handshake itself takes one Handshake packet from the client,
+	 * its Finished. What it sent beyond that at this level is the
+	 * acknowledgment of the Handshake packets of the server that it had
+	 * nothing to answer with (RFC 9000 ch. 13.2.1).
+	 */
+	zexpect_true(client_ep->tx_pn.handshake >= 2,
+		     "The client acknowledged no Handshake packet (%" PRIu64 " sent)",
+		     client_ep->tx_pn.handshake);
+
+	/* The server answered the Initial packet of the client with its
+	 * ServerHello, which carries the acknowledgment: no packet of its
+	 * own was spent on it.
+	 */
+	zexpect_equal(server_ep->tx_pn.initial, 1,
+		      "The server sent %" PRIu64 " Initial packets", server_ep->tx_pn.initial);
+
+	ret = zsock_close(peers.client_stream);
+	zassert_ok(ret, "Failed to close the client stream (%d)", -errno);
+	ret = zsock_close(peers.server_stream);
+	zassert_ok(ret, "Failed to close the server stream (%d)", -errno);
+
+	ret = quic_connection_close(peers.server_conn);
+	zassert_ok(ret, "Failed to close the server connection (%d)", ret);
+	ret = quic_connection_close(peers.client_sock);
+	zassert_ok(ret, "Failed to close the client connection (%d)", ret);
+	ret = quic_connection_close(peers.server_sock);
+	zassert_ok(ret, "Failed to close the server socket (%d)", ret);
+}
+
 ZTEST_SUITE(net_socket_quic, NULL, setup, before, after, NULL);
