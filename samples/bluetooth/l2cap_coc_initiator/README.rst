@@ -35,7 +35,7 @@ To build the sample:
    :compact:
 
 After flashing, the device will scan for nearby Bluetooth devices, connect to
-the first one it finds, and attempt to establish an L2CAP channel on PSM 0x29.
+the first one it finds, and attempt to establish an L2CAP channel on PSM 0x0080.
 
 Pair this sample with the :zephyr:code-sample:`bluetooth_l2cap_coc_acceptor`
 sample running on another device. The initiator will automatically scan, connect,

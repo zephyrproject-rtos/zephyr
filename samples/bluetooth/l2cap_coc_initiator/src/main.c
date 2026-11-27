@@ -14,7 +14,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 
-#define PSM              0x29
+#define PSM              0x0080 /* SPSM of the acceptor sample */
 #define SEND_INTERVAL_MS 2000
 #define DATA_MTU         23
 
