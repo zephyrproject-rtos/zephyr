@@ -10,4 +10,8 @@
 /* Set by a suite before provoking a fault that must be fatal. */
 extern volatile bool expect_fault;
 
+#if defined(CONFIG_ARM64)
+extern volatile unsigned int last_fault_reason;
+#endif
+
 #endif
