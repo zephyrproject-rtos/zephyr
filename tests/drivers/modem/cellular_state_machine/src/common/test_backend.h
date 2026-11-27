@@ -87,6 +87,9 @@ bool test_backend_wait_for_read(enum test_backend_pipe_id pipe, k_timeout_t time
 /* Leave CMUX connect attempts pending until test_backend_cmux_connect_finish(). */
 void test_backend_cmux_connect_hold(bool hold);
 
+/* Leave CMUX disconnects unanswered, as a modem that never replies to the disconnect. */
+void test_backend_cmux_disconnect_hold(bool hold);
+
 /* Wait for the driver to start a CMUX connect attempt. */
 bool test_backend_wait_for_cmux_connect(k_timeout_t timeout);
 
