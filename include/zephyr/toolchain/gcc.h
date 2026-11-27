@@ -683,8 +683,13 @@ do {                                                                    \
  * @param x Nonzero unsigned long value
  * @return X rounded up to the next power of two
  */
+/* The "| 1" keeps the __builtin_clzl() argument nonzero when x is 1. That
+ * branch is not taken then, but it has to be a constant expression for the
+ * result to be usable as an array size. It does not change the result for
+ * any x greater than 2.
+ */
 #define Z_POW2_CEIL(x) \
-	((x) <= 2UL ? (x) : (1UL << (8 * sizeof(long) - __builtin_clzl((x) - 1))))
+	((x) <= 2UL ? (x) : (1UL << (8 * sizeof(long) - __builtin_clzl(((x) - 1) | 1))))
 
 /**
  * @brief Check whether or not a value is a power of 2
