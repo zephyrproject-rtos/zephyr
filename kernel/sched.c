@@ -530,17 +530,15 @@ static ALWAYS_INLINE int swap_switch(unsigned int key, bool release_global_lock)
 	return _current->swap_retval;
 }
 
-#ifdef CONFIG_SMP
-int z_swap_switch(unsigned int key, bool release_global_lock)
-{
-	return swap_switch(key, release_global_lock);
-}
-#else
-int z_swap_switch_up(unsigned int key)
+int z_swap_switch(unsigned int key)
 {
 	return swap_switch(key, false);
 }
-#endif
+
+int z_swap_switch_irqlock(unsigned int key)
+{
+	return swap_switch(key, true);
+}
 #endif /* CONFIG_USE_SWITCH */
 
 #if defined(CONFIG_USE_SWITCH) && !defined(CONFIG_SMP)
