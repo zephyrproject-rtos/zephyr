@@ -191,7 +191,7 @@ static void lfclk_clock_event_handler(nrfx_clock_lfclk_evt_type_t event)
 		if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_DRIVER_CALIBRATION)) {
 			z_nrf_clock_calibration_lfclk_started();
 		}
-		common_clkstarted_handle(CLOCK_DEVICE_LFCLK);
+		common_clk_ready_handle(CLOCK_DEVICE_LFCLK);
 		break;
 #if NRF_CLOCK_HAS_CALIBRATION
 	case NRFX_CLOCK_LFCLK_EVT_CAL_DONE:

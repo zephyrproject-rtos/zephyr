@@ -21,6 +21,8 @@
 
 #define COMMON_STATUS_MASK       0x7
 #define COMMON_GET_STATUS(flags) (flags & COMMON_STATUS_MASK)
+#define COMMON_CTX_MASK       (COMMON_CTX_ONOFF | COMMON_CTX_API)
+#define COMMON_GET_CTX(flags) (flags & COMMON_CTX_MASK)
 
 #ifdef CONFIG_HAS_NORDIC_MULTI_OPTION_CLOCKS
 struct clock_onoff {
@@ -131,17 +133,19 @@ int api_nosys_on_off(const struct device *dev, clock_control_subsys_t sys);
 
 void common_connect_irq(void);
 
-void common_set_on_state(uint32_t *flags);
+int common_set_starting_state(uint32_t *flags, uint32_t ctx);
 
-void common_blocking_start_callback(const struct device *dev, clock_control_subsys_t subsys,
-				    void *user_data);
+void common_set_on_state(uint32_t *flags);
 
 int common_async_start(const struct device *dev, clock_control_cb_t cb, void *user_data,
 		       uint32_t ctx);
 
 int common_stop(const struct device *dev, uint32_t ctx);
 
-void common_clkstarted_handle(const struct device *dev);
+void common_onoff_ready_callback(const struct device *dev, clock_control_subsys_t sys,
+	void *user_data);
+
+void common_clk_ready_handle(const struct device *dev);
 
 void common_clear_pending_irq(void);
 
@@ -163,6 +167,9 @@ int common_api_release(const struct device *dev, const struct nrf_clock_spec *sp
 
 int common_api_cancel_or_release(const struct device *dev, const struct nrf_clock_spec *spec,
 				 struct onoff_client *cli);
+
+void common_onoff_stop(struct onoff_manager *manager, onoff_notify_fn notify);
+
 #endif
 
 int common_clk_init(const struct device *dev);
