@@ -419,6 +419,15 @@ static int coap_server_process(int sock_fd)
 		return ret;
 	}
 
+	/* RFC 7252, section 3: a message with an unknown version number is
+	 * silently ignored.
+	 */
+	if (coap_header_get_version(&request) != COAP_VERSION_1) {
+		LOG_DBG("Ignoring message with unknown version %u",
+			coap_header_get_version(&request));
+		return 0;
+	}
+
 	/* RFC 7252 Section 5.4.1: Check for unsupported critical options before processing.
 	 * This must happen before any OSCORE-specific logic to ensure fail-closed behavior.
 	 */
