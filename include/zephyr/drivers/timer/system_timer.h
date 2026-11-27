@@ -297,7 +297,9 @@ void sys_clock_no_timeout(void);
  *
  * The hook is optional.  Without it, sys_clock_set_timeout() is called with
  * its deprecated idle argument set to true, which keeps a driver keying its
- * low-power handling on that argument working.  It goes with the argument, by
+ * low-power handling on that argument working.  That call is made only when
+ * the power state has a non-zero exit latency and ticks is a deadline, as it
+ * was before this hook existed.  The default goes with the argument, by
  * which time a platform using the power management facility is expected to
  * have implemented sys_clock_idle_enter() itself.
  *
