@@ -91,6 +91,10 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 */
 	memset(&thread->arch, 0, sizeof(thread->arch));
 
+#ifdef CONFIG_DEMAND_PAGING
+	z_arm64_el1_perm_retry_retire(thread, NULL);
+#endif
+
 	/*
 	 * The ESF is now hosted at the top of the stack. For user threads this
 	 * is also fine because at this stage they are still running in EL1.
@@ -211,6 +215,9 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 
 int arch_coprocessors_disable(struct k_thread *thread)
 {
+#ifdef CONFIG_DEMAND_PAGING
+	z_arm64_el1_perm_retry_retire(thread, NULL);
+#endif
 #if defined(CONFIG_FPU_SHARING)
 	return arch_float_disable(thread);
 #else

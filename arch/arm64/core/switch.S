@@ -63,6 +63,20 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	orr	x4, x4, x2, lsl #TPIDRROEL0_EXC_SHIFT
 	msr	tpidrro_el0, x4
 
+#ifdef CONFIG_DEMAND_PAGING
+	ldrb	w3, [x1, #_thread_offset_to_exception_depth]
+	cbnz	w3, 1f
+	adrp	x3, z_arm64_el1_perm_retry_active
+	ldr	w3, [x3, :lo12:z_arm64_el1_perm_retry_active]
+	cbz	w3, 1f
+	stp	x0, x1, [sp, #-16]!
+	mov	x0, x1
+	mov	x1, xzr
+	bl	z_arm64_el1_perm_retry_retire
+	ldp	x0, x1, [sp], #16
+1:
+#endif
+
 #ifdef CONFIG_FPU_SHARING
 	/*
 	 * Do this after tpidrro_el0 is updated with the new exception

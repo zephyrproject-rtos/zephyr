@@ -1832,6 +1832,213 @@ void z_arm64_swap_mem_domains(struct k_thread *incoming)
  */
 #define TLBI_VA_SHIFT 12
 
+#define EL1_PERM_RETRY_SLOTS MAX(16U, (CONFIG_MP_MAX_NUM_CPUS * 2U))
+
+/*
+ * Bounded cache of active EL1 permission-fault retry snapshots, keyed by
+ * (_current, elr, page) in thread context and (cpu, nested, elr, page) in ISR
+ * context so preemption, CPU migration, or unrelated page faults cannot re-arm
+ * an unresolvable fault (e.g. STTR on an EL1-only page). Protected by
+ * el1_perm_retry_lock.
+ */
+struct el1_perm_retry_entry {
+	bool valid;
+	const struct k_thread *thread;
+	const struct _cpu *cpu;
+	uint32_t nested;
+	uint64_t elr;
+	uintptr_t virt;
+	uint64_t desc;
+};
+
+static struct el1_perm_retry_entry el1_perm_retry[EL1_PERM_RETRY_SLOTS];
+static struct k_spinlock el1_perm_retry_lock;
+/*
+ * Fast-path __ATOMIC_RELAXED reads only gate taking el1_perm_retry_lock,
+ * which serializes all entry and active-count updates: on paging paths both
+ * el1_perm_retry_allow() and el1_perm_retry_invalidate_va() are ordered by the
+ * outer z_mm_lock, while retire/clear paths execute on the owning CPU or
+ * after scheduler-lock handoffs.
+ */
+uint32_t z_arm64_el1_perm_retry_active;
+
+/* Must be called with el1_perm_retry_lock held. */
+static void el1_perm_retry_entry_clear(struct el1_perm_retry_entry *entry)
+{
+	if (entry->valid) {
+		entry->valid = false;
+		if (z_arm64_el1_perm_retry_active > 0U) {
+			__atomic_store_n(&z_arm64_el1_perm_retry_active,
+					 z_arm64_el1_perm_retry_active - 1U, __ATOMIC_RELAXED);
+		}
+	}
+}
+
+/* Must be called with el1_perm_retry_lock held. */
+static struct el1_perm_retry_entry *el1_perm_retry_find(const struct k_thread *thread,
+							const struct _cpu *cpu, uint32_t nested,
+							uint64_t elr, uintptr_t page)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(el1_perm_retry); i++) {
+		if (el1_perm_retry[i].valid && (el1_perm_retry[i].nested == nested) &&
+		    ((nested == 0U) ? (el1_perm_retry[i].thread == thread)
+				    : (el1_perm_retry[i].cpu == cpu)) &&
+		    (el1_perm_retry[i].elr == elr) && (el1_perm_retry[i].virt == page)) {
+			return &el1_perm_retry[i];
+		}
+	}
+
+	return NULL;
+}
+
+static void el1_perm_retry_clear(const struct k_thread *thread, uint64_t elr, uintptr_t page)
+{
+	if (__atomic_load_n(&z_arm64_el1_perm_retry_active, __ATOMIC_RELAXED) == 0U) {
+		return;
+	}
+
+	k_spinlock_key_t key = k_spin_lock(&el1_perm_retry_lock);
+	const struct _cpu *cur_cpu = arch_curr_cpu();
+	uint32_t cur_nested = cur_cpu->nested;
+	struct el1_perm_retry_entry *entry =
+		el1_perm_retry_find(thread, cur_cpu, cur_nested, elr, page);
+
+	if (entry != NULL) {
+		el1_perm_retry_entry_clear(entry);
+	}
+	k_spin_unlock(&el1_perm_retry_lock, key);
+}
+
+/*
+ * Retire active retry snapshots that can no longer be suspended at the saved
+ * instruction pointer.
+ *
+ * When esf == NULL (thread init, abort, or cooperative switch), retire all
+ * thread-context (nested == 0) snapshots owned by @p thread without touching
+ * any ISR-context snapshots on the calling CPU. When esf != NULL (demand paging
+ * entry or IRQ exit), retire deeper nested ISR entries on this CPU and any
+ * entries at the current execution level whose ELR differs from esf->elr or
+ * (when @p has_page is true) whose target page is more than one page away from
+ * @p page. Keeping the immediate neighbor page avoids re-granting retry quota
+ * when an uncompleted cross-page instruction reports differing FAR_EL1 pages
+ * across retries, while still bounding same-ELR sequential scans to 2 slots.
+ */
+static void el1_perm_retry_retire_ctx(const struct k_thread *thread, const struct arch_esf *esf,
+				      bool has_page, uintptr_t page)
+{
+	if (((esf == NULL) && (thread == NULL)) ||
+	    (__atomic_load_n(&z_arm64_el1_perm_retry_active, __ATOMIC_RELAXED) == 0U)) {
+		return;
+	}
+
+	k_spinlock_key_t key = k_spin_lock(&el1_perm_retry_lock);
+	const struct _cpu *cur_cpu = arch_curr_cpu();
+	uint32_t cur_nested = cur_cpu->nested;
+
+	for (size_t i = 0U; i < ARRAY_SIZE(el1_perm_retry); i++) {
+		struct el1_perm_retry_entry *entry = &el1_perm_retry[i];
+
+		if (!entry->valid) {
+			continue;
+		}
+		if (esf == NULL) {
+			if ((entry->nested == 0U) && (entry->thread == thread)) {
+				el1_perm_retry_entry_clear(entry);
+			}
+			continue;
+		}
+		if ((entry->cpu == cur_cpu) && (entry->nested > cur_nested)) {
+			el1_perm_retry_entry_clear(entry);
+		} else if (entry->nested == cur_nested) {
+			bool same_owner = (cur_nested == 0U) ? (entry->thread == thread)
+							     : (entry->cpu == cur_cpu);
+
+			if (same_owner) {
+				uintptr_t page_diff = (entry->virt >= page) ? (entry->virt - page)
+									    : (page - entry->virt);
+
+				if ((entry->elr != esf->elr) ||
+				    (has_page && (page_diff > CONFIG_MMU_PAGE_SIZE))) {
+					el1_perm_retry_entry_clear(entry);
+				}
+			}
+		}
+	}
+	k_spin_unlock(&el1_perm_retry_lock, key);
+}
+
+void z_arm64_el1_perm_retry_retire(const struct k_thread *thread, const struct arch_esf *esf)
+{
+	el1_perm_retry_retire_ctx(thread, esf, false, 0U);
+}
+
+static bool el1_perm_retry_allow(const struct k_thread *thread, uint64_t elr, uintptr_t page,
+				 uint64_t desc)
+{
+	k_spinlock_key_t key = k_spin_lock(&el1_perm_retry_lock);
+	const struct _cpu *cur_cpu = arch_curr_cpu();
+	uint32_t cur_nested = cur_cpu->nested;
+	struct el1_perm_retry_entry *entry =
+		el1_perm_retry_find(thread, cur_cpu, cur_nested, elr, page);
+
+	if (entry != NULL) {
+		if (entry->desc == desc) {
+			k_spin_unlock(&el1_perm_retry_lock, key);
+			return false;
+		}
+	} else {
+		for (size_t i = 0U; i < ARRAY_SIZE(el1_perm_retry); i++) {
+			if (!el1_perm_retry[i].valid) {
+				entry = &el1_perm_retry[i];
+				break;
+			}
+		}
+		if (entry == NULL) {
+			/*
+			 * Preserve existing valid snapshots when the table is full
+			 * instead of evicting them and re-arming earlier retries.
+			 */
+			k_spin_unlock(&el1_perm_retry_lock, key);
+			return false;
+		}
+	}
+
+	if (!entry->valid) {
+		entry->valid = true;
+		__atomic_store_n(&z_arm64_el1_perm_retry_active, z_arm64_el1_perm_retry_active + 1U,
+				 __ATOMIC_RELAXED);
+	}
+	entry->thread = thread;
+	entry->cpu = (cur_nested > 0U) ? cur_cpu : NULL;
+	entry->nested = cur_nested;
+	entry->elr = elr;
+	entry->virt = page;
+	entry->desc = desc;
+	k_spin_unlock(&el1_perm_retry_lock, key);
+	return true;
+}
+
+/*
+ * Synchronized internally by el1_perm_retry_lock; PTE writers call this under
+ * xlat_lock after updating the descriptor so retries see the new mapping.
+ */
+static void el1_perm_retry_invalidate_va(uintptr_t virt)
+{
+	if (__atomic_load_n(&z_arm64_el1_perm_retry_active, __ATOMIC_RELAXED) == 0U) {
+		return;
+	}
+
+	uintptr_t page = ROUND_DOWN(virt, CONFIG_MMU_PAGE_SIZE);
+	k_spinlock_key_t key = k_spin_lock(&el1_perm_retry_lock);
+
+	for (size_t i = 0U; i < ARRAY_SIZE(el1_perm_retry); i++) {
+		if (el1_perm_retry[i].valid && (el1_perm_retry[i].virt == page)) {
+			el1_perm_retry_entry_clear(&el1_perm_retry[i]);
+		}
+	}
+	k_spin_unlock(&el1_perm_retry_lock, key);
+}
+
 /*
  * Invalidate one virtual address from the TLB across every ASID (TLBI
  * VAAE1{IS}). Domain page tables are allocated ASIDs from 1 up and
@@ -1904,6 +2111,7 @@ void arch_mem_page_out(void *addr, uintptr_t location)
 	desc |= PTE_BLOCK_DESC_AP_RO;
 
 	*pte = desc;
+	el1_perm_retry_invalidate_va(virt);
 	MMU_DEBUG("page_out: virt=%#lx location=%#lx\n", virt, location);
 	debug_show_pte(pte, XLAT_LAST_LEVEL);
 	k_spin_unlock(&xlat_lock, xlat_key);
@@ -1946,6 +2154,7 @@ void arch_mem_page_in(void *addr, uintptr_t phys)
 	desc |= PTE_BLOCK_DESC_AF;
 
 	*pte = desc;
+	el1_perm_retry_invalidate_va(virt);
 	MMU_DEBUG("page_in: virt=%#lx phys=%#lx\n", virt, phys);
 	debug_show_pte(pte, XLAT_LAST_LEVEL);
 	k_spin_unlock(&xlat_lock, xlat_key);
@@ -2037,6 +2246,7 @@ uintptr_t arch_page_info_get(void *addr, uintptr_t *phys, bool clear_accessed)
 	if (clear_accessed) {
 		desc &= ~PTE_BLOCK_DESC_AF;
 		*pte = desc;
+		el1_perm_retry_invalidate_va(virt);
 		MMU_DEBUG("page_info: virt=%#lx (clearing AF)\n", virt);
 		debug_show_pte(pte, XLAT_LAST_LEVEL);
 		k_spin_unlock(&xlat_lock, xlat_key);
@@ -2089,6 +2299,10 @@ bool z_arm64_do_demand_paging(struct arch_esf *esf, uint64_t esr, uint64_t far)
 	uintptr_t phys;
 	uint64_t ec = GET_ESR_EC(esr);
 
+	if (esf == NULL) {
+		return false;
+	}
+
 	/* filter relevant exceptions */
 	switch (ec) {
 	case 0x20: /* insn abort from lower EL */
@@ -2118,6 +2332,8 @@ bool z_arm64_do_demand_paging(struct arch_esf *esf, uint64_t esr, uint64_t far)
 	bool write = (GET_ESR_ISS(esr) & BIT(6)) != 0; /* WnR */
 	struct k_spinlock *mm_lock = z_mm_lock_get();
 	k_spinlock_key_t mm_key = k_spin_lock(mm_lock);
+
+	el1_perm_retry_retire_ctx(_current, esf, true, virt);
 
 #ifdef CONFIG_USERSPACE
 	if (ec == 0x20 || ec == 0x24) {
@@ -2162,6 +2378,7 @@ bool z_arm64_do_demand_paging(struct arch_esf *esf, uint64_t esr, uint64_t far)
 	if (pte == NULL) {
 		k_spin_unlock(&xlat_lock, xlat_key);
 		/* page mapping doesn't exist, let the core code do its thing */
+		el1_perm_retry_clear(_current, esf->elr, virt);
 		k_spin_unlock(mm_lock, mm_key);
 		return do_mem_page_fault(esf, virt);
 	}
@@ -2169,6 +2386,7 @@ bool z_arm64_do_demand_paging(struct arch_esf *esf, uint64_t esr, uint64_t far)
 	if ((desc & PTE_DESC_TYPE_MASK) != PTE_PAGE_DESC) {
 		k_spin_unlock(&xlat_lock, xlat_key);
 		/* page is not loaded/mapped */
+		el1_perm_retry_clear(_current, esf->elr, virt);
 		k_spin_unlock(mm_lock, mm_key);
 		return do_mem_page_fault(esf, virt);
 	}
@@ -2208,8 +2426,18 @@ bool z_arm64_do_demand_paging(struct arch_esf *esf, uint64_t esr, uint64_t far)
 	if (!need_af && !need_dirty) {
 		k_spin_unlock(&xlat_lock, xlat_key);
 		if ((ec == 0x25U) && is_perm_fault) {
-			/* Bounded EL1 permission retries are added separately. */
-			goto out_unlock;
+			if (!el1_perm_retry_allow(_current, esf->elr, virt, desc)) {
+				goto out_unlock;
+			}
+		} else {
+			/*
+			 * Translation, AF-only, and EL0 faults rely on the
+			 * resolving CPU having completed its update before
+			 * releasing z_mm_lock: TLBI VAAE1IS + DSB ISH for dirty
+			 * or mapping changes, and DSB completion for AF-only
+			 * updates (AF=0 entries are not cached in TLB).
+			 */
+			el1_perm_retry_clear(_current, esf->elr, virt);
 		}
 		k_spin_unlock(mm_lock, mm_key);
 		return true;
@@ -2227,6 +2455,7 @@ bool z_arm64_do_demand_paging(struct arch_esf *esf, uint64_t esr, uint64_t far)
 	}
 
 	*pte = desc;
+	el1_perm_retry_invalidate_va(virt);
 	k_spin_unlock(&xlat_lock, xlat_key);
 	if (sync_domains(virt, CONFIG_MMU_PAGE_SIZE, need_dirty ? "dirtied" : "accessed") != 0) {
 		int rb_ret;
@@ -2257,6 +2486,7 @@ bool z_arm64_do_demand_paging(struct arch_esf *esf, uint64_t esr, uint64_t far)
 	return true;
 
 out_unlock:
+	el1_perm_retry_clear(_current, esf->elr, virt);
 	k_spin_unlock(mm_lock, mm_key);
 	return false;
 }

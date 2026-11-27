@@ -126,7 +126,19 @@ z_arm64_irq_done:
 	ldr	w1, [x0, #___cpu_t_nested_OFFSET]
 	subs	w1, w1, #1
 	str	w1, [x0, #___cpu_t_nested_OFFSET]
+#ifdef CONFIG_DEMAND_PAGING
+	cbz	w1, 3f
+	adrp	x2, z_arm64_el1_perm_retry_active
+	ldr	w2, [x2, :lo12:z_arm64_el1_perm_retry_active]
+	cbz	w2, exit
+	ldr	x0, [x0, #___cpu_t_current_OFFSET]
+	mov	x1, sp
+	bl	z_arm64_el1_perm_retry_retire
+	b	exit
+3:
+#else
 	bne	exit
+#endif
 
 	/* No more nested: retrieve the task's stack. */
 	ldr	x1, [sp]
@@ -139,6 +151,18 @@ z_arm64_irq_done:
 	/* arch_curr_cpu()->arch.current_stack_limit = thread->arch.stack_limit */
 	ldr	x2, [x1, #_thread_offset_to_stack_limit]
 	str	x2, [x0, #_cpu_offset_to_current_stack_limit]
+#endif
+
+#ifdef CONFIG_DEMAND_PAGING
+	adrp	x2, z_arm64_el1_perm_retry_active
+	ldr	w2, [x2, :lo12:z_arm64_el1_perm_retry_active]
+	cbz	w2, 2f
+	str	x1, [sp, #-16]!
+	mov	x0, x1
+	add	x1, sp, #16
+	bl	z_arm64_el1_perm_retry_retire
+	ldr	x1, [sp], #16
+2:
 #endif
 
 	/*
