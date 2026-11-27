@@ -1214,6 +1214,15 @@
 				status = "disabled";
 			};
 
+			hash: crypto@54020400 {
+				compatible = "st,stm32-hash";
+				reg = <0x54020400 0x400>;
+				clocks = <&rcc STM32_CLOCK(AHB3, 1)>;
+				resets = <&rctl STM32_RESET(AHB3, 1)>;
+				interrupts = <39 0>;
+				status = "disabled";
+			};
+
 			i2s6: i2s@56001400 {
 				compatible = "st,stm32h7-i2s", "st,stm32-i2s";
 				reg = <0x56001400 0x400>;
