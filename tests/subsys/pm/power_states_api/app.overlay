@@ -6,7 +6,7 @@
 
 / {
 	cpus {
-		cpu@0 {
+		cpu0: cpu@0 {
 			cpu-power-states = <&state0 &state1 &state2 &state3>;
 		};
 
