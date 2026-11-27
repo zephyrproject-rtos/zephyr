@@ -5,6 +5,9 @@
  */
 
 #include "icm42670.h"
+#ifdef CONFIG_ICM42X70_TRIGGER
+#include "icm42x70_trigger.h"
+#endif
 
 #include <zephyr/drivers/sensor/icm42x70.h>
 #include <zephyr/sys/byteorder.h>
@@ -39,9 +42,8 @@ static int icm42670_set_gyro_odr(struct icm42x70_data *drv_data, const struct se
 
 	if (val->val1 <= 1600 && val->val1 >= 12) {
 		bool was_disabled = (drv_data->gyro_hz == 0);
-
 		err = inv_imu_set_gyro_frequency(&drv_data->driver,
-						 convert_freq_to_bitfield(val->val1, &gyro_hz));
+				convert_freq_to_bitfield(val->val1, &gyro_hz));
 		if (err != 0) {
 			return -EIO;
 		}
@@ -51,12 +53,28 @@ static int icm42670_set_gyro_odr(struct icm42x70_data *drv_data, const struct se
 				return -EIO;
 			}
 		}
+#ifdef CONFIG_ICM42X70_TRIGGER
+		/* FIFO and its interrupt are disabled by icm42x70_apex_enable() */
+		if (icm42x70_trigger_enable_interrupt(drv_data) != 0) {
+			return -EIO;
+		}
+#endif
 	} else if (val->val1 == 0) {
 		err = inv_imu_disable_gyro(&drv_data->driver);
 		if (err != 0) {
 			return -EIO;
 		}
 		drv_data->gyro_hz = val->val1;
+
+#ifdef CONFIG_ICM42X70_TRIGGER
+		if ((drv_data->accel_hz == 0)
+#ifdef CONFIG_TDK_APEX
+				|| (drv_data->apex_enabled == 1)
+#endif
+		   ) {
+			icm42x70_trigger_disable_interrupt(drv_data);
+		}
+#endif
 	} else {
 		LOG_ERR("Incorrect sampling value");
 		return -EINVAL;

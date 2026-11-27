@@ -27,7 +27,15 @@ int icm42x70_trigger_init(const struct device *dev);
  * @param dev icm42x70 device pointer
  * @return int 0 on success, negative error code otherwise
  */
-int icm42x70_trigger_enable_interrupt(const struct device *dev);
+int icm42x70_trigger_enable_interrupt(struct icm42x70_data *drv_data);
+
+/**
+ * @brief disable the trigger gpio interrupt
+ *
+ * @param dev icm42x70 device pointer
+ * @return int 0 on success, negative error code otherwise
+ */
+int icm42x70_trigger_disable_interrupt(struct icm42x70_data *drv_data);
 
 /**
  * @brief lock access to the icm42x70 device driver

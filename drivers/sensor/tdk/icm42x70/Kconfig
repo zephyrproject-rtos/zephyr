@@ -24,14 +24,17 @@ menuconfig ICM42X70
 	select TDK_APEX if $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42670p),apex,pedometer) \
 		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42670p),apex,tilt) \
 		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42670p),apex,smd) \
+		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42670p),apex,tap) \
 		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42670p),apex,wom) \
 		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42670s),apex,pedometer) \
 		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42670s),apex,tilt) \
 		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42670s),apex,smd) \
+		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42670s),apex,tap) \
 		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42670s),apex,wom) \
 		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42370p),apex,pedometer) \
 		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42370p),apex,tilt) \
 		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42370p),apex,smd) \
+		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42370p),apex,tap) \
 		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42370p),apex,wom)
 	select USE_EMD_ICM42670 if DT_HAS_INVENSENSE_ICM42670P_ENABLED || DT_HAS_INVENSENSE_ICM42670S_ENABLED
 	select USE_EMD_ICM42370 if DT_HAS_INVENSENSE_ICM42370P_ENABLED

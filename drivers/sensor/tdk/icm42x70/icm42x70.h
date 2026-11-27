@@ -18,6 +18,7 @@
 #include "imu/inv_imu_driver.h"
 #ifdef CONFIG_TDK_APEX
 #include "imu/inv_imu_apex.h"
+#include "imu/inv_imu_tap.h"
 #endif
 
 union icm42x70_bus {
@@ -70,18 +71,26 @@ struct icm42x70_data {
 #endif
 	int32_t temp;
 #ifdef CONFIG_TDK_APEX
-	uint8_t dmp_odr_hz;
+	uint16_t dmp_odr_hz;
 	uint64_t pedometer_cnt;
 	uint8_t pedometer_activity;
 	uint8_t pedometer_cadence;
+	inv_imu_tap_event_t inv_imu_tap_info;
 	uint8_t apex_status;
 #endif
+
+	uint8_t apex_enabled;
+	uint8_t int_status;
+	uint8_t int_status2;
+	uint8_t int_status3;
 
 #ifdef CONFIG_ICM42X70_TRIGGER
 	const struct device *dev;
 	struct gpio_callback gpio_cb;
 	sensor_trigger_handler_t data_ready_handler;
 	const struct sensor_trigger *data_ready_trigger;
+	sensor_trigger_handler_t apex_ready_handler;
+	const struct sensor_trigger *apex_ready_trigger;
 	struct k_mutex mutex;
 #endif
 #ifdef CONFIG_ICM42X70_TRIGGER_OWN_THREAD
@@ -117,20 +126,32 @@ uint32_t convert_ln_bw_to_bitfield(uint32_t val);
 
 #ifdef CONFIG_TDK_APEX
 
-#define ICM42X70_APEX_STATUS_MASK_TILT  BIT(0)
-#define ICM42X70_APEX_STATUS_MASK_SMD   BIT(1)
-#define ICM42X70_APEX_STATUS_MASK_WOM_X BIT(2)
-#define ICM42X70_APEX_STATUS_MASK_WOM_Y BIT(3)
-#define ICM42X70_APEX_STATUS_MASK_WOM_Z BIT(4)
+#define ICM42X70_APEX_STATUS_MASK_TILT        BIT(0)
+#define ICM42X70_APEX_STATUS_MASK_SMD         BIT(1)
+#define ICM42X70_APEX_STATUS_MASK_WOM_X       BIT(2)
+#define ICM42X70_APEX_STATUS_MASK_WOM_Y       BIT(3)
+#define ICM42X70_APEX_STATUS_MASK_WOM_Z       BIT(4)
+
+#define ICM42X70_APEX_STATUS_SINGLE_TAP       1
+#define ICM42X70_APEX_STATUS_DOUBLE_TAP       2
+#define ICM42X70_APEX_STATUS_TRIPLE_TAP       3
+
+#define ICM42X70_APEX_STATUS_TAP_X            0
+#define ICM42X70_APEX_STATUS_TAP_Y            1
+#define ICM42X70_APEX_STATUS_TAP_Z            2
+
+#define ICM42X70_APEX_STATUS_MASK_TAP_POS     0
+#define ICM42X70_APEX_STATUS_MASK_TAP_NEG     1
 
 int icm42x70_apex_enable(inv_imu_device_t *s);
 int icm42x70_apex_fetch_from_dmp(const struct device *dev);
 void icm42x70_apex_pedometer_cadence_convert(struct sensor_value *val, uint8_t raw_val,
-					     uint8_t dmp_odr_hz);
+					     uint16_t dmp_odr_hz);
 int icm42x70_apex_enable_pedometer(const struct device *dev, inv_imu_device_t *s);
 int icm42x70_apex_enable_tilt(inv_imu_device_t *s);
 int icm42x70_apex_enable_smd(inv_imu_device_t *s);
 int icm42x70_apex_enable_wom(inv_imu_device_t *s);
+int icm42x70_apex_enable_tap(const struct device *dev, inv_imu_device_t *s);
 #endif
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_ICM42X70_H_ */

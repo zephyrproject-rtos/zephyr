@@ -34,14 +34,31 @@ static void icm42x70_thread_cb(const struct device *dev)
 {
 	struct icm42x70_data *data = dev->data;
 	const struct icm42x70_config *cfg = dev->config;
+	uint8_t int_status[4];
+	int rc = 0;
 
 	icm42x70_lock(dev);
 	gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_DISABLE);
 
+	rc |= inv_imu_read_reg(&data->driver, INT_STATUS_DRDY, 4, int_status);
 	if (data->data_ready_handler) {
-		data->data_ready_handler(dev, data->data_ready_trigger);
+#ifdef CONFIG_ICM42X70_TRIGGER
+		data->int_status = int_status[1];
+#else
+		data->int_status = int_status[0];
+#endif
+		if (data->int_status != 0) {
+			data->data_ready_handler(dev, data->data_ready_trigger);
+		}
 	}
-
+	if (data->apex_ready_handler) {
+		/* Read APEX interrupt status */
+		if ((int_status[2] != 0) || (int_status[3] != 0)) {
+			data->int_status2 = int_status[2];
+			data->int_status3 = int_status[3];
+			data->apex_ready_handler(dev, data->apex_ready_trigger);
+		}
+	}
 	gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
 	icm42x70_unlock(dev);
 }
@@ -81,16 +98,21 @@ int icm42x70_trigger_set(const struct device *dev, const struct sensor_trigger *
 		return -EINVAL;
 	}
 
-	if (trig->type != SENSOR_TRIG_DATA_READY &&
-	    !(IS_ENABLED(CONFIG_TDK_APEX) && trig->type == SENSOR_TRIG_MOTION)) {
-		return -ENOTSUP;
-	}
-
 	icm42x70_lock(dev);
 	gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_DISABLE);
 
-	data->data_ready_handler = handler;
-	data->data_ready_trigger = trig;
+	if (trig->type == SENSOR_TRIG_DATA_READY) {
+		data->data_ready_handler = handler;
+		data->data_ready_trigger = trig;
+#ifdef CONFIG_TDK_APEX
+	} else if (trig->type == SENSOR_TRIG_MOTION) {
+		data->apex_ready_handler = handler;
+		data->apex_ready_trigger = trig;
+#endif
+	} else {
+		LOG_ERR("ERROR While set trigger");
+		return -ENOTSUP;
+	}
 
 	icm42x70_unlock(dev);
 	gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
@@ -138,21 +160,37 @@ int icm42x70_trigger_init(const struct device *dev)
 	return gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_EDGE_TO_INACTIVE);
 }
 
-int icm42x70_trigger_enable_interrupt(const struct device *dev)
+int icm42x70_trigger_enable_interrupt(struct icm42x70_data *drv_data)
 {
-	struct icm42x70_data *data = dev->data;
 	int err = 0;
 	inv_imu_int1_pin_config_t int1_pin_config;
-	inv_imu_interrupt_parameter_t config_int = {(inv_imu_interrupt_value)0};
+	inv_imu_interrupt_parameter_t config_int;
+
+	err |= inv_imu_get_config_int1(&drv_data->driver, &config_int);
 
 	/* Set interrupt config */
 	int1_pin_config.int_polarity = INT_CONFIG_INT1_POLARITY_HIGH;
 	int1_pin_config.int_mode = INT_CONFIG_INT1_MODE_PULSED;
 	int1_pin_config.int_drive = INT_CONFIG_INT1_DRIVE_CIRCUIT_PP;
-	err |= inv_imu_set_pin_config_int1(&data->driver, &int1_pin_config);
+	err |= inv_imu_set_pin_config_int1(&drv_data->driver, &int1_pin_config);
 
 	config_int.INV_FIFO_THS = INV_IMU_ENABLE;
-	err |= inv_imu_set_config_int1(&data->driver, &config_int);
+	err |= inv_imu_set_config_int1(&drv_data->driver, &config_int);
+	err |= inv_imu_configure_fifo(&drv_data->driver, INV_IMU_FIFO_ENABLED);
+
+	return err;
+}
+
+int icm42x70_trigger_disable_interrupt(struct icm42x70_data *drv_data)
+{
+	int err = 0;
+	inv_imu_interrupt_parameter_t config_int;
+
+	err |= inv_imu_get_config_int1(&drv_data->driver, &config_int);
+
+	config_int.INV_FIFO_THS = INV_IMU_DISABLE;
+	err |= inv_imu_set_config_int1(&drv_data->driver, &config_int);
+	err |= inv_imu_configure_fifo(&drv_data->driver, INV_IMU_FIFO_DISABLED);
 
 	return err;
 }
