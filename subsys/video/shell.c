@@ -808,15 +808,20 @@ static int video_shell_set_ctrl(const struct shell *sh, const struct device *dev
 	struct video_control ctrl;
 	char menu_name[CONFIG_VIDEO_SHELL_CTRL_NAME_SIZE];
 	char *arg_ctrl = argv[0];
-	char *arg_value = argv[1];
+	char *arg_value = argc > 1 ? argv[1] : NULL;
 	char *end_value;
-	size_t i;
+	int32_t i;
 	int ret;
 
 	ret = video_shell_get_ctrl_by_name(&cq, arg_ctrl);
 	if (ret < 0) {
 		shell_error(sh, "Video control '%s' not found for this device", arg_ctrl);
 		return ret;
+	}
+
+	if (cq.type != VIDEO_CTRL_TYPE_BUTTON && arg_value == NULL) {
+		shell_error(sh, "Missing control value");
+		return -EINVAL;
 	}
 
 	ctrl.id = cq.id;
@@ -827,14 +832,14 @@ static int video_shell_set_ctrl(const struct shell *sh, const struct device *dev
 			shell_error(sh, "Video control '%s' has no menu names", arg_ctrl);
 			return -ENOTSUP;
 		}
-		for (i = 0; cq.menu[i] != NULL; i++) {
+		for (i = 0; i <= cq.range.max && cq.menu[i] != NULL; i++) {
 			video_shell_convert_ctrl_name(cq.menu[i], menu_name, sizeof(menu_name));
 			if (strcmp(menu_name, arg_value) == 0) {
 				ctrl.val = i;
 				break;
 			}
 		}
-		if (cq.menu[i] == NULL) {
+		if (i > cq.range.max || cq.menu[i] == NULL) {
 			shell_error(sh, "Video control value '%s' is not present in the menu",
 				    arg_value);
 			return -EINVAL;
@@ -860,13 +865,21 @@ static int video_shell_set_ctrl(const struct shell *sh, const struct device *dev
 			return -EINVAL;
 		}
 		break;
+	case VIDEO_CTRL_TYPE_BUTTON:
+		ctrl.val = 0;
+		break;
 	default:
 		CODE_UNREACHABLE;
 	}
 
-	shell_print(sh, "Setting control '%s' (0x%08x) to value '%s' (%lld)",
-		    arg_ctrl, ctrl.id, arg_value,
-		    (long long)(cq.type == VIDEO_CTRL_TYPE_INTEGER64 ? ctrl.val64 : ctrl.val));
+	if (cq.type == VIDEO_CTRL_TYPE_BUTTON) {
+		shell_print(sh, "Triggering control '%s' (0x%08x)", arg_ctrl, ctrl.id);
+	} else {
+		shell_print(
+			sh, "Setting control '%s' (0x%08x) to value '%s' (%lld)", arg_ctrl, ctrl.id,
+			arg_value,
+			(long long)(cq.type == VIDEO_CTRL_TYPE_INTEGER64 ? ctrl.val64 : ctrl.val));
+	}
 
 	ret = video_set_ctrl(dev, &ctrl);
 	if (ret < 0) {
@@ -909,6 +922,7 @@ static int cmd_video_ctrl(const struct shell *sh, size_t argc, char **argv)
 	switch (argc) {
 	case 2:
 		return video_shell_print_ctrls(sh, dev);
+	case 3:
 	case 4:
 		return video_shell_set_ctrl(sh, dev, argc - 2, &argv[2]);
 	default:
@@ -960,8 +974,8 @@ static void complete_video_ctrl_menu_name(size_t idx, struct shell_static_entry 
 
 	/* Then complete the menu value */
 
-	for (size_t i = 0; cq.menu[i] != NULL; i++) {
-		if (i == idx) {
+	for (int32_t i = 0; i <= cq.range.max && cq.menu[i] != NULL; i++) {
+		if ((size_t)i == idx) {
 			video_shell_convert_ctrl_name(cq.menu[i], video_shell_menu_name,
 						      sizeof(video_shell_menu_name));
 			entry->syntax = video_shell_menu_name;
@@ -1429,7 +1443,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_video_cmds,
 		cmd_video_frmival, 2, 1),
 	SHELL_CMD_ARG(ctrl, &dsub_video_ctrl_dev,
 		SHELL_HELP("Query or set video controls of a device",
-			   "<device> [<ctrl> <value>]"),
+			   "<device> [<ctrl> [<value>]]"),
 		cmd_video_ctrl, 2, 2),
 	SHELL_CMD_ARG(selection, &dsub_video_selection_dev,
 		SHELL_HELP("Query or set the video selection of a device",
