@@ -19,6 +19,7 @@ struct emul_tps6521x_stats {
 	uint32_t reg3_writes;
 	/* TPS65214: protected writes dropped while locked */
 	uint32_t blocked_writes;
+	uint32_t int_writes;
 };
 
 uint8_t emul_tps6521x_get(const struct emul *target, uint8_t reg);
@@ -27,5 +28,12 @@ bool emul_tps6521x_locked(const struct emul *target);
 void emul_tps6521x_stats(const struct emul *target, struct emul_tps6521x_stats *stats);
 /* make writes to @p reg fail with -EIO; a negative value turns this off */
 void emul_tps6521x_fail_writes_to(const struct emul *target, int reg);
+
+void emul_tps6521x_raise(const struct emul *target, uint8_t reg, uint8_t bits);
+void emul_tps6521x_stick(const struct emul *target, uint8_t reg, uint8_t bits);
+void emul_tps6521x_pb_hold(const struct emul *target, bool pressed);
+bool emul_tps6521x_nint_asserted(const struct emul *target);
+void emul_tps6521x_raise_on_read(const struct emul *target, uint8_t reg, uint8_t bits);
+void emul_tps6521x_int_reset(const struct emul *target);
 
 #endif /* EMUL_TPS6521X_H_ */
