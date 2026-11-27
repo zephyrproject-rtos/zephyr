@@ -1,0 +1,12 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&agt0 {
+	status = "okay";
+};
+
+&counter0 {
+	status = "okay";
+};

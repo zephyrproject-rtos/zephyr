@@ -1,0 +1,61 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "cpk_ra8t2-pinctrl.dtsi"
+
+/ {
+	compatible = "renesas,ra8t2", "renesas,ra8";
+	model = "Renesas CPK-RA8T2";
+
+	chosen {
+		zephyr,flash-controller = &mram_ctrl;
+	};
+};
+
+&xtal {
+	clock-frequency = <DT_FREQ_M(24)>;
+	mosel = <0>;
+	status = "okay";
+};
+
+&subclk {
+	status = "okay";
+};
+
+&pll {
+	status = "okay";
+
+	pllp {
+		status = "okay";
+	};
+
+	pllq {
+		status = "okay";
+	};
+
+	pllr {
+		status = "okay";
+	};
+};
+
+&pll2 {
+	status = "okay";
+
+	pll2p {
+		status = "okay";
+	};
+
+	pll2q {
+		status = "okay";
+	};
+
+	pll2r {
+		status = "okay";
+	};
+};
+
+&sciclk {
+	status = "okay";
+};

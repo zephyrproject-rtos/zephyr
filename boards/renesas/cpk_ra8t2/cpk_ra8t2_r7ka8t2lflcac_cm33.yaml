@@ -1,0 +1,14 @@
+identifier: cpk_ra8t2/r7ka8t2lflcac/cm33
+name: Renesas CPK-RA8T2 (Cortex-M33)
+type: mcu
+arch: arm
+ram: 640
+flash: 256
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - counter
+  - flash
+  - uart
+vendor: renesas

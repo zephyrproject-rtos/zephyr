@@ -556,6 +556,7 @@ tests:
     integration_platforms:
       - ek_ra8p1/r7ka8p1kflcac/cm85
     platform_allow:
+      - cpk_ra8t2/r7ka8t2lflcac/cm85
       - ek_ra8p1/r7ka8p1kflcac/cm85
       - mck_ra8t2/r7ka8t2lflcac/cm85
       - ek_ra8t2/r7ka8t2lflcac/cm85

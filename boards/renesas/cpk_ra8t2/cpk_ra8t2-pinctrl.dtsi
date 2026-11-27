@@ -1,0 +1,44 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	sci1_default: sci1-default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_SCI_1, 7, 7)>; /* TXD1 */
+			drive-strength = "medium";
+		};
+
+		group2 {
+			psels = <RA_PSEL(RA_PSEL_SCI_1, 7, 6)>; /* RXD1 */
+		};
+	};
+
+	sci4_spi_default: sci4-spi-default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_SCI_4, 7, 14)>, /* MOSI4 */
+				<RA_PSEL(RA_PSEL_SCI_4, 7, 15)>, /* MISO4 */
+				<RA_PSEL(RA_PSEL_SCI_4, 5, 14)>; /* SCK4 */
+			drive-strength = "high";
+		};
+	};
+
+	sci9_default: sci9-default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_SCI_9, 2, 9)>; /* TXD9 */
+			drive-strength = "medium";
+		};
+
+		group2 {
+			psels = <RA_PSEL(RA_PSEL_SCI_9, 2, 8)>; /* RXD9 */
+		};
+	};
+
+	canfd1_default: canfd1-default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_CANFD, 5, 12)>, /* CTX1 */
+				<RA_PSEL(RA_PSEL_CANFD, 12, 15)>; /* CRX1 */
+		};
+	};
+};
