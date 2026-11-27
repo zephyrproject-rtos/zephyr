@@ -3,52 +3,38 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <st/n6/stm32n657.dtsi>
-#include <mem.h>
+
+#include <st/n6/stm32n6.dtsi>
 
 / {
 	soc {
-		peripherals@40000000 {
-			ramcfg@52023100 {
-				memory@34200000 {
-					reg = <0x34200000 DT_SIZE_K(448)>;
-					status = "disabled";
-				};
+		compatible = "st,stm32n657", "st,stm32n6", "simple-bus";
+
+		peripherals: peripherals@40000000 {
+			cryp: crypto@54020800 {
+				compatible = "st,stm32-cryp";
+				reg = <0x54020800 0x400>;
+				clocks = <&rcc STM32_CLOCK(AHB3, 2)>;
+				resets = <&rctl STM32_RESET(AHB3, 2)>;
+				interrupts = <37 0>;
+				status = "disabled";
 			};
 
-			ramcfg@52023180 {
-				memory@34270000 {
-					reg = <0x34270000 DT_SIZE_K(448)>;
-					status = "disabled";
-				};
+			npu_cache: cache-controller@580dfc00 {
+				compatible = "st,stm32-npu-cache";
+				reg = <0x580dfc00 DT_SIZE_K(1)>;
+				clocks = <&rcc STM32_CLOCK(AHB5, 30)>;
+				resets = <&rctl STM32_RESET(AHB5, 30)>;
+				status = "okay";
 			};
 
-			ramcfg@52023200 {
-				memory@342e0000 {
-					reg = <0x342e0000 DT_SIZE_K(448)>;
-					status = "disabled";
-				};
+			npu: npu@580e0000 {
+				compatible = "st,stm32-npu";
+				reg = <0x580e0000 DT_SIZE_K(128)>;
+				clocks = <&rcc STM32_CLOCK(AHB5, 31)>;
+				resets = <&rctl STM32_RESET(AHB5, 31)>;
+				status = "disabled";
 			};
-
-			ramcfg@52023280 {
-				memory@34350000 {
-					reg = <0x34350000 DT_SIZE_K(448)>;
-					status = "disabled";
-				};
-			};
-		};
-	};
-
-	axisram12@34000000 {
-		memory@34000000 {
-			/* This section is the RAM available to the chainloaded application */
-			/* 400 kB of FLEXRAM followed by 624 kB of AXISRAM1 + AXISRAM2 */
-			reg = <0x34000000 (DT_SIZE_K(400) + DT_SIZE_K(624) + DT_SIZE_M(1))>;
-		};
-
-		memory@34180400 {
-			/* This section is the RAM available to FSBL application */
-			reg = <0x34180400 DT_SIZE_K(511)>;
 		};
 	};
 };
