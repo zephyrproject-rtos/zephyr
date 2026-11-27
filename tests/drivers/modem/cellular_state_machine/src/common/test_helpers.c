@@ -258,7 +258,10 @@ void advance_to(const struct device *dev, enum boot_step target)
 	/* The default PDP context needs no APN, so those steps are never reached */
 	if (!test_backend_uses_default_pdp_context(dev)) {
 		STOP_AT(AWAIT_APN);
-		zassert_ok(cellular_set_apn(dev, TEST_APN));
+		/* An APN kept from an earlier boot is not set again: its script runs at once */
+		int ret = cellular_set_apn(dev, TEST_APN);
+
+		zassert_true((ret == 0) || (ret == -EALREADY), "setting the APN failed (%d)", ret);
 
 		expect_line(TEST_BACKEND_PIPE_DLCI1, TEST_APN_CMD);
 		STOP_AT(APN);

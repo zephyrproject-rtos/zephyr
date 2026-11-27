@@ -61,6 +61,27 @@ ZTEST(modem_cellular_state_machine, test_boot_with_network_script)
 		      "UART baudrate was not switched");
 }
 
+/* A link that ended with a suspend, not through PPP dead, must keep the interface dormant
+ * after the next dial until the modem is registered
+ */
+ZTEST(modem_cellular_state_machine, test_dormant_until_registered_after_suspend)
+{
+	modem_restart(modem_no_network);
+	advance_to(modem_no_network, BOOT_LINK_UP);
+	suspend_and_shutdown(modem_no_network);
+
+	zassert_ok(modem_cellular_pm_action(modem_no_network, PM_DEVICE_ACTION_RESUME),
+		   "resume failed");
+	advance_to(modem_no_network, BOOT_DIAL);
+	ok(TEST_BACKEND_PIPE_DLCI2);
+	/* Dialled, not registered yet */
+	expect_state(modem_no_network, TEST_BACKEND_STATE_DIALED);
+
+	registered(TEST_BACKEND_PIPE_DLCI1);
+	expect_state(modem_no_network, TEST_BACKEND_STATE_LINK_UP);
+	suspend_and_shutdown(modem_no_network);
+}
+
 ZTEST(modem_cellular_state_machine, test_boot_without_network_script)
 {
 	modem_restart(modem_no_network);
