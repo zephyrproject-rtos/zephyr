@@ -62,17 +62,16 @@ K_MEM_SLAB_DEFINE_STATIC_TYPE(spair_slab, struct spair, CONFIG_NET_SOCKETPAIR_MA
 /* forward declaration */
 static const struct socket_op_vtable spair_fd_op_vtable;
 
-#undef sock_is_nonblock
 /** Determine if a @ref spair is in non-blocking mode */
-static inline bool sock_is_nonblock(const struct spair *spair)
+static inline bool spair_is_nonblock(const struct spair *sp)
 {
-	return !!(spair->flags & SPAIR_FLAG_NONBLOCK);
+	return (sp->flags & SPAIR_FLAG_NONBLOCK) != 0U;
 }
 
 /** Determine if a @ref spair is connected */
-static inline bool sock_is_connected(const struct spair *spair)
+static inline bool spair_is_connected(const struct spair *sp)
 {
-	const struct spair *remote = zvfs_get_fd_obj(spair->remote,
+	const struct spair *remote = zvfs_get_fd_obj(sp->remote,
 		(const struct fd_op_vtable *)&spair_fd_op_vtable, 0);
 
 	if (remote == NULL) {
@@ -82,11 +81,10 @@ static inline bool sock_is_connected(const struct spair *spair)
 	return true;
 }
 
-#undef sock_is_eof
 /** Determine if a @ref spair has encountered end-of-file */
-static inline bool sock_is_eof(const struct spair *spair)
+static inline bool spair_is_eof(const struct spair *sp)
 {
-	return !sock_is_connected(spair);
+	return !spair_is_connected(sp);
 }
 
 /**
@@ -416,7 +414,7 @@ static ssize_t spair_write(void *obj, const void *buffer, size_t count)
 	}
 
 	res = k_sem_take(&spair->sem, K_NO_WAIT);
-	is_nonblock = sock_is_nonblock(spair);
+	is_nonblock = spair_is_nonblock(spair);
 	if (res < 0) {
 		if (is_nonblock) {
 			errno = EAGAIN;
@@ -430,7 +428,7 @@ static ssize_t spair_write(void *obj, const void *buffer, size_t count)
 			res = -1;
 			goto out;
 		}
-		is_nonblock = sock_is_nonblock(spair);
+		is_nonblock = spair_is_nonblock(spair);
 	}
 
 	have_local_sem = true;
@@ -622,7 +620,7 @@ static ssize_t spair_read(void *obj, void *buffer, size_t count)
 	}
 
 	res = k_sem_take(&spair->sem, K_NO_WAIT);
-	is_nonblock = sock_is_nonblock(spair);
+	is_nonblock = spair_is_nonblock(spair);
 	if (res < 0) {
 		if (is_nonblock) {
 			errno = EAGAIN;
@@ -636,12 +634,12 @@ static ssize_t spair_read(void *obj, void *buffer, size_t count)
 			res = -1;
 			goto out;
 		}
-		is_nonblock = sock_is_nonblock(spair);
+		is_nonblock = spair_is_nonblock(spair);
 	}
 
 	have_local_sem = true;
 
-	is_connected = sock_is_connected(spair);
+	is_connected = spair_is_connected(spair);
 	avail = spair_read_avail(spair);
 
 	if (avail == 0) {
@@ -720,7 +718,7 @@ static ssize_t spair_read(void *obj, void *buffer, size_t count)
 	}
 
 	bytes_read = ring_buf_get(&spair->recv_q, (void *)buffer, count);
-	if (spair_read_avail(spair) == 0 && !sock_is_eof(spair)) {
+	if (spair_read_avail(spair) == 0 && !spair_is_eof(spair)) {
 		k_poll_signal_reset(&spair->readable);
 	}
 
@@ -753,7 +751,7 @@ static int spair_poll_prepare_ctx(struct spair *const obj,
 	if (pfd->events & ZSOCK_POLLIN) {
 
 		/* Tell poll() to short-circuit wait */
-		if (sock_is_eof(obj)) {
+		if (spair_is_eof(obj)) {
 			res = -EALREADY;
 			goto out;
 		}
@@ -770,7 +768,7 @@ static int spair_poll_prepare_ctx(struct spair *const obj,
 	if (pfd->events & ZSOCK_POLLOUT) {
 
 		/* Tell poll() to short-circuit wait */
-		if (!sock_is_connected(obj)) {
+		if (!spair_is_connected(obj)) {
 			res = -EALREADY;
 			goto out;
 		}
@@ -825,7 +823,7 @@ static int spair_poll_update_ctx(struct spair *const obj,
 	bool have_remote_sem = false;
 
 	if (pfd->events & ZSOCK_POLLOUT) {
-		if (!sock_is_connected(obj)) {
+		if (!spair_is_connected(obj)) {
 			pfd->revents |= ZSOCK_POLLHUP;
 			goto pollout_done;
 		}
@@ -865,7 +863,7 @@ static int spair_poll_update_ctx(struct spair *const obj,
 pollout_done:
 
 	if (pfd->events & ZSOCK_POLLIN) {
-		if (sock_is_eof(obj)) {
+		if (spair_is_eof(obj)) {
 			pfd->revents |= ZSOCK_POLLIN;
 			goto pollin_done;
 		}
@@ -962,7 +960,7 @@ static int spair_ioctl(void *obj, unsigned int request, va_list args)
 
 	switch (request) {
 		case ZVFS_F_GETFL: {
-			if (sock_is_nonblock(spair)) {
+			if (spair_is_nonblock(spair)) {
 				flags |= ZVFS_O_NONBLOCK;
 			}
 
@@ -1085,9 +1083,9 @@ static ssize_t spair_sendmsg(void *obj, const struct net_msghdr *msg,
 		goto out;
 	}
 
-	is_connected = sock_is_connected(spair);
+	is_connected = spair_is_connected(spair);
 	avail = is_connected ? spair_write_avail(spair) : 0;
-	is_nonblock = sock_is_nonblock(spair);
+	is_nonblock = spair_is_nonblock(spair);
 
 	for (size_t i = 0; i < msg->msg_iovlen; ++i) {
 		/* check & msg->msg_iov[i]? */
