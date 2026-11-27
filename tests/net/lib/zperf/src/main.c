@@ -239,6 +239,106 @@ ZTEST(zperf_api, test_udp_upload_download)
 	zassert_true(server_results.time_in_us > 0, "UDP server did not report a transfer time");
 }
 
+/* An iperf2 client sends one more datagram to end the test, an iperf3 client
+ * ends it on the control connection.
+ */
+#define UDP_FIN_PACKETS (IS_ENABLED(CONFIG_NET_ZPERF_IPERF3) ? 0U : 1U)
+
+/* The datagrams of one send call that fit CONFIG_NET_ZPERF_UDP_GSO_BUF_SIZE */
+#define TEST_GSO_SEGMENTS 4U
+
+#if defined(CONFIG_NET_UDP_GSO)
+BUILD_ASSERT(CONFIG_NET_ZPERF_UDP_GSO_BUF_SIZE / TEST_PACKET_SIZE == TEST_GSO_SEGMENTS &&
+	     TEST_GSO_SEGMENTS <= CONFIG_NET_UDP_GSO_MAX_SEGMENTS,
+	     "The send buffer must hold exactly TEST_GSO_SEGMENTS test datagrams");
+#endif
+
+static void check_udp_upload_gso(uint16_t segments)
+{
+	struct zperf_download_params download_param = {
+		.port = TEST_PORT,
+	};
+	struct zperf_upload_params upload_param;
+	struct zperf_results client_results = { 0 };
+	int ret;
+
+	ret = zperf_udp_download(&download_param, server_session_cb, NULL);
+	zassert_ok(ret, "Failed to start UDP server (%d)", ret);
+
+	fill_upload_params(&upload_param);
+	upload_param.options.udp_segments = segments;
+
+	ret = zperf_udp_upload(&upload_param, &client_results);
+	zassert_ok(ret, "UDP upload with UDP_SEGMENT failed (%d)", ret);
+
+	/* Each datagram of a block has its own sequence number, so the
+	 * server sees them all and in order, as with one datagram per call.
+	 * A block sent as one datagram would show up as lost datagrams.
+	 */
+	zexpect_true(client_results.nb_packets_sent > TEST_GSO_SEGMENTS,
+		     "Only %u datagrams sent", client_results.nb_packets_sent);
+	zexpect_equal((client_results.nb_packets_sent - UDP_FIN_PACKETS) % TEST_GSO_SEGMENTS,
+		      0U, "%u datagrams sent, not whole blocks of %u",
+		      client_results.nb_packets_sent - UDP_FIN_PACKETS, TEST_GSO_SEGMENTS);
+	zexpect_equal(client_results.nb_packets_lost, 0U, "%u datagrams lost",
+		      client_results.nb_packets_lost);
+	zexpect_equal(client_results.nb_packets_outorder, 0U, "%u datagrams out of order",
+		      client_results.nb_packets_outorder);
+	zexpect_equal(client_results.nb_packets_rcvd, client_results.nb_packets_sent,
+		      "Server received %u of %u datagrams", client_results.nb_packets_rcvd,
+		      client_results.nb_packets_sent);
+
+	ret = k_sem_take(&session_finished, TEST_TIMEOUT);
+	zassert_ok(ret, "Timed out waiting for UDP server session to finish");
+	zassert_equal(server_last_status, ZPERF_SESSION_FINISHED,
+		      "UDP server session did not finish cleanly (status %d)", server_last_status);
+
+	/* An iperf3 client does not get the reordering count back, so check
+	 * the sequence numbers on the server too.
+	 */
+	zexpect_equal(server_results.nb_packets_lost, 0U, "Server lost %u datagrams",
+		      server_results.nb_packets_lost);
+	zexpect_equal(server_results.nb_packets_outorder, 0U,
+		      "Server saw %u datagrams out of order", server_results.nb_packets_outorder);
+}
+
+ZTEST(zperf_api, test_udp_upload_gso)
+{
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_UDP_GSO);
+
+	check_udp_upload_gso(TEST_GSO_SEGMENTS);
+}
+
+ZTEST(zperf_api, test_udp_upload_gso_limited_to_buffer)
+{
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_UDP_GSO);
+
+	/* More datagrams per call than the send buffer holds */
+	check_udp_upload_gso(UINT16_MAX);
+}
+
+ZTEST(zperf_api, test_udp_upload_gso_not_supported)
+{
+	Z_TEST_SKIP_IFDEF(CONFIG_NET_UDP_GSO);
+
+	struct zperf_download_params download_param = {
+		.port = TEST_PORT,
+	};
+	struct zperf_upload_params upload_param;
+	struct zperf_results client_results = { 0 };
+	int ret;
+
+	ret = zperf_udp_download(&download_param, server_session_cb, NULL);
+	zassert_ok(ret, "Failed to start UDP server (%d)", ret);
+
+	fill_upload_params(&upload_param);
+	upload_param.options.udp_segments = TEST_GSO_SEGMENTS;
+
+	ret = zperf_udp_upload(&upload_param, &client_results);
+	zexpect_equal(ret, -ENOTSUP, "UDP_SEGMENT upload without NET_UDP_GSO returned %d",
+		      ret);
+}
+
 static void verify_udp_packet_sequence(const int32_t *packet_ids, size_t packet_count,
 				       uint32_t expected_lost, uint32_t expected_outorder,
 				       uint32_t expected_total)

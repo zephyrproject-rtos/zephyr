@@ -2335,13 +2335,24 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 		break;
 
-#if defined(CONFIG_NET_UDP_OPTIONS)
+#if defined(CONFIG_NET_UDP_OPTIONS) || defined(CONFIG_NET_UDP_GSO)
 	case NET_IPPROTO_UDP:
 		if (net_context_get_proto(ctx) != NET_IPPROTO_UDP) {
 			break;
 		}
 
 		switch (optname) {
+#if defined(CONFIG_NET_UDP_GSO)
+		case ZSOCK_UDP_SEGMENT:
+			ret = net_context_get_option(ctx, NET_OPT_UDP_SEGMENT, optval, optlen);
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
+
+			return 0;
+#endif /* CONFIG_NET_UDP_GSO */
+#if defined(CONFIG_NET_UDP_OPTIONS)
 		case ZSOCK_UDP_OPT:
 		case ZSOCK_UDP_OPT_OCS:
 		case ZSOCK_UDP_OPT_APC:
@@ -2368,10 +2379,11 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 			}
 
 			return 0;
+#endif /* CONFIG_NET_UDP_OPTIONS */
 		}
 
 		break;
-#endif /* CONFIG_NET_UDP_OPTIONS */
+#endif /* CONFIG_NET_UDP_OPTIONS || CONFIG_NET_UDP_GSO */
 
 	case NET_IPPROTO_TCP:
 		switch (optname) {
@@ -3085,13 +3097,24 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 		break;
 
-#if defined(CONFIG_NET_UDP_OPTIONS)
+#if defined(CONFIG_NET_UDP_OPTIONS) || defined(CONFIG_NET_UDP_GSO)
 	case NET_IPPROTO_UDP:
 		if (net_context_get_proto(ctx) != NET_IPPROTO_UDP) {
 			break;
 		}
 
 		switch (optname) {
+#if defined(CONFIG_NET_UDP_GSO)
+		case ZSOCK_UDP_SEGMENT:
+			ret = net_context_set_option(ctx, NET_OPT_UDP_SEGMENT, optval, optlen);
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
+
+			return 0;
+#endif /* CONFIG_NET_UDP_GSO */
+#if defined(CONFIG_NET_UDP_OPTIONS)
 		case ZSOCK_UDP_OPT:
 		case ZSOCK_UDP_OPT_OCS:
 		case ZSOCK_UDP_OPT_APC:
@@ -3118,10 +3141,11 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			}
 
 			return 0;
+#endif /* CONFIG_NET_UDP_OPTIONS */
 		}
 
 		break;
-#endif /* CONFIG_NET_UDP_OPTIONS */
+#endif /* CONFIG_NET_UDP_OPTIONS || CONFIG_NET_UDP_GSO */
 
 	case NET_IPPROTO_TCP:
 		switch (optname) {

@@ -144,6 +144,13 @@ int zperf_prepare_upload_sock(const struct net_sockaddr *peer_addr, uint8_t tos,
 
 uint32_t zperf_packet_duration(uint32_t packet_size, uint32_t rate_in_kbps);
 
+/* Set up a UDP upload socket for the number of datagrams per send call the
+ * upload asks for. Return that number, limited to what the send buffer and
+ * the stack take, 1 when each call sends one datagram, or a negative error.
+ */
+int zperf_udp_gso_setup(int sock, const struct zperf_upload_params *param,
+			uint32_t packet_size);
+
 void zperf_async_work_submit(enum session_proto proto, int session_id, struct k_work *work);
 
 /* What zperf_api.c calls to do the work of the public functions of the same

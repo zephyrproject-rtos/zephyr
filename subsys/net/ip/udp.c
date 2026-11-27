@@ -59,6 +59,11 @@ int net_udp_finalize(struct net_pkt *pkt, bool force_chksum)
 	udp_hdr->len = net_htons(length);
 	udp_hdr->chksum = 0U;
 
+	/* Every datagram of a block gets its own checksum when it is split */
+	if (net_pkt_gso_type(pkt) != NET_GSO_NONE) {
+		return net_pkt_set_data(pkt, &udp_access);
+	}
+
 	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt), type) || force_chksum) {
 		int ret;
 		uint16_t chksum = 0;

@@ -724,6 +724,20 @@ use_interface_mtu:
 			mtu = MAX(NET_IPV4_MTU, mtu);
 		}
 
+		/* A block is split into datagrams before the driver and is
+		 * never fragmented. Its datagrams no longer fit if the path
+		 * MTU dropped after the send call.
+		 */
+		if (net_pkt_gso_type(pkt) != NET_GSO_NONE) {
+			if (net_gso_max_segment_len(pkt) > mtu) {
+				LOG_DBG("GSO segment %zu larger than MTU %u",
+					net_gso_max_segment_len(pkt), mtu);
+				return NET_DROP;
+			}
+
+			return NET_OK;
+		}
+
 		if (pkt_len > mtu) {
 			ret = net_ipv4_send_fragmented_pkt(net_pkt_iface(pkt), pkt, pkt_len, mtu);
 

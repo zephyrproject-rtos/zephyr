@@ -322,6 +322,13 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	}
 
 	PR("MTU       : %d\n", net_if_get_mtu(iface));
+
+	if (IS_ENABLED(CONFIG_NET_GSO) && net_if_get_gso_types(iface) != 0U) {
+		PR("GSO       : types=0x%02x, max size=%u, max segments=%u\n",
+		   net_if_get_gso_types(iface), net_if_get_gso_max_size(iface),
+		   net_if_get_gso_max_segs(iface));
+	}
+
 	PR("Flags     : %s\n", iface_flags2str(iface));
 	PR("Device    : %s (%p)\n",
 	   net_if_get_device(iface) ? net_if_get_device(iface)->name : "<?>",

@@ -248,10 +248,70 @@ static void update_txtime_stats_detail(struct net_pkt *pkt,
 	}
 }
 
+struct gso_tx {
+	struct net_if *iface;
+	int bytes;
+	int status;
+};
+
+static void gso_tx_segment(struct net_pkt *seg, void *user_data)
+{
+	struct gso_tx *tx = user_data;
+	int ret;
+
+	net_if_tx_lock(tx->iface);
+	ret = net_if_l2(tx->iface)->send(tx->iface, seg);
+	net_if_tx_unlock(tx->iface);
+
+	if (ret < 0) {
+		NET_WARN_RATELIMIT("iface %d pkt %p send failure status %d",
+				   net_if_get_by_iface(tx->iface), seg, ret);
+		net_pkt_unref(seg);
+		tx->status = ret;
+		return;
+	}
+
+	tx->bytes += ret;
+}
+
+/* Send a block the interface cannot take as separate packets. The block is
+ * consumed. Returns the bytes sent, or an error if nothing was sent.
+ */
+static int net_if_tx_gso(struct net_if *iface, struct net_pkt *pkt)
+{
+	struct gso_tx tx = {
+		.iface = iface,
+		.status = 0,
+	};
+	int ret;
+
+	ret = net_gso_segment(pkt, false, NET_GSO_BUF_TIMEOUT, gso_tx_segment, &tx);
+	if (tx.bytes > 0) {
+		return tx.bytes;
+	}
+
+	return ret < 0 ? ret : tx.status;
+}
+
+/* The context callback counts one UDP datagram, count the rest of a block */
+static void gso_update_udp_sent(struct net_context *context, uint16_t segs)
+{
+	if (segs <= 1U || !IS_ENABLED(CONFIG_NET_STATISTICS_UDP) || context == NULL ||
+	    net_context_get_proto(context) != NET_IPPROTO_UDP) {
+		return;
+	}
+
+	while (segs-- > 1U) {
+		net_stats_update_udp_sent(net_context_get_iface(context));
+	}
+}
+
 static void net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct net_linkaddr ll_dst = { 0 };
 	struct net_context *context;
+	bool consumed = false;
+	uint16_t segs = 1U;
 	uint32_t create_time;
 	int status;
 
@@ -276,6 +336,10 @@ static void net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 
 	context = net_pkt_context(pkt);
 
+	if (net_pkt_gso_type(pkt) != NET_GSO_NONE) {
+		segs = net_gso_segment_count(pkt);
+	}
+
 	if (net_if_flag_is_set(iface, NET_IF_LOWER_UP)) {
 		if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS) ||
 		    IS_ENABLED(CONFIG_TRACING_NET_CORE)) {
@@ -289,12 +353,17 @@ static void net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 			}
 		}
 
-		net_if_tx_lock(iface);
-		status = net_if_l2(iface)->send(iface, pkt);
-		net_if_tx_unlock(iface);
-		if (status < 0) {
-			NET_WARN_RATELIMIT("iface %d pkt %p send failure status %d",
-				     net_if_get_by_iface(iface), pkt, status);
+		if (net_gso_needs_split(iface, pkt)) {
+			status = net_if_tx_gso(iface, pkt);
+			consumed = true;
+		} else {
+			net_if_tx_lock(iface);
+			status = net_if_l2(iface)->send(iface, pkt);
+			net_if_tx_unlock(iface);
+			if (status < 0) {
+				NET_WARN_RATELIMIT("iface %d pkt %p send failure status %d",
+						   net_if_get_by_iface(iface), pkt, status);
+			}
 		}
 
 		if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS) ||
@@ -338,7 +407,9 @@ static void net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 	}
 
 	if (status < 0) {
-		net_pkt_unref(pkt);
+		if (!consumed) {
+			net_pkt_unref(pkt);
+		}
 	} else {
 		net_stats_update_bytes_sent(iface, status);
 		conn_mgr_if_used(iface);
@@ -349,6 +420,7 @@ static void net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 			context, status);
 
 		net_context_send_cb(context, status);
+		gso_update_udp_sent(context, segs);
 	}
 
 	if (ll_dst.len > 0) {

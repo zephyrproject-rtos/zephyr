@@ -1138,6 +1138,12 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *msg, int flags,
 #define ZSOCK_UDP_OPT_DPLPMTUD 15
 /** Let the application echo REQ->RES itself instead of the stack (int boolean) */
 #define ZSOCK_UDP_OPT_DPLPMTUD_APP_RESPOND 16
+/**
+ * Send each buffer as a series of UDP datagrams with this many payload bytes,
+ * the last one possibly shorter (int, 0 = off). Also a control message type
+ * with a uint16_t value that applies to one sendmsg() call.
+ */
+#define ZSOCK_UDP_SEGMENT 103
 
 /** cmsg types for IPPROTO_UDP level in ancillary data */
 #define ZSOCK_UDP_OPT_CMSG_APC    1  /**< uint32_t CRC32c */

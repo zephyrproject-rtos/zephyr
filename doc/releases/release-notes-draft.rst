@@ -161,6 +161,12 @@ Libraries / Subsystems
     applications that use the first result now connect over IPv6 when it is
     usable. :kconfig:option:`CONFIG_NET_SOCKETS_DNS_PREFER_IPV4` restores the
     preference of IPv4, see the :ref:`migration guide <migration_4.6>`.
+  * UDP sockets can send several datagrams with one call with the ``UDP_SEGMENT`` socket option
+    or control message, as on Linux, when the experimental
+    :kconfig:option:`CONFIG_NET_UDP_GSO` is enabled. The stack handles the call once and splits
+    it into datagrams just before the network driver. A driver that can split such blocks
+    itself declares it with :c:func:`net_if_set_gso_limits`. zperf sends several datagrams per
+    call with the ``-g`` option of ``zperf udp upload``, see :ref:`zperf`.
   * Added the :ref:`STUN <stun_interface>` library, a codec for the messages of
     :rfc:`8489` with the attributes of ICE (:rfc:`8445`): parsing, building,
     MESSAGE-INTEGRITY, FINGERPRINT and the address attributes. A device finds out

@@ -1055,6 +1055,27 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 			break;
 #endif /* CONFIG_NET_CONTEXT_PRIORITY */
 
+#ifdef CONFIG_NET_UDP_GSO
+		case 'g': {
+			int segments = parse_arg(&i, argc, argv);
+
+			if (!is_udp) {
+				shell_fprintf(sh, SHELL_WARNING,
+					      "TCP does not support -g option\n");
+				return -ENOEXEC;
+			}
+			if (segments < 1 || segments > UINT16_MAX) {
+				shell_fprintf(sh, SHELL_WARNING,
+					      "Parse error: %s\n", argv[i]);
+				return -ENOEXEC;
+			}
+
+			param.options.udp_segments = segments;
+			opt_cnt += 2;
+			break;
+		}
+#endif /* CONFIG_NET_UDP_GSO */
+
 		case 'I':
 			i++;
 			if (i >= argc) {
@@ -1307,6 +1328,27 @@ static int shell_cmd_upload2(const struct shell *sh, size_t argc,
 			opt_cnt += 2;
 			break;
 #endif /* CONFIG_NET_CONTEXT_PRIORITY */
+
+#ifdef CONFIG_NET_UDP_GSO
+		case 'g': {
+			int segments = parse_arg(&i, argc, argv);
+
+			if (!is_udp) {
+				shell_fprintf(sh, SHELL_WARNING,
+					      "TCP does not support -g option\n");
+				return -ENOEXEC;
+			}
+			if (segments < 1 || segments > UINT16_MAX) {
+				shell_fprintf(sh, SHELL_WARNING,
+					      "Parse error: %s\n", argv[i]);
+				return -ENOEXEC;
+			}
+
+			param.options.udp_segments = segments;
+			opt_cnt += 2;
+			break;
+		}
+#endif /* CONFIG_NET_UDP_GSO */
 
 		case 'I':
 			i++;
@@ -2012,6 +2054,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_udp,
 #ifdef CONFIG_NET_CONTEXT_PRIORITY
 		  "-p: Specify custom packet priority\n"
 #endif /* CONFIG_NET_CONTEXT_PRIORITY */
+#ifdef CONFIG_NET_UDP_GSO
+		  "-g count: Send count datagrams per call with UDP_SEGMENT\n"
+#endif /* CONFIG_NET_UDP_GSO */
 		  "-I: Specify host interface name\n"
 		  "Example: udp upload 192.0.2.2 1111 1 1K 1M\n"
 		  "Example: udp upload 2001:db8::2\n",
@@ -2037,6 +2082,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_udp,
 #ifdef CONFIG_NET_CONTEXT_PRIORITY
 		  "-p: Specify custom packet priority\n"
 #endif /* CONFIG_NET_CONTEXT_PRIORITY */
+#ifdef CONFIG_NET_UDP_GSO
+		  "-g count: Send count datagrams per call with UDP_SEGMENT\n"
+#endif /* CONFIG_NET_UDP_GSO */
 		  "-I: Specify host interface name\n"
 		  "Example: udp upload2 v4 1 1K 1M\n"
 		  "Example: udp upload2 v6\n"

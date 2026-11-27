@@ -27,6 +27,11 @@ static uint8_t udp_sample_packet[sizeof(struct zperf_udp_datagram) +
 			     sizeof(struct zperf_client_hdr_v1) +
 			     PACKET_SIZE_MAX];
 
+#if defined(CONFIG_NET_UDP_GSO)
+/* The datagrams of one send call with UDP segmentation */
+static uint8_t udp_gso_block[CONFIG_NET_ZPERF_UDP_GSO_BUF_SIZE];
+#endif
+
 #if !defined(CONFIG_ZPERF_SESSION_PER_THREAD)
 static struct zperf_async_upload_context udp_async_upload_ctx;
 #endif /* CONFIG_ZPERF_SESSION_PER_THREAD */
@@ -181,6 +186,8 @@ static int udp_upload(int sock, int port,
 	int64_t print_time;
 	uint32_t print_period;
 	bool is_mcast_pkt = false;
+	uint8_t *buf = udp_sample_packet;
+	int segments;
 	int ret;
 
 	if (packet_size > PACKET_SIZE_MAX) {
@@ -190,6 +197,18 @@ static int udp_upload(int sock, int port,
 		NET_WARN("Packet size set to the min size: %zu", header_size);
 		packet_size = header_size;
 	}
+
+	segments = zperf_udp_gso_setup(sock, param, packet_size);
+	if (segments < 0) {
+		return segments;
+	}
+
+#if defined(CONFIG_NET_UDP_GSO)
+	if (segments > 1) {
+		buf = udp_gso_block;
+		(void)memset(udp_gso_block, 'z', sizeof(udp_gso_block));
+	}
+#endif
 
 	/* Start the loop */
 	start_time = k_uptime_ticks();
@@ -214,47 +233,60 @@ static int udp_upload(int sock, int port,
 			break;
 		}
 
-		zperf_pacer_next(&pacer, loop_time);
-
 		usecs64 = param->unix_offset_us + k_ticks_to_us_floor64(loop_time - start_time);
 		secs = usecs64 / USEC_PER_SEC;
 		usecs = usecs64 % USEC_PER_SEC;
 
-		/* Fill the packet header */
-		datagram = (struct zperf_udp_datagram *)udp_sample_packet;
+		for (int i = 0; i < segments; i++) {
+			uint8_t *pkt = buf + i * packet_size;
 
-		datagram->id = net_htonl(nb_packets + 1);
-		datagram->tv_sec = net_htonl(secs);
-		datagram->tv_usec = net_htonl(usecs);
+			zperf_pacer_next(&pacer, loop_time);
 
-		hdr = (struct zperf_client_hdr_v1 *)(udp_sample_packet +
-						     sizeof(*datagram));
-		hdr->flags = 0;
-		hdr->num_of_threads = net_htonl(1);
-		hdr->port = net_htonl(port);
-		hdr->buffer_len = sizeof(udp_sample_packet) -
-			sizeof(*datagram) - sizeof(*hdr);
-		hdr->bandwidth = net_htonl(rate_in_kbps);
-		hdr->num_of_bytes = net_htonl(packet_size);
+			/* Fill the packet header */
+			datagram = (struct zperf_udp_datagram *)udp_sample_packet;
 
-		/* Load custom data payload if requested */
-		if (param->data_loader != NULL) {
-			ret = param->data_loader(param->data_loader_ctx, data_offset,
-				udp_sample_packet + header_size, packet_size - header_size);
-			if (ret < 0) {
-				NET_ERR("Failed to load data for offset %llu", data_offset);
-				return ret;
+			datagram->id = net_htonl(nb_packets + i + 1);
+			datagram->tv_sec = net_htonl(secs);
+			datagram->tv_usec = net_htonl(usecs);
+
+			hdr = (struct zperf_client_hdr_v1 *)(udp_sample_packet +
+							     sizeof(*datagram));
+			hdr->flags = 0;
+			hdr->num_of_threads = net_htonl(1);
+			hdr->port = net_htonl(port);
+			hdr->buffer_len = sizeof(udp_sample_packet) -
+				sizeof(*datagram) - sizeof(*hdr);
+			hdr->bandwidth = net_htonl(rate_in_kbps);
+			hdr->num_of_bytes = net_htonl(packet_size);
+
+			/* A datagram of a block may start unaligned, so the
+			 * header is built in the sample packet and copied.
+			 */
+			if (pkt != udp_sample_packet) {
+				memcpy(pkt, udp_sample_packet, MIN(header_size, packet_size));
 			}
+
+			/* Load custom data payload if requested */
+			if (param->data_loader != NULL) {
+				ret = param->data_loader(param->data_loader_ctx, data_offset,
+							 pkt + header_size,
+							 packet_size - header_size);
+				if (ret < 0) {
+					NET_ERR("Failed to load data for offset %llu",
+						data_offset);
+					return ret;
+				}
+			}
+			data_offset += packet_size - header_size;
 		}
-		data_offset += packet_size - header_size;
 
 		/* Send the packet */
-		ret = zsock_send(sock, udp_sample_packet, packet_size, 0);
+		ret = zsock_send(sock, buf, segments * packet_size, 0);
 		if (ret < 0) {
 			NET_ERR("Failed to send the packet (%d)", errno);
 			return -errno;
 		} else {
-			nb_packets++;
+			nb_packets += segments;
 		}
 
 		if (IS_ENABLED(CONFIG_NET_ZPERF_LOG_LEVEL_DBG)) {

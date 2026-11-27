@@ -839,6 +839,17 @@ struct net_if_dev {
 	/** The hardware MTU */
 	uint16_t mtu;
 
+#if defined(CONFIG_NET_GSO)
+	/** Largest number of segments in a GSO block the device splits */
+	uint16_t gso_max_segs;
+
+	/** Largest GSO block the device splits, IP header included */
+	uint32_t gso_max_size;
+
+	/** GSO types the device splits, BIT(enum net_gso_type) */
+	uint8_t gso_types;
+#endif /* CONFIG_NET_GSO */
+
 #if defined(CONFIG_NET_SOCKETS_OFFLOAD)
 	/** A function pointer to create an offloaded socket.
 	 *  If non-NULL, the interface is considered offloaded at socket level.
@@ -1612,6 +1623,111 @@ static inline void net_if_set_mtu(struct net_if *iface,
 	}
 
 	iface->if_dev->mtu = mtu;
+}
+
+/**
+ * @brief Set the generic segmentation offload limits of a network interface
+ *
+ * A network driver that splits GSO blocks itself calls this from its
+ * interface init function. A block whose type is in @p types and that is
+ * within both limits is passed to the driver as it is, and the driver must
+ * send it as a series of packets of net_pkt_gso_size() payload bytes each,
+ * filling in the length and checksum fields of every one. Any other block
+ * is split in software before the driver sees it.
+ *
+ * The limits are 0 by default, so every block is split in software.
+ *
+ * @param iface Pointer to a network interface structure
+ * @param types Bitmask of BIT(enum net_gso_type) values the device splits,
+ *        0 if none.
+ * @param max_size Largest block in bytes the device takes, counted from the
+ *        start of the IP header.
+ * @param max_segs Largest number of segments in one block.
+ */
+static inline void net_if_set_gso_limits(struct net_if *iface, uint8_t types,
+					 uint32_t max_size, uint16_t max_segs)
+{
+#if defined(CONFIG_NET_GSO)
+	if (iface == NULL) {
+		return;
+	}
+
+	iface->if_dev->gso_types = types;
+	iface->if_dev->gso_max_size = max_size;
+	iface->if_dev->gso_max_segs = max_segs;
+#else
+	ARG_UNUSED(iface);
+	ARG_UNUSED(types);
+	ARG_UNUSED(max_size);
+	ARG_UNUSED(max_segs);
+#endif
+}
+
+/**
+ * @brief Get the GSO types a network interface splits itself
+ *
+ * @param iface Pointer to a network interface structure
+ *
+ * @return Bitmask of BIT(enum net_gso_type) values, 0 if none.
+ */
+static inline uint8_t net_if_get_gso_types(struct net_if *iface)
+{
+#if defined(CONFIG_NET_GSO)
+	if (iface == NULL) {
+		return 0U;
+	}
+
+	return iface->if_dev->gso_types;
+#else
+	ARG_UNUSED(iface);
+
+	return 0U;
+#endif
+}
+
+/**
+ * @brief Get the largest GSO block a network interface splits itself
+ *
+ * @param iface Pointer to a network interface structure
+ *
+ * @return Size in bytes counted from the start of the IP header.
+ */
+static inline uint32_t net_if_get_gso_max_size(struct net_if *iface)
+{
+#if defined(CONFIG_NET_GSO)
+	if (iface == NULL) {
+		return 0U;
+	}
+
+	return iface->if_dev->gso_max_size;
+#else
+	ARG_UNUSED(iface);
+
+	return 0U;
+#endif
+}
+
+/**
+ * @brief Get the largest number of segments a network interface splits
+ *        from one GSO block
+ *
+ * @param iface Pointer to a network interface structure
+ *
+ * @return Number of segments.
+ */
+static inline uint16_t net_if_get_gso_max_segs(struct net_if *iface)
+{
+#if defined(CONFIG_NET_GSO)
+	if (iface == NULL) {
+		return 0U;
+	}
+
+	return iface->if_dev->gso_max_segs;
+#else
+	ARG_UNUSED(iface);
+
+	return 0U;
+#endif
 }
 
 /**

@@ -20,3 +20,17 @@ tests:
       - CONFIG_NET_TCP_TIME_WAIT_DELAY=0
       - CONFIG_NET_MAX_CONTEXTS=16
       - CONFIG_NET_MAX_CONN=16
+  net.zperf.udp_gso:
+    extra_configs:
+      - CONFIG_NET_UDP_GSO=y
+      # Holds 4 datagrams of the 256 byte test packets
+      - CONFIG_NET_ZPERF_UDP_GSO_BUF_SIZE=1024
+  net.zperf.iperf3.udp_gso:
+    extra_configs:
+      - CONFIG_NET_ZPERF_IPERF3=y
+      - CONFIG_NET_ZPERF_IPERF3_IDLE_TIMEOUT=3
+      - CONFIG_NET_TCP_TIME_WAIT_DELAY=0
+      - CONFIG_NET_MAX_CONTEXTS=16
+      - CONFIG_NET_MAX_CONN=16
+      - CONFIG_NET_UDP_GSO=y
+      - CONFIG_NET_ZPERF_UDP_GSO_BUF_SIZE=1024

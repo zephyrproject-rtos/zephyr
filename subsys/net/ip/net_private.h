@@ -114,6 +114,76 @@ extern void net_pkt_init(void);
 static inline void net_pkt_init(void) { }
 #endif
 
+/* Length of the largest segment of a UDP block, IP header included */
+static inline size_t net_gso_max_segment_len(struct net_pkt *pkt)
+{
+	return net_pkt_ip_hdr_len(pkt) + net_pkt_ip_opts_len(pkt) + NET_UDPH_LEN +
+	       net_pkt_gso_size(pkt);
+}
+
+/* How long a segment allocation may wait, as for an IP fragment */
+#define NET_GSO_BUF_TIMEOUT K_MSEC(100)
+
+#if defined(CONFIG_NET_GSO)
+/* Copy the attributes a clone gets, but not the data, from pkt to dst */
+extern void net_pkt_copy_attributes(struct net_pkt *pkt, struct net_pkt *dst);
+
+/* Append buffers for size bytes, which take exactly size bytes of writes */
+extern int net_pkt_alloc_buffer_exact(struct net_pkt *pkt, size_t size, k_timeout_t timeout);
+
+/* Called for every segment made from a block. The callback owns the
+ * segment.
+ */
+typedef void (*net_gso_deliver_t)(struct net_pkt *seg, void *user_data);
+
+/* Number of segments pkt stands for, 1 if it is not a block. */
+extern uint16_t net_gso_segment_count(struct net_pkt *pkt);
+
+/* Is pkt a block that iface cannot take as it is? */
+extern bool net_gso_needs_split(struct net_if *iface, struct net_pkt *pkt);
+
+/* Split the block blk into segments and pass each to deliver. The block is
+ * freed afterwards unless keep_block is set, in which case its data and
+ * cursor are left unchanged. Without keep_block, payload buffers are moved
+ * to the segments when a segment starts and ends on buffer boundaries, and
+ * copied otherwise.
+ *
+ * Returns 0 if every segment was made, or a negative errno if one could not
+ * be. The segments after it are then dropped and counted as IP drops.
+ */
+extern int net_gso_segment(struct net_pkt *blk, bool keep_block, k_timeout_t timeout,
+			   net_gso_deliver_t deliver, void *user_data);
+#else
+typedef void (*net_gso_deliver_t)(struct net_pkt *seg, void *user_data);
+
+static inline uint16_t net_gso_segment_count(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return 1U;
+}
+
+static inline bool net_gso_needs_split(struct net_if *iface, struct net_pkt *pkt)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(pkt);
+
+	return false;
+}
+
+static inline int net_gso_segment(struct net_pkt *blk, bool keep_block, k_timeout_t timeout,
+				  net_gso_deliver_t deliver, void *user_data)
+{
+	ARG_UNUSED(blk);
+	ARG_UNUSED(keep_block);
+	ARG_UNUSED(timeout);
+	ARG_UNUSED(deliver);
+	ARG_UNUSED(user_data);
+
+	return -ENOTSUP;
+}
+#endif /* CONFIG_NET_GSO */
+
 #if defined(CONFIG_NET_CONTEXT)
 extern const char *net_context_state(struct net_context *context);
 extern bool net_context_is_reuseaddr_set(struct net_context *context);

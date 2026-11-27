@@ -259,6 +259,8 @@ extern "C" {
 #define TCP_KEEPCNT    ZSOCK_TCP_KEEPCNT
 #define TCP_QUICKACK   ZSOCK_TCP_QUICKACK
 
+#define UDP_SEGMENT    ZSOCK_UDP_SEGMENT
+
 #define IP_TOS               ZSOCK_IP_TOS
 #define IP_TTL               ZSOCK_IP_TTL
 #define IP_PKTINFO           ZSOCK_IP_PKTINFO

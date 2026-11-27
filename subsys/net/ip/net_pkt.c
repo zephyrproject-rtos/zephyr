@@ -2253,8 +2253,8 @@ static void clone_pkt_attributes(struct net_pkt *pkt, struct net_pkt *clone_pkt)
 	net_pkt_set_rx_timestamping(clone_pkt, net_pkt_is_rx_timestamping(pkt));
 	net_pkt_set_forwarding(clone_pkt, net_pkt_forwarding(pkt));
 	net_pkt_set_chksum_done(clone_pkt, net_pkt_is_chksum_done(pkt));
-	net_pkt_set_loopback(pkt, net_pkt_is_loopback(pkt));
-	net_pkt_set_ip_reassembled(pkt, net_pkt_is_ip_reassembled(pkt));
+	net_pkt_set_loopback(clone_pkt, net_pkt_is_loopback(pkt));
+	net_pkt_set_ip_reassembled(clone_pkt, net_pkt_is_ip_reassembled(pkt));
 	net_pkt_set_cooked_mode(clone_pkt, net_pkt_is_cooked_mode(pkt));
 	net_pkt_set_ipv4_pmtu(clone_pkt, net_pkt_ipv4_pmtu(pkt));
 	net_pkt_set_ipv4_ll_resolve_addr(clone_pkt,
@@ -2294,6 +2294,38 @@ static void clone_pkt_attributes(struct net_pkt *pkt, struct net_pkt *clone_pkt)
 
 	clone_pkt_cb(pkt, clone_pkt);
 }
+
+#if defined(CONFIG_NET_GSO)
+void net_pkt_copy_attributes(struct net_pkt *pkt, struct net_pkt *dst)
+{
+	clone_pkt_attributes(pkt, dst);
+}
+
+int net_pkt_alloc_buffer_exact(struct net_pkt *pkt, size_t size, k_timeout_t timeout)
+{
+	struct net_buf *prev = pkt->buffer != NULL ? net_buf_frag_last(pkt->buffer) : NULL;
+	struct net_buf *buf;
+	int ret;
+
+	ret = net_pkt_alloc_buffer_raw(pkt, size, timeout);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* The raw allocation leaves the last buffer at its full size, so
+	 * that more can be written to it. Shrink it back to what was asked.
+	 */
+	for (buf = prev != NULL ? prev->frags : pkt->buffer; buf != NULL; buf = buf->frags) {
+		if (buf->frags == NULL) {
+			buf->size = MIN(buf->size, size);
+		} else {
+			size -= MIN(buf->size, size);
+		}
+	}
+
+	return 0;
+}
+#endif /* CONFIG_NET_GSO */
 
 /* Clone pkt on slab for iface. With l2_reserve the buffer is allocated as
  * for a new packet on iface, so the L2 of a TX packet can reserve its header

@@ -532,6 +532,34 @@ config NET_UDP_OPTIONS_DPLPMTUD_ECHO_MIN_INTERVAL_MS
 	  rate limit caps that reflection. Set to 0 to disable the limit,
 	  e.g. on a server that must answer many distinct probers at once.
 
+config NET_UDP_GSO
+	bool "UDP generic segmentation offload (UDP_SEGMENT) [EXPERIMENTAL]"
+	depends on NET_UDP && NET_NATIVE_IP
+	select NET_GSO
+	select EXPERIMENTAL
+	help
+	  Enable the UDP_SEGMENT socket option and control message. A
+	  socket with a segment size set sends one large buffer as a
+	  series of UDP datagrams of that size, the last one possibly
+	  shorter. The stack builds the IP and UDP headers once for the
+	  whole buffer and splits it just before the network driver, in
+	  software or, if the driver supports it, in hardware.
+
+	  The whole buffer is allocated from the TX buffer pool at once,
+	  so the pool limits the useful buffer size. Each datagram uses
+	  buffers of its own, so with fixed size buffers the last buffer
+	  of each datagram is only partly used. Variable size buffers
+	  (NET_BUF_VARIABLE_DATA_SIZE) give one buffer per datagram.
+
+config NET_UDP_GSO_MAX_SEGMENTS
+	int "Maximum number of datagrams in one UDP_SEGMENT send"
+	depends on NET_UDP_GSO
+	default 64
+	range 2 1024
+	help
+	  A send with UDP_SEGMENT that would create more datagrams than
+	  this fails with EINVAL.
+
 if NET_UDP
 
 module = NET_UDP
@@ -869,6 +897,15 @@ config NET_PKT_CONTROL_BLOCK_SIZE
 	  enabled. If there are already specific control blocks enabled, like
 	  net_pkt_cb_ieee802154, the actual pkt control block size will be the
 	  maximum of them.
+
+config NET_GSO
+	bool
+	depends on NET_NATIVE_IP
+	help
+	  Generic segmentation offload: a network packet can carry a block
+	  of transport payload that is split into several packets just
+	  before the network driver, in software unless the network
+	  interface reports that it can do it.
 
 config NET_HEADERS_ALWAYS_CONTIGUOUS
 	bool

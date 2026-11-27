@@ -1180,6 +1180,26 @@ ZTEST(net_ipv4_fragment, test_reassembly_timeout_race)
 	zassert_equal(packets, 0, "Reassembly slot was not released");
 }
 
+ZTEST(net_ipv4_fragment, test_clone_keeps_reassembled_flag)
+{
+	struct net_pkt *pkt;
+	struct net_pkt *clone;
+
+	pkt = net_pkt_alloc_with_buffer(iface1, sizeof(ipv4_udp), NET_AF_INET,
+					NET_IPPROTO_UDP, K_NO_WAIT);
+	zassert_not_null(pkt, "Packet creation failed");
+
+	net_pkt_set_ip_reassembled(pkt, true);
+
+	clone = net_pkt_clone(pkt, K_NO_WAIT);
+	zassert_not_null(clone, "Packet clone failed");
+
+	zexpect_true(net_pkt_is_ip_reassembled(clone), "Clone lost the reassembled flag");
+
+	net_pkt_unref(clone);
+	net_pkt_unref(pkt);
+}
+
 static void test_pre(void *ptr)
 {
 	race_armed = false;

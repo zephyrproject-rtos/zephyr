@@ -421,9 +421,65 @@ static inline bool process_multicast(struct net_pkt *pkt)
 
 static void net_queue_rx(struct net_if *iface, struct net_pkt *pkt);
 
+static void gso_queue_rx(struct net_pkt *seg, void *user_data)
+{
+	ARG_UNUSED(user_data);
+
+	net_queue_rx(net_pkt_iface(seg), seg);
+}
+
+#if defined(CONFIG_NET_IPV4) || defined(CONFIG_NET_IPV6)
+/* Deliver a local copy of a multicast packet to our own listeners */
+static void mcast_loop_deliver(struct net_pkt *clone, void *user_data)
+{
+	struct net_pkt *pkt = user_data;
+
+	net_pkt_set_iface(clone, net_pkt_iface(pkt));
+	/* The clone has no L2 header yet, so mark it as already
+	 * processed. Otherwise the receive path passes it to the
+	 * L2, which reads the network header as a link layer one
+	 * and drops the packet.
+	 */
+	net_pkt_set_loopback(clone, true);
+	net_pkt_set_l2_processed(clone, true);
+	if (net_recv_data(net_pkt_iface(clone), clone) < 0) {
+		if (IS_ENABLED(CONFIG_NET_STATISTICS)) {
+			switch (net_pkt_family(pkt)) {
+#if defined(CONFIG_NET_IPV4)
+			case NET_AF_INET:
+				net_stats_update_ipv4_sent(net_pkt_iface(pkt));
+				break;
+#endif
+#if defined(CONFIG_NET_IPV6)
+			case NET_AF_INET6:
+				net_stats_update_ipv6_sent(net_pkt_iface(pkt));
+				break;
+#endif
+			}
+		}
+		net_pkt_unref(clone);
+	}
+}
+#endif
+
+static void update_ip_sent_stats(struct net_if *iface, int family, uint16_t count)
+{
+	while (count-- > 0U) {
+		switch (family) {
+		case NET_AF_INET:
+			net_stats_update_ipv4_sent(iface);
+			break;
+		case NET_AF_INET6:
+			net_stats_update_ipv6_sent(iface);
+			break;
+		}
+	}
+}
+
 int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 {
 	struct net_if *iface;
+	uint16_t segs = 1U;
 	int family;
 	int status;
 	int ret;
@@ -469,43 +525,32 @@ int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 		NET_DBG("Loopback pkt %p back to us", pkt);
 		net_pkt_set_loopback(pkt, true);
 		net_pkt_set_l2_processed(pkt, true);
-		net_queue_rx(net_pkt_iface(pkt), pkt);
+
+		/* A receiver never sees a block */
+		if (net_pkt_gso_type(pkt) != NET_GSO_NONE) {
+			(void)net_gso_segment(pkt, false, NET_GSO_BUF_TIMEOUT, gso_queue_rx, NULL);
+		} else {
+			net_queue_rx(net_pkt_iface(pkt), pkt);
+		}
+
 		ret = 0;
 		goto err;
 	}
 
 #if defined(CONFIG_NET_IPV4) || defined(CONFIG_NET_IPV6)
 	if (process_multicast(pkt)) {
-		struct net_pkt *clone = net_pkt_clone(pkt, K_NO_WAIT);
-
-		if (clone != NULL) {
-			net_pkt_set_iface(clone, net_pkt_iface(pkt));
-			/* The clone has no L2 header yet, so mark it as already
-			 * processed. Otherwise the receive path passes it to the
-			 * L2, which reads the network header as a link layer one
-			 * and drops the packet.
-			 */
-			net_pkt_set_loopback(clone, true);
-			net_pkt_set_l2_processed(clone, true);
-			if (net_recv_data(net_pkt_iface(clone), clone) < 0) {
-				if (IS_ENABLED(CONFIG_NET_STATISTICS)) {
-					switch (net_pkt_family(pkt)) {
-#if defined(CONFIG_NET_IPV4)
-					case NET_AF_INET:
-						net_stats_update_ipv4_sent(net_pkt_iface(pkt));
-						break;
-#endif
-#if defined(CONFIG_NET_IPV6)
-					case NET_AF_INET6:
-						net_stats_update_ipv6_sent(net_pkt_iface(pkt));
-						break;
-#endif
-					}
-				}
-				net_pkt_unref(clone);
+		if (net_pkt_gso_type(pkt) != NET_GSO_NONE) {
+			if (net_gso_segment(pkt, true, K_NO_WAIT, mcast_loop_deliver, pkt) < 0) {
+				NET_DBG("Failed to segment multicast packet");
 			}
 		} else {
-			NET_DBG("Failed to clone multicast packet");
+			struct net_pkt *clone = net_pkt_clone(pkt, K_NO_WAIT);
+
+			if (clone != NULL) {
+				mcast_loop_deliver(clone, pkt);
+			} else {
+				NET_DBG("Failed to clone multicast packet");
+			}
 		}
 	}
 #endif
@@ -517,6 +562,11 @@ int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 	if (IS_ENABLED(CONFIG_NET_STATISTICS)) {
 		iface = net_pkt_iface(pkt);
 		family = net_pkt_family(pkt);
+
+		/* A block counts as the datagrams sent on the wire */
+		if (net_pkt_gso_type(pkt) != NET_GSO_NONE) {
+			segs = net_gso_segment_count(pkt);
+		}
 	}
 
 	if (net_if_try_send_data(net_pkt_iface(pkt), pkt, timeout) == NET_DROP) {
@@ -525,14 +575,7 @@ int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_STATISTICS)) {
-		switch (family) {
-		case NET_AF_INET:
-			net_stats_update_ipv4_sent(iface);
-			break;
-		case NET_AF_INET6:
-			net_stats_update_ipv6_sent(iface);
-			break;
-		}
+		update_ip_sent_stats(iface, family, segs);
 	}
 
 	ret = 0;

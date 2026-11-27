@@ -2417,6 +2417,33 @@ static int get_context_ipv6_mcast_loop(struct net_context *context,
 #endif
 }
 
+static int get_context_udp_segment(struct net_context *context,
+				   void *value, uint32_t *len)
+{
+#if defined(CONFIG_NET_UDP_GSO)
+	int val = context->options.udp_segment;
+
+	if (net_context_get_proto(context) != NET_IPPROTO_UDP) {
+		return -ENOPROTOOPT;
+	}
+
+	if (value == NULL || len == NULL || *len < sizeof(int)) {
+		return -EINVAL;
+	}
+
+	(void)memcpy(value, &val, sizeof(val));
+	*len = sizeof(val);
+
+	return 0;
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
 static int get_context_dont_fragment(struct net_context *context,
 				     void *value, uint32_t *len)
 {
@@ -2551,6 +2578,11 @@ static int context_parse_udp_option_cmsgs(const struct net_msghdr *msg,
 			}
 
 			return -EINVAL;
+#if defined(CONFIG_NET_UDP_GSO)
+		case ZSOCK_UDP_SEGMENT:
+			/* Not a UDP option, read by get_pkt_udp_segment() */
+			break;
+#endif
 		default:
 			return -EINVAL;
 		}
@@ -2934,7 +2966,8 @@ static int context_validate_dont_fragment_packet(struct net_pkt *pkt)
 {
 	uint16_t mtu;
 
-	if (!net_pkt_dont_fragment(pkt)) {
+	/* The datagrams of a block were checked against the MTU already */
+	if (!net_pkt_dont_fragment(pkt) || net_pkt_gso_type(pkt) != NET_GSO_NONE) {
 		return 0;
 	}
 
@@ -3097,6 +3130,133 @@ static bool get_pkt_dont_fragment(struct net_context *context,
 	return dont_fragment;
 }
 
+#if defined(CONFIG_NET_UDP_GSO)
+/* The UDP_SEGMENT size for this send: the control message if there is one,
+ * otherwise the socket option.
+ */
+static int get_pkt_udp_segment(struct net_context *context,
+			       const struct net_msghdr *msghdr,
+			       uint16_t *gso_size)
+{
+	struct net_cmsghdr *cmsg;
+
+	*gso_size = context->options.udp_segment;
+
+	if (msghdr == NULL || msghdr->msg_control == NULL || msghdr->msg_controllen == 0U) {
+		return 0;
+	}
+
+	for (cmsg = NET_CMSG_FIRSTHDR(msghdr); cmsg != NULL;
+	     cmsg = NET_CMSG_NXTHDR(msghdr, cmsg)) {
+		if (cmsg->cmsg_level != NET_IPPROTO_UDP ||
+		    cmsg->cmsg_type != ZSOCK_UDP_SEGMENT) {
+			continue;
+		}
+
+		if (cmsg->cmsg_len != NET_CMSG_LEN(sizeof(uint16_t))) {
+			return -EINVAL;
+		}
+
+		(void)memcpy(gso_size, NET_CMSG_DATA(cmsg), sizeof(*gso_size));
+		break;
+	}
+
+	return 0;
+}
+
+/* The MTU a datagram to dst must fit, the same one the IP fragmentation
+ * check uses for the block later.
+ */
+static uint16_t udp_segment_mtu(struct net_if *iface, net_sa_family_t family,
+				const struct net_sockaddr *dst)
+{
+	uint16_t mtu = net_if_get_mtu(iface);
+	int ret;
+
+	if ((IS_ENABLED(CONFIG_NET_IPV4_PMTU) && family == NET_AF_INET) ||
+	    (IS_ENABLED(CONFIG_NET_IPV6_PMTU) && family == NET_AF_INET6)) {
+		ret = net_pmtu_get_mtu(dst);
+		if (ret > 0) {
+			return ret;
+		}
+	}
+
+	return family == NET_AF_INET6 ? MAX(NET_IPV6_MTU, mtu) : MAX(NET_IPV4_MTU, mtu);
+}
+
+/* Check a send of len bytes in datagrams of gso_size bytes, as Linux does */
+static int context_check_udp_segment(struct net_context *context,
+				     struct net_if *iface,
+				     net_sa_family_t family,
+				     const struct net_sockaddr *dst,
+				     size_t len, uint16_t gso_size,
+				     bool has_udp_opts)
+{
+	size_t hdr_len = (family == NET_AF_INET6 ? NET_IPV6H_LEN : NET_IPV4H_LEN) +
+			 NET_UDPH_LEN;
+
+	if (iface != NULL && net_if_is_ip_offloaded(iface)) {
+		return -EOPNOTSUPP;
+	}
+
+	if (has_udp_opts) {
+		return -EINVAL;
+	}
+
+#if defined(CONFIG_NET_CONTEXT_TIMESTAMPING)
+	if ((context->options.timestamping & ZSOCK_SOF_TIMESTAMPING_TX_HARDWARE) != 0) {
+		return -EINVAL;
+	}
+#else
+	ARG_UNUSED(context);
+#endif
+
+	if (hdr_len + gso_size > udp_segment_mtu(iface, family, dst)) {
+		return -EINVAL;
+	}
+
+	if (DIV_ROUND_UP(len, gso_size) > CONFIG_NET_UDP_GSO_MAX_SEGMENTS) {
+		return -EINVAL;
+	}
+
+	if (len + hdr_len > UINT16_MAX) {
+		return -EMSGSIZE;
+	}
+
+	return 0;
+}
+
+/* Allocate a block for len payload bytes. Each datagram's payload gets
+ * buffers of its own, so that the segmenter can move them to the datagram
+ * without a copy.
+ */
+static struct net_pkt *context_alloc_udp_block(struct net_context *context,
+					       net_sa_family_t family,
+					       size_t len, uint16_t gso_size,
+					       k_timeout_t timeout)
+{
+	k_timepoint_t end = sys_timepoint_calc(timeout);
+	struct net_pkt *pkt;
+
+	pkt = context_alloc_pkt(context, family, 0, timeout);
+	if (pkt == NULL) {
+		return NULL;
+	}
+
+	for (size_t off = 0U; off < len; off += gso_size) {
+		if (net_pkt_alloc_buffer_exact(pkt, MIN(gso_size, len - off),
+					       sys_timepoint_timeout(end)) < 0) {
+			net_pkt_unref(pkt);
+			return NULL;
+		}
+	}
+
+	net_pkt_set_gso(pkt, NET_GSO_UDP_L4, gso_size);
+
+	return pkt;
+}
+#endif /* CONFIG_NET_UDP_GSO */
+
 static int context_sendto(struct net_context *context,
 			  const void *buf,
 			  size_t len,
@@ -3115,6 +3275,9 @@ static int context_sendto(struct net_context *context,
 					 CONFIG_NET_IPV6, (context->options.dont_fragment),
 					 (false));
 	net_sa_family_t family;
+#if defined(CONFIG_NET_UDP_GSO)
+	uint16_t gso_size = 0U;
+#endif
 	size_t alloc_len;
 	size_t tmp_len;
 	uint16_t proto;
@@ -3445,6 +3608,36 @@ static int context_sendto(struct net_context *context,
 		}
 	}
 
+#if defined(CONFIG_NET_UDP_GSO)
+	if (net_context_get_proto(context) == NET_IPPROTO_UDP &&
+	    net_context_get_type(context) == NET_SOCK_DGRAM &&
+	    (family == NET_AF_INET || family == NET_AF_INET6)) {
+		ret = get_pkt_udp_segment(context, msghdr, &gso_size);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (gso_size > 0U) {
+			bool has_udp_opts = false;
+
+#if defined(CONFIG_NET_UDP_OPTIONS)
+			has_udp_opts = context->options.udp_opt.enabled != 0U ||
+				       udp_opts_ptr != NULL;
+#endif
+			ret = context_check_udp_segment(context, iface, family, dst_addr,
+							len, gso_size, has_udp_opts);
+			if (ret < 0) {
+				return ret;
+			}
+
+			/* A single datagram is sent as it is */
+			if (len <= gso_size) {
+				gso_size = 0U;
+			}
+		}
+	}
+#endif /* CONFIG_NET_UDP_GSO */
+
 	context->send_cb = cb;
 	context->user_data = user_data;
 
@@ -3455,7 +3648,15 @@ static int context_sendto(struct net_context *context,
 		goto skip_alloc;
 	}
 
-	pkt = context_alloc_pkt(context, family, alloc_len, PKT_WAIT_TIME);
+#if defined(CONFIG_NET_UDP_GSO)
+	if (gso_size > 0U) {
+		pkt = context_alloc_udp_block(context, family, len, gso_size, PKT_WAIT_TIME);
+	} else
+#endif
+	{
+		pkt = context_alloc_pkt(context, family, alloc_len, PKT_WAIT_TIME);
+	}
+
 	if (!pkt) {
 		NET_ERR("Failed to allocate net_pkt");
 		return -ENOBUFS;
@@ -4947,6 +5148,37 @@ static int set_context_dont_fragment(struct net_context *context,
 #endif
 }
 
+static int set_context_udp_segment(struct net_context *context,
+				   const void *value, uint32_t len)
+{
+#if defined(CONFIG_NET_UDP_GSO)
+	int val;
+
+	if (net_context_get_proto(context) != NET_IPPROTO_UDP) {
+		return -ENOPROTOOPT;
+	}
+
+	if (value == NULL || len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	val = *((const int *)value);
+	if (val < 0 || val > UINT16_MAX) {
+		return -EINVAL;
+	}
+
+	context->options.udp_segment = (uint16_t)val;
+
+	return 0;
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
 static int set_context_reuseaddr(struct net_context *context,
 				 const void *value, uint32_t len)
 {
@@ -5585,6 +5817,9 @@ int net_context_set_option(struct net_context *context,
 	case NET_OPT_DONT_FRAGMENT:
 		ret = set_context_dont_fragment(context, value, len);
 		break;
+	case NET_OPT_UDP_SEGMENT:
+		ret = set_context_udp_segment(context, value, len);
+		break;
 	case NET_OPT_LINGER:
 		ret = set_context_linger(context, value, len);
 		break;
@@ -5714,6 +5949,9 @@ int net_context_get_option(struct net_context *context,
 		break;
 	case NET_OPT_DONT_FRAGMENT:
 		ret = get_context_dont_fragment(context, value, len);
+		break;
+	case NET_OPT_UDP_SEGMENT:
+		ret = get_context_udp_segment(context, value, len);
 		break;
 	case NET_OPT_LINGER:
 		ret = get_context_linger(context, value, len);

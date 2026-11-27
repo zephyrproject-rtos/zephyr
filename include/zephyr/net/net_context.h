@@ -435,6 +435,11 @@ __net_socket struct net_context {
 		uint8_t timestamping;
 #endif
 
+#if defined(CONFIG_NET_UDP_GSO)
+		/** UDP_SEGMENT payload size of each datagram, 0 = off */
+		uint16_t udp_segment;
+#endif
+
 #if defined(CONFIG_NET_CONTEXT_LINGER)
 		/** Socket SO_LINGER option. When enabled (l_onoff != 0) with a
 		 * zero timeout (l_linger == 0), close() aborts the connection
@@ -1479,6 +1484,7 @@ enum net_context_option {
 	NET_OPT_UDP_OPT_DPLPMTUD  = 41, /**< UDP options: DPLPMTUD enable (@rfc{9869}) */
 	NET_OPT_UDP_OPT_DPLPMTUD_APP_RESPOND = 42, /**< UDP options: app echoes RES itself */
 	NET_OPT_BROADCAST         = 43, /**< Broadcast flag (SO_BROADCAST) */
+	NET_OPT_UDP_SEGMENT       = 44, /**< UDP generic segmentation offload size */
 };
 
 /**
