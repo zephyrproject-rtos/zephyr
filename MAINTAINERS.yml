@@ -1871,7 +1871,8 @@ Documentation Infrastructure:
     - dts/bindings/crypto/
     - include/zephyr/crypto/
     - samples/drivers/crypto/
-    - tests/crypto/
+    - tests/crypto/crypto_aes/
+    - tests/crypto/crypto_hash/
     - doc/services/crypto/
     - tests/drivers/build_all/crypto/
   labels:
