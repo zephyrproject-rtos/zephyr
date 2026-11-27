@@ -47,3 +47,16 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
     integration_platforms:
       - nrf54h20dk/nrf54h20/cpuapp
+  drivers.i2s.mcasp_dma:
+    depends_on: i2s
+    tags:
+      - drivers
+      - userspace
+    platform_allow:
+      - am62l_evm/am62l3/a53
+    integration_platforms:
+      - am62l_evm/am62l3/a53
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="boards/am62l_evm_am62l3_a53_dma.overlay"
+    extra_configs:
+      - CONFIG_I2S_TI_MCASP_DMA=y
