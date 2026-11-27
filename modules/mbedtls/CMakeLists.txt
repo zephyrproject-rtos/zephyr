@@ -7,13 +7,16 @@
 if(CONFIG_MBEDTLS)
 
   if(CONFIG_MBEDTLS_BUILTIN)
+
+    include(${CMAKE_CURRENT_LIST_DIR}/psa_crypto_interface.cmake)
+
     # Create an interface library named "mbedtls_iface":
     # - This is the library other modules/subsystems link against.
-    # - It contains some Mbed TLS configuration flags (ex: MBEDTLS_CONFIG_FILE
-    #   and TF_PSA_CRYPTO_CONFIG_FILE) which are used in Mbed TLS build, but
-    #   which must also be defined when Zephyr code includes headers
-    #   from Mbed TLS.
+    # - It contains the Mbed TLS configuration flag (MBEDTLS_CONFIG_FILE)
+    #   which is used in Mbed TLS build, but which must also be defined
+    #   when Zephyr code includes headers from Mbed TLS.
     # - It contains public include directories which are provided by Mbed TLS.
+    # - It links to "psa_crypto_interface" for the TF-PSA-Crypto counterparts.
     zephyr_interface_library_named(mbedtls_iface)
 
     # Keep mbedTLS library as alias since downstream versions of Zephyr or
@@ -26,8 +29,8 @@ if(CONFIG_MBEDTLS)
 
     target_compile_definitions(mbedtls_iface INTERFACE
       MBEDTLS_CONFIG_FILE="${CONFIG_MBEDTLS_CONFIG_FILE}"
-      TF_PSA_CRYPTO_CONFIG_FILE="${CONFIG_TF_PSA_CRYPTO_CONFIG_FILE}"
     )
+    target_link_libraries(mbedtls_iface INTERFACE psa_crypto_interface)
 
     # Some CMake variables that are used in Mbed TLS build
     set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
@@ -91,6 +94,10 @@ if(CONFIG_MBEDTLS)
     )
 
     if(CONFIG_TF_PSA_CRYPTO_BUILTIN)
+      target_include_directories(psa_crypto_interface INTERFACE
+        $<TARGET_PROPERTY:tfpsacrypto,INTERFACE_INCLUDE_DIRECTORIES>
+      )
+
       # Add some support for legacy crypto that unfortunately is still required
       # in some scenarios.
       include(${CMAKE_CURRENT_LIST_DIR}/legacy_support.cmake)
