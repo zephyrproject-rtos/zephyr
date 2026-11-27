@@ -1543,7 +1543,7 @@ static ssize_t read_status_flags(struct bt_conn *conn, const struct bt_gatt_attr
 				 uint16_t len, uint16_t offset)
 {
 	const struct tbs_inst *inst = BT_AUDIO_CHRC_USER_DATA(attr);
-	const uint16_t status_flags_le = sys_cpu_to_le16(inst->optional_opcodes);
+	const uint16_t status_flags_le = sys_cpu_to_le16(inst->status_flags);
 
 	LOG_DBG("Index %u: status_flags 0x%04x", inst_index(inst), inst->status_flags);
 
