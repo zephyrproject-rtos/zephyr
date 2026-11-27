@@ -1,0 +1,31 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/nxp-siul2-gpio.h>
+#include <zephyr/dt-bindings/wuc/wuc_nxp_s32_wkpu.h>
+
+/ {
+	zephyr,user {
+		wake-gpios = <&gpioe_l 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP |
+					  NXP_SIUL2_GPIO_INT_WKPU)>;
+	};
+};
+
+&gpioe_l {
+	status = "okay";
+};
+
+&rtc {
+	wakeup-source;
+	wakeup-ctrls = <&wkpu_wuc NXP_S32_WKPU_SOURCE(1, NXP_S32_WKPU_EDGE_RISING)>,
+		       <&wkpu_wuc NXP_S32_WKPU_SOURCE(0, NXP_S32_WKPU_EDGE_RISING)>;
+};
+
+&wkpu {
+	wkpu_wuc: wakeup-controller {
+		compatible = "nxp,s32-wkpu-wuc";
+		#wakeup-ctrl-cells = <1>;
+	};
+};

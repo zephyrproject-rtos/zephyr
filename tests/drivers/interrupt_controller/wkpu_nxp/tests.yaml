@@ -7,11 +7,24 @@ common:
     - interrupt_controller
     - wkpu
   harness: ztest
+  platform_allow:
+    - frdm_mcxe31b
+    - frdm_mcxe32b/mcxe32b/cpu0
+  integration_platforms:
+    - frdm_mcxe31b
+    - frdm_mcxe32b/mcxe32b/cpu0
 tests:
-  drivers.interrupt_controller.wkpu_nxp:
-    # Exercises the WKPU driver through the RTC-timeout internal wake-up source
-    # (no external pin stimulus required).
-    platform_allow:
-      - frdm_mcxe31b
-    integration_platforms:
-      - frdm_mcxe31b
+  # Exercises the WKPU driver through the RTC-timeout internal wake-up source
+  # (no external pin stimulus required).
+  drivers.interrupt_controller.wkpu_nxp: {}
+  drivers.interrupt_controller.wkpu_nxp.wuc:
+    extra_args: EXTRA_DTC_OVERLAY_FILE=wuc.overlay
+    extra_configs:
+      - CONFIG_WUC=y
+      - CONFIG_GPIO=y
+  drivers.interrupt_controller.wkpu_nxp.wuc.pm_device:
+    extra_args: EXTRA_DTC_OVERLAY_FILE=wuc.overlay
+    extra_configs:
+      - CONFIG_WUC=y
+      - CONFIG_GPIO=y
+      - CONFIG_PM_DEVICE=y

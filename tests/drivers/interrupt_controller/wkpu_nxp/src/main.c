@@ -25,7 +25,12 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/counter.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/interrupt_controller/intc_wkpu_nxp_s32.h>
+#include <zephyr/drivers/wuc.h>
+#include <zephyr/dt-bindings/wuc/wuc_nxp_s32_wkpu.h>
+#include <zephyr/irq.h>
+#include <zephyr/pm/device.h>
 
 /* RM: WKPU wake-up source 1 == RTC timeout. */
 #define WKPU_RTC_TIMEOUT_SOURCE 1U
@@ -36,6 +41,7 @@ static const struct device *const wkpu = DEVICE_DT_GET(DT_NODELABEL(wkpu));
 static const struct device *const rtc = DEVICE_DT_GET(DT_NODELABEL(rtc));
 
 static K_SEM_DEFINE(wkpu_sem, 0, 1);
+static K_SEM_DEFINE(rtc_sem, 0, 1);
 static volatile uint8_t fired_source = 0xFFU;
 
 static void wkpu_callback(uint8_t source, void *arg)
@@ -53,6 +59,7 @@ static void rtc_alarm_callback(const struct device *dev, uint8_t chan_id,
 	ARG_UNUSED(chan_id);
 	ARG_UNUSED(ticks);
 	ARG_UNUSED(user_data);
+	k_sem_give(&rtc_sem);
 }
 
 ZTEST(wkpu_nxp, test_rtc_timeout_triggers_wkpu)
@@ -70,8 +77,8 @@ ZTEST(wkpu_nxp, test_rtc_timeout_triggers_wkpu)
 					WKPU_RTC_TIMEOUT_SOURCE, wkpu_callback, NULL);
 	zassert_ok(err, "wkpu_nxp_s32_set_callback() failed: %d", err);
 
-	wkpu_nxp_s32_enable_interrupt(wkpu, WKPU_RTC_TIMEOUT_SOURCE,
-				      WKPU_NXP_S32_RISING_EDGE);
+	zassert_ok(wkpu_nxp_s32_enable_interrupt(wkpu, WKPU_RTC_TIMEOUT_SOURCE,
+						WKPU_NXP_S32_RISING_EDGE));
 
 	/* Program an RTC compare a few seconds out on the RTCVAL channel. The
 	 * counter is free-running from driver init.
@@ -100,4 +107,211 @@ ZTEST(wkpu_nxp, test_rtc_timeout_triggers_wkpu)
 		      fired_source, WKPU_RTC_TIMEOUT_SOURCE);
 }
 
-ZTEST_SUITE(wkpu_nxp, NULL, NULL, NULL, NULL, NULL);
+#if defined(CONFIG_WUC_NXP_S32_WKPU)
+static const struct wuc_dt_spec rtc_wuc = {
+	.dev = DEVICE_DT_GET(DT_NODELABEL(wkpu_wuc)),
+	.id = NXP_S32_WKPU_SOURCE(WKPU_RTC_TIMEOUT_SOURCE, NXP_S32_WKPU_EDGE_RISING),
+};
+static const struct wuc_dt_spec api_wuc = {
+	.dev = DEVICE_DT_GET(DT_NODELABEL(wkpu_wuc)),
+	.id = NXP_S32_WKPU_SOURCE(0U, NXP_S32_WKPU_EDGE_RISING),
+};
+static const struct gpio_dt_spec wake = GPIO_DT_SPEC_GET(DT_PATH(zephyr_user), wake_gpios);
+
+#define TEST_WKPU_BASE DT_REG_ADDR(DT_NODELABEL(wkpu))
+#define WKPU_IRER_ADDRESS (TEST_WKPU_BASE + 0x18U)
+#define WKPU_WRER_ADDRESS (TEST_WKPU_BASE + 0x1cU)
+#define WAKE_MSCR_ADDRESS (DT_REG_ADDR_BY_NAME(DT_GPIO_CTLR(DT_PATH(zephyr_user), wake_gpios), \
+					     mscr) + sizeof(uint32_t) * wake.pin)
+
+static void arm_rtc_alarm(void)
+{
+	struct counter_alarm_cfg alarm = {
+		.callback = rtc_alarm_callback,
+		.ticks = counter_us_to_ticks(rtc, 3000000U),
+	};
+
+	zassert_ok(counter_set_channel_alarm(rtc, RTC_ALARM_CHANNEL, &alarm));
+}
+
+ZTEST(wkpu_nxp, test_wuc_retains_status_after_irq)
+{
+	zassert_true(device_is_ready(rtc_wuc.dev));
+	zassert_ok(wkpu_nxp_s32_set_callback(wkpu, WKPU_RTC_TIMEOUT_SOURCE,
+					   WKPU_RTC_TIMEOUT_SOURCE, wkpu_callback, NULL));
+	zassert_ok(wuc_enable_wakeup_source_dt(&rtc_wuc));
+	zassert_ok(wkpu_nxp_s32_enable_interrupt(wkpu, WKPU_RTC_TIMEOUT_SOURCE,
+						WKPU_NXP_S32_RISING_EDGE));
+	arm_rtc_alarm();
+	zassert_ok(k_sem_take(&wkpu_sem, K_SECONDS(10)));
+	zassert_equal(fired_source, WKPU_RTC_TIMEOUT_SOURCE);
+	zassert_equal(wuc_check_wakeup_source_triggered_dt(&rtc_wuc), 1);
+	zassert_ok(wuc_clear_wakeup_source_triggered_dt(&rtc_wuc));
+	zassert_equal(wuc_check_wakeup_source_triggered_dt(&rtc_wuc), 0);
+}
+
+ZTEST(wkpu_nxp, test_wuc_without_active_irq)
+{
+	bool triggered;
+
+	zassert_true(device_is_ready(rtc_wuc.dev));
+	zassert_ok(wuc_enable_wakeup_source_dt(&rtc_wuc));
+	arm_rtc_alarm();
+	/* Keep the originating peripheral's status until WUC has sampled it. */
+	irq_disable(DT_IRQN(DT_NODELABEL(rtc)));
+	triggered = WAIT_FOR(wuc_check_wakeup_source_triggered_dt(&rtc_wuc) == 1,
+			     5000000U, k_usleep(1000));
+	irq_enable(DT_IRQN(DT_NODELABEL(rtc)));
+
+	zassert_true(triggered, "RTC event was not visible with the WKPU IRQ disabled");
+	zassert_equal(wkpu_nxp_s32_get_pending(wkpu), 0U);
+	zassert_equal(wuc_check_wakeup_source_triggered_dt(&rtc_wuc), 1);
+	zassert_ok(wuc_clear_wakeup_source_triggered_dt(&rtc_wuc));
+	zassert_equal(wuc_check_wakeup_source_triggered_dt(&rtc_wuc), 0);
+}
+
+ZTEST(wkpu_nxp, test_counter_wakeup_lifecycle)
+{
+	if (IS_ENABLED(CONFIG_PM_DEVICE)) {
+		zassert_true(pm_device_wakeup_enable(rtc, false));
+		arm_rtc_alarm();
+		zexpect_equal(sys_read32(WKPU_WRER_ADDRESS) & BIT(1), 0U,
+			      "Disabled wake-up policy armed the RTC route");
+		zassert_ok(counter_cancel_channel_alarm(rtc, RTC_ALARM_CHANNEL));
+		zassert_true(pm_device_wakeup_enable(rtc, true));
+	}
+
+	arm_rtc_alarm();
+	zexpect_equal(sys_read32(WKPU_WRER_ADDRESS) & BIT(1), BIT(1));
+	zexpect_equal(sys_read32(WKPU_IRER_ADDRESS) & BIT(1), 0U,
+		      "Counter wake-up must not enable an ordinary WKPU IRQ");
+	zassert_ok(counter_stop(rtc));
+	zexpect_equal(sys_read32(WKPU_WRER_ADDRESS) & BIT(1), 0U);
+	zassert_ok(counter_start(rtc));
+	zexpect_equal(sys_read32(WKPU_WRER_ADDRESS) & BIT(1), BIT(1));
+	zassert_ok(counter_cancel_channel_alarm(rtc, RTC_ALARM_CHANNEL));
+	zexpect_equal(sys_read32(WKPU_WRER_ADDRESS) & BIT(1), 0U);
+
+	struct counter_alarm_cfg alarm = {
+		.callback = rtc_alarm_callback,
+		.ticks = counter_us_to_ticks(rtc, 3000000U),
+	};
+
+	zassert_ok(counter_set_channel_alarm(rtc, 1U, &alarm));
+	zexpect_equal(sys_read32(WKPU_WRER_ADDRESS) & (BIT(0) | BIT(1)), BIT(0),
+		      "API timeout must use source 0, not RTC timeout source 1");
+	zassert_ok(counter_cancel_channel_alarm(rtc, 1U));
+	zexpect_equal(sys_read32(WKPU_WRER_ADDRESS) & (BIT(0) | BIT(1)), 0U);
+
+	k_sem_reset(&rtc_sem);
+	arm_rtc_alarm();
+	zassert_ok(k_sem_take(&rtc_sem, K_SECONDS(10)));
+	zexpect_equal(sys_read32(WKPU_WRER_ADDRESS) & BIT(1), 0U,
+		      "One-shot expiry left the wake route armed");
+	zexpect_equal(wuc_check_wakeup_source_triggered_dt(&rtc_wuc), 1,
+		      "RTC ISR lost wake status before clearing the peripheral flag");
+}
+
+ZTEST(wkpu_nxp, test_gpio_wakeup_pad_keeping)
+{
+	uint32_t saved = sys_read32(WAKE_MSCR_ADDRESS);
+
+	zassert_true(gpio_is_ready_dt(&wake));
+	for (uint32_t pke = 0U; pke <= SIUL2_MSCR_PKE_MASK; pke += SIUL2_MSCR_PKE_MASK) {
+		sys_write32((saved & ~SIUL2_MSCR_PKE_MASK) | pke, WAKE_MSCR_ADDRESS);
+		zexpect_ok(gpio_pin_configure_dt(&wake, GPIO_INPUT));
+		for (uint8_t repeat = 0U; repeat < 2U; repeat++) {
+			zexpect_ok(gpio_pin_interrupt_configure_dt(
+				&wake, GPIO_INT_EDGE_TO_ACTIVE | GPIO_INT_WAKEUP));
+			zexpect_equal(sys_read32(WAKE_MSCR_ADDRESS) & SIUL2_MSCR_PKE_MASK, 0U);
+			zexpect_equal(sys_read32(WKPU_WRER_ADDRESS) & BIT(30), BIT(30));
+		}
+		zexpect_ok(gpio_pin_interrupt_configure_dt(&wake, GPIO_INT_EDGE_TO_ACTIVE));
+		zexpect_equal(sys_read32(WAKE_MSCR_ADDRESS) & SIUL2_MSCR_PKE_MASK, pke);
+		zexpect_equal(sys_read32(WKPU_WRER_ADDRESS) & BIT(30), 0U);
+
+		zexpect_ok(gpio_pin_interrupt_configure_dt(
+			&wake, GPIO_INT_EDGE_TO_ACTIVE | GPIO_INT_WAKEUP));
+		zexpect_ok(gpio_pin_interrupt_configure_dt(
+			&wake, GPIO_INT_EDGE_TO_INACTIVE | GPIO_INT_WAKEUP));
+		zexpect_ok(gpio_pin_interrupt_configure_dt(&wake, GPIO_INT_DISABLE));
+		zexpect_equal(sys_read32(WAKE_MSCR_ADDRESS) & SIUL2_MSCR_PKE_MASK, pke);
+		zexpect_equal(sys_read32(WKPU_WRER_ADDRESS) & BIT(30), 0U);
+	}
+	sys_write32(saved, WAKE_MSCR_ADDRESS);
+}
+
+ZTEST(wkpu_nxp, test_gpio_reconfigure_disarms_wakeup)
+{
+	uint32_t saved = sys_read32(WAKE_MSCR_ADDRESS);
+
+	zassert_true(gpio_is_ready_dt(&wake));
+	sys_write32(saved | SIUL2_MSCR_PKE_MASK, WAKE_MSCR_ADDRESS);
+	zexpect_ok(gpio_pin_configure_dt(&wake, GPIO_INPUT));
+	zexpect_ok(gpio_pin_interrupt_configure_dt(
+		&wake, GPIO_INT_EDGE_TO_ACTIVE | GPIO_INT_WAKEUP));
+	zexpect_ok(gpio_pin_configure(wake.port, wake.pin, GPIO_INPUT | GPIO_PULL_UP));
+	zexpect_equal(sys_read32(WAKE_MSCR_ADDRESS) & SIUL2_MSCR_PKE_MASK,
+		      SIUL2_MSCR_PKE_MASK);
+	zexpect_equal(sys_read32(WKPU_WRER_ADDRESS) & BIT(30), 0U);
+	zexpect_ok(gpio_pin_configure_dt(&wake, GPIO_INPUT));
+	zexpect_ok(gpio_pin_interrupt_configure_dt(&wake, GPIO_INT_DISABLE));
+	sys_write32(saved, WAKE_MSCR_ADDRESS);
+}
+
+ZTEST(wkpu_nxp, test_gpio_wuc_conflict_preserves_configuration)
+{
+	const struct wuc_dt_spec rising = {
+		.dev = DEVICE_DT_GET(DT_NODELABEL(wkpu_wuc)),
+		.id = NXP_S32_WKPU_SOURCE(30U, NXP_S32_WKPU_EDGE_RISING),
+	};
+	uint32_t saved = sys_read32(WAKE_MSCR_ADDRESS);
+
+	zassert_ok(gpio_pin_configure_dt(&wake, GPIO_INPUT));
+	sys_write32(saved | SIUL2_MSCR_PKE_MASK, WAKE_MSCR_ADDRESS);
+	zassert_ok(wuc_enable_wakeup_source_dt(&rising));
+	zexpect_equal(gpio_pin_interrupt_configure_dt(
+		&wake, GPIO_INT_EDGE_TO_ACTIVE | GPIO_INT_WAKEUP), -EBUSY);
+	zexpect_equal(sys_read32(WAKE_MSCR_ADDRESS) & SIUL2_MSCR_PKE_MASK,
+		      SIUL2_MSCR_PKE_MASK);
+	zexpect_equal(sys_read32(WKPU_WRER_ADDRESS) & BIT(30), BIT(30));
+	zexpect_equal(sys_read32(WKPU_IRER_ADDRESS) & BIT(30), 0U);
+	zassert_ok(wuc_disable_wakeup_source_dt(&rising));
+	zexpect_ok(gpio_pin_interrupt_configure_dt(
+		&wake, GPIO_INT_EDGE_TO_ACTIVE | GPIO_INT_WAKEUP));
+	zexpect_ok(gpio_pin_interrupt_configure_dt(&wake, GPIO_INT_DISABLE));
+	sys_write32(saved, WAKE_MSCR_ADDRESS);
+}
+#endif
+
+static void before(void *fixture)
+{
+	ARG_UNUSED(fixture);
+	zassert_true(device_is_ready(wkpu));
+	zassert_true(device_is_ready(rtc));
+	k_sem_reset(&wkpu_sem);
+	k_sem_reset(&rtc_sem);
+	fired_source = 0xffU;
+}
+
+static void after(void *fixture)
+{
+	ARG_UNUSED(fixture);
+	irq_enable(DT_IRQN(DT_NODELABEL(rtc)));
+	wkpu_nxp_s32_disable_interrupt(wkpu, WKPU_RTC_TIMEOUT_SOURCE);
+	wkpu_nxp_s32_unset_callback(wkpu, WKPU_RTC_TIMEOUT_SOURCE);
+	zassert_ok(counter_cancel_channel_alarm(rtc, RTC_ALARM_CHANNEL));
+	zassert_ok(counter_cancel_channel_alarm(rtc, 1U));
+#if defined(CONFIG_WUC_NXP_S32_WKPU)
+	zassert_ok(gpio_pin_interrupt_configure_dt(&wake, GPIO_INT_DISABLE));
+	zassert_ok(wuc_disable_wakeup_source_dt(&rtc_wuc));
+	zassert_ok(wuc_clear_wakeup_source_triggered_dt(&rtc_wuc));
+	zassert_ok(wuc_disable_wakeup_source_dt(&api_wuc));
+	zassert_ok(wuc_clear_wakeup_source_triggered_dt(&api_wuc));
+	if (IS_ENABLED(CONFIG_PM_DEVICE)) {
+		zassert_true(pm_device_wakeup_enable(rtc, false));
+	}
+#endif
+}
+
+ZTEST_SUITE(wkpu_nxp, NULL, NULL, before, after, NULL);

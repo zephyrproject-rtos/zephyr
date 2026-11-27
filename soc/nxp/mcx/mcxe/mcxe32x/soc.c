@@ -13,11 +13,24 @@
 #if defined(CONFIG_SOC_MCXE32B_CPU0)
 #include <fsl_power.h>
 #include <fsl_clock.h>
+#if defined(CONFIG_WUC_NXP_S32_WKPU)
+#include "intc_wkpu_nxp_s32_priv.h"
+#endif
 #endif
 
 void soc_early_init_hook(void)
 {
 #if defined(CONFIG_SOC_MCXE32B_CPU0)
+	if (POWER_ExitFromStandbyMode()) {
+		uint64_t wakeup_sources =
+			(uint64_t)WKPU->WISR | ((uint64_t)WKPU->WISR_64 << 32U);
+
+#if defined(CONFIG_WUC_NXP_S32_WKPU)
+		wkpu_nxp_s32_wuc_capture(DEVICE_DT_GET(DT_NODELABEL(wkpu)), wakeup_sources);
+#endif
+		WKPU->WISR = (uint32_t)wakeup_sources;
+		WKPU->WISR_64 = (uint32_t)(wakeup_sources >> 32U);
+	}
 	SystemInit();
 	enable_sram_extra_latency(true);
 	/* Enable I/DCache */

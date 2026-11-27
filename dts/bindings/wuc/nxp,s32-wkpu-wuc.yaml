@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP S32 WKPU wakeup controller. This node is a child of an nxp,s32-wkpu
+  controller, which owns the shared registers and interrupt handling.
+
+  A wakeup source ID encodes the hardware source number in bits [7:0] and
+  the edge in bits [9:8] (1 = rising, 2 = falling, 3 = both). Use
+  NXP_S32_WKPU_SOURCE(source, edge) from wuc_nxp_s32_wkpu.h. Sources 0-3
+  are internal and support rising edges only.
+
+  Enabling a source configures its edge and opens its wakeup request gate,
+  without enabling an interrupt. Interrupt and wakeup requests share the
+  same edge configuration. Conflicting edges on an armed source are
+  rejected, rather than changing another consumer's configuration.
+
+compatible: "nxp,s32-wkpu-wuc"
+
+include: [base.yaml, wuc-controller.yaml]
+
+properties:
+  "#wakeup-ctrl-cells":
+    const: 1
+
+wakeup-ctrl-cells:
+  - id

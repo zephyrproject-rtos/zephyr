@@ -7,8 +7,10 @@
 #define DT_DRV_COMPAT nxp_rtc_jdp
 
 #include <zephyr/drivers/counter.h>
+#include <zephyr/drivers/wuc.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/clock.h>
 #include <fsl_rtc.h>
 #include <zephyr/logging/log.h>
@@ -56,6 +58,8 @@ struct mcux_rtc_jdp_data {
 	void *top_user_data;
 	uint32_t guard_period;
 	uint32_t sw_pending_mask;
+	uint32_t wake_mask;
+	struct k_spinlock lock;
 };
 
 struct mcux_rtc_jdp_config {
@@ -65,18 +69,88 @@ struct mcux_rtc_jdp_config {
 	uint8_t clock_source;
 	rtc_clock_divide_t clock_divide;
 	uint8_t irqn;
+	struct wuc_dt_spec wuc[RTC_CHANNEL_COUNT];
+	bool wakeup_source;
 };
+
+static int mcux_rtc_jdp_enable_wakeup(const struct device *dev, uint8_t chan_id)
+{
+	const struct counter_config_info *info = dev->config;
+	const struct mcux_rtc_jdp_config *config =
+		CONTAINER_OF(info, struct mcux_rtc_jdp_config, info);
+	struct mcux_rtc_jdp_data *data = dev->data;
+	int ret;
+
+	if (!IS_ENABLED(CONFIG_WUC) || !config->wakeup_source ||
+	    config->wuc[chan_id].dev == NULL ||
+	    (IS_ENABLED(CONFIG_PM_DEVICE) && !pm_device_wakeup_is_enabled(dev))) {
+		return 0;
+	}
+
+	ret = wuc_enable_wakeup_source_dt(&config->wuc[chan_id]);
+	if (ret == 0) {
+		data->wake_mask |= BIT(chan_id);
+	}
+	return ret;
+}
+
+static int mcux_rtc_jdp_disable_wakeup(const struct device *dev, uint8_t chan_id)
+{
+	const struct counter_config_info *info = dev->config;
+	const struct mcux_rtc_jdp_config *config =
+		CONTAINER_OF(info, struct mcux_rtc_jdp_config, info);
+	struct mcux_rtc_jdp_data *data = dev->data;
+	int ret;
+
+	if ((data->wake_mask & BIT(chan_id)) == 0U) {
+		return 0;
+	}
+
+	/* Internal wake status can disappear when the RTC flag is cleared. */
+	ret = wuc_check_wakeup_source_triggered_dt(&config->wuc[chan_id]);
+	if (ret < 0 && ret != -ENOSYS) {
+		return ret;
+	}
+	ret = wuc_disable_wakeup_source_dt(&config->wuc[chan_id]);
+	if (ret == 0) {
+		data->wake_mask &= ~BIT(chan_id);
+	}
+	return ret;
+}
 
 static int mcux_rtc_jdp_start(const struct device *dev)
 {
 	const struct counter_config_info *info = dev->config;
 	const struct mcux_rtc_jdp_config *config =
 		CONTAINER_OF(info, struct mcux_rtc_jdp_config, info);
+	struct mcux_rtc_jdp_data *data = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+	uint32_t previous = data->wake_mask;
+	int ret;
+
+	for (uint8_t channel = 0U; channel < info->channels; channel++) {
+		if (data->alarm_callback[channel] == NULL ||
+		    (data->sw_pending_mask & BIT(channel)) != 0U) {
+			continue;
+		}
+		ret = mcux_rtc_jdp_enable_wakeup(dev, channel);
+		if (ret < 0) {
+			for (uint8_t i = 0U; i < channel; i++) {
+				if ((previous & BIT(i)) == 0U &&
+				    mcux_rtc_jdp_disable_wakeup(dev, i) < 0) {
+					LOG_ERR("Failed to roll back channel %u wake-up", i);
+				}
+			}
+			k_spin_unlock(&data->lock, key);
+			return ret;
+		}
+	}
 
 	RTC_EnableRTC(config->base);
 	RTC_EnableInterrupts(config->base,
 			     (uint32_t)(kRTC_RTCInterruptEnable | kRTC_APIInterruptEnable |
 					kRTC_CounterRollOverInterruptEnable));
+	k_spin_unlock(&data->lock, key);
 	return 0;
 }
 
@@ -85,12 +159,24 @@ static int mcux_rtc_jdp_stop(const struct device *dev)
 	const struct counter_config_info *info = dev->config;
 	const struct mcux_rtc_jdp_config *config =
 		CONTAINER_OF(info, struct mcux_rtc_jdp_config, info);
+	struct mcux_rtc_jdp_data *data = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+	int ret;
+
+	for (uint8_t channel = 0U; channel < info->channels; channel++) {
+		ret = mcux_rtc_jdp_disable_wakeup(dev, channel);
+		if (ret < 0) {
+			k_spin_unlock(&data->lock, key);
+			return ret;
+		}
+	}
 
 	RTC_DisableInterrupts(config->base,
 			      (uint32_t)(kRTC_RTCInterruptEnable | kRTC_APIInterruptEnable |
 					 kRTC_CounterRollOverInterruptEnable));
 	RTC_DisableRTC(config->base);
 	RTC_DisableAPI(config->base);
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
@@ -264,6 +350,7 @@ static int mcux_rtc_jdp_set_alarm(const struct device *dev, uint8_t chan_id,
 	uint32_t now;
 	bool irq_on_late;
 	uint32_t max_rel_val;
+	k_spinlock_key_t key;
 	int err;
 
 	info = dev->config;
@@ -273,7 +360,9 @@ static int mcux_rtc_jdp_set_alarm(const struct device *dev, uint8_t chan_id,
 	if ((chan_id >= info->channels) || (alarm_cfg == NULL) || (alarm_cfg->callback == NULL)) {
 		return -EINVAL;
 	}
+	key = k_spin_lock(&data->lock);
 	if (data->alarm_callback[chan_id] != NULL) {
+		k_spin_unlock(&data->lock, key);
 		return -EBUSY;
 	}
 
@@ -304,12 +393,22 @@ static int mcux_rtc_jdp_set_alarm(const struct device *dev, uint8_t chan_id,
 	/* Re-read counter and evaluate/handle late or immediate */
 	if (mcux_rtc_jdp_eval_and_handle(dev, chan_id, is_abs, val, max_rel_val, irq_on_late,
 					 &err) != 0) {
+		k_spin_unlock(&data->lock, key);
+		return err;
+	}
+
+	err = mcux_rtc_jdp_enable_wakeup(dev, chan_id);
+	if (err < 0) {
+		mcux_rtc_jdp_alarm_drop(data, chan_id);
+		k_spin_unlock(&data->lock, key);
 		return err;
 	}
 
 	/* Normal case */
 	irq_enable(config->irqn);
-	return mcux_rtc_jdp_program_compare(config, chan_id, val);
+	err = mcux_rtc_jdp_program_compare(config, chan_id, val);
+	k_spin_unlock(&data->lock, key);
+	return err;
 }
 
 static int mcux_rtc_jdp_cancel_alarm(const struct device *dev, uint8_t chan_id)
@@ -318,23 +417,32 @@ static int mcux_rtc_jdp_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	const struct mcux_rtc_jdp_config *config =
 		CONTAINER_OF(info, struct mcux_rtc_jdp_config, info);
 	struct mcux_rtc_jdp_data *data = dev->data;
+	k_spinlock_key_t key;
+	int ret;
 
 	if (chan_id >= info->channels) {
 		LOG_ERR("Invalid channel id");
 		return -EINVAL;
 	}
 
+	key = k_spin_lock(&data->lock);
+	ret = mcux_rtc_jdp_disable_wakeup(dev, chan_id);
+	if (ret < 0) {
+		k_spin_unlock(&data->lock, key);
+		return ret;
+	}
 	if (chan_id == RTC_ALARM_CHANNEL) {
 		RTC_DisableInterrupts(config->base, (uint32_t)(kRTC_RTCInterruptEnable));
 	} else if (chan_id == API_ALARM_CHANNEL) {
 		RTC_DisableInterrupts(config->base, (uint32_t)(kRTC_APIInterruptEnable));
 		RTC_DisableAPI(config->base);
-	} else {
-		/* Unsupported channel */
-		return -EINVAL;
 	}
 
-	data->alarm_callback[chan_id] = NULL;
+	RTC_ClearInterruptFlags(config->base, chan_id == RTC_ALARM_CHANNEL ?
+				kRTC_RTCInterruptFlag : kRTC_APIInterruptFlag);
+	data->sw_pending_mask &= ~BIT(chan_id);
+	mcux_rtc_jdp_alarm_drop(data, chan_id);
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
@@ -415,36 +523,32 @@ static void mcux_rtc_jdp_isr(const struct device *dev)
 	uint32_t status = RTC_GetInterruptFlags(config->base);
 	uint32_t current = RTC_GetCountValue(config->base);
 
-	/* Handle RTC match interrupt or software-pending */
-	if ((status & kRTC_RTCInterruptFlag) != 0U ||
-	    (data->sw_pending_mask & BIT(RTC_ALARM_CHANNEL))) {
-		if (data->alarm_callback[RTC_ALARM_CHANNEL] != NULL) {
-			counter_alarm_callback_t cb = data->alarm_callback[RTC_ALARM_CHANNEL];
-			void *ud = data->alarm_user_data[RTC_ALARM_CHANNEL];
+	for (uint8_t channel = 0U; channel < info->channels; channel++) {
+		uint32_t flag = channel == RTC_ALARM_CHANNEL ?
+			kRTC_RTCInterruptFlag : kRTC_APIInterruptFlag;
+		k_spinlock_key_t key = k_spin_lock(&data->lock);
+		counter_alarm_callback_t cb;
+		void *user_data;
+		int ret;
 
-			data->alarm_callback[RTC_ALARM_CHANNEL] = NULL;
-			data->alarm_user_data[RTC_ALARM_CHANNEL] = NULL;
-			data->sw_pending_mask &= ~BIT(RTC_ALARM_CHANNEL);
-			cb(dev, RTC_ALARM_CHANNEL, current, ud);
+		if ((status & flag) == 0U && (data->sw_pending_mask & BIT(channel)) == 0U) {
+			k_spin_unlock(&data->lock, key);
+			continue;
 		}
-
-		RTC_ClearInterruptFlags(config->base, kRTC_RTCInterruptFlag);
-	}
-
-	/* Handle API match interrupt or software-pending */
-	if ((status & kRTC_APIInterruptFlag) != 0U ||
-	    (data->sw_pending_mask & BIT(API_ALARM_CHANNEL))) {
-		if (data->alarm_callback[API_ALARM_CHANNEL] != NULL) {
-			counter_alarm_callback_t cb = data->alarm_callback[API_ALARM_CHANNEL];
-			void *ud = data->alarm_user_data[API_ALARM_CHANNEL];
-
-			data->alarm_callback[API_ALARM_CHANNEL] = NULL;
-			data->alarm_user_data[API_ALARM_CHANNEL] = NULL;
-			data->sw_pending_mask &= ~BIT(API_ALARM_CHANNEL);
-			cb(dev, API_ALARM_CHANNEL, current, ud);
+		ret = mcux_rtc_jdp_disable_wakeup(dev, channel);
+		if (ret < 0) {
+			LOG_ERR("Cannot disarm channel %u wake-up: %d", channel, ret);
 		}
+		cb = data->alarm_callback[channel];
+		user_data = data->alarm_user_data[channel];
+		mcux_rtc_jdp_alarm_drop(data, channel);
+		data->sw_pending_mask &= ~BIT(channel);
+		RTC_ClearInterruptFlags(config->base, flag);
+		k_spin_unlock(&data->lock, key);
 
-		RTC_ClearInterruptFlags(config->base, kRTC_APIInterruptFlag);
+		if (cb != NULL) {
+			cb(dev, channel, current, user_data);
+		}
 	}
 
 	/* Handle counter rollover interrupt */
@@ -463,12 +567,36 @@ static uint32_t mcux_rtc_jdp_get_freq(const struct device *dev)
 	return info->freq;
 }
 
+static int mcux_rtc_jdp_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	ARG_UNUSED(dev);
+
+	/* The always-on counter keeps running; PM metadata controls wake-up policy. */
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+	case PM_DEVICE_ACTION_RESUME:
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+}
+
 static int mcux_rtc_jdp_init(const struct device *dev)
 {
 	const struct counter_config_info *info = dev->config;
 	const struct mcux_rtc_jdp_config *config =
 		CONTAINER_OF(info, struct mcux_rtc_jdp_config, info);
 	rtc_config_t rtc_config;
+
+	if (IS_ENABLED(CONFIG_WUC) && config->wakeup_source) {
+		for (uint8_t channel = 0U; channel < info->channels; channel++) {
+			if (config->wuc[channel].dev != NULL &&
+			    !device_is_ready(config->wuc[channel].dev)) {
+				LOG_ERR("Channel %u wake-up controller is not ready", channel);
+				return -ENODEV;
+			}
+		}
+	}
 
 	/* Get default configuration */
 	RTC_GetDefaultConfig(&rtc_config);
@@ -489,7 +617,7 @@ static int mcux_rtc_jdp_init(const struct device *dev)
 	/* Start the counter */
 	RTC_EnableRTC(config->base);
 
-	return 0;
+	return pm_device_driver_init(dev, mcux_rtc_jdp_pm_action);
 }
 
 static DEVICE_API(counter, mcux_rtc_jdp_driver_api) = {
@@ -522,6 +650,11 @@ static DEVICE_API(counter, mcux_rtc_jdp_driver_api) = {
 		.clock_source = DT_INST_PROP(n, clock_source),                     \
 		.clock_divide = RTC_JDP_DIV_ENUM(n),                               \
 		.irqn = DT_INST_IRQN(n),                                           \
+		.wuc = {COND_CODE_1(CONFIG_WUC,                                   \
+			(WUC_DT_SPEC_INST_GET_BY_IDX_OR(n, 0, {0})), ({0})),           \
+			COND_CODE_1(CONFIG_WUC,                                       \
+			(WUC_DT_SPEC_INST_GET_BY_IDX_OR(n, 1, {0})), ({0}))},           \
+		.wakeup_source = DT_INST_PROP_OR(n, wakeup_source, 0),             \
 		.info =                                                            \
 			{                                                              \
 				.max_top_value = UINT32_MAX,                               \
@@ -532,7 +665,8 @@ static DEVICE_API(counter, mcux_rtc_jdp_driver_api) = {
 				.channels = RTC_CHANNEL_COUNT,                             \
 			},                                                             \
 	};                                                                     \
-	DEVICE_DT_INST_DEFINE(n, &mcux_rtc_jdp_init, NULL,                     \
+	PM_DEVICE_DT_INST_DEFINE(n, mcux_rtc_jdp_pm_action);                  \
+	DEVICE_DT_INST_DEFINE(n, &mcux_rtc_jdp_init, PM_DEVICE_DT_INST_GET(n), \
 				&mcux_rtc_jdp_data_##n,                                    \
 				&mcux_rtc_jdp_config_##n.info, POST_KERNEL,                \
 				CONFIG_COUNTER_INIT_PRIORITY, &mcux_rtc_jdp_driver_api);   \

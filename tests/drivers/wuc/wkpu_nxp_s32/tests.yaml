@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - interrupt_controller
+    - wuc
+  platform_allow:
+    - qemu_cortex_m3
+  integration_platforms:
+    - qemu_cortex_m3
+  harness: ztest
+tests:
+  drivers.wuc.wkpu_nxp_s32.32:
+    extra_args: WKPU_TEST_SOURCES=32
+  drivers.wuc.wkpu_nxp_s32.64:
+    extra_args: WKPU_TEST_SOURCES=64
