@@ -1881,7 +1881,16 @@ static int stm32_dcmipp_pipe_init(const struct device *dev)
 		pipe->fmt.height /= dcmipp->isp_dec_vratio;
 	}
 #endif
-	pipe->fmt.pixelformat = dcmipp->source_fmt.pixelformat;
+	if (pipe->id == DCMIPP_PIPE0) {
+		pipe->fmt.pixelformat = dcmipp->source_fmt.pixelformat;
+	}
+#if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
+	else {
+		pipe->fmt.pixelformat = VIDEO_FMT_IS_YUV(dcmipp->source_fmt.pixelformat) ?
+						VIDEO_PIX_FMT_YUYV : VIDEO_PIX_FMT_RGB565;
+	}
+#endif
+	stm32_dcmipp_compute_fmt_pitch(pipe->id, &pipe->fmt);
 	pipe->crop.top = 0;
 	pipe->crop.left = 0;
 	pipe->crop.width = pipe->fmt.width;
