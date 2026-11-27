@@ -1,14 +1,42 @@
 # Copyright 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-mainmenu "FRDM-MCXE31B system off demo"
+mainmenu "MCXE system off demo"
+
+choice APP_WAKEUP_SOURCE
+	prompt "Standby wake-up source"
+	default APP_WAKEUP_RTC
+
+config APP_WAKEUP_RTC
+	bool "RTC timeout"
+
+config APP_WAKEUP_GPIO
+	bool "External GPIO"
+	depends on SOC_MCXE32B_CPU0
+	select GPIO
+
+config APP_WAKEUP_BOTH
+	bool "RTC timeout or external GPIO"
+	depends on SOC_MCXE32B_CPU0
+	select GPIO
+
+endchoice
+
+config APP_USE_CPU1
+	bool "Start and cooperatively stop CPU1 before standby"
+	depends on SOC_MCXE32B_CPU0
+	select ARM_MPU
+	help
+	  Requires the companion CPU1 image built by sysbuild. CPU0 requests
+	  shutdown through non-cacheable standby SRAM and waits for CPU1's
+	  acknowledgment and hardware WFI status before gating its clock.
 
 config APP_TEST_CYCLES
 	int "Number of standby cycles to execute"
 	range 1 1000
 	default 10
 	help
-	  Number of times the sample arms the RTC alarm and enters system off.
+	  Number of times the sample arms its wake-up sources and enters system off.
 	  The completed cycle count is stored in standby-retained noinit memory
 	  so it can be retrieved after each standby wake reset.
 
