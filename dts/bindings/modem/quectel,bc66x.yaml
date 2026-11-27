@@ -8,7 +8,7 @@ description: Quectel BC660K-GL or BC66 NB-IoT modem
 
 compatible: "quectel,bc66x"
 
-include: zephyr,cellular-modem-device.yaml
+include: ["zephyr,cellular-modem-device.yaml", offloaded-netdev.yaml]
 
 properties:
   mdm-boot-gpios:

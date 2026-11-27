@@ -5,7 +5,7 @@ description: u-blox SARA-R4 modem
 
 compatible: "u-blox,sara-r4"
 
-include: zephyr,cellular-modem-device.yaml
+include: ["zephyr,cellular-modem-device.yaml", offloaded-netdev.yaml]
 
 properties:
   mdm-power-gpios:

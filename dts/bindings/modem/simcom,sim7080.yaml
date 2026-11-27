@@ -5,7 +5,7 @@ description: Simcom Sim7080 modem
 
 compatible: "simcom,sim7080"
 
-include: zephyr,cellular-modem-device.yaml
+include: ["zephyr,cellular-modem-device.yaml", offloaded-netdev.yaml]
 
 properties:
   mdm-power-gpios:
