@@ -13,6 +13,12 @@ target_sources(app PRIVATE
   src/test_scan_window.c
 )
 
+if(CONFIG_BT_CTLR_TEST_ENTROPY_SHIM)
+  # Test-only entropy shim, see entropy_shim.overlay
+  target_sources(app PRIVATE src/entropy_shim.c)
+  zephyr_include_directories(${ZEPHYR_BASE}/boards/native/nrf_bsim/common)
+endif()
+
 if(CONFIG_BT_CTLR_CONN_META)
   # The controller's lll_conn.h includes the test's lll_conn_meta.h.
   zephyr_include_directories(meta)

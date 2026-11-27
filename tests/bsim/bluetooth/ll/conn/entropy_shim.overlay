@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2026 The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Test-only entropy shim (zephyrproject-rtos/zephyr#126663): replace the nRF
+ * RNG entropy device with the shim driver compiled into the test application.
+ */
+&rng {
+	compatible = "vnd,entropy-shim";
+};
