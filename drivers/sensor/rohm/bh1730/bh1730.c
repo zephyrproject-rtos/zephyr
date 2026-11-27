@@ -145,16 +145,21 @@ static inline uint8_t bh1730_get_gain(uint8_t gain_reg_val)
 static uint32_t bh1730_calculate_lux(uint16_t data0, uint16_t data1, uint8_t itime_reg,
 				     uint8_t gain_reg)
 {
-	/* Check page 13 of datasheet for lux calculation formula */
+	/*
+	 * Check page 13 of datasheet for lux calculation formula:
+	 * Lx = (k0 * DATA0 - k1 * DATA1) / Gain * 102.6 / ITIME_ms
+	 * with ITIME_ms = Tint * 964 * (256 - ITIME) ~= 2.7 ms * (256 - ITIME).
+	 * Since 102.6 / 2.7 = 38, this is exact in integer math as
+	 * Lx = (k0 * DATA0 - k1 * DATA1) * 38 / (Gain * (256 - ITIME))
+	 */
 	const uint32_t SCALE = 1000;
-	const uint32_t scale1026 = 102600; /* 102.6 * 1000 */
+	const uint32_t LUX_FACTOR = 38;
 
 	/* prevent division by zero */
 	if (data0 == 0) {
 		return 0;
 	}
 
-	uint32_t itime_ms = bh1730_get_integration_time_ms(itime_reg);
 	uint8_t gain = bh1730_get_gain(gain_reg);
 
 	/* Compute ratio = (DATA1 / DATA0) scaled by 1000 */
@@ -179,13 +184,13 @@ static uint32_t bh1730_calculate_lux(uint16_t data0, uint16_t data1, uint8_t iti
 
 	/* Compute numerator (scaled values, may be negative → use int64_t) */
 	int64_t numerator = (int64_t)data0 * k0_scaled - (int64_t)data1 * k1_scaled;
-	uint64_t denominator = (uint64_t)gain * scale1026;
+	uint64_t denominator = (uint64_t)SCALE * gain * (256U - itime_reg);
 
 	if (numerator <= 0 || denominator == 0) {
 		return 0;
 	}
 
-	uint32_t lux = (uint32_t)((numerator * itime_ms) / denominator);
+	uint32_t lux = (uint32_t)(((uint64_t)numerator * LUX_FACTOR) / denominator);
 
 	return lux;
 }
