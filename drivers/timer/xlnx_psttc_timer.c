@@ -32,6 +32,13 @@ const int32_t z_sys_timer_irq_for_test = DT_IRQN(DT_INST(0, xlnx_ttcps));
  * method, and there is room for improvement.
  */
 #define CYCLES_NEXT_MIN		(10000)
+/*
+ * update_match() also re-arms when the counter read back after the write is
+ * less than CYCLES_READBACK_MARGIN cycles short of the match: the counter
+ * could step onto a match that close before the new value reaches the
+ * comparator.
+ */
+#define CYCLES_READBACK_MARGIN	(100U)
 #define CYCLES_NEXT_MAX		(XTTC_MAX_INTERVAL_COUNT)
 #define MAX_TICKS		((XTTC_MAX_INTERVAL_COUNT / 4U) / CYCLES_PER_TICK)
 
@@ -61,6 +68,7 @@ static uint32_t read_count(void)
 static void update_match(uint32_t cycles, uint32_t match)
 {
 	uint32_t delta = match - cycles;
+	uint32_t now;
 
 	/* Ensure that the match value meets the minimum timing requirements */
 	if (delta < CYCLES_NEXT_MIN) {
@@ -69,6 +77,22 @@ static void update_match(uint32_t cycles, uint32_t match)
 
 	/* Write counter match value for interrupt generation */
 	sys_write32(match, TIMER_BASE_ADDR + XTTCPS_MATCH_0_OFFSET);
+
+	/* The match interrupt fires only when the counter steps onto the match
+	 * value. If anything held this path up for CYCLES_NEXT_MIN cycles, the
+	 * counter can already be at or past the value just written, and the next
+	 * timer interrupt would come only after the 32-bit counter wraps (42.9 s
+	 * at 100 MHz). Read the counter back after the write and move the match
+	 * ahead until it is at least CYCLES_READBACK_MARGIN cycles in front of
+	 * the counter.
+	 */
+	now = read_count();
+	while ((now - cycles) >= ((match - cycles) - CYCLES_READBACK_MARGIN)) {
+		cycles = now;
+		match = now + CYCLES_NEXT_MIN;
+		sys_write32(match, TIMER_BASE_ADDR + XTTCPS_MATCH_0_OFFSET);
+		now = read_count();
+	}
 }
 
 static void ttc_isr(const void *arg)
