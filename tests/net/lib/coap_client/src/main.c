@@ -2030,6 +2030,28 @@ ZTEST(coap_client, test_separate_response)
 	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT, "Unexpected response");
 }
 
+/* A request answered by a separate response is held, but a new request takes
+ * it when no request is free.
+ */
+ZTEST(coap_client, test_separate_response_frees_request)
+{
+	struct coap_client_request req = short_request;
+
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_empty_ack;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &short_request, NULL));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zexpect_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT, "Unexpected response");
+	k_sleep(K_MSEC(10));
+
+	req.user_data = NULL;
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_no_reply;
+	for (int i = 0; i < CONFIG_COAP_CLIENT_MAX_REQUESTS; i++) {
+		zexpect_ok(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL),
+			   "Request %d found no free slot", i);
+	}
+}
+
 ZTEST(coap_client, test_separate_response_lost)
 {
 	struct coap_client_request req = short_request;
@@ -2379,6 +2401,43 @@ ZTEST(coap_client, test_duplicate_response_after_exchange)
 	zassert_equal(z_impl_zsock_recvfrom_fake.call_count, 2);
 	zassert_equal(same_mid_ack_cnt, 2);
 	zassert_equal(rst_sent_cnt, 0, "Duplicate rejected");
+}
+
+/* A server that missed the Acknowledgment repeats its separate response after
+ * newer responses pushed it out of the duplicate cache. The request is still
+ * held, so the late copy is acknowledged again, not rejected.
+ */
+ZTEST(coap_client, test_duplicate_response_after_cache_overwrite)
+{
+	struct net_sockaddr *dst = net_sad(&dst_address);
+
+	same_mid_req_cnt = 0;
+	same_mid_ack_cnt = 0;
+	rst_sent_cnt = 0;
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_same_mid_once;
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_same_mid;
+
+	zassert_ok(coap_client_req(&client, 0, dst, &short_request, NULL));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_ACK_TIMEOUT_MS)));
+	wait_callbacks_done();
+	zassert_equal(same_mid_ack_cnt, 1);
+
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake;
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake;
+	for (int i = 0; i < CONFIG_COAP_CLIENT_DEDUP_CACHE_SIZE; i++) {
+		zassert_ok(coap_client_req(&client, 0, dst, &short_request, NULL));
+		zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_ACK_TIMEOUT_MS)));
+		wait_callbacks_done();
+	}
+
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_same_mid_once;
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_same_mid;
+	set_socket_events(client.fd, ZSOCK_POLLIN);
+
+	zassert_equal(k_sem_take(&sem1, K_MSEC(MORE_THAN_ACK_TIMEOUT_MS)), -EAGAIN,
+		      "Duplicate delivered");
+	zexpect_equal(same_mid_ack_cnt, 2, "Duplicate not acknowledged");
+	zexpect_equal(rst_sent_cnt, 0, "Duplicate rejected");
 }
 
 /* A response is remembered for a time only, after which its message ID may
