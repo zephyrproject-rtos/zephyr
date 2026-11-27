@@ -370,7 +370,7 @@ static void ti_adc_isr(const struct device *dev)
 		regs->CONTROL &= ~TI_ADC_CONTROL_ENABLE;
 
 		/* clear interrupt status */
-		regs->IRQ_STATUS |= data->fifo_irq_mask;
+		regs->IRQ_STATUS = status & data->fifo_irq_mask;
 
 		/* wait for current conversion to finish */
 		do {
@@ -389,7 +389,7 @@ static void ti_adc_isr(const struct device *dev)
 			data->buffer[i] = FIELD_GET(TI_ADC_FIFODATA_ADCDATA, *data->fifo_data_ptr);
 		}
 
-		regs->IRQ_STATUS |= TI_ADC_IRQ_END_OF_SEQUENCE;
+		regs->IRQ_STATUS = TI_ADC_IRQ_END_OF_SEQUENCE;
 
 		adc_context_on_sampling_done(&data->ctx, dev);
 	}
