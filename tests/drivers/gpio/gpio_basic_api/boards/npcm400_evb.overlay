@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2026 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Connect J16 pin 1 (GPIO10) to J16 pin 2 (GPIO11) with a jumper wire. */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&gpio1 0 0>;
+		in-gpios = <&gpio1 1 0>;
+	};
+};
+
+&pinctrl {
+	gpio10_11_gpio: gpio10-11-gpio {
+		g10 {
+			pinmux = <&pin_gpio10_gpio>;
+		};
+
+		g11 {
+			pinmux = <&pin_gpio11_gpio>;
+		};
+	};
+};
+
+&gpio1 {
+	pinctrl-0 = <&gpio10_11_gpio>;
+	pinctrl-names = "default";
+};
