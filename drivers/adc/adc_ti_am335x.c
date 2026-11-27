@@ -89,6 +89,8 @@ enum ti_adc_irq {
 /* FIFO Threshold Register */
 #define TI_ADC_FIFO_THRESHOLD (40)
 
+#define TI_ADC_FIFOWC_NUMWDS GENMASK(8, 0)
+
 /* FIFO Data Register */
 #define TI_ADC_FIFODATA_ADCDATA GENMASK(11, 0) /* FIFO Data Mask */
 
@@ -129,6 +131,12 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 
 	regs->CONTROL &= ~TI_ADC_CONTROL_ENABLE;
 	regs->STEPENABLE = 0;
+
+	for (uint32_t wc = FIELD_GET(TI_ADC_FIFOWC_NUMWDS, *data->fifo_wc_ptr); wc > 0; wc--) {
+		(void)*data->fifo_data_ptr;
+	}
+
+	data->repeat_buffer = data->buffer;
 
 	/* enable steps */
 	for (int chan = 0; chan < TI_ADC_TOTAL_CHANNELS; chan++) {
@@ -255,7 +263,7 @@ static int ti_adc_channel_setup(const struct device *dev, const struct adc_chann
 static int ti_adc_read_start(const struct device *dev, const struct adc_sequence *sequence)
 {
 	struct ti_adc_data *data = DEV_DATA(dev);
-	const uint8_t samplings = (sequence->options ? sequence->options->extra_samplings + 1 : 1);
+	const uint32_t samplings = (sequence->options ? sequence->options->extra_samplings + 1 : 1);
 	size_t required_size = 0;
 
 	data->chan_count = 0;
@@ -381,12 +389,16 @@ static void ti_adc_isr(const struct device *dev)
 		regs->CONTROL |= TI_ADC_CONTROL_ENABLE;
 
 	} else if (status & TI_ADC_IRQ_END_OF_SEQUENCE) {
-		uint16_t wc = *data->fifo_wc_ptr;
+		uint16_t wc = FIELD_GET(TI_ADC_FIFOWC_NUMWDS, *data->fifo_wc_ptr);
 		uint16_t i;
 
 		for (i = 0; i < wc; i++) {
+			uint32_t word = *data->fifo_data_ptr;
+
 			/* write from fifo to buffer */
-			data->buffer[i] = FIELD_GET(TI_ADC_FIFODATA_ADCDATA, *data->fifo_data_ptr);
+			if (i < data->chan_count) {
+				data->buffer[i] = FIELD_GET(TI_ADC_FIFODATA_ADCDATA, word);
+			}
 		}
 
 		regs->IRQ_STATUS = TI_ADC_IRQ_END_OF_SEQUENCE;
