@@ -6,6 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <string.h>
+
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/state.h>
 #include <zephyr/sys/util_macro.h>
@@ -82,14 +84,12 @@ static struct pm_state_device_constraint _devices_constraints[] = {
 static struct pm_state_device_constraint *
 pm_policy_priv_device_find_device_constraints(const struct device *dev)
 {
-	if (dev == NULL) {
+	if (dev == NULL || dev->name == NULL) {
 		return NULL;
 	}
 
 	for (size_t i = 0; i < ARRAY_SIZE(_devices_constraints); i++) {
-		const struct device *device = device_get_binding(_devices_constraints[i].dev);
-
-		if (device == dev) {
+		if (strcmp(dev->name, _devices_constraints[i].dev) == 0) {
 			return &_devices_constraints[i];
 		}
 	}
