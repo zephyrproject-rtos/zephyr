@@ -593,7 +593,7 @@ static void dump_ptable_walk(uintptr_t addr)
 }
 #endif
 
-void z_arm64_fatal_error(unsigned int reason, struct arch_esf *esf)
+static void arm64_fatal_error(unsigned int reason, struct arch_esf *esf, bool allow_demand_paging)
 {
 	uint64_t esr = 0;
 	uint64_t elr = 0;
@@ -629,9 +629,8 @@ void z_arm64_fatal_error(unsigned int reason, struct arch_esf *esf)
 			reason = K_ERR_CPU_EXCEPTION;
 		}
 
-		if (IS_ENABLED(CONFIG_DEMAND_PAGING) &&
-		    reason != K_ERR_STACK_CHK_FAIL &&
-		    z_arm64_do_demand_paging(esf, esr, far)) {
+		if (IS_ENABLED(CONFIG_DEMAND_PAGING) && allow_demand_paging &&
+		    reason != K_ERR_STACK_CHK_FAIL && z_arm64_do_demand_paging(esf, esr, far)) {
 			return;
 		}
 
@@ -671,6 +670,16 @@ void z_arm64_fatal_error(unsigned int reason, struct arch_esf *esf)
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
 	z_fatal_error(reason, esf);
+}
+
+void z_arm64_fatal_error(unsigned int reason, struct arch_esf *esf)
+{
+	arm64_fatal_error(reason, esf, false);
+}
+
+void z_arm64_sync_exc_fatal(unsigned int reason, struct arch_esf *esf)
+{
+	arm64_fatal_error(reason, esf, true);
 }
 
 /**

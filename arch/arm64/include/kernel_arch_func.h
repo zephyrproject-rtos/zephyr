@@ -47,6 +47,7 @@ static inline void arch_switch(void *switch_to, void **switched_from)
 }
 
 extern void z_arm64_fatal_error(unsigned int reason, struct arch_esf *esf);
+extern void z_arm64_sync_exc_fatal(unsigned int reason, struct arch_esf *esf);
 extern void z_arm64_set_ttbr0(uint64_t ttbr0);
 extern void z_arm64_mem_cfg_ipi(void);
 

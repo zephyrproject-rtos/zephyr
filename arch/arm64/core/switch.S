@@ -273,7 +273,7 @@ inv:
 #ifdef CONFIG_EXTRA_EXCEPTION_INFO
 	z_arm64_save_exception_info sp
 #endif
-	bl	z_arm64_fatal_error
+	bl	z_arm64_sync_exc_fatal
 
 	/* Return here only in case of recoverable error */
 	.cfi_endproc
