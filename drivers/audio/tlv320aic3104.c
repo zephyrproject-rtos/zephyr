@@ -1011,6 +1011,42 @@ static int codec_initialize(const struct device *dev)
 	return 0;
 }
 
+static int codec_mclk_rate(const struct device *dev, const struct audio_codec_cfg *cfg,
+			   uint32_t *rate)
+{
+	const struct tlv320aic3104_config *dev_cfg = dev->config;
+	int ret;
+
+	if (dev_cfg->mclk_fixed_hz != 0U) {
+		*rate = dev_cfg->mclk_fixed_hz;
+		return 0;
+	}
+
+	if (dev_cfg->mclk_dev == NULL) {
+		*rate = cfg->mclk_freq;
+		return 0;
+	}
+
+	if (!device_is_ready(dev_cfg->mclk_dev)) {
+		LOG_ERR("MCLK provider not ready");
+		return -ENODEV;
+	}
+
+	ret = clock_control_on(dev_cfg->mclk_dev, dev_cfg->mclk_subsys);
+	if (ret < 0 && ret != -EALREADY) {
+		LOG_ERR("MCLK enable failed: %d", ret);
+		return ret;
+	}
+
+	ret = clock_control_get_rate(dev_cfg->mclk_dev, dev_cfg->mclk_subsys, rate);
+	if (ret < 0) {
+		LOG_ERR("MCLK rate read failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
 static int codec_configure(const struct device *dev, struct audio_codec_cfg *cfg)
 {
 	static const struct {
@@ -1042,10 +1078,16 @@ static int codec_configure(const struct device *dev, struct audio_codec_cfg *cfg
 	struct tlv320aic3104_data *data = dev->data;
 	struct tlv320aic3104_clock_solution clock_sol;
 	struct tlv320aic3104_dai_solution dai_sol;
+	uint32_t mclk_hz;
 	int ret;
 
 	if (cfg == NULL) {
 		return -EINVAL;
+	}
+
+	ret = codec_mclk_rate(dev, cfg, &mclk_hz);
+	if (ret < 0) {
+		return ret;
 	}
 
 	ret = tlv320aic3104_dai_solve(cfg->dai_type, cfg->dai_cfg.i2s.word_size,
@@ -1054,8 +1096,7 @@ static int codec_configure(const struct device *dev, struct audio_codec_cfg *cfg
 		return ret;
 	}
 
-	ret = tlv320aic3104_clock_solve(cfg->mclk_freq, cfg->dai_cfg.i2s.frame_clk_freq,
-					&clock_sol);
+	ret = tlv320aic3104_clock_solve(mclk_hz, cfg->dai_cfg.i2s.frame_clk_freq, &clock_sol);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1356,12 +1397,34 @@ static DEVICE_API(audio_codec, codec_driver_api) = {
 #define TLV320AIC3104_DEFAULT_INPUT(inst, prop)                                                    \
 	((uint8_t)DT_INST_ENUM_IDX_OR(inst, prop, TLV320AIC3104_INPUT_LINE2))
 
+#define TLV320AIC3104_MCLK_NODE(inst) DT_INST_CLOCKS_CTLR_BY_NAME(inst, mclk)
+
+#define TLV320AIC3104_MCLK_IS_FIXED(inst)                                                          \
+	COND_CODE_1(DT_INST_CLOCKS_HAS_NAME(inst, mclk),                                           \
+		    (DT_NODE_HAS_PROP(TLV320AIC3104_MCLK_NODE(inst), clock_frequency)), (0))
+
+#define TLV320AIC3104_MCLK_FIXED_HZ(inst)                                                          \
+	COND_CODE_1(TLV320AIC3104_MCLK_IS_FIXED(inst),                                             \
+		    (DT_PROP(TLV320AIC3104_MCLK_NODE(inst), clock_frequency)), (0U))
+
+#define TLV320AIC3104_MCLK_DEV(inst)                                                               \
+	COND_CODE_1(DT_INST_CLOCKS_HAS_NAME(inst, mclk),                                           \
+		    (COND_CODE_1(TLV320AIC3104_MCLK_IS_FIXED(inst), (NULL),                        \
+				 (DEVICE_DT_GET(TLV320AIC3104_MCLK_NODE(inst))))),                 \
+		    (NULL))
+
+#define TLV320AIC3104_MCLK_SUBSYS(inst)                                                            \
+	((clock_control_subsys_t)(uintptr_t)DT_INST_PHA_BY_NAME_OR(inst, clocks, mclk, name, 0))
+
 #define TLV320AIC3104_DEFINE(inst, part)                                                           \
 	static struct tlv320aic3104_data tlv320aic3104_data_##part##_##inst;                       \
 	static const struct tlv320aic3104_config tlv320aic3104_config_##part##_##inst = {          \
 		.variant = &tlv320aic3104_variant_##part,                                          \
 		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET(inst, reset_gpios),                            \
+		.mclk_fixed_hz = TLV320AIC3104_MCLK_FIXED_HZ(inst),                                \
+		.mclk_dev = TLV320AIC3104_MCLK_DEV(inst),                                          \
+		.mclk_subsys = TLV320AIC3104_MCLK_SUBSYS(inst),                                    \
 		.mic_bias_level = (uint8_t)DT_INST_PROP(inst, mic_bias_level),                     \
 		.default_input_left = TLV320AIC3104_DEFAULT_INPUT(inst, left_capture_input),       \
 		.default_input_right = TLV320AIC3104_DEFAULT_INPUT(inst, right_capture_input),     \

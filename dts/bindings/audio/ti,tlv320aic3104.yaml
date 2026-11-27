@@ -20,6 +20,19 @@ properties:
     required: true
     description: GPIO for hardware reset (active-low)
 
+  clocks:
+    description: |
+      Optional MCLK provider, named "mclk" in clock-names. When present,
+      audio_codec_configure() takes the MCLK rate from this clock instead of
+      audio_codec_cfg.mclk_freq. A provider with a clock-frequency
+      property, such as a fixed-clock for an on-board oscillator, is read
+      at build time. Any other provider is switched on and read through the
+      clock control API (CONFIG_CLOCK_CONTROL), and its specifier may have no
+      cells or a "name" cell.
+
+  clock-names:
+    description: Must be "mclk" when clocks is present.
+
   mic-bias-level:
     type: int
     default: 0

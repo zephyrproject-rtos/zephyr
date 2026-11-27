@@ -12,6 +12,7 @@
 
 #include <zephyr/audio/codec.h>
 #include <zephyr/device.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 
@@ -186,6 +187,10 @@ struct tlv320aic3104_config {
 	const struct tlv320aic3104_variant *variant;
 	struct i2c_dt_spec bus;
 	struct gpio_dt_spec reset_gpio;
+
+	uint32_t mclk_fixed_hz;
+	const struct device *mclk_dev;
+	clock_control_subsys_t mclk_subsys;
 
 	uint8_t mic_bias_level;
 

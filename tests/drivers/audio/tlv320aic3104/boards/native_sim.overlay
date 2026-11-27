@@ -4,6 +4,18 @@
  */
 
 / {
+	aic_mclk: aic-mclk {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <12288000>;
+	};
+
+	aic_fake_mclk: aic-fake-mclk {
+		compatible = "vnd,aic3104-test-clock";
+		#clock-cells = <1>;
+		output-rate = <12288000>;
+	};
+
 	i2c_emul_bus: i2c_emul@60000000 {
 		compatible = "zephyr,i2c-emul-controller";
 		reg = <0x60000000 0x1>;
@@ -144,6 +156,24 @@
 			reset-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
 			left-capture-input = "line1";
 			right-capture-input = "line1";
+			status = "okay";
+		};
+
+		tlv320aic3106_mclk: tlv320aic3106@2a {
+			compatible = "ti,tlv320aic3106";
+			reg = <0x2a>;
+			reset-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			clocks = <&aic_mclk>;
+			clock-names = "mclk";
+			status = "okay";
+		};
+
+		tlv320aic3106_fake_mclk: tlv320aic3106@2b {
+			compatible = "ti,tlv320aic3106";
+			reg = <0x2b>;
+			reset-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			clocks = <&aic_fake_mclk 7>;
+			clock-names = "mclk";
 			status = "okay";
 		};
 	};
