@@ -1088,7 +1088,16 @@ static void send_state_machine(struct isotp_send_ctx *sctx)
 	switch (sctx->state) {
 
 	case ISOTP_TX_SEND_FF:
-		send_ff(sctx);
+		ret = send_ff(sctx);
+		if (ret < 0) {
+			LOG_ERR("Failed to send FF");
+			send_report_error(sctx, ret == -EAGAIN ?
+				ISOTP_N_TIMEOUT_A :
+				ISOTP_N_ERROR);
+			send_state_machine(sctx);
+			break;
+		}
+
 		k_timer_start(&sctx->timer, K_MSEC(ISOTP_BS_TIMEOUT_MS), K_NO_WAIT);
 		sctx->state = ISOTP_TX_WAIT_FC;
 		LOG_DBG("SM send FF");
@@ -1109,6 +1118,7 @@ static void send_state_machine(struct isotp_send_ctx *sctx)
 				send_report_error(sctx, ret == -EAGAIN ?
 						ISOTP_N_TIMEOUT_A :
 						ISOTP_N_ERROR);
+				send_state_machine(sctx);
 				break;
 			}
 
