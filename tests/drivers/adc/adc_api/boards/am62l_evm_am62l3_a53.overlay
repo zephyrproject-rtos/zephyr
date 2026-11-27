@@ -1,0 +1,10 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* ADC0 channels 0 and 1 are configured in the board devicetree. */
+/ {
+	zephyr,user {
+		io-channels = <&main_adc0 0>, <&main_adc0 1>;
+	};
+};
