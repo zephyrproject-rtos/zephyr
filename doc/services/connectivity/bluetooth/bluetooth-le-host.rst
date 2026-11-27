@@ -184,6 +184,22 @@ there are four possible security levels that can be reached:
   provisioning. It follows a similar procedure as pairing, but is done
   using separate mesh-specific APIs.
 
+Encryption without pairing
+--------------------------
+
+An application that authenticates the peer with a protocol of its own can encrypt the connection
+with the key that protocol produced, a Transient Application Key (TAK), instead of pairing. This is
+the non-paired security model of Bluetooth Core Specification 7.0 (LE security mode 4 level 2),
+enabled with :kconfig:option:`CONFIG_BT_TAK`.
+
+Both devices call :c:func:`bt_conn_le_non_paired_set` when the connection is established and
+:c:func:`bt_conn_le_tak_set` once they have the key. The call of the Central starts encryption, and
+the Peripheral needs its key by the time that request arrives; otherwise encryption fails and the
+Central can try again. The link then reports :c:enumerator:`BT_SECURITY_L2` with
+:c:enumerator:`BT_SECURITY_FLAG_TAK`. A GATT attribute or an L2CAP server that requires encryption
+or authentication refuses such a link unless it permits a TAK, with
+:c:enumerator:`BT_GATT_PERM_TAK` or :c:member:`bt_l2cap_server.tak`.
+
 L2CAP
 =====
 
