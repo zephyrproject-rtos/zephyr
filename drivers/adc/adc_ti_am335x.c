@@ -104,6 +104,7 @@ struct ti_adc_cfg {
 	void (*irq_func)(const struct device *dev);
 	uint32_t open_delay[TI_ADC_TOTAL_CHANNELS];
 	uint8_t oversampling[TI_ADC_TOTAL_CHANNELS];
+	uint8_t resolution[TI_ADC_TOTAL_CHANNELS];
 	uint8_t fifo;
 };
 
@@ -267,6 +268,31 @@ static int ti_adc_read_start(const struct device *dev, const struct adc_sequence
 	size_t required_size = 0;
 
 	data->chan_count = 0;
+
+	if (sequence->channels == 0) {
+		LOG_ERR("Invalid channel mask 0x%x", sequence->channels);
+		return -EINVAL;
+	}
+
+	for (int chan = 0; chan < TI_ADC_TOTAL_CHANNELS; chan++) {
+		if (!IS_BIT_SET(sequence->channels, chan)) {
+			continue;
+		}
+
+		if (DEV_CFG(dev)->resolution[chan] != 0 &&
+		    sequence->resolution != DEV_CFG(dev)->resolution[chan]) {
+			LOG_ERR("Channel %d resolution must be %d, set in devicetree", chan,
+				DEV_CFG(dev)->resolution[chan]);
+			return -EINVAL;
+		}
+
+		if (sequence->oversampling != 0 &&
+		    sequence->oversampling != DEV_CFG(dev)->oversampling[chan]) {
+			LOG_ERR("Channel %d averages 2^%d samples, set in devicetree", chan,
+				DEV_CFG(dev)->oversampling[chan]);
+			return -ENOTSUP;
+		}
+	}
 
 	/* count channels enabled in sequence */
 	for (int chan = 0; chan < TI_ADC_TOTAL_CHANNELS; chan++) {
@@ -432,6 +458,7 @@ static void ti_adc_isr(const struct device *dev)
 		.irq_func = &ti_adc_irq_setup_##n,                                                 \
 		.open_delay = CHAN_PROP_LIST(n, ti_open_delay),                                    \
 		.oversampling = CHAN_PROP_LIST(n, zephyr_oversampling),                            \
+		.resolution = CHAN_PROP_LIST(n, zephyr_resolution),                                \
 		.fifo = DT_INST_PROP(n, ti_fifo),                                                  \
 	};                                                                                         \
                                                                                                    \
