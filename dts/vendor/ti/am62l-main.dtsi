@@ -236,6 +236,8 @@
 		clocks = <&scmi_clk 194>;
 		clock-names = "fck";
 		power-domains = <&main_mcasp0_pd>;
+		dmas = <&main_bcdma 49 0>, <&main_bcdma 48 0>;
+		dma-names = "tx", "rx";
 		status = "disabled";
 	};
 
@@ -247,6 +249,8 @@
 		clocks = <&scmi_clk 216>;
 		clock-names = "fck";
 		power-domains = <&main_mcasp1_pd>;
+		dmas = <&main_bcdma 51 0>, <&main_bcdma 50 0>;
+		dma-names = "tx", "rx";
 		status = "disabled";
 	};
 
@@ -258,6 +262,8 @@
 		clocks = <&scmi_clk 230>;
 		clock-names = "fck";
 		power-domains = <&main_mcasp2_pd>;
+		dmas = <&main_bcdma 53 0>, <&main_bcdma 52 0>;
+		dma-names = "tx", "rx";
 		status = "disabled";
 	};
 
