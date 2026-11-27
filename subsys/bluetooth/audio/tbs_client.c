@@ -2462,6 +2462,44 @@ static bool check_and_set_all_busy(struct bt_tbs_server_inst *srv_inst)
 	return all_idle;
 }
 
+/* Reset what discovery finds. The subscribe parameters, and the discover parameters of their CCC
+ * discovery, are kept: an earlier discovery may have put them on the GATT client's subscription
+ * list, where they stay until the connection ends or, for a bonded peer, until it is unpaired.
+ * Discovery subscribes them again, which returns -EALREADY for those on the list.
+ */
+static void tbs_inst_reset(struct bt_tbs_instance *inst)
+{
+	(void)memset(inst->calls, 0, sizeof(inst->calls));
+	inst->start_handle = 0U;
+	inst->end_handle = 0U;
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_UCI)
+	inst->bearer_uci_handle = 0U;
+#endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_UCI) */
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST)
+	inst->uri_list_handle = 0U;
+#endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST) */
+#if defined(CONFIG_BT_TBS_CLIENT_READ_BEARER_SIGNAL_INTERVAL) ||                                   \
+	defined(CONFIG_BT_TBS_CLIENT_SET_BEARER_SIGNAL_INTERVAL)
+	inst->signal_interval_handle = 0U;
+#endif /* defined(CONFIG_BT_TBS_CLIENT_READ_BEARER_SIGNAL_INTERVAL) */
+/* || defined(CONFIG_BT_TBS_CLIENT_SET_BEARER_SIGNAL_INTERVAL) */
+#if defined(CONFIG_BT_TBS_CLIENT_CCID)
+	inst->ccid_handle = 0U;
+	inst->ccid = 0U;
+#endif /* defined(CONFIG_BT_TBS_CLIENT_CCID) */
+#if defined(CONFIG_BT_TBS_CLIENT_OPTIONAL_OPCODES)
+	inst->optional_opcodes_handle = 0U;
+#endif /* defined(CONFIG_BT_TBS_CLIENT_OPTIONAL_OPCODES) */
+	inst->termination_reason_handle = 0U;
+
+	(void)memset(&inst->read_params, 0, sizeof(inst->read_params));
+	(void)memset(inst->read_buf, 0, sizeof(inst->read_buf));
+	(void)memset(&inst->net_buf, 0, sizeof(inst->net_buf));
+
+	/* Not busy during discovery, as before: it reads the CCID with tbs_client_gatt_read() */
+	(void)memset(inst->flags, 0, sizeof(inst->flags));
+}
+
 int bt_tbs_client_discover(struct bt_conn *conn)
 {
 	uint8_t conn_index;
@@ -2482,11 +2520,14 @@ int bt_tbs_client_discover(struct bt_conn *conn)
 	}
 
 #if defined(CONFIG_BT_TBS_CLIENT_TBS)
-	(void)memset(srv_inst->tbs_insts, 0, sizeof(srv_inst->tbs_insts)); /* reset data */
+	for (size_t i = 0U; i < ARRAY_SIZE(srv_inst->tbs_insts); i++) {
+		tbs_inst_reset(&srv_inst->tbs_insts[i]);
+	}
+
 	srv_inst->inst_cnt = 0U;
 #endif /* CONFIG_BT_TBS_CLIENT_TBS */
 #if defined(CONFIG_BT_TBS_CLIENT_GTBS)
-	(void)memset(&srv_inst->gtbs_inst, 0, sizeof(srv_inst->gtbs_inst)); /* reset data */
+	tbs_inst_reset(&srv_inst->gtbs_inst);
 	return primary_discover_gtbs(conn);
 #else
 	return primary_discover_tbs(conn);
