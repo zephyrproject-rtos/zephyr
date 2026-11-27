@@ -889,6 +889,13 @@ struct bt_l2cap_server {
 	int (*accept)(struct bt_conn *conn, struct bt_l2cap_server *server,
 		      struct bt_l2cap_chan **chan);
 
+	/** @brief A link encrypted with a Transient Application Key meets @ref sec_level.
+	 *
+	 *  This does not tell which application supplied the key: a server that has
+	 *  to can check the connection in its accept() callback.
+	 */
+	bool			tak;
+
 	/** @cond INTERNAL_HIDDEN */
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 	/* References held on this server: one while a connection request for

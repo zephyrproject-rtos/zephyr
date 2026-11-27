@@ -775,6 +775,16 @@ config BT_SMP_MIN_ENC_KEY_SIZE
 
 endif # BT_SMP
 
+config BT_TAK
+	bool "Transient Application Key (TAK) encryption [EXPERIMENTAL]"
+	select BT_LE_ENCRYPTION
+	select EXPERIMENTAL
+	help
+	  Support for the non-paired security model, LE security mode 4 level 2:
+	  the application authenticates the peer with a protocol of its own and
+	  supplies the key that encrypts the connection, without pairing or
+	  bonding. See bt_conn_le_non_paired_set() and bt_conn_le_tak_set().
+
 rsource "Kconfig.l2cap"
 rsource "Kconfig.gatt"
 rsource "../services/Kconfig"

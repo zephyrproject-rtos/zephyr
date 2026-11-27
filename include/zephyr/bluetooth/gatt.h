@@ -118,6 +118,16 @@ enum bt_gatt_perm {
 	 *  If set, requires that LE Secure Connections is used for write access.
 	 */
 	BT_GATT_PERM_WRITE_LESC = BIT(8),
+
+	/** @brief Attribute encryption and authentication permissions are met by a TAK.
+	 *
+	 *  If set, a link encrypted with a Transient Application Key satisfies the
+	 *  encryption, authentication and LE Secure Connections permissions of the
+	 *  attribute. Without it such a link is refused where one of them is set.
+	 *  The permission does not tell which application supplied the key: a profile
+	 *  that has to can check the connection in a @ref bt_gatt_authorization_cb.
+	 */
+	BT_GATT_PERM_TAK = BIT(9),
 };
 
 /**

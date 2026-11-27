@@ -4856,6 +4856,29 @@ static bool is_in_pairing_procedure(struct bt_smp *smp)
 	return atomic_test_bit(smp->flags, SMP_FLAG_PAIRING);
 }
 
+static void smp_pairing_not_supported(struct bt_smp *smp)
+{
+	struct bt_smp_pairing_fail *rsp;
+	struct bt_smp_hdr *hdr;
+	struct net_buf *buf;
+
+	/* Not smp_create_pdu(): it marks the SMP context as timed out when it gets no buffer */
+	buf = bt_l2cap_create_pdu_timeout(NULL, 0, SMP_TIMEOUT);
+	if (buf == NULL) {
+		return;
+	}
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	hdr->code = BT_SMP_CMD_PAIRING_FAIL;
+
+	rsp = net_buf_add(buf, sizeof(*rsp));
+	rsp->reason = BT_SMP_ERR_PAIRING_NOTSUPP;
+
+	if (bt_l2cap_send_pdu(&smp->chan, buf, NULL, NULL) != 0) {
+		net_buf_unref(buf);
+	}
+}
+
 static int bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan.chan);
@@ -4887,6 +4910,17 @@ static int bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	 */
 	if (hdr->code >= ARRAY_SIZE(handlers)) {
 		LOG_WRN("Received reserved SMP code 0x%02x", hdr->code);
+		return 0;
+	}
+
+	/* Core Vol 3 Part C 10.6.2.1 and 10.6.2.2: the non-paired security model rejects a
+	 * Security Request and a Pairing Request as a device without pairing does.
+	 */
+	if (bt_conn_le_non_paired(chan->conn)) {
+		if (hdr->code != BT_SMP_CMD_PAIRING_FAIL) {
+			smp_pairing_not_supported(smp);
+		}
+
 		return 0;
 	}
 
@@ -6282,6 +6316,13 @@ int bt_smp_auth_pairing_confirm(struct bt_conn *conn)
 
 int bt_smp_start_security(struct bt_conn *conn)
 {
+	/* bt_conn_set_security() and smp_pairing_complete() get here without looking again: the
+	 * connection may have entered the non-paired security model since they decided.
+	 */
+	if (bt_conn_le_non_paired(conn)) {
+		return -EPERM;
+	}
+
 	switch (conn->role) {
 #if defined(CONFIG_BT_CENTRAL)
 	case BT_HCI_ROLE_CENTRAL:

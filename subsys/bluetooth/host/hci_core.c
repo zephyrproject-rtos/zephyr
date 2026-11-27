@@ -2522,7 +2522,9 @@ enum bt_security_err bt_security_err_get(uint8_t hci_err)
 #if defined(CONFIG_BT_LE_ENCRYPTION)
 static bool update_sec_level(struct bt_conn *conn)
 {
-	if (conn->le.keys && (conn->le.keys->flags & BT_KEYS_AUTHENTICATED)) {
+	/* Keys that reach a non-paired connection, e.g. from BR/EDR, say nothing about a TAK */
+	if (!bt_conn_le_non_paired(conn) && conn->le.keys &&
+	    (conn->le.keys->flags & BT_KEYS_AUTHENTICATED)) {
 		if (conn->le.keys->flags & BT_KEYS_SC &&
 		    conn->le.keys->enc_size == BT_SMP_MAX_ENC_KEY_SIZE) {
 			conn->sec_level = BT_SECURITY_L4;
@@ -2555,6 +2557,7 @@ static void hci_encrypt_change(struct net_buf *buf)
 	}
 
 	if (status) {
+		bt_conn_le_tak_enc_done(conn);
 		bt_conn_security_changed(conn, status,
 					 bt_security_err_get(status));
 		bt_conn_unref(conn);
@@ -2563,6 +2566,7 @@ static void hci_encrypt_change(struct net_buf *buf)
 
 	if (conn->encrypt == evt->encrypt) {
 		LOG_WRN("No change to encryption state (encrypt 0x%02x)", evt->encrypt);
+		bt_conn_le_tak_enc_done(conn);
 		bt_conn_unref(conn);
 		return;
 	}
@@ -2586,6 +2590,11 @@ static void hci_encrypt_change(struct net_buf *buf)
 		if (!update_sec_level(conn)) {
 			status = BT_HCI_ERR_AUTH_FAIL;
 		}
+
+		/* After the encryption state and the level are recorded: bt_conn_le_tak_set()
+		 * and bt_conn_set_security() look at the pending state first and at those second.
+		 */
+		bt_conn_le_tak_enc_done(conn);
 	}
 #endif /* CONFIG_BT_LE_ENCRYPTION */
 #if defined(CONFIG_BT_CLASSIC)
@@ -2792,8 +2801,15 @@ static void le_ltk_request(struct net_buf *buf)
 	(void)memcpy(&rand_value, evt->rand, sizeof(rand_value));
 	(void)memcpy(&ediv, evt->ediv, sizeof(ediv));
 
-	if (IS_ENABLED(CONFIG_BT_SMP)) {
+	if (IS_ENABLED(CONFIG_BT_TAK) && bt_conn_le_non_paired(conn)) {
+		/* Core Vol 3 Part C 10.6.2: a TAK goes with EDIV and Rand zero */
+		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && rand_value == 0U && ediv == 0U) {
+			reply = bt_conn_le_tak_take(conn, ltk);
+		}
+	} else if (IS_ENABLED(CONFIG_BT_SMP)) {
 		reply = bt_smp_request_ltk(conn, rand_value, ediv, ltk);
+	} else {
+		/* No source of keys: the negative reply below */
 	}
 
 	if (reply) {
