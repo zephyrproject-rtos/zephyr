@@ -1,0 +1,9 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_CRITICAL_SECTION_HOOKS
+	def_bool y
+	select CRITICAL_SECTION_HOOKS
+	select NONZERO_SPINLOCK_SIZE
+
+source "Kconfig.zephyr"
