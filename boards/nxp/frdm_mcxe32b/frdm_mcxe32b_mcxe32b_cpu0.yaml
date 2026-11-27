@@ -16,4 +16,7 @@ supported:
   - arduino_gpio
   - can
   - gpio
+  - hwinfo
+  - netif:eth
+  - ptp_clock
 vendor: nxp

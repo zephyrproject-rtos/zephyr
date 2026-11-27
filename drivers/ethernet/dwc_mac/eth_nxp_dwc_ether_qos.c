@@ -81,7 +81,8 @@ DWMAC_ASSERT_BUFFER_ALIGNMENT(DATA_BUS_WIDTH);
 #error "Unsupported PHY connection type"
 #endif
 
-#if defined(CONFIG_SOC_SERIES_MCXE31X) || defined(CONFIG_SOC_SERIES_S32K3)
+#if defined(CONFIG_SOC_SERIES_MCXE31X) || defined(CONFIG_SOC_SERIES_MCXE32X) ||                    \
+	defined(CONFIG_SOC_SERIES_S32K3)
 /* MMC counters present in the controller */
 #define NXP_ETH_MMC_COUNTERS(X)                                                                    \
 	X(TX_OCTET_COUNT_GOOD_BAD)                                                                 \
@@ -164,12 +165,13 @@ static const struct pinctrl_dev_config *eth0_pcfg = PINCTRL_DT_INST_DEV_CONFIG_G
 
 /*
  * The PHY interface selection is sampled when the MAC leaves reset, so the MAC
- * has to be held there while dwmac_bus_init() sets it. MCXE31x and S32K3 have
- * no reset line, gating the MAC clocks takes that role there instead. RT11xx
- * has none either and latches the selection at the DMA software reset, which
- * dwmac_probe() issues after this function returns.
+ * has to be held there while dwmac_bus_init() sets it. MCXE31x, MCXE32x and
+ * S32K3 have no reset line, gating the MAC clocks takes that role there
+ * instead. RT11xx has none either and latches the selection at the DMA
+ * software reset, which dwmac_probe() issues after this function returns.
  */
 BUILD_ASSERT(DT_INST_NODE_HAS_PROP(0, resets) || IS_ENABLED(CONFIG_SOC_SERIES_MCXE31X) ||
+		     IS_ENABLED(CONFIG_SOC_SERIES_MCXE32X) ||
 		     IS_ENABLED(CONFIG_SOC_SERIES_S32K3) ||
 		     IS_ENABLED(CONFIG_SOC_SERIES_IMXRT11XX),
 	     "Ethernet node is missing the resets property");
@@ -186,7 +188,8 @@ static const struct reset_dt_spec eth_reset = RESET_DT_SPEC_INST_GET_OR(0, {0});
 	(clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(0, clk, name)
 
 static const clock_control_subsys_t eth0_clocks[] = {
-#if defined(CONFIG_SOC_SERIES_MCXE31X) || defined(CONFIG_SOC_SERIES_S32K3)
+#if defined(CONFIG_SOC_SERIES_MCXE31X) || defined(CONFIG_SOC_SERIES_MCXE32X) ||                    \
+	defined(CONFIG_SOC_SERIES_S32K3)
 	NXP_ETH_CLOCK_SUBSYS(tx),
 	NXP_ETH_CLOCK_SUBSYS(rx),
 #endif
@@ -237,7 +240,7 @@ int dwmac_bus_init(const struct device *dev)
 	}
 
 	/* Select the PHY interface. */
-#if defined(CONFIG_SOC_SERIES_MCXE31X)
+#if defined(CONFIG_SOC_SERIES_MCXE31X) || defined(CONFIG_SOC_SERIES_MCXE32X)
 	DCM_GPR->DCMRWF1 = (DCM_GPR->DCMRWF1 & ~DCM_GPR_DCMRWF1_RMII_MII_SEL_MASK) |
 			   DCM_GPR_DCMRWF1_RMII_MII_SEL(PHY_MODE);
 #elif defined(CONFIG_SOC_SERIES_S32K3)
@@ -363,7 +366,8 @@ int dwmac_platform_init(const struct device *dev)
 	DWMAC_REG_WRITE(DMA_SYSBUS_MODE, NXP_ETH_DMA_SYSBUS_MODE);
 
 	/* Set up IRQs (still masked for now) */
-#if defined(CONFIG_SOC_SERIES_MCXE31X) || defined(CONFIG_SOC_SERIES_S32K3)
+#if defined(CONFIG_SOC_SERIES_MCXE31X) || defined(CONFIG_SOC_SERIES_MCXE32X) ||                    \
+	defined(CONFIG_SOC_SERIES_S32K3)
 	/*
 	 * The MAC raises DMA transfer completion on the dedicated tx/rx
 	 * lines and everything else on the common line, so all three share
@@ -390,7 +394,8 @@ static const struct dwmac_config dwmac_config = {
 	.ptp_clock = DEVICE_DT_GET(DT_INST_CHILD(0, ptp_clock)),
 	.ptp_clk = NXP_ETH_CLOCK_SUBSYS(ptp),
 #endif
-#if defined(CONFIG_SOC_SERIES_MCXE31X) || defined(CONFIG_SOC_SERIES_S32K3)
+#if defined(CONFIG_SOC_SERIES_MCXE31X) || defined(CONFIG_SOC_SERIES_MCXE32X) ||                    \
+	defined(CONFIG_SOC_SERIES_S32K3)
 	DWMAC_MMC_CONFIG_INIT(nxp_eth_mmc)
 #endif
 };
