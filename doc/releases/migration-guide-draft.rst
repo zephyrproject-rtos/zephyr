@@ -199,6 +199,10 @@ Boards
   The root compatible of the LPCXpresso54114 board is now ``nxp,lpc5411x`` instead of
   ``nxp,lpc54xxx``. (:github:`125465`)
 
+* The STM32N6 non-secure address range overlay :file:`st/n6/stm32n657X0_ns.dtsi` is renamed to
+  :file:`st/n6/stm32n6_ns.dtsi`, since it only remaps peripheral and internal RAM ranges that are
+  common to the whole STM32N6 family. Out-of-tree boards including it must update their include.
+
 Device Drivers and Devicetree
 *****************************
 
