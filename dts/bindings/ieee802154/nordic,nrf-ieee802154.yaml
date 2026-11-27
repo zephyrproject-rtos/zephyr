@@ -5,4 +5,4 @@ description: Nordic nRF IEEE 802.15.4 node
 
 compatible: "nordic,nrf-ieee802154"
 
-include: base.yaml
+include: [base.yaml, ieee802154-radio.yaml]

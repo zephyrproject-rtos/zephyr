@@ -5,4 +5,4 @@ description: ST STM32WBA IEEE 802.15.4
 
 compatible: "st,stm32wba-ieee802154"
 
-include: base.yaml
+include: [base.yaml, ieee802154-radio.yaml]
