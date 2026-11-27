@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  filter: CONFIG_MULTITHREADING and not CONFIG_BUILD_WITH_TFM
+  min_ram: 48
+  min_flash: 128
+  tags:
+    - crypto
+    - mbedtls
+    - psa
+
+tests:
+  crypto.mbedtls_threading:
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+      - qemu_cortex_m3
+      - qemu_x86_64

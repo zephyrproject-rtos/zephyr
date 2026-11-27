@@ -124,6 +124,15 @@ Libraries / Subsystems
 
   * :kconfig:option:`CONFIG_MBEDTLS_SSL_CLI_C`
   * :kconfig:option:`CONFIG_MBEDTLS_SSL_SRV_C`
+  * Mbed TLS and TF-PSA-Crypto global state, PSA key slots, RNG state, and the
+    built-in memory buffer allocator are now thread-safe by default in
+    multithreaded builds when :kconfig:option:`CONFIG_MBEDTLS_BUILTIN` or
+    :kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_C` is enabled
+    (:kconfig:option:`CONFIG_MBEDTLS_THREADING_C`), backed by Zephyr kernel
+    mutexes and condition variables
+    (:kconfig:option:`CONFIG_MBEDTLS_THREADING_ZEPHYR`) when
+    :kconfig:option:`CONFIG_TF_PSA_CRYPTO_BUILTIN` is enabled. See the
+    :ref:`migration guide <migration_4.6>` for more information.
 
   * Mbed TLS was updated to version 4.1.2. Release notes (including security fixes) can be found
     `here <https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-4.1.2>`_.
