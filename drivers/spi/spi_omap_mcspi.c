@@ -12,6 +12,8 @@ LOG_MODULE_REGISTER(omap_mcspi, CONFIG_SPI_LOG_LEVEL);
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/util.h>
 #include "spi_context.h"
@@ -130,6 +132,7 @@ struct omap_mcspi_data {
 	uint32_t chconf;
 	uint32_t chctrl;
 	uint8_t dfs; /* data frame size - word length in bytes */
+	atomic_t pm_held;
 #if OMAP_MCSPI_INTERRUPTS
 	const uint8_t *irq_tx_buf;
 	uint8_t *irq_rx_buf;
@@ -146,6 +149,39 @@ struct omap_mcspi_data {
 	int irq_status;
 #endif
 };
+
+static int omap_mcspi_pm_get(const struct device *dev)
+{
+	struct omap_mcspi_data *data = DEV_DATA(dev);
+	int ret;
+
+	if (atomic_get(&data->pm_held) != 0) {
+		return 0;
+	}
+
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	atomic_set(&data->pm_held, 1);
+
+	return 0;
+}
+
+static void omap_mcspi_pm_put(const struct device *dev)
+{
+	struct omap_mcspi_data *data = DEV_DATA(dev);
+
+	if (atomic_cas(&data->pm_held, 1, 0)) {
+		(void)pm_device_runtime_put(dev);
+	}
+}
+
+static bool omap_mcspi_pm_keep(const struct spi_config *config)
+{
+	return (config->operation & (SPI_LOCK_ON | SPI_HOLD_ON_CS)) != 0U;
+}
 
 static void omap_mcspi_channel_enable(const struct device *dev, bool enable)
 {
@@ -644,6 +680,17 @@ static void omap_mcspi_irq_finish(const struct device *dev, int status)
 	data->irq_active = false;
 	data->irq_status = status;
 	omap_mcspi_cs_control(dev, false);
+
+#ifdef CONFIG_SPI_ASYNC
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME_ASYNC) && k_is_in_isr() &&
+	    data->ctx.asynchronous && !omap_mcspi_pm_keep(data->ctx.config) &&
+	    atomic_cas(&data->pm_held, 1, 0)) {
+		if (pm_device_runtime_put_async(dev, K_NO_WAIT) < 0) {
+			atomic_set(&data->pm_held, 1);
+		}
+	}
+#endif
+
 	spi_context_complete(&data->ctx, dev, status);
 }
 
@@ -894,6 +941,12 @@ static int omap_mcspi_transceive_all(const struct device *dev, const struct spi_
 
 	spi_context_lock(ctx, asynchronous, callback, userdata, config);
 
+	ret = omap_mcspi_pm_get(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to resume the controller (%d)", ret);
+		goto cleanup_no_cs;
+	}
+
 	ret = omap_mcspi_configure(dev, config, tx_bufs, rx_bufs);
 	if (ret) {
 		LOG_ERR("An error occurred in the SPI configuration");
@@ -947,6 +1000,9 @@ static int omap_mcspi_transceive_all(const struct device *dev, const struct spi_
 		}
 
 		if (!asynchronous && (config->operation & SPI_LOCK_ON) == 0U) {
+			if (!omap_mcspi_pm_keep(config)) {
+				omap_mcspi_pm_put(dev);
+			}
 			spi_context_release(ctx, ret);
 		}
 
@@ -969,6 +1025,9 @@ cleanup:
 
 cleanup_no_cs:
 	if (!(config->operation & SPI_LOCK_ON)) {
+		if (!omap_mcspi_pm_keep(config)) {
+			omap_mcspi_pm_put(dev);
+		}
 		spi_context_release(ctx, ret);
 	}
 	return ret;
@@ -999,26 +1058,11 @@ static int omap_mcspi_transceive_async(const struct device *dev, const struct sp
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-static int omap_mcspi_init(const struct device *dev)
+static int omap_mcspi_hw_init(const struct device *dev)
 {
-	const struct omap_mcspi_cfg *cfg = DEV_CFG(dev);
 	struct omap_mcspi_data *data = DEV_DATA(dev);
-	struct omap_mcspi_regs *regs;
+	struct omap_mcspi_regs *regs = DEV_REGS(dev);
 	int ret;
-
-	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
-	regs = DEV_REGS(dev);
-
-	if (cfg->num_cs > OMAP_MCSPI_NUM_CHANNELS) {
-		LOG_ERR("chipselect count cannot be greater than max channel count");
-		return -EINVAL;
-	}
-
-	ret = pinctrl_apply_state(cfg->pinctrl, PINCTRL_STATE_DEFAULT);
-	if (ret < 0) {
-		LOG_ERR("failed to apply pinctrl");
-		return ret;
-	}
 
 	/* Software Reset */
 	regs->SYSCONFIG |= OMAP_MCSPI_SYSCONFIG_SOFTRESET;
@@ -1046,16 +1090,68 @@ static int omap_mcspi_init(const struct device *dev)
 		regs->CHAN[ch].CHCONF |= OMAP_MCSPI_CHCONF_EPOL;
 	}
 
+	data->ctx.config = NULL;
+
+#if OMAP_MCSPI_INTERRUPTS
+	if (DEV_CFG(dev)->irq_config != NULL) {
+		regs->IRQENABLE = 0U;
+		regs->IRQSTATUS = UINT32_MAX;
+	}
+#endif
+
+	return 0;
+}
+
+static int omap_mcspi_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct omap_mcspi_cfg *cfg = DEV_CFG(dev);
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_TURN_ON:
+		return omap_mcspi_hw_init(dev);
+	case PM_DEVICE_ACTION_RESUME:
+		ret = pinctrl_apply_state(cfg->pinctrl, PINCTRL_STATE_DEFAULT);
+		if (ret < 0) {
+			LOG_ERR("failed to apply pinctrl");
+		}
+		return ret;
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = pinctrl_apply_state(cfg->pinctrl, PINCTRL_STATE_SLEEP);
+		return (ret == -ENOENT) ? 0 : ret;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+}
+
+static int omap_mcspi_init(const struct device *dev)
+{
+	const struct omap_mcspi_cfg *cfg = DEV_CFG(dev);
+	struct omap_mcspi_data *data = DEV_DATA(dev);
+	int ret;
+
+	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
+
+	if (cfg->num_cs > OMAP_MCSPI_NUM_CHANNELS) {
+		LOG_ERR("chipselect count cannot be greater than max channel count");
+		return -EINVAL;
+	}
+
 	ret = spi_context_cs_configure_all(&data->ctx);
 	if (ret < 0) {
 		return ret;
 	}
 	spi_context_unlock_unconditionally(&data->ctx);
 
+	ret = pm_device_driver_init(dev, omap_mcspi_pm_action);
+	if (ret < 0) {
+		return ret;
+	}
+
 #if OMAP_MCSPI_INTERRUPTS
 	if (cfg->irq_config != NULL) {
-		regs->IRQENABLE = 0U;
-		regs->IRQSTATUS = UINT32_MAX;
 		cfg->irq_config(dev);
 	}
 #endif
@@ -1079,9 +1175,12 @@ static int omap_mcspi_release(const struct device *dev, const struct spi_config 
 	}
 #endif
 
-	if (data->ctx.config != NULL && !spi_cs_is_gpio(data->ctx.config)) {
+	if (data->ctx.config != NULL && !spi_cs_is_gpio(data->ctx.config) &&
+	    atomic_get(&data->pm_held) != 0) {
 		regs->CHAN[data->ctx.config->peripheral].CHCONF &= ~OMAP_MCSPI_CHCONF_FORCE;
 	}
+
+	omap_mcspi_pm_put(dev);
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
@@ -1133,7 +1232,10 @@ static DEVICE_API(spi, omap_mcspi_api) = {
 		SPI_CONTEXT_INIT_SYNC(omap_mcspi_data_##n, ctx),                                   \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)};                             \
                                                                                                    \
-	SPI_DEVICE_DT_INST_DEFINE(n, omap_mcspi_init, NULL, &omap_mcspi_data_##n,                  \
+	PM_DEVICE_DT_INST_DEFINE(n, omap_mcspi_pm_action);                                         \
+                                                                                                   \
+	SPI_DEVICE_DT_INST_DEFINE(n, omap_mcspi_init, PM_DEVICE_DT_INST_GET(n),                    \
+				  &omap_mcspi_data_##n,                                            \
 				  &omap_mcspi_config_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,   \
 				  &omap_mcspi_api);
 
