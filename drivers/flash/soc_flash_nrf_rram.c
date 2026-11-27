@@ -255,10 +255,11 @@ __weak void nrf_flash_sync_set_delay(uint32_t delay_us)
 
 #endif /* !CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE */
 
-/* Internal write workhorse. Callers (nrf_rram_write / nrf_rram_fill_impl)
- * are responsible for validating @p addr and @p len against RRAM_SIZE
- * and for upholding the WRITE_LINE_SIZE alignment contract before
- * reaching this helper - mirroring the layering used by nrf_rram_read.
+/* Internal write workhorse. Callers (flash_nrf_rram_write /
+ * flash_nrf_rram_fill_impl) are responsible for validating @p addr and
+ * @p len against RRAM_SIZE and for upholding the WRITE_LINE_SIZE
+ * alignment contract before reaching this helper - mirroring the layering
+ * used by flash_nrf_rram_read.
  */
 static int nrf_write(off_t addr, const void *data, uint8_t fill_val, size_t len)
 {
@@ -355,7 +356,7 @@ static inline bool rram_line_holds(const uint8_t *line, uint32_t pat)
  * underlying nrf_write() call. The optimisation works for any @p val,
  * not only the device ERASE_VALUE.
  */
-static int nrf_rram_fill_impl(off_t addr, uint8_t val, size_t len)
+static int flash_nrf_rram_fill_impl(off_t addr, uint8_t val, size_t len)
 {
 #ifdef CONFIG_NRF_RRAM_FILL_SKIP_IF_FILLED
 	const uint32_t pat = (uint32_t)val * 0x01010101U;
@@ -391,7 +392,7 @@ static int nrf_rram_fill_impl(off_t addr, uint8_t val, size_t len)
 #endif /* CONFIG_NRF_RRAM_FILL_SKIP_IF_FILLED */
 }
 
-static int nrf_rram_read(const struct device *dev, off_t addr, void *data, size_t len)
+static int flash_nrf_rram_read(const struct device *dev, off_t addr, void *data, size_t len)
 {
 	ARG_UNUSED(dev);
 
@@ -408,7 +409,7 @@ static int nrf_rram_read(const struct device *dev, off_t addr, void *data, size_
 	return 0;
 }
 
-static int nrf_rram_write(const struct device *dev, off_t addr, const void *data, size_t len)
+static int flash_nrf_rram_write(const struct device *dev, off_t addr, const void *data, size_t len)
 {
 	ARG_UNUSED(dev);
 
@@ -427,7 +428,7 @@ static int nrf_rram_write(const struct device *dev, off_t addr, const void *data
 	return nrf_write(addr, data, 0 /* fill_val unused for data writes */, len);
 }
 
-static int nrf_rram_erase(const struct device *dev, off_t addr, size_t len)
+static int flash_nrf_rram_erase(const struct device *dev, off_t addr, size_t len)
 {
 	ARG_UNUSED(dev);
 
@@ -443,11 +444,11 @@ static int nrf_rram_erase(const struct device *dev, off_t addr, size_t len)
 		return -EINVAL;
 	}
 
-	return nrf_rram_fill_impl(addr, ERASE_VALUE, len);
+	return flash_nrf_rram_fill_impl(addr, ERASE_VALUE, len);
 }
 
 #if defined(CONFIG_FLASH_HAS_DRIVER_FILL)
-static int nrf_rram_fill(const struct device *dev, uint8_t val, off_t addr, size_t len)
+static int flash_nrf_rram_fill(const struct device *dev, uint8_t val, off_t addr, size_t len)
 {
 	ARG_UNUSED(dev);
 
@@ -463,11 +464,11 @@ static int nrf_rram_fill(const struct device *dev, uint8_t val, off_t addr, size
 		return -EINVAL;
 	}
 
-	return nrf_rram_fill_impl(addr, val, len);
+	return flash_nrf_rram_fill_impl(addr, val, len);
 }
 #endif /* CONFIG_FLASH_HAS_DRIVER_FILL */
 
-int nrf_rram_get_size(const struct device *dev, uint64_t *size)
+int flash_nrf_rram_get_size(const struct device *dev, uint64_t *size)
 {
 	ARG_UNUSED(dev);
 
@@ -476,7 +477,7 @@ int nrf_rram_get_size(const struct device *dev, uint64_t *size)
 	return 0;
 }
 
-static const struct flash_parameters *nrf_rram_get_parameters(const struct device *dev)
+static const struct flash_parameters *flash_nrf_rram_get_parameters(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -492,8 +493,9 @@ static const struct flash_parameters *nrf_rram_get_parameters(const struct devic
 }
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
-static void nrf_rram_page_layout(const struct device *dev, const struct flash_pages_layout **layout,
-				 size_t *layout_size)
+static void flash_nrf_rram_page_layout(const struct device *dev,
+				       const struct flash_pages_layout **layout,
+				       size_t *layout_size)
 {
 	ARG_UNUSED(dev);
 
@@ -507,21 +509,21 @@ static void nrf_rram_page_layout(const struct device *dev, const struct flash_pa
 }
 #endif
 
-static DEVICE_API(flash, nrf_rram_api) = {
-	.read = nrf_rram_read,
-	.write = nrf_rram_write,
-	.erase = nrf_rram_erase,
+static DEVICE_API(flash, flash_nrf_rram_api) = {
+	.read = flash_nrf_rram_read,
+	.write = flash_nrf_rram_write,
+	.erase = flash_nrf_rram_erase,
 #if defined(CONFIG_FLASH_HAS_DRIVER_FILL)
-	.fill = nrf_rram_fill,
+	.fill = flash_nrf_rram_fill,
 #endif
-	.get_size = nrf_rram_get_size,
-	.get_parameters = nrf_rram_get_parameters,
+	.get_size = flash_nrf_rram_get_size,
+	.get_parameters = flash_nrf_rram_get_parameters,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
-	.page_layout = nrf_rram_page_layout,
+	.page_layout = flash_nrf_rram_page_layout,
 #endif
 };
 
-static int nrf_rram_init(const struct device *dev)
+static int flash_nrf_rram_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -552,5 +554,5 @@ static int nrf_rram_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, nrf_rram_init, NULL, NULL, NULL, POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,
-		      &nrf_rram_api);
+DEVICE_DT_INST_DEFINE(0, flash_nrf_rram_init, NULL, NULL, NULL, POST_KERNEL,
+		      CONFIG_FLASH_INIT_PRIORITY, &flash_nrf_rram_api);
