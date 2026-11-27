@@ -603,6 +603,13 @@ Timers
   now uses the generic system timer core, which keeps the match value at least 16 timer cycles
   ahead of the counter. Remove the option from application and board configurations.
 
+USB
+===
+
+* :c:macro:`HID_KEYBOARD_REPORT_DESC` now requires the maximum supported key usage ID as an
+  argument. Pass ``HID_KEY_MENU`` to preserve the previous report descriptor behavior.
+  (:github:`114344`)
+
 W1
 ==
 
