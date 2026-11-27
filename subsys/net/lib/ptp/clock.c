@@ -1042,6 +1042,16 @@ const struct ptp_time_prop_ds *ptp_clock_time_prop_ds(void)
 	return &ptp_clk.time_prop_ds;
 }
 
+void ptp_clock_time_prop_update(const struct ptp_msg *msg)
+{
+	if (!ptp_msg_current_parent(msg)) {
+		return;
+	}
+
+	ptp_clk.time_prop_ds.current_utc_offset = msg->announce.current_utc_offset;
+	ptp_clk.time_prop_ds.flags = msg->header.flags[1];
+}
+
 const struct ptp_dataset *ptp_clock_ds(void)
 {
 	struct ptp_dataset *ds = &ptp_clk.dataset;

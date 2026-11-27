@@ -34,6 +34,10 @@ void ptp_msg_unref(struct ptp_msg *msg)
 	ARG_UNUSED(msg);
 }
 
+void ptp_clock_time_prop_update(__unused const struct ptp_msg *msg)
+{
+}
+
 /* Signed comparator contract: > 0 means a is better, < 0 means b is better. */
 int ptp_btca_ds_cmp(const struct ptp_dataset *a, const struct ptp_dataset *b)
 {
