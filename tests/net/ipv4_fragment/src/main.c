@@ -149,6 +149,21 @@ static const unsigned char ipv4_opts_copied[] = {
 	0x94, 0x04, 0x00, 0x00,
 };
 
+/* Record Route, only in the first fragment, and Loose Source and Record
+ * Route with one address, copied into every fragment. LSRR is 7 bytes,
+ * so the copied options need one byte of End of Option List padding.
+ */
+static const unsigned char ipv4_opts_lsrr[] = {
+	0x07, 0x07, 0x04, 0x00, 0x00, 0x00, 0x00,
+	0x83, 0x07, 0x04, 0xc0, 0xa8, 0x08, 0x02,
+	0x00, 0x00,
+};
+
+static const unsigned char ipv4_opts_lsrr_copied[] = {
+	0x83, 0x07, 0x04, 0xc0, 0xa8, 0x08, 0x02,
+	0x00,
+};
+
 #define IPV4_OPTS_HDR_LEN (NET_IPV4H_LEN + sizeof(ipv4_opts))
 #define IPV4_OPTS_SRC_PORT 4353
 #define IPV4_OPTS_DST_PORT 25349
@@ -159,7 +174,22 @@ enum {
 	TEST_SINGLE_FRAGMENT,
 	TEST_NO_FRAGMENT,
 	TEST_UDP_OPTIONS,
+	TEST_OPTIONS_WIRE,
 };
+
+/* Options expected in the first fragment and in the later ones */
+static const uint8_t *exp_opts;
+static size_t exp_opts_len;
+static const uint8_t *exp_opts_copied;
+static size_t exp_opts_copied_len;
+
+/* Payload of the fragments sent in a TEST_OPTIONS_WIRE test, at its
+ * fragment offset.
+ */
+static uint8_t wire_payload[IPV4_TEST_PACKET_SIZE + 64];
+
+/* The payload as it was before the fragmentation, with a zero L4 checksum */
+static uint8_t wire_expected[IPV4_TEST_PACKET_SIZE + 64];
 
 static struct net_if *iface1;
 
@@ -280,12 +310,17 @@ static void race_worker_fn(void *a, void *b, void *c)
 	(void)net_ipv4_handle_fragment_hdr(race_final_frag, &race_final_hdr);
 }
 
-static uint16_t ipv4_hdr_sum(const uint8_t *hdr, size_t len)
+/* Ones' complement sum of data, added to sum */
+static uint16_t inet_sum(uint32_t sum, const uint8_t *data, size_t len)
 {
-	uint32_t sum = 0U;
+	size_t i;
 
-	for (size_t i = 0; i < len; i += 2U) {
-		sum += sys_get_be16(&hdr[i]);
+	for (i = 0; i + 1U < len; i += 2U) {
+		sum += sys_get_be16(&data[i]);
+	}
+
+	if (i < len) {
+		sum += (uint32_t)data[i] << 8;
 	}
 
 	while (sum > 0xffffU) {
@@ -295,7 +330,12 @@ static uint16_t ipv4_hdr_sum(const uint8_t *hdr, size_t len)
 	return sum;
 }
 
-/* Checks a fragment of a datagram that carries ipv4_opts */
+static uint16_t ipv4_hdr_sum(const uint8_t *hdr, size_t len)
+{
+	return inet_sum(0U, hdr, len);
+}
+
+/* Checks a fragment of a datagram that carries exp_opts */
 static void check_ipv4_options_fragment(struct net_pkt *pkt, uint16_t current_length,
 					bool final)
 {
@@ -318,16 +358,16 @@ static void check_ipv4_options_fragment(struct net_pkt *pkt, uint16_t current_le
 		      "IPv4 header length mismatch");
 
 	if (current_length == 0U) {
-		zassert_equal(hdr_len, IPV4_OPTS_HDR_LEN, "First fragment IHL mismatch");
-		zassert_ok(net_pkt_read(pkt, hdr + NET_IPV4H_LEN, sizeof(ipv4_opts)));
-		zassert_mem_equal(hdr + NET_IPV4H_LEN, ipv4_opts, sizeof(ipv4_opts),
+		zassert_equal(hdr_len, NET_IPV4H_LEN + exp_opts_len, "First fragment IHL mismatch");
+		zassert_ok(net_pkt_read(pkt, hdr + NET_IPV4H_LEN, exp_opts_len));
+		zassert_mem_equal(hdr + NET_IPV4H_LEN, exp_opts, exp_opts_len,
 				  "First fragment options mismatch");
 	} else {
-		zassert_equal(hdr_len, NET_IPV4H_LEN + sizeof(ipv4_opts_copied),
+		zassert_equal(hdr_len, NET_IPV4H_LEN + exp_opts_copied_len,
 			      "Fragment IHL mismatch");
-		zassert_ok(net_pkt_read(pkt, hdr + NET_IPV4H_LEN, sizeof(ipv4_opts_copied)));
-		zassert_mem_equal(hdr + NET_IPV4H_LEN, ipv4_opts_copied,
-				  sizeof(ipv4_opts_copied), "Fragment options mismatch");
+		zassert_ok(net_pkt_read(pkt, hdr + NET_IPV4H_LEN, exp_opts_copied_len));
+		zassert_mem_equal(hdr + NET_IPV4H_LEN, exp_opts_copied, exp_opts_copied_len,
+				  "Fragment options mismatch");
 	}
 
 	zassert_equal(ipv4_hdr_sum(hdr, hdr_len), 0xffffU, "IPv4 header checksum mismatch");
@@ -419,7 +459,7 @@ static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 			 * packets
 			 */
 			if (active_test == TEST_UDP || active_test == TEST_TCP ||
-			    active_test == TEST_UDP_OPTIONS) {
+			    active_test == TEST_UDP_OPTIONS || active_test == TEST_OPTIONS_WIRE) {
 				zassert_not_equal(pkt_id, 0, "IPv4 header ID should not be 0");
 			} else if (active_test == TEST_SINGLE_FRAGMENT) {
 				zassert_equal(pkt_id, 0, "IPv4 header ID should be 0");
@@ -428,7 +468,7 @@ static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 
 		hdr_len = (NET_IPV4_HDR(pkt)->vhl & NET_IPV4_IHL_MASK) * 4U;
 
-		if (active_test == TEST_UDP_OPTIONS) {
+		if (active_test == TEST_UDP_OPTIONS || active_test == TEST_OPTIONS_WIRE) {
 			/* The expected size counts the payload only */
 			last_packet = pkt_recv_size + net_pkt_get_len(pkt) - hdr_len >=
 				      pkt_recv_expected_size;
@@ -442,10 +482,29 @@ static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 						   pkt_recv_size, last_packet);
 		}
 
+		if (active_test == TEST_OPTIONS_WIRE) {
+			size_t len = net_pkt_get_len(pkt) - hdr_len;
+
+			/* Keep the payload to check the L4 checksum over the
+			 * whole datagram, and do not loop the fragment back.
+			 */
+			zassert_true(pkt_recv_size + len <= sizeof(wire_payload),
+				     "Fragment past the end of the datagram");
+			net_pkt_cursor_init(pkt);
+			net_pkt_set_overwrite(pkt, true);
+			zassert_ok(net_pkt_skip(pkt, hdr_len));
+			zassert_ok(net_pkt_read(pkt, &wire_payload[pkt_recv_size], len));
+			net_pkt_cursor_init(pkt);
+		}
+
 		pkt_recv_size += net_pkt_get_len(pkt) - hdr_len;
 
 		if (last_packet) {
 			last_packet_received = true;
+		}
+
+		if (active_test == TEST_OPTIONS_WIRE) {
+			goto no_duplicate;
 		}
 
 		if (active_test == TEST_SINGLE_FRAGMENT) {
@@ -1131,6 +1190,213 @@ ZTEST(net_ipv4_fragment, test_reassembly_options)
 		      "Expected data received size mismatch at upper layers");
 }
 
+/* Build a datagram from my_addr1 to my_addr2 that carries the given header
+ * options and an ICMP, TCP or UDP header followed by data_len bytes of
+ * test_tmp_buf. The L4 checksum is left to the fragmentation.
+ */
+static struct net_pkt *make_l4_options_pkt(uint8_t proto, const uint8_t *opts,
+					   size_t opts_len, size_t data_len)
+{
+	size_t hdr_len = NET_IPV4H_LEN + opts_len;
+	struct net_ipv4_hdr hdr = { 0 };
+	struct net_icmp_hdr icmp = { 0 };
+	struct net_tcp_hdr tcp = { 0 };
+	struct net_udp_hdr udp = { 0 };
+	const void *l4_hdr;
+	size_t l4_hdr_len;
+	struct net_pkt *pkt;
+	uint16_t chksum = 0;
+	size_t i;
+
+	switch (proto) {
+	case NET_IPPROTO_ICMP:
+		icmp.type = NET_ICMPV4_ECHO_REQUEST;
+		l4_hdr = &icmp;
+		l4_hdr_len = sizeof(icmp);
+		break;
+	case NET_IPPROTO_TCP:
+		tcp.src_port = net_htons(IPV4_OPTS_SRC_PORT);
+		tcp.dst_port = net_htons(IPV4_OPTS_DST_PORT);
+		tcp.offset = (NET_TCPH_LEN / 4U) << 4;
+		tcp.flags = 0x18; /* PSH and ACK */
+		sys_put_be16(1024, tcp.wnd);
+		l4_hdr = &tcp;
+		l4_hdr_len = sizeof(tcp);
+		break;
+	default:
+		udp.src_port = net_htons(IPV4_OPTS_SRC_PORT);
+		udp.dst_port = net_htons(IPV4_OPTS_DST_PORT);
+		udp.len = net_htons(NET_UDPH_LEN + data_len);
+		l4_hdr = &udp;
+		l4_hdr_len = sizeof(udp);
+		break;
+	}
+
+	pkt = net_pkt_alloc_with_buffer(iface1, hdr_len + l4_hdr_len + data_len,
+					NET_AF_INET, proto, ALLOC_TIMEOUT);
+	zassert_not_null(pkt, "Packet creation failed");
+
+	hdr.vhl = 0x40 | (hdr_len / 4U);
+	hdr.ttl = 64;
+	hdr.proto = proto;
+	hdr.len = net_htons(hdr_len + l4_hdr_len + data_len);
+	net_ipv4_addr_copy_raw(hdr.src, my_addr1.s4_addr);
+	net_ipv4_addr_copy_raw(hdr.dst, my_addr2.s4_addr);
+
+	zassert_ok(net_pkt_write(pkt, &hdr, sizeof(hdr)));
+	zassert_ok(net_pkt_write(pkt, opts, opts_len));
+	zassert_ok(net_pkt_write(pkt, l4_hdr, l4_hdr_len));
+
+	for (i = 0; i < data_len; i += sizeof(test_tmp_buf)) {
+		zassert_ok(net_pkt_write(pkt, test_tmp_buf,
+					 MIN(sizeof(test_tmp_buf), data_len - i)));
+	}
+
+	net_pkt_set_iface(pkt, iface1);
+	net_pkt_set_family(pkt, NET_AF_INET);
+	net_pkt_set_ip_hdr_len(pkt, NET_IPV4H_LEN);
+	net_pkt_set_ipv4_opts_len(pkt, opts_len);
+
+	zassert_ok(net_calc_chksum_ipv4(pkt, &chksum));
+	NET_IPV4_HDR(pkt)->chksum = chksum;
+
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_overwrite(pkt, true);
+	zassert_true(l4_hdr_len + data_len <= sizeof(wire_expected), "Datagram too long");
+	zassert_ok(net_pkt_skip(pkt, hdr_len));
+	zassert_ok(net_pkt_read(pkt, wire_expected, l4_hdr_len + data_len));
+
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_chksum_done(pkt, false);
+
+	return pkt;
+}
+
+/* Send a datagram with header options whose L4 checksum is left to the
+ * fragmentation. Check the options of every fragment, and that the payload
+ * of all the fragments is the original one with a valid L4 checksum in the
+ * L4 header.
+ */
+static void send_options_datagram(uint8_t proto, const uint8_t *opts, size_t opts_len,
+				  const uint8_t *copied, size_t copied_len)
+{
+	size_t fit_len = ROUND_DOWN(NET_IPV4_MTU - NET_IPV4H_LEN - opts_len, 8U);
+	struct net_pkt *pkt;
+	uint32_t sum = 0U;
+	size_t chksum_offset;
+	size_t len;
+
+	exp_opts = opts;
+	exp_opts_len = opts_len;
+	exp_opts_copied = copied;
+	exp_opts_copied_len = copied_len;
+
+	active_test = TEST_OPTIONS_WIRE;
+	test_started = true;
+
+	pkt = make_l4_options_pkt(proto, opts, opts_len, IPV4_TEST_PACKET_SIZE);
+	len = net_pkt_get_len(pkt) - NET_IPV4H_LEN - opts_len;
+	pkt_recv_expected_size = len;
+
+	zassert_ok(net_send_data(pkt), "Packet send failure");
+	zassert_equal(k_sem_take(&wait_data, WAIT_TIME), 0,
+		      "Timeout waiting for packet to be sent");
+	k_sleep(K_MSEC(100));
+
+	zexpect_true(last_packet_received, "Expected last packet");
+	zexpect_equal(lower_layer_packet_count, DIV_ROUND_UP(len, fit_len),
+		      "Fragment count mismatch");
+	zassert_equal(pkt_recv_size, len, "Payload size mismatch");
+
+	/* ICMP has no pseudo header */
+	if (proto != NET_IPPROTO_ICMP) {
+		sum = inet_sum(0U, my_addr1.s4_addr, sizeof(my_addr1));
+		sum = inet_sum(sum, my_addr2.s4_addr, sizeof(my_addr2));
+		sum += proto + len;
+	}
+
+	zexpect_equal(inet_sum(sum, wire_payload, len), 0xffffU, "L4 checksum mismatch");
+
+	/* The checksum went into the L4 header and nowhere else */
+	switch (proto) {
+	case NET_IPPROTO_ICMP:
+		chksum_offset = offsetof(struct net_icmp_hdr, chksum);
+		break;
+	case NET_IPPROTO_TCP:
+		chksum_offset = offsetof(struct net_tcp_hdr, chksum);
+		break;
+	default:
+		chksum_offset = offsetof(struct net_udp_hdr, chksum);
+		break;
+	}
+
+	zexpect_not_equal(sys_get_be16(&wire_payload[chksum_offset]), 0U, "L4 checksum missing");
+	sys_put_be16(0U, &wire_payload[chksum_offset]);
+	zexpect_mem_equal(wire_payload, wire_expected, len, "L4 payload mismatch");
+}
+
+ZTEST(net_ipv4_fragment, test_icmp_options_chksum)
+{
+	send_options_datagram(NET_IPPROTO_ICMP, ipv4_opts, sizeof(ipv4_opts),
+			      ipv4_opts_copied, sizeof(ipv4_opts_copied));
+}
+
+ZTEST(net_ipv4_fragment, test_tcp_options_chksum)
+{
+	send_options_datagram(NET_IPPROTO_TCP, ipv4_opts, sizeof(ipv4_opts),
+			      ipv4_opts_copied, sizeof(ipv4_opts_copied));
+}
+
+/* The copied options that are not a multiple of 4 bytes are padded with
+ * End of Option List.
+ */
+ZTEST(net_ipv4_fragment, test_copied_options_padding)
+{
+	send_options_datagram(NET_IPPROTO_UDP, ipv4_opts_lsrr, sizeof(ipv4_opts_lsrr),
+			      ipv4_opts_lsrr_copied, sizeof(ipv4_opts_lsrr_copied));
+}
+
+/* A datagram whose header options cannot be parsed is not fragmented */
+ZTEST(net_ipv4_fragment, test_malformed_options_not_fragmented)
+{
+	/* Option type in the last byte, without a length */
+	static const uint8_t truncated[] = { 0x01, 0x01, 0x01, 0x83 };
+	/* Option length below the minimum of 2 */
+	static const uint8_t too_short[] = { 0x83, 0x00, 0x00, 0x00 };
+	/* Option length past the end of the header */
+	static const uint8_t too_long[] = {
+		0x83, 0xff, 0x04, 0xc0, 0xa8, 0x08, 0x02, 0x00,
+	};
+	static const struct {
+		const uint8_t *opts;
+		size_t len;
+	} cases[] = {
+		{ truncated, sizeof(truncated) },
+		{ too_short, sizeof(too_short) },
+		{ too_long, sizeof(too_long) },
+	};
+
+	active_test = TEST_OPTIONS_WIRE;
+	test_started = true;
+
+	for (size_t i = 0; i < ARRAY_SIZE(cases); i++) {
+		struct net_pkt *pkt;
+		int ret;
+
+		pkt = make_l4_options_pkt(NET_IPPROTO_UDP, cases[i].opts, cases[i].len,
+					  IPV4_TEST_PACKET_SIZE);
+
+		ret = net_ipv4_send_fragmented_pkt(iface1, pkt, net_pkt_get_len(pkt),
+						   NET_IPV4_MTU);
+		zexpect_equal(ret, -EINVAL, "Case %zu fragmented (%d)", i, ret);
+
+		net_pkt_unref(pkt);
+	}
+
+	k_sleep(K_MSEC(100));
+	zexpect_equal(lower_layer_packet_count, 0, "Fragments sent");
+}
+
 /* Test inserting only 1 fragment and ensuring that it is removed after the timeout elapses */
 ZTEST(net_ipv4_fragment, test_fragment_timeout)
 {
@@ -1509,6 +1775,11 @@ static void test_pre(void *ptr)
 	pkt_id = 0;
 	pkt_recv_size = 0;
 	pkt_recv_expected_size = 0;
+
+	exp_opts = ipv4_opts;
+	exp_opts_len = sizeof(ipv4_opts);
+	exp_opts_copied = ipv4_opts_copied;
+	exp_opts_copied_len = sizeof(ipv4_opts_copied);
 }
 
 ZTEST_SUITE(net_ipv4_fragment, NULL, test_setup, test_pre, NULL, NULL);
