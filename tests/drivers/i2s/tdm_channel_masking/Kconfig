@@ -1,0 +1,13 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "TDM channel masking test"
+
+config TDM_MASKING_TEST_WORD_SIZE
+	int "Sample word size in bits"
+	range 16 32
+	default 16
+	help
+	  Size of each TDM slot sample, 16 or 32 bits.
+
+source "Kconfig.zephyr"

@@ -1,0 +1,31 @@
+common:
+  tags:
+    - drivers
+    - i2s
+  depends_on: i2s
+  filter: dt_alias_exists("i2s-tdm")
+  harness: ztest
+tests:
+  drivers.i2s.tdm_channel_masking:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
+    harness_config:
+      fixture: i2s_loopback
+  drivers.i2s.tdm_channel_masking.word_size_32:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
+    extra_configs:
+      - CONFIG_TDM_MASKING_TEST_WORD_SIZE=32
+    harness_config:
+      fixture: i2s_loopback
+  drivers.i2s.tdm_channel_masking.nrf54lm20:
+    build_only: true
+    platform_allow:
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp
+    integration_platforms:
+      - nrf54lm20dk/nrf54lm20a/cpuapp
