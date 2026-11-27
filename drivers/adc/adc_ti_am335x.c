@@ -263,6 +263,10 @@ static int ti_adc_read_start(const struct device *dev, const struct adc_sequence
 	/* count channels enabled in sequence */
 	for (int chan = 0; chan < TI_ADC_TOTAL_CHANNELS; chan++) {
 		if (IS_BIT_SET(sequence->channels, chan)) {
+			if (data->steps[chan] == UINT8_MAX) {
+				LOG_ERR("Channel %d is not configured", chan);
+				return -EINVAL;
+			}
 			data->chan_count++;
 		}
 	};
