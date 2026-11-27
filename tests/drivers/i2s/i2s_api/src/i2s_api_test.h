@@ -18,6 +18,15 @@ extern struct k_mem_slab tx_mem_slab;
 #define TIMEOUT		2000
 #define FRAME_CLK_FREQ	8000
 
+struct i2s_test_frame {
+	const char *name;
+	uint32_t format;
+	uint8_t channels;
+};
+
+/* Frame format of the test run in progress */
+extern const struct i2s_test_frame *test_frame;
+
 extern int16_t data_l[SAMPLE_NO];
 extern int16_t data_r[SAMPLE_NO];
 
@@ -32,6 +41,11 @@ extern bool dir_both_supported;
 #else
 #define I2S_DEV_NODE_TX DT_ALIAS(i2s_node0)
 #endif
+
+/* A block holds data_l and data_r interleaved. In a one-channel format they are
+ * consecutive frames, so a block stays larger than a typical hardware FIFO and
+ * the test timing does not depend on the number of channels.
+ */
 #define BLOCK_SIZE (2 * sizeof(data_l))
 
 #define NUM_RX_BLOCKS	4

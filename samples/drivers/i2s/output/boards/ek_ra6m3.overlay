@@ -1,0 +1,62 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/*
+ * No wiring needed. To check the output, probe these i2s1 pins:
+ *   SSI_BCK: P204, SSI_LRCK: P205, SSI_DATA: P206
+ */
+
+/ {
+	aliases {
+		i2s-tx = &i2s1;
+	};
+};
+
+&pinctrl {
+	ssie1_default: ssie1_default {
+		group1 {
+			/* SSI_BCK SSI_LRCK SSI_DATA */
+			psels = <RA_PSEL(RA_PSEL_SSIE, 2, 4)>,
+				<RA_PSEL(RA_PSEL_SSIE, 2, 5)>,
+				<RA_PSEL(RA_PSEL_SSIE, 2, 6)>;
+			drive-strength = "high";
+		};
+	};
+
+	pwm1_default: pwm1_default {
+		group1 {
+			/* GTIOC1A */
+			psels = <RA_PSEL(RA_PSEL_GPT1, 1, 9)>;
+		};
+	};
+};
+
+&i2s1 {
+	pinctrl-0 = <&ssie1_default>;
+	pinctrl-names = "default";
+	interrupts = <84 12>, <85 12>;
+	interrupt-names = "ssi_rt", "ssi_if";
+	clocks = <&pclkb MSTPC 7>, <&ssi_internal_clock 0>;
+	clock-names = "pclk", "audio-clock";
+	status = "okay";
+};
+
+&pwm1 {
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-names = "default";
+	interrupts = <89 12>, <90 12>;
+	interrupt-names = "gtioca", "overflow";
+	status = "okay";
+
+	ssi_internal_clock: pwmclock {
+		compatible = "pwm-clock";
+		#clock-cells = <1>;
+		pwms = <&pwm1 0 PWM_HZ(2822400) PWM_POLARITY_NORMAL>;
+		status = "okay";
+	};
+};

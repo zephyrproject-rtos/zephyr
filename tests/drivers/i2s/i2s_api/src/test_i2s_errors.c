@@ -15,8 +15,8 @@ ZTEST_USER(i2s_errors, test_i2s_improper_configuration)
 {
 	int err;
 	struct i2s_config invalid_config = { .word_size = 16U,
-					     .channels = 2U,
-					     .format = I2S_FMT_DATA_FORMAT_I2S,
+					     .channels = test_frame->channels,
+					     .format = test_frame->format,
 					     .frame_clk_freq = FRAME_CLK_FREQ,
 					     .block_size = BLOCK_SIZE,
 					     .timeout = TIMEOUT,
@@ -33,14 +33,14 @@ ZTEST_USER(i2s_errors, test_i2s_improper_configuration)
 		err, 0,
 		"I2S configuration did not detect improper data format (I2S_FMT_DATA_FORMAT_LEFT_JUSTIFIED | I2S_FMT_DATA_FORMAT_RIGHT_JUSTIFIED)");
 
-	invalid_config.format = I2S_FMT_DATA_FORMAT_I2S | I2S_FMT_DATA_ORDER_LSB;
+	invalid_config.format = test_frame->format | I2S_FMT_DATA_ORDER_LSB;
 
 	err = i2s_configure(dev_i2s, I2S_DIR_TX, &invalid_config);
 	zassert_not_equal(
 		err, 0,
 		"I2S configuration did not detect improper stream format (I2S_FMT_DATA_ORDER_LSB)");
 
-	invalid_config.format = I2S_FMT_DATA_FORMAT_I2S;
+	invalid_config.format = test_frame->format;
 	invalid_config.channels = 3U;
 	err = i2s_configure(dev_i2s, I2S_DIR_TX, &invalid_config);
 	zassert_not_equal(err, 0,
@@ -53,8 +53,8 @@ ZTEST_USER(i2s_errors, test_i2s_config_attempt_in_wrong_state)
 	int config_err;
 	char tx_data[BLOCK_SIZE] = {0};
 	struct i2s_config inactive_config = { .word_size = 16U,
-					      .channels = 2U,
-					      .format = I2S_FMT_DATA_FORMAT_I2S,
+					      .channels = test_frame->channels,
+					      .format = test_frame->format,
 					      .frame_clk_freq = FRAME_CLK_FREQ,
 					      .block_size = BLOCK_SIZE,
 					      .timeout = TIMEOUT,
@@ -89,8 +89,8 @@ ZTEST_USER(i2s_errors, test_i2s_incorrect_trigger)
 	int err;
 	char tx_data[BLOCK_SIZE] = {0};
 	struct i2s_config test_config = { .word_size = 16U,
-					  .channels = 2U,
-					  .format = I2S_FMT_DATA_FORMAT_I2S,
+					  .channels = test_frame->channels,
+					  .format = test_frame->format,
 					  .frame_clk_freq = FRAME_CLK_FREQ,
 					  .block_size = BLOCK_SIZE,
 					  .timeout = TIMEOUT,
@@ -117,8 +117,8 @@ ZTEST_USER(i2s_errors, test_i2s_unconfigured_access)
 	int err;
 	char tx_data[BLOCK_SIZE] = {0};
 	struct i2s_config inactive_config = { .word_size = 16U,
-					      .channels = 2U,
-					      .format = I2S_FMT_DATA_FORMAT_I2S,
+					      .channels = test_frame->channels,
+					      .format = test_frame->format,
 					      .frame_clk_freq = 0,
 					      .block_size = BLOCK_SIZE,
 					      .timeout = TIMEOUT,
@@ -141,8 +141,8 @@ ZTEST_USER(i2s_errors, test_i2s_improper_block_size_write)
 	int err;
 	char tx_data[BLOCK_SIZE] = {0};
 	struct i2s_config test_config = { .word_size = 16U,
-					  .channels = 2U,
-					  .format = I2S_FMT_DATA_FORMAT_I2S,
+					  .channels = test_frame->channels,
+					  .format = test_frame->format,
 					  .frame_clk_freq = FRAME_CLK_FREQ,
 					  .block_size = BLOCK_SIZE,
 					  .timeout = TIMEOUT,
@@ -164,8 +164,8 @@ static void write_to_exhausted_slab(int32_t timeout, int expected)
 	int err;
 	char tx_data[BLOCK_SIZE] = {0};
 	struct i2s_config test_config = { .word_size = 16U,
-					  .channels = 2U,
-					  .format = I2S_FMT_DATA_FORMAT_I2S,
+					  .channels = test_frame->channels,
+					  .format = test_frame->format,
 					  .frame_clk_freq = FRAME_CLK_FREQ,
 					  .block_size = BLOCK_SIZE,
 					  .timeout = timeout,

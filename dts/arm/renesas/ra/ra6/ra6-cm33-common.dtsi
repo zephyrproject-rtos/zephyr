@@ -306,6 +306,18 @@
 			};
 		};
 
+		i2s0: ssie@4009d000 {
+			compatible = "renesas,ra-i2s-ssie";
+			reg = <0x4009d000 0x28>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			channel = <0>;
+			clocks = <&pclkb MSTPC 8>;
+			clock-names = "pclk";
+			full-duplex;
+			status = "disabled";
+		};
+
 		iic0: iic0@4009f000 {
 			compatible = "renesas,ra-iic";
 			reg = <0x4009f000 0x100>;

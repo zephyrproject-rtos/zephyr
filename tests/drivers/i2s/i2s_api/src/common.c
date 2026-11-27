@@ -37,6 +37,11 @@ ZTEST_DMEM int16_t data_r[SAMPLE_NO] = {
 	-32767, -30273, -23170, -12540,     -1,
 };
 
+/* In a one-channel format a stream can start on any word, so a block of constant
+ * data must hold the same value in every word.
+ */
+#define CONST_VAL_R(val_l, val_r) (test_frame->channels == 1 ? (val_l) : (val_r))
+
 static void fill_buf(int16_t *tx_block, int att)
 {
 	for (int i = 0; i < SAMPLE_NO; i++) {
@@ -94,6 +99,8 @@ static int verify_buf(int16_t *rx_block, int att)
 
 void fill_buf_const(int16_t *tx_block, int16_t val_l, int16_t val_r)
 {
+	val_r = CONST_VAL_R(val_l, val_r);
+
 	for (int i = 0; i < SAMPLE_NO; i++) {
 		tx_block[2 * i] = val_l;
 		tx_block[2 * i + 1] = val_r;
@@ -103,6 +110,8 @@ void fill_buf_const(int16_t *tx_block, int16_t val_l, int16_t val_r)
 int verify_buf_const(int16_t *rx_block, int16_t val_l, int16_t val_r)
 {
 	int sample_no = SAMPLE_NO;
+
+	val_r = CONST_VAL_R(val_l, val_r);
 
 #if (CONFIG_I2S_TEST_ALLOWED_DATA_OFFSET > 0)
 	static ZTEST_DMEM int offset = -1;
@@ -193,8 +202,8 @@ int configure_stream(const struct device *dev_i2s, enum i2s_dir dir)
 	struct i2s_config i2s_cfg = {0};
 
 	i2s_cfg.word_size = 16U;
-	i2s_cfg.channels = 2U;
-	i2s_cfg.format = I2S_FMT_DATA_FORMAT_I2S;
+	i2s_cfg.channels = test_frame->channels;
+	i2s_cfg.format = test_frame->format;
 	i2s_cfg.frame_clk_freq = FRAME_CLK_FREQ;
 	i2s_cfg.block_size = BLOCK_SIZE;
 	i2s_cfg.timeout = TIMEOUT;

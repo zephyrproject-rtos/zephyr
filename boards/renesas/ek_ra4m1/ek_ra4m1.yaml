@@ -13,4 +13,5 @@ supported:
   - watchdog
   - counter
   - crc
+  - i2s
 vendor: renesas

@@ -23,13 +23,36 @@ static int16_t data[SAMPLE_NO] = {
 	-20788, -18205, -15447, -12540,  -9512,  -6393,  -3212,     -1,
 };
 
+struct stream_format {
+	const char *name;
+	uint32_t format;
+	uint8_t channels;
+};
+
+static const struct stream_format formats[] = {
+	{"I2S", I2S_FMT_DATA_FORMAT_I2S, 2U},
+#ifdef CONFIG_SAMPLE_I2S_FORMAT_PCM_SHORT
+	{"PCM short frame", I2S_FMT_DATA_FORMAT_PCM_SHORT, 1U},
+#endif
+#ifdef CONFIG_SAMPLE_I2S_FORMAT_PCM_LONG
+	{"PCM long frame", I2S_FMT_DATA_FORMAT_PCM_LONG, 1U},
+#endif
+};
+
 /* Fill buffer with sine wave on left channel, and sine wave shifted by
- * 90 degrees on right channel. "att" represents a power of two to attenuate
- * the samples by
+ * 90 degrees on right channel. With one channel, fill it with the sine wave
+ * only. "att" represents a power of two to attenuate the samples by
  */
-static void fill_buf(int16_t *tx_block, int att)
+static void fill_buf(int16_t *tx_block, int att, uint8_t channels)
 {
 	int r_idx;
+
+	if (channels == 1U) {
+		for (int i = 0; i < 2 * SAMPLE_NO; i++) {
+			tx_block[i] = data[i % SAMPLE_NO] / (1 << att);
+		}
+		return;
+	}
 
 	for (int i = 0; i < SAMPLE_NO; i++) {
 		/* Left channel is sine wave */
@@ -42,6 +65,9 @@ static void fill_buf(int16_t *tx_block, int att)
 
 #define NUM_BLOCKS 20
 #define BLOCK_SIZE (2 * sizeof(data))
+
+/* Longer than the transmission of NUM_BLOCKS blocks with one channel */
+#define DRAIN_TIME_MS 200
 
 #ifdef CONFIG_NOCACHE_MEMORY
 	#define MEM_SLAB_CACHE_ATTR __nocache
@@ -56,22 +82,19 @@ static STRUCT_SECTION_ITERABLE(k_mem_slab, tx_0_mem_slab) =
 	Z_MEM_SLAB_INITIALIZER(tx_0_mem_slab, _k_mem_slab_buf_tx_0_mem_slab,
 				WB_UP(BLOCK_SIZE), NUM_BLOCKS);
 
-int main(void)
+static int send_stream(const struct device *dev_i2s, const struct stream_format *format)
 {
 	void *tx_block[NUM_BLOCKS];
 	struct i2s_config i2s_cfg;
 	int ret;
 	uint32_t tx_idx;
-	const struct device *dev_i2s = DEVICE_DT_GET(DT_ALIAS(i2s_tx));
 
-	if (!device_is_ready(dev_i2s)) {
-		printf("I2S device not ready\n");
-		return -ENODEV;
-	}
+	printf("Sending %s, %u channel(s)\n", format->name, format->channels);
+
 	/* Configure I2S stream */
 	i2s_cfg.word_size = 16U;
-	i2s_cfg.channels = 2U;
-	i2s_cfg.format = I2S_FMT_DATA_FORMAT_I2S;
+	i2s_cfg.channels = format->channels;
+	i2s_cfg.format = format->format;
 	i2s_cfg.frame_clk_freq = 44100;
 	i2s_cfg.block_size = BLOCK_SIZE;
 	i2s_cfg.timeout = 2000;
@@ -96,7 +119,7 @@ int main(void)
 			printf("Failed to allocate TX block\n");
 			return ret;
 		}
-		fill_buf((uint16_t *)tx_block[tx_idx], tx_idx % 3);
+		fill_buf((uint16_t *)tx_block[tx_idx], tx_idx % 3, format->channels);
 	}
 
 	tx_idx = 0;
@@ -126,6 +149,29 @@ int main(void)
 		printf("Could not trigger I2S tx\n");
 		return ret;
 	}
+	return 0;
+}
+
+int main(void)
+{
+	const struct device *dev_i2s = DEVICE_DT_GET(DT_ALIAS(i2s_tx));
+	int ret;
+
+	if (!device_is_ready(dev_i2s)) {
+		printf("I2S device not ready\n");
+		return -ENODEV;
+	}
+
+	ARRAY_FOR_EACH(formats, i) {
+		ret = send_stream(dev_i2s, &formats[i]);
+		if (ret < 0) {
+			return ret;
+		}
+
+		/* The stream can be configured again once the drain has finished */
+		k_msleep(DRAIN_TIME_MS);
+	}
+
 	printf("All I2S blocks written\n");
 	return 0;
 }

@@ -9,6 +9,8 @@
 #include <zephyr/dt-bindings/pwm/ra_pwm.h>
 #include <zephyr/dt-bindings/misc/renesas/ra-elc/ra4w1-elc.h>
 
+/delete-node/ &i2s0;
+
 / {
 	soc {
 		code_flash_ctrl: code-flash-ctrl {

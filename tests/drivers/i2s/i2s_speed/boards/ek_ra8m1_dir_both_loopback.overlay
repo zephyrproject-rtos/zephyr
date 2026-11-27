@@ -6,6 +6,11 @@
 
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
+/*
+ * Loopback wiring on i2s0:
+ *   P405 (SSI_TX) <-> P406 (SSI_RX)
+ */
+
 / {
 	aliases {
 		i2s-node0 = &i2s0;

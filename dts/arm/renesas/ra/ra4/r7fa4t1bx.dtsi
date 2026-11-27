@@ -16,6 +16,7 @@
 /delete-node/ &agt5;
 /delete-node/ &usbfs;
 /delete-node/ &usbfs_phy;
+/delete-node/ &i2s0;
 
 / {
 	soc {
