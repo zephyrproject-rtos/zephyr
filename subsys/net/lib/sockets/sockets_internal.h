@@ -75,10 +75,22 @@ static inline void net_socket_offloaded_port_untrack(int fd)
 }
 #endif /* CONFIG_NET_SOCKETS_OFFLOAD_PORT_TRACKING */
 
-#define sock_is_eof(ctx) sock_get_flag(ctx, SOCK_EOF)
+static inline bool sock_is_eof(struct net_context *ctx)
+{
+	return sock_get_flag(ctx, SOCK_EOF) != 0U;
+}
+
 #define sock_set_eof(ctx) sock_set_flag(ctx, SOCK_EOF, SOCK_EOF)
-#define sock_is_nonblock(ctx) sock_get_flag(ctx, SOCK_NONBLOCK)
-#define sock_is_error(ctx) sock_get_flag(ctx, SOCK_ERROR)
+
+static inline bool sock_is_nonblock(struct net_context *ctx)
+{
+	return sock_get_flag(ctx, SOCK_NONBLOCK) != 0U;
+}
+
+static inline bool sock_is_error(struct net_context *ctx)
+{
+	return sock_get_flag(ctx, SOCK_ERROR) != 0U;
+}
 
 /* Record a pending socket error (positive errno) and flag the context.
  * The value is stored in a dedicated net_context field rather than being
