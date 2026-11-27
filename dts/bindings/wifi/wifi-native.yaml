@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for Wi-Fi devices using the native network stack
+
+class:
+  - net_if
+  - ethernet
+  - wifi_native

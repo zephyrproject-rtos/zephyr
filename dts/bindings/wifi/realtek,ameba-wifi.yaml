@@ -5,7 +5,7 @@ description: Realtek Ameba SoC WiFi
 
 compatible: "realtek,ameba-wifi"
 
-include: [base.yaml]
+include: [base.yaml, wifi-native.yaml]
 
 properties:
   reg:

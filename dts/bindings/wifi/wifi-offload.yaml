@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for Wi-Fi devices with an offloaded network stack
+
+include: offloaded-netdev.yaml
+
+class: wifi_offload
