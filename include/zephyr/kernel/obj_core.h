@@ -72,9 +72,14 @@ struct k_obj_core;
 	extern struct k_obj_type _obj_type; \
 	k_obj_core_init(_objp, &_obj_type)
 
+#define K_OBJ_CORE_INIT_UNLINKED(_objp, _obj_type) \
+	extern struct k_obj_type _obj_type;        \
+	z_obj_core_init_unlinked(_objp, &_obj_type)
+
 #define K_OBJ_CORE_LINK(objp) k_obj_core_link(objp)
 #else
 #define K_OBJ_CORE_INIT(objp, type)   do { } while (0)
+#define K_OBJ_CORE_INIT_UNLINKED(objp, type) do { } while (0)
 #define K_OBJ_CORE_LINK(objp)         do { } while (0)
 #endif /* CONFIG_OBJ_CORE */
 
@@ -231,6 +236,26 @@ void k_obj_core_link(struct k_obj_core *obj_core);
  */
 void k_obj_core_init_and_link(struct k_obj_core *obj_core,
 			      struct k_obj_type *type);
+
+/**
+ * @cond INTERNAL_HIDDEN
+ *
+ * Object core initialization for kernel objects initialized at run time.
+ * Such objects have no end of life the object core framework could hook,
+ * so they are never linked into their type's list. The node is left
+ * untouched so that re-initializing a statically defined object, which
+ * is linked at boot, keeps the list intact.
+ */
+static inline void z_obj_core_init_unlinked(struct k_obj_core *obj_core,
+					    struct k_obj_type *type)
+{
+	obj_core->type = type;
+#ifdef CONFIG_OBJ_CORE_STATS
+	obj_core->stats = NULL;
+#endif /* CONFIG_OBJ_CORE_STATS */
+}
+
+/** @endcond */
 
 /**
  * @brief Unlink the kernel object from the kernel object type list

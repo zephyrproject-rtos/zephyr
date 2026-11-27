@@ -48,6 +48,7 @@ static struct k_mutex mutex2;
 
 static K_SEM_DEFINE(sem1, 0, 1);
 static struct k_sem sem2;
+static K_SEM_DEFINE(sem3, 0, 1);
 
 static void thread_entry(void *, void *, void *);
 K_THREAD_DEFINE(thread1, 512 + CONFIG_TEST_EXTRA_STACK_SIZE,
@@ -108,19 +109,25 @@ static void common_obj_core_test(uint32_t type_id, const char *str,
 			      "static %s not found with unlocked walk\n", str);
 	}
 
-	/* Search for dynamically initialized object */
+	/*
+	 * Search for dynamically initialized object. Only threads, which
+	 * unlink on abort, are listed. Other objects initialized at run time
+	 * have no end of life and are never linked.
+	 */
 
 	if (dyn_obj_core != NULL) {
+		int expected = (type_id == K_OBJ_TYPE_THREAD_ID) ? 1 : 0;
+
 		walk_data.obj_core = dyn_obj_core;
 		status = k_obj_type_walk_locked(obj_type, obj_core_find_op,
 						&walk_data);
-		zassert_equal(status, 1,
-			      "dynamic %s not found with locked walk\n", str);
+		zassert_equal(status, expected,
+			      "dynamic %s: unexpected locked walk result\n", str);
 
 		status = k_obj_type_walk_unlocked(obj_type, obj_core_find_op,
 						  &walk_data);
-		zassert_equal(status, 1,
-			      "dynamic %s not found with unlocked walk\n", str);
+		zassert_equal(status, expected,
+			      "dynamic %s: unexpected unlocked walk result\n", str);
 	}
 }
 
@@ -273,6 +280,48 @@ ZTEST(obj_core, test_obj_core_mutex)
 	k_mutex_init(&mutex2);
 	common_obj_core_test(K_OBJ_TYPE_MUTEX_ID, "mutex",
 			     K_OBJ_CORE(&mutex1), K_OBJ_CORE(&mutex2));
+}
+
+static void __noinline init_stack_local_sem(void)
+{
+	struct k_sem local_sem;
+
+	k_sem_init(&local_sem, 0, 1);
+}
+
+static int obj_core_count_op(struct k_obj_core *obj_core, void *data)
+{
+	int *count = data;
+
+	(*count)++;
+	return 0;
+}
+
+/*
+ * A semaphore initialized on the stack must not be linked: once its frame
+ * is gone, the next k_sem_init() would write through it. Re-initializing a
+ * statically defined semaphore must keep the list intact.
+ */
+ZTEST(obj_core, test_obj_core_sem_lifetime)
+{
+	struct k_obj_type *obj_type = k_obj_type_find(K_OBJ_TYPE_SEM_ID);
+	int before = 0;
+	int after = 0;
+
+	zassert_not_null(obj_type, "semaphore object type not found\n");
+
+	(void)k_obj_type_walk_locked(obj_type, obj_core_count_op, &before);
+
+	init_stack_local_sem();
+	k_sem_init(&sem2, 0, 1);
+	k_sem_init(&sem3, 0, 1);
+
+	(void)k_obj_type_walk_locked(obj_type, obj_core_count_op, &after);
+	zassert_equal(before, after, "semaphore list changed: %d -> %d\n",
+		      before, after);
+
+	common_obj_core_test(K_OBJ_TYPE_SEM_ID, "semaphore",
+			     K_OBJ_CORE(&sem3), K_OBJ_CORE(&sem2));
 }
 
 ZTEST(obj_core, test_obj_core_sem)
