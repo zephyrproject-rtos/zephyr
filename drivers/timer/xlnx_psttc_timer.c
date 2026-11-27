@@ -97,6 +97,7 @@ static void update_match(uint32_t cycles, uint32_t match)
 
 static void ttc_isr(const void *arg)
 {
+	k_spinlock_key_t key;
 	uint32_t cycles;
 	uint32_t ticks;
 
@@ -104,6 +105,15 @@ static void ttc_isr(const void *arg)
 
 	/* Acknowledge interrupt */
 	sys_read32(TIMER_BASE_ADDR + XTTCPS_ISR_OFFSET);
+
+	/*
+	 * Hold the system clock lock from reading the counter until the
+	 * kernel has taken the ticks. A timeout started by an interrupt
+	 * that preempts this ISR after last_cycles has moved, but before
+	 * the ticks are announced, would be timed from a curr_tick short
+	 * by those ticks and expire early.
+	 */
+	key = sys_clock_lock();
 
 	/* Read counter value */
 	cycles = read_count();
@@ -122,8 +132,8 @@ static void ttc_isr(const void *arg)
 	ticks = 1;
 #endif
 
-	/* Announce to the kernel*/
-	sys_clock_announce(ticks);
+	/* Announce to the kernel, which releases the lock */
+	sys_clock_announce_locked(ticks, key);
 }
 
 void sys_clock_set_timeout(uint32_t ticks, bool idle)
