@@ -1,0 +1,19 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Run the CAN API tests on MCAN2 (header J18) of the AM62L EVM.
+ *
+ * Use with -DEXTRA_DTC_OVERLAY_FILE=boards/am62l_evm_mcan2.overlay. The pads
+ * are UART0 CTS/RTS, which the console does not use.
+ */
+
+/ {
+	chosen {
+		zephyr,canbus = &main_mcan2;
+	};
+};
+
+&main_mcan2 {
+	status = "okay";
+};

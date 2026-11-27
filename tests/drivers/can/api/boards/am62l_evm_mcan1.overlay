@@ -1,0 +1,35 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Run the CAN API tests on MCAN1 (header J6) of the AM62L EVM.
+ *
+ * Use with -DEXTRA_DTC_OVERLAY_FILE=boards/am62l_evm_mcan1.overlay and
+ * -DEXTRA_CONF_FILE=boards/am62l_evm_mcan1.conf. The hogs route the MCAN1
+ * pads to J6 through the UART1 bus switch U73 (SPRUJG8B 2.6.9, schematic
+ * PROC181E1-1a sheet 40): UART1 is lost on the FT4232 while this image runs.
+ */
+
+/ {
+	chosen {
+		zephyr,canbus = &main_mcan1;
+	};
+};
+
+&main_mcan1 {
+	status = "okay";
+};
+
+&gpio_expander {
+	uart1-fet-sel {
+		gpio-hog;
+		gpios = <2 GPIO_ACTIVE_HIGH>;
+		output-low;
+	};
+
+	uart1-fet-buf-en {
+		gpio-hog;
+		gpios = <6 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};

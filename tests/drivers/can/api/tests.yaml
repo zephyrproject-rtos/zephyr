@@ -19,6 +19,17 @@ tests:
       and not dt_compat_enabled("infineon,xmc4xxx-can-node")
     extra_configs:
       - CONFIG_CAN_ACCEPT_RTR=y
+  drivers.can.api.am62l_evm.mcan1:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=boards/am62l_evm_mcan1.overlay
+      - EXTRA_CONF_FILE=boards/am62l_evm_mcan1.conf
+    platform_allow:
+      - am62l_evm/am62l3/a53
+  drivers.can.api.am62l_evm.mcan2:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=boards/am62l_evm_mcan2.overlay
+    platform_allow:
+      - am62l_evm/am62l3/a53
   drivers.can.api.twai:
     extra_args: DTC_OVERLAY_FILE=twai-enable.overlay
     platform_allow:
