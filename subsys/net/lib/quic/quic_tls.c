@@ -5893,6 +5893,63 @@ int quic_flush_deferred_crypto(struct quic_endpoint *ep)
 }
 #endif /* CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT */
 
+/* Write an ACK frame for one packet (RFC 9000 ch. 19.3), returns its length */
+static int quic_put_ack_frame(uint8_t *buf, size_t size, uint64_t largest_pn)
+{
+	size_t pos = 0;
+	int n;
+
+	/* The type, and after the packet number the ACK delay, the range
+	 * count and the first range, all zero for this one packet.
+	 */
+	if (size < 1U + 3U) {
+		return -ENOBUFS;
+	}
+
+	buf[pos++] = QUIC_FRAME_TYPE_ACK;
+
+	n = quic_put_varint(&buf[pos], size - pos - 3U, largest_pn);
+	if (n <= 0) {
+		return n < 0 ? n : -ENOBUFS;
+	}
+
+	pos += n;
+	buf[pos++] = 0;
+	buf[pos++] = 0;
+	buf[pos++] = 0;
+
+	return (int)pos;
+}
+
+/* Write the acknowledgment that is pending at an Initial or a Handshake
+ * level, so that it goes out with what is being sent there. Returns the
+ * length of the frame, 0 when none is pending or it does not fit. Called
+ * with send_lock held.
+ */
+ZTESTABLE_STATIC size_t quic_take_handshake_ack(struct quic_endpoint *ep,
+						enum quic_secret_level level,
+						uint8_t *buf, size_t size)
+{
+	int len;
+
+	if (level != QUIC_SECRET_LEVEL_INITIAL && level != QUIC_SECRET_LEVEL_HANDSHAKE) {
+		return 0;
+	}
+
+	if (!ep->handshake_ack[level].pending) {
+		return 0;
+	}
+
+	len = quic_put_ack_frame(buf, size, ep->handshake_ack[level].pkt_num);
+	if (len <= 0) {
+		return 0;
+	}
+
+	ep->handshake_ack[level].pending = false;
+
+	return (size_t)len;
+}
+
 /*
  * Build CRYPTO frame directly into endpoint's TX buffer
  * Returns pointer to where TLS data should be written
@@ -6288,9 +6345,10 @@ static int quic_send_packet_with_pn(struct quic_endpoint *ep,
 static int quic_send_prepared_frame(struct quic_endpoint *ep,
 				    enum quic_secret_level level,
 				    size_t frame_header_len,
-				    size_t data_len)
+				    size_t data_len,
+				    size_t trailer_len)
 {
-	size_t total_frame_len = frame_header_len + data_len;
+	size_t total_frame_len = frame_header_len + data_len + trailer_len;
 	int ret;
 
 	ret = quic_send_packet_from_txbuf(ep, level, total_frame_len, 0U, false, false);
@@ -6312,12 +6370,14 @@ static int quic_send_prepared_frame(struct quic_endpoint *ep,
 }
 
 /* Updated TLS send callback, zero copy for TLS data */
-static int quic_tls_send_callback(void *user_data,
-				  enum quic_secret_level level,
-				  const uint8_t *data, size_t len)
+ZTESTABLE_STATIC int quic_tls_send_callback(void *user_data,
+					    enum quic_secret_level level,
+					    const uint8_t *data, size_t len)
 {
 	struct quic_endpoint *ep = user_data;
 	size_t frame_header_len;
+	size_t used;
+	size_t ack_len = 0;
 	uint8_t *dest;
 	int ret;
 
@@ -6344,8 +6404,25 @@ static int quic_tls_send_callback(void *user_data,
 	/* Copy TLS data into frame */
 	memcpy(dest, data, len);
 
+	/* A packet of the peer that waits for its acknowledgment at this
+	 * level gets it with this one. The frame follows the CRYPTO frame:
+	 * the first frame is what tells that the packet has to be
+	 * acknowledged in turn.
+	 */
+	used = frame_header_len + len;
+	if (used < sizeof(ep->crypto.tx_buffer)) {
+		ack_len = quic_take_handshake_ack(ep, level, dest + len,
+						  sizeof(ep->crypto.tx_buffer) - used);
+	}
+
 	/* Send */
-	ret = quic_send_prepared_frame(ep, level, frame_header_len, len);
+	ret = quic_send_prepared_frame(ep, level, frame_header_len, len, ack_len);
+	if (ret != 0 && ack_len > 0U) {
+		/* The packet was neither sent nor queued, so the
+		 * acknowledgment is pending again.
+		 */
+		ep->handshake_ack[level].pending = true;
+	}
 
 	k_mutex_unlock(&ep->send_lock);
 

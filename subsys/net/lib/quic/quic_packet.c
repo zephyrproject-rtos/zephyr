@@ -2118,29 +2118,14 @@ static int quic_send_ack(struct quic_endpoint *ep,
 			 uint64_t largest_pn)
 {
 	uint8_t frame[32];
-	size_t pos = 0;
-	int n;
+	int len;
 
-	/* ACK frame type */
-	frame[pos++] = QUIC_FRAME_TYPE_ACK;
-
-	/* Largest Acknowledged */
-	n = quic_put_varint(&frame[pos], sizeof(frame) - pos, largest_pn);
-	if (n <= 0) {
-		return n < 0 ? n : -EINVAL;
+	len = quic_put_ack_frame(frame, sizeof(frame), largest_pn);
+	if (len < 0) {
+		return len;
 	}
-	pos += n;
 
-	/* ACK Delay (0 for now) */
-	frame[pos++] = 0;
-
-	/* ACK Range Count (0 = just one contiguous range) */
-	frame[pos++] = 0;
-
-	/* First ACK Range (acknowledging just this packet) */
-	frame[pos++] = 0;
-
-	return quic_send_packet(ep, level, frame, pos);
+	return quic_send_packet(ep, level, frame, len);
 }
 
 /*

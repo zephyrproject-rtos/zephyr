@@ -781,6 +781,16 @@ struct quic_endpoint {
 		uint64_t application;
 	} rx_pn;
 
+	/** The Initial and the Handshake packet of the peer whose frames
+	 * are being handled, when it asks for an acknowledgment: a reply at
+	 * that level carries it, and it is sent alone when there is none.
+	 * Indexed by the level, under send_lock.
+	 */
+	struct {
+		uint64_t pkt_num;
+		bool pending;
+	} handshake_ack[2];
+
 	/** The real UDP socket to use when sending QUIC data to peer.
 	 * Different QUIC connections may share the same UDP socket.
 	 */
@@ -1640,6 +1650,11 @@ int handle_crypto_level_packet(struct quic_endpoint *ep,
 			       size_t payload_len,
 			       size_t total_packet_len,
 			       bool *ack_only);
+bool quic_handshake_payload_is_ack_eliciting(const uint8_t *payload, size_t len);
+size_t quic_take_handshake_ack(struct quic_endpoint *ep, enum quic_secret_level level,
+			       uint8_t *buf, size_t size);
+int quic_tls_send_callback(void *user_data, enum quic_secret_level level,
+			   const uint8_t *data, size_t len);
 int quic_build_connection_close(uint8_t *frame, size_t frame_len,
 				uint8_t type, uint64_t error_code,
 				uint64_t frame_type, const char *reason);
