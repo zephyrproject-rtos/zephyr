@@ -11,6 +11,7 @@
 #include <soc/soc.h>
 #include <soc/lp_tee_reg.h>
 #include <bootloader_flash_priv.h>
+#include <spi_flash_mmap.h>
 #include <ulp_lp_core.h>
 #include <ulp_lp_core_memory_shared.h>
 #include <esp_sleep.h>
@@ -31,21 +32,31 @@ void IRAM_ATTR lp_core_image_init(void)
 
 	const uint32_t lpcore_img_off = PARTITION_OFFSET(slot0_lpcore_partition);
 	const uint32_t lpcore_img_size = CONFIG_SOC_FAMILY_ESPRESSIF_ULP_RESERVE_MEM;
+	spi_flash_mmap_handle_t map_handle;
+	const void *data;
+	esp_err_t err;
 
-	const uint8_t *data = (const uint8_t *)bootloader_mmap(lpcore_img_off, lpcore_img_size);
+	err = spi_flash_mmap(lpcore_img_off, lpcore_img_size, SPI_FLASH_MMAP_DATA, &data,
+			     &map_handle);
 
-	if (data == NULL) {
-		LOG_ERR("LP core image mmap failed at 0x%x", lpcore_img_off);
+	if (err != ESP_OK) {
+		LOG_ERR("Failed to mmap LP core image at 0x%x: %d", lpcore_img_off, err);
 		return;
 	}
 
 	if (*(const uint32_t *)data == 0xffffffff) {
 		LOG_ERR("LP core partition at 0x%x is erased; LP image not flashed",
 			lpcore_img_off);
+		spi_flash_munmap(map_handle);
 		return;
 	}
 
-	if (ulp_lp_core_load_binary(data, lpcore_img_size) != 0) {
+	int ret = ulp_lp_core_load_binary(data, lpcore_img_size);
+
+	spi_flash_munmap(map_handle);
+
+	if (ret != 0) {
+		LOG_ERR("LP core binary load failed (err %d)", ret);
 		return;
 	}
 
