@@ -7,6 +7,7 @@ compatible: "wch,ch9120"
 
 include:
   - uart-device.yaml
+  - offloaded-netdev.yaml
 
 properties:
   reset-gpios:
