@@ -48,6 +48,11 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
  */
 struct k_spinlock z_mm_lock;
 
+struct k_spinlock *z_mm_lock_get(void)
+{
+	return &z_mm_lock;
+}
+
 /*
  * General page frame management
  */
