@@ -23,3 +23,14 @@ config WUC_MCUX_WUU
 	depends on DT_HAS_NXP_WUC_WUU_ENABLED
 	help
 	  Enable support for NXP WUU (Wakeup Unit) wakeup controller driver.
+
+config WUC_NXP_S32_WKPU
+	bool "NXP S32 WKPU wakeup control"
+	default y
+	depends on DT_HAS_NXP_S32_WKPU_WUC_ENABLED
+	depends on NXP_S32_WKPU
+	help
+	  Enable the wakeup controller child of an NXP S32 WKPU. The parent
+	  interrupt controller owns register access and shared edge detection.
+	  This driver configures encoded source edges and controls wakeup
+	  request gates independently of interrupts.

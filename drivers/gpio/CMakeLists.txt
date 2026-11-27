@@ -4,6 +4,9 @@ zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/gpio.h)
 
 zephyr_library()
 
+zephyr_library_include_directories_ifdef(CONFIG_NXP_S32_WKPU
+  ${ZEPHYR_BASE}/drivers/interrupt_controller)
+
 # zephyr-keep-sorted-start
 zephyr_library_include_directories_ifdef(CONFIG_GPIO_NPM10XX ${ZEPHYR_BASE}/drivers/mfd)
 zephyr_library_sources_ifdef(CONFIG_GPIO_AD559X gpio_ad559x.c)
