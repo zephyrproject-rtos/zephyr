@@ -407,6 +407,7 @@ static void timeout_wheel_sift_down(void)
  * advanced. Handlers fire with the lock dropped; inflight_timeout tracks
  * the in-flight timeout so aborts race correctly.
  */
+Z_REQUIRES(z_timeout_lock)
 static k_spinlock_key_t timeout_wheel_announce_now(k_spinlock_key_t key)
 {
 	struct _timeout *t;
@@ -421,9 +422,9 @@ static k_spinlock_key_t timeout_wheel_announce_now(k_spinlock_key_t key)
 		timeout_wheel_clear_flags(t);
 
 		inflight_timeout = t;
-		k_spin_unlock(&timeout_lock, key);
+		k_spin_unlock(&z_timeout_lock, key);
 		t->fn(t);
-		key = k_spin_lock(&timeout_lock);
+		key = k_spin_lock(&z_timeout_lock);
 		inflight_timeout = NULL;
 	}
 	wheel.announcing = 0;
@@ -498,6 +499,7 @@ static k_ticks_t z_timeout_q_next_expiry(void)
  * subsystem lock dropped; advances curr_tick and announce_remaining. Returns
  * the (possibly re-acquired) spinlock key.
  */
+Z_REQUIRES(z_timeout_lock)
 static k_spinlock_key_t z_timeout_q_announce(k_spinlock_key_t key)
 {
 	uint32_t mask;
