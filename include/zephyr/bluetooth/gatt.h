@@ -110,12 +110,18 @@ enum bt_gatt_perm {
 	/** @brief Attribute read permission with LE Secure Connection encryption.
 	 *
 	 *  If set, requires that LE Secure Connections is used for read access.
+	 *  The LE GATT Security Levels characteristic
+	 *  (@kconfig{CONFIG_BT_GAP_LE_GATT_SECURITY_LEVELS}) reports this as LE security
+	 *  mode 1 level 4, the lowest level that implies LE Secure Connections.
 	 */
 	BT_GATT_PERM_READ_LESC = BIT(7),
 
 	/** @brief Attribute write permission with LE Secure Connection encryption.
 	 *
 	 *  If set, requires that LE Secure Connections is used for write access.
+	 *  The LE GATT Security Levels characteristic
+	 *  (@kconfig{CONFIG_BT_GAP_LE_GATT_SECURITY_LEVELS}) reports this as LE security
+	 *  mode 1 level 4, the lowest level that implies LE Secure Connections.
 	 */
 	BT_GATT_PERM_WRITE_LESC = BIT(8),
 
