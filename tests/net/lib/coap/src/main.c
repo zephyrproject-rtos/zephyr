@@ -447,6 +447,31 @@ ZTEST(coap, test_parse_malformed_opt_len_ext)
 	zassert_equal(r, -EILSEQ, "Should've failed to parse a packet");
 }
 
+ZTEST(coap, test_parse_option_ext_overflow)
+{
+	/* Extended delta 0xfefe + 269 = 65547, wraps to Uri-Path (11). */
+	uint8_t delta_pdu[] = {0x40U, 0x01U, 0U, 0x01U, 0xe1U, 0xfeU, 0xfeU, 'x'};
+	/* Extended length 0xfef4 + 269 = 65537, wraps to 1. */
+	uint8_t len_pdu[] = {0x40U, 0x01U, 0U, 0x01U, 0x3eU, 0xfeU, 0xf4U, 'x'};
+	/* Extended delta 0xfef2 + 269 = 65535, the largest valid delta. */
+	uint8_t max_pdu[] = {0x40U, 0x01U, 0U, 0x01U, 0xe1U, 0xfeU, 0xf2U, 'x'};
+	struct coap_packet cpkt;
+	struct coap_option option;
+	int r;
+
+	r = coap_packet_parse(&cpkt, delta_pdu, sizeof(delta_pdu), &option, 1U);
+	zexpect_equal(r, -EILSEQ, "Accepted an option delta above 65535");
+
+	r = coap_packet_parse(&cpkt, len_pdu, sizeof(len_pdu), &option, 1U);
+	zexpect_equal(r, -EILSEQ, "Accepted an option length above 65535");
+
+	r = coap_packet_parse(&cpkt, max_pdu, sizeof(max_pdu), &option, 1U);
+	zassert_ok(r, "Rejected option delta 65535");
+	zexpect_equal(option.delta, UINT16_MAX, "Wrong option delta");
+	zexpect_equal(option.len, 1U, "Wrong option length");
+	zexpect_equal(option.value[0], 'x', "Wrong option value");
+}
+
 /* 1 option, No payload (with payload marker) */
 ZTEST(coap, test_parse_malformed_marker)
 {
