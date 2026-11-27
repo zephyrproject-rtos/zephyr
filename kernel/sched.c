@@ -339,6 +339,7 @@ void z_thread_timeout(struct _timeout *timeout)
 		 * wait.
 		 */
 		if (!z_timeout_inflight_superseded(timeout)) {
+			arch_thread_return_value_set(thread, -EAGAIN);
 			z_sched_wake_thread_locked(thread);
 		}
 	}
