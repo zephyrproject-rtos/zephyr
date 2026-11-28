@@ -21,6 +21,7 @@
 #if CONFIG_I2C_RENESAS_RA_IIC_BUS_RECOVERY
 #include <zephyr/drivers/gpio.h>
 #include "i2c_bitbang.h"
+#include "i2c-priv.h"
 #endif /* CONFIG_I2C_RENESAS_RA_IIC_BUS_RECOVERY */
 
 #include <zephyr/logging/log.h>
@@ -870,6 +871,7 @@ static int i2c_ra_iic_recover(const struct device *dev)
 	};
 
 	uint32_t bitrate_cfg;
+	fsp_err_t fsp_err;
 	int ret = 0;
 
 	if (!gpio_is_ready_dt(&config->scl)) {
@@ -883,6 +885,14 @@ static int i2c_ra_iic_recover(const struct device *dev)
 	}
 
 	k_mutex_lock(&data->bus_mutex, K_FOREVER);
+
+	/* Stop the IIC peripheral: disables its interrupts so that the
+	 * bit-banged clocks/STOP cannot raise spurious IIC events.
+	 */
+	fsp_err = R_IIC_MASTER_Close(&data->control_ctrl);
+	if (fsp_err != FSP_SUCCESS) {
+		LOG_WRN("Failed to close I2C controller (FSP_ERR=%d)", fsp_err);
+	}
 
 	ret = gpio_pin_configure_dt(&config->scl, GPIO_OUTPUT_HIGH);
 	if (ret != 0) {
@@ -914,6 +924,19 @@ static int i2c_ra_iic_recover(const struct device *dev)
 
 restore:
 	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+
+	/* Full IIC reset with the pins back on the peripheral: clears BBSY/MST
+	 * and the FSP transfer state left over from the failed transfer.
+	 */
+	fsp_err = R_IIC_MASTER_Open(&data->control_ctrl, &data->ctrl_fconfig);
+	if (fsp_err != FSP_SUCCESS) {
+		LOG_ERR("Failed to reopen I2C controller (FSP_ERR=%d)", fsp_err);
+		ret = -EIO;
+	}
+
+	/* Drop any completion event signalled before or during the recovery. */
+	k_sem_reset(&data->complete_sem);
+
 	k_mutex_unlock(&data->bus_mutex);
 
 	return ret;
