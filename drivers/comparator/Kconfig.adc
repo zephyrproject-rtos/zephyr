@@ -1,0 +1,19 @@
+# Copyright 2026 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config COMPARATOR_ADC
+	bool "ADC voltage comparator driver"
+	default y
+	depends on DT_HAS_ADC_COMPARATOR_ENABLED
+	select ADC
+	help
+	  Enable the ADC-backed voltage comparator driver.
+
+config COMPARATOR_ADC_INIT_PRIORITY
+	int "ADC voltage comparator init priority"
+	default ADC_INIT_PRIORITY
+	depends on COMPARATOR_ADC
+	help
+	  ADC voltage comparator device driver initialization priority.
+	  Defaults to ADC_INIT_PRIORITY, relying on devicetree dependency
+	  ordering to initialize after the backing ADC controller.

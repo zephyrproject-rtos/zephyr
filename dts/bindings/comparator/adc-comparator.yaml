@@ -1,0 +1,20 @@
+# Copyright 2026 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: ADC-backed voltage comparator
+
+compatible: "adc-comparator"
+
+include: base.yaml
+
+properties:
+  io-channels:
+    required: true
+    description:
+      ADC channel used to measure the input voltage.
+
+  threshold-mv:
+    type: int
+    default: 0
+    description:
+      Voltage threshold in millivolts above which the comparator output is high.
