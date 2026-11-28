@@ -74,6 +74,7 @@ struct spi_esp32_data {
 	size_t target_rx_seg_cnt;
 #endif
 	uint8_t dfs;
+	uint8_t word_size;
 	uint32_t clock_source_hz;
 #if CONFIG_PM
 	bool pm_policy_state_on;
