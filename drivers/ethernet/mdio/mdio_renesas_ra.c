@@ -34,6 +34,8 @@ struct renesas_ra_mdio_data {
 static int renesas_ra_mdio_read(const struct device *dev, uint8_t prtad, uint8_t regad,
 				uint16_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct renesas_ra_mdio_data *dev_data = dev->data;
 	ether_phy_extended_cfg_t *ext_cfg =
 		(ether_phy_extended_cfg_t *)dev_data->ether_phy_cfg.p_extend;
@@ -60,6 +62,8 @@ static int renesas_ra_mdio_read(const struct device *dev, uint8_t prtad, uint8_t
 static int renesas_ra_mdio_write(const struct device *dev, uint8_t prtad, uint8_t regad,
 				 uint16_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct renesas_ra_mdio_data *dev_data = dev->data;
 	ether_phy_extended_cfg_t *ext_cfg =
 		(ether_phy_extended_cfg_t *)dev_data->ether_phy_cfg.p_extend;
@@ -82,6 +86,8 @@ static int renesas_ra_mdio_write(const struct device *dev, uint8_t prtad, uint8_
 
 static int renesas_ra_mdio_initialize(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct renesas_ra_mdio_data *data = dev->data;
 	const struct renesas_ra_mdio_config *cfg = dev->config;
 	int err;

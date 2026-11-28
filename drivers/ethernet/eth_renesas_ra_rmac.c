@@ -102,6 +102,9 @@ extern fsp_err_t rmac_do_link(rmac_instance_ctrl_t *const p_instance_ctrl,
 static void phy_link_cb(const struct device *phy_dev, struct phy_link_state *state, void *eth_dev)
 {
 	const struct device *dev = (struct device *)eth_dev;
+
+	DEVICE_DT_ASSUME_ANY(dev, renesas_ra_ethernet_rmac);
+
 	struct eth_renesas_ra_data *data = dev->data;
 	fsp_err_t fsp_err = FSP_SUCCESS;
 
@@ -298,6 +301,9 @@ rx_end:
 static void eth_rx_thread(void *arg1, void *unused1, void *unused2)
 {
 	const struct device *dev = (const struct device *)arg1;
+
+	DEVICE_DT_ASSUME_ANY(dev, renesas_ra_ethernet_rmac);
+
 	struct eth_renesas_ra_data *data = dev->data;
 
 	ARG_UNUSED(unused1);
@@ -313,6 +319,9 @@ static void eth_rx_thread(void *arg1, void *unused1, void *unused2)
 static void eth_renesas_ra_init_iface(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_ASSUME_ANY(dev, renesas_ra_ethernet_rmac);
+
 	struct eth_renesas_ra_data *data = dev->data;
 	const struct eth_renesas_ra_config *config = dev->config;
 
@@ -345,6 +354,8 @@ static void eth_renesas_ra_init_iface(struct net_if *iface)
 static struct net_stats_eth *eth_renesas_ra_get_stats(const struct device *dev,
 						      struct net_if *iface __unused)
 {
+	DEVICE_DT_ASSUME_ANY(dev, renesas_ra_ethernet_rmac);
+
 	struct eth_renesas_ra_data *data = dev->data;
 
 	return &data->stats;
@@ -354,6 +365,8 @@ static struct net_stats_eth *eth_renesas_ra_get_stats(const struct device *dev,
 
 const struct device *eth_renesas_ra_get_phy(const struct device *dev, struct net_if *iface __unused)
 {
+	DEVICE_DT_ASSUME_ANY(dev, renesas_ra_ethernet_rmac);
+
 	const struct eth_renesas_ra_config *config = dev->config;
 
 	return config->phy_dev;
@@ -361,6 +374,8 @@ const struct device *eth_renesas_ra_get_phy(const struct device *dev, struct net
 
 static int eth_renesas_ra_tx(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_ASSUME_ANY(dev, renesas_ra_ethernet_rmac);
+
 	struct eth_renesas_ra_data *data = dev->data;
 	size_t len = net_pkt_get_len(pkt);
 	fsp_err_t fsp_err = FSP_ERR_NOT_INITIALIZED;
@@ -412,6 +427,8 @@ tx_end:
 
 static int renesas_ra_eswm_init(const struct device *dev)
 {
+	DEVICE_DT_ASSUME_ANY(dev, renesas_ra_eswm);
+
 	struct eswm_renesas_ra_data *data = dev->data;
 	const struct eswm_renesas_ra_config *config = dev->config;
 	uint32_t gwcaclk, pclk, eswclk, eswphyclk, ethphyclk, phy_ref_rate;
@@ -468,6 +485,8 @@ static int renesas_ra_eswm_init(const struct device *dev)
 
 static int renesas_ra_eth_init(const struct device *dev)
 {
+	DEVICE_DT_ASSUME_ANY(dev, renesas_ra_ethernet_rmac);
+
 	struct eth_renesas_ra_data *data = dev->data;
 	const struct eth_renesas_ra_config *config = dev->config;
 	fsp_err_t fsp_err = FSP_SUCCESS;
