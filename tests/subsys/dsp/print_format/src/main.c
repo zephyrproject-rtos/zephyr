@@ -64,6 +64,145 @@ ZTEST(zdsp_print_format, test_print_q31_precision_negative)
 	assert_strings("-0.2425", buffer);
 }
 
+ZTEST(zdsp_print_format, test_print_q31_precision_1)
+{
+	char buffer[256];
+	q31_t q = (q31_t)0x0f5c28f0; /* 0.119999997 */
+
+	snprintf(buffer, 256, "%" PRIq(1), PRIq_arg(q, 1, 0));
+	assert_strings("0.1", buffer);
+
+	snprintf(buffer, 256, "%" PRIq(1), PRIq_arg(q, 1, 5));
+	assert_strings("3.8", buffer);
+
+	q = (q31_t)0x83d70a00; /* -0.970000029 */
+
+	snprintf(buffer, 256, "%" PRIq(1), PRIq_arg(q, 1, 0));
+	assert_strings("-0.9", buffer);
+}
+
+ZTEST(zdsp_print_format, test_print_q31_precision_9)
+{
+	char buffer[256];
+	q31_t q = (q31_t)0x0f5c28f0; /* 0.119999997318 */
+
+	snprintf(buffer, 256, "%" PRIq(9), PRIq_arg(q, 9, 0));
+	assert_strings("0.119999997", buffer);
+
+	snprintf(buffer, 256, "%" PRIq(9), PRIq_arg(q, 9, 1));
+	assert_strings("0.239999994", buffer);
+
+	snprintf(buffer, 256, "%" PRIq(9), PRIq_arg(q, 9, -2));
+	assert_strings("0.029999999", buffer);
+
+	q = (q31_t)0x83d70a00; /* -0.970000028610 */
+
+	snprintf(buffer, 256, "%" PRIq(9), PRIq_arg(q, 9, 0));
+	assert_strings("-0.970000028", buffer);
+
+	snprintf(buffer, 256, "%" PRIq(9), PRIq_arg(q, 9, 1));
+	assert_strings("-1.940000057", buffer);
+
+	snprintf(buffer, 256, "%" PRIq(9), PRIq_arg(q, 9, -2));
+	assert_strings("-0.242500007", buffer);
+}
+
+ZTEST(zdsp_print_format, test_print_q31_zero)
+{
+	char buffer[256];
+	q31_t q = 0;
+
+	snprintf(buffer, 256, "%" PRIq(6), PRIq_arg(q, 6, 0));
+	assert_strings("0.000000", buffer);
+
+	/* The sign is kept when a negative value truncates to zero */
+	q = -1; /* -0.000000000466 */
+
+	snprintf(buffer, 256, "%" PRIq(6), PRIq_arg(q, 6, 0));
+	assert_strings("-0.000000", buffer);
+}
+
+ZTEST(zdsp_print_format, test_print_q31_large_shift)
+{
+	char buffer[256];
+	q31_t q = INT32_MAX; /* 0.999999999534 */
+
+	snprintf(buffer, 256, "%" PRIq(6), PRIq_arg(q, 6, 16));
+	assert_strings("65535.999969", buffer);
+
+	snprintf(buffer, 256, "%" PRIq(6), PRIq_arg(q, 6, 30));
+	assert_strings("1073741823.500000", buffer);
+
+	snprintf(buffer, 256, "%" PRIq(6), PRIq_arg(q, 6, 31));
+	assert_strings("2147483647.000000", buffer);
+
+	snprintf(buffer, 256, "%" PRIq(6), PRIq_arg(q, 6, -31));
+	assert_strings("0.000000", buffer);
+
+	q = -INT32_MAX; /* -0.999999999534 */
+
+	snprintf(buffer, 256, "%" PRIq(6), PRIq_arg(q, 6, 16));
+	assert_strings("-65535.999969", buffer);
+
+	q = INT32_MIN; /* -1.0 */
+
+	snprintf(buffer, 256, "%" PRIq(6), PRIq_arg(q, 6, 16));
+	assert_strings("-65536.000000", buffer);
+
+	snprintf(buffer, 256, "%" PRIq(6), PRIq_arg(q, 6, 31));
+	assert_strings("-2147483648.000000", buffer);
+
+	q = (q31_t)0x0f5c28f0; /* 0.119999997 */
+
+	snprintf(buffer, 256, "%" PRIq(9), PRIq_arg(q, 9, -20));
+	assert_strings("0.000000114", buffer);
+}
+
+ZTEST(zdsp_print_format, test_print_q31_full_scale)
+{
+	char buffer[256];
+	q31_t q = INT32_MAX; /* 0.999999999534 */
+
+	snprintf(buffer, 256, "%" PRIq(6), PRIq_arg(q, 6, 0));
+	assert_strings("0.999999", buffer);
+
+	snprintf(buffer, 256, "%" PRIq(9), PRIq_arg(q, 9, 0));
+	assert_strings("0.999999999", buffer);
+
+	q = (q31_t)0x40000002; /* 0.500000000931 */
+
+	snprintf(buffer, 256, "%" PRIq(9), PRIq_arg(q, 9, 0));
+	assert_strings("0.500000000", buffer);
+
+	q = INT32_MIN; /* -1.0 */
+
+	snprintf(buffer, 256, "%" PRIq(6), PRIq_arg(q, 6, 0));
+	assert_strings("-1.000000", buffer);
+}
+
+ZTEST(zdsp_print_format, test_print_q15_q7_full_scale)
+{
+	char buffer[256];
+	q15_t q15 = INT16_MAX; /* 0.999969482 */
+	q7_t q7 = INT8_MAX;    /* 0.9921875 */
+
+	snprintf(buffer, 256, "%" PRIq(9), PRIq_arg(q15, 9, 0));
+	assert_strings("0.999969482", buffer);
+
+	q15 = INT16_MIN; /* -1.0 */
+
+	snprintf(buffer, 256, "%" PRIq(6), PRIq_arg(q15, 6, 0));
+	assert_strings("-1.000000", buffer);
+
+	snprintf(buffer, 256, "%" PRIq(9), PRIq_arg(q7, 9, 0));
+	assert_strings("0.992187500", buffer);
+
+	q7 = INT8_MIN; /* -1.0 */
+
+	snprintf(buffer, 256, "%" PRIq(3), PRIq_arg(q7, 3, 0));
+	assert_strings("-1.000", buffer);
+}
+
 ZTEST(zdsp_print_format, test_print_q15_precision_positive)
 {
 	char buffer[256];
