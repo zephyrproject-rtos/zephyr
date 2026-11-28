@@ -146,7 +146,7 @@
 	interrupt-parent = <&gic>;
 };
 
-&main_spi0 {
+&main_spi1 {
 	interrupts = <GIC_SPI 173 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&gic>;
 };
