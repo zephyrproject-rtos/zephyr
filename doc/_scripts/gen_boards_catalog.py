@@ -260,6 +260,7 @@ def get_catalog(
         doc_page = guess_doc_page(board)
 
         supported_features = {}
+        supported_features_enabled = {}
         compatibles = {}
         target_memory = []
 
@@ -268,6 +269,7 @@ def get_catalog(
             for board_target, edt in board_devicetrees[board.name].items():
                 features = {}
                 target_compatibles = set()
+                target_enabled_feature_types = set()
                 ram_size = get_board_memory_size(edt, "zephyr,sram")
                 flash_size = get_board_memory_size(edt, "zephyr,flash")
                 if ram_size is not None or flash_size is not None:
@@ -309,7 +311,9 @@ def get_catalog(
                             locations.add("soc")
 
                     existing_feature = features.get(binding_type, {}).get(node.matching_compat)
-                    target_compatibles.add(node.matching_compat)
+                    if node.status == "okay":
+                        target_compatibles.add(node.matching_compat)
+                        target_enabled_feature_types.add(binding_type)
 
                     node_info = {
                         "filename": str(filename),
@@ -342,6 +346,7 @@ def get_catalog(
                     "flash_size": flash_size,
                     "features": features,
                 }
+                supported_features_enabled[board_target] = list(target_enabled_feature_types)
                 compatibles[board_target] = list(target_compatibles)
 
         board_runner_info = {}
@@ -379,6 +384,7 @@ def get_catalog(
             "socs": list(socs),
             "revision_default": board.revision_default,
             "supported_features": supported_features,
+            "supported_features_enabled": supported_features_enabled,
             "compatibles": compatibles,
             "image": guess_image(board),
             "maintained": is_board_maintained(doc_page_path) if doc_page_path else False,

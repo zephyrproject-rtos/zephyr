@@ -144,6 +144,8 @@ function hashIndicatesFilteredCatalogView() {
 function updateURL() {
   const params = ["name", "arch", "vendor", "soc"];
   const hashParams = new URLSearchParams(window.location.hash.slice(1));
+  // Remove the retired scope toggle from existing catalog links.
+  hashParams.delete("peripheral-scope");
 
   params.forEach((param) => {
     const element = document.getElementById(param);
@@ -237,14 +239,21 @@ function setupHWCapabilitiesField() {
   const tagInput = document.getElementById("hwcaps-input");
   const datalist = document.getElementById("tag-list");
 
-  const tagCounts = Array.from(document.querySelectorAll(".board-card")).reduce((acc, board) => {
-    (board.getAttribute("data-supported-features") || "").split(" ").forEach((tag) => {
-      acc[tag] = (acc[tag] || 0) + 1;
-    });
-    return acc;
-  }, {});
+  function getAllTags() {
+    const attr = "data-supported-features";
+    const tagCounts = Array.from(document.querySelectorAll(".board-card")).reduce(
+      (acc, board) => {
+        (board.getAttribute(attr) || "").split(" ").forEach((tag) => {
+          if (tag) acc[tag] = (acc[tag] || 0) + 1;
+        });
+        return acc;
+      },
+      {},
+    );
+    return Object.keys(tagCounts).sort();
+  }
 
-  const allTags = Object.keys(tagCounts).sort();
+  let allTags = getAllTags();
 
   function addTag(tag) {
     if (selectedTags.includes(tag) || tag === "" || !allTags.includes(tag)) return;
@@ -281,6 +290,12 @@ function setupHWCapabilitiesField() {
     filterBoards();
   }
 
+  document.querySelector(".filter-form").addEventListener("reset", () => {
+    selectedTags = [];
+    tagInput.value = "";
+    updateDatalist();
+  });
+
   tagInput.addEventListener("input", () => {
     if (allTags.includes(tagInput.value)) {
       addTag(tagInput.value);
@@ -312,20 +327,15 @@ function setupCompatiblesField() {
   const tagInput = document.getElementById("compatibles-input");
   const datalist = document.getElementById("compatibles-list");
 
-  // Collect all unique compatibles from boards
-  const allCompatibles = Array.from(document.querySelectorAll(".board-card")).reduce(
-    (acc, board) => {
-      (board.getAttribute("data-compatibles") || "").split(" ").forEach((compat) => {
-        if (compat && !acc.includes(compat)) {
-          acc.push(compat);
-        }
-      });
-      return acc;
-    },
-    [],
-  );
+  function getAllCompatibles() {
+    const attr = "data-compatibles";
+    return [...new Set(
+      Array.from(document.querySelectorAll(".board-card"))
+        .flatMap((b) => (b.getAttribute(attr) || "").split(" ").filter(Boolean))
+    )].sort();
+  }
 
-  allCompatibles.sort();
+  const allCompatibles = getAllCompatibles();
 
   function addCompatible(compatible) {
     if (selectedCompatibles.includes(compatible) || compatible === "") return;
@@ -363,6 +373,12 @@ function setupCompatiblesField() {
 
     filterBoards();
   }
+
+  document.querySelector(".filter-form").addEventListener("reset", () => {
+    selectedCompatibles = [];
+    tagInput.value = "";
+    updateDatalist();
+  });
 
   tagInput.addEventListener("input", () => {
     if (allCompatibles.includes(tagInput.value)) {
@@ -787,6 +803,9 @@ function filterBoards() {
     (tag) => tag.textContent,
   );
 
+  const compatAttr = "data-compatibles";
+  const featuresAttr = "data-supported-features";
+
   const resetFiltersBtn = document.getElementById("reset-filters");
   const ramFiltered = ramMinBytes > 0 || ramMaxBytes < Infinity;
   const flashFiltered = flashMinBytes > 0 || flashMaxBytes < Infinity;
@@ -818,10 +837,10 @@ function filterBoards() {
     const boardTargetMemory = parseBoardTargetMemory(board);
     const boardVendor = board.getAttribute("data-vendor") || "";
     const boardSocs = (board.getAttribute("data-socs") || "").split(" ").filter(Boolean);
-    const boardSupportedFeatures = (board.getAttribute("data-supported-features") || "")
+    const boardSupportedFeatures = (board.getAttribute(featuresAttr) || "")
       .split(" ")
       .filter(Boolean);
-    const boardCompatibles = (board.getAttribute("data-compatibles") || "")
+    const boardCompatibles = (board.getAttribute(compatAttr) || "")
       .split(" ")
       .filter(Boolean);
     const isShield = board.classList.contains("shield");
