@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Dotcom IoT LLP
+# SPDX-License-Identifier: Apache-2.0
+
+config SGP41
+	bool "Sensirion SGP41 VOC / NOx gas sensor"
+	depends on DT_HAS_SENSIRION_SGP41_ENABLED
+	default y
+	select I2C
+	select CRC
+	select RTIO
+	select SENSOR_ASYNC_API
+	help
+	  Enable driver for the Sensirion SGP41 multi-pixel gas sensor
+	  (raw VOC and NOx signals) on I2C.
