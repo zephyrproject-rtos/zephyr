@@ -261,6 +261,15 @@ Libraries / Subsystems
     command was run without that argument and its remaining arguments, which usually failed
     with a wrong argument count.
 
+* DFU
+
+  * Added :kconfig:option:`CONFIG_MCUBOOT_ACTIVE_SLOT_FROM_BLINFO` to determine the active image
+    slot at runtime via MCUboot blinfo retention data. This option is required (and enabled by
+    default) for RAM_LOAD bootloader modes. (:github:`120323`)
+
+  * Deprecated :c:func:`boot_fetch_active_slot` in favor of :c:func:`boot_fetch_active_slot_area_id`
+    (:github:`120323`).
+
 Devicetree
 **********
 
