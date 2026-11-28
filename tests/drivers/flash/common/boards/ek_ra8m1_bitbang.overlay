@@ -1,0 +1,65 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * The on-board S28HL512T in octal DTR mode (8D-8D-8D) through the bitbang
+ * MSPI controller on the OSPI pins, which the hardware controller must
+ * release. The chip keeps its I/O mode across an MCU reset, so it is reset
+ * through its RESET# line. The SFDP tables were read from the chip.
+ */
+
+/delete-node/ &ext_flash_ctrl;
+
+&ospi0 {
+	status = "disabled";
+};
+
+/ {
+	mspi_bb: mspi-bitbang-controller {
+		compatible = "zephyr,mspi-bitbang-controller";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		sck-gpios = <&ioport8 8 GPIO_ACTIVE_HIGH>;
+		io-gpios = <&ioport1 0 GPIO_ACTIVE_HIGH>, <&ioport8 3 GPIO_ACTIVE_HIGH>,
+			   <&ioport1 3 GPIO_ACTIVE_HIGH>, <&ioport1 1 GPIO_ACTIVE_HIGH>,
+			   <&ioport1 2 GPIO_ACTIVE_HIGH>, <&ioport8 0 GPIO_ACTIVE_HIGH>,
+			   <&ioport8 2 GPIO_ACTIVE_HIGH>, <&ioport8 4 GPIO_ACTIVE_HIGH>;
+		ce-gpios = <&ioport1 4 GPIO_ACTIVE_LOW>;
+		clock-frequency = <DT_FREQ_K(250)>;
+		status = "okay";
+
+		s28hl512t: nor-flash@0 {
+			compatible = "infineon,s28hx512t", "jedec,nor";
+			reg = <0>;
+
+			mspi-io-mode = "MSPI_IO_MODE_OCTAL";
+			mspi-data-rate = "MSPI_DATA_RATE_DUAL";
+			mspi-endian = "MSPI_BIG_ENDIAN";
+			mspi-max-frequency = <DT_FREQ_K(250)>;
+
+			/* s28hl512t parameters */
+			size = <DT_SIZE_M(512)>;
+			erase-block-size = <DT_SIZE_K(256)>;
+			jedec-id = [34 5a 1a];
+			sfdp-bfp = [f7 21 8a ff ff ff ff 1f 00 00 00 00 00 00 00 00
+				    ee ff ff ff ff ff 00 00 ff ff 00 00 0c 21 00 ff
+				    00 ff 12 dc 23 fa ff 8b 82 e7 ff e3 ec 03 1c 60
+				    7a b0 7a b0 f7 66 80 5c 00 00 00 ff f9 10 f8 a0
+				    00 00 00 00 00 00 bc 02 00 00 00 00 ff ff 7e 7e];
+			sfdp-ff05 = [00 ee 80 0b 71 71 65 65 00 b0 ff 96 a8 0b 00 00
+				     0c 55 1c a2];
+			sfdp-ff84 = [41 12 0f fe 21 ff ff dc];
+			command-length = "INSTR_2_BYTE";
+			address-length = "ADDR_4_BYTE";
+
+			reset-gpios = <&ioport1 6 GPIO_ACTIVE_LOW>;
+			t-reset-pulse = <1000>;
+			t-reset-recovery = <500000>;
+
+			status = "okay";
+		};
+	};
+};

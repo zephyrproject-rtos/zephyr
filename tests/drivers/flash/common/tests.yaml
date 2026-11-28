@@ -276,6 +276,12 @@ tests:
       - DTC_OVERLAY_FILE="./socs/ra8_ospi_b_nor.overlay"
     extra_conf_files:
       - ${ZEPHYR_BASE}/tests/drivers/flash/common/socs/ra8_ospi_b_nor.conf
+  drivers.flash.common.mspi_bitbang:
+    filter: dt_compat_enabled("zephyr,mspi-bitbang-controller")
+    platform_allow:
+      - ek_ra8m1
+    extra_args:
+      - FILE_SUFFIX="bitbang"
   drivers.flash.common.mspi_runtime_sfdp:
     platform_allow:
       - nrf7120dk/nrf7120/cpuapp

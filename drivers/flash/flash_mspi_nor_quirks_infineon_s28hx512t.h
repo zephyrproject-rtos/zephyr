@@ -14,6 +14,12 @@
 #define S28HX512T_OCMD_READ_DDR (0xEE)
 #define S28HX512T_OCMD_READ_SDR (0xEC)
 
+/*
+ * Dummy cycles of a volatile register read in 1S-1S-1S with the default
+ * register latency code after reset (CFR3V[7:6] = 0).
+ */
+#define S28HX512T_SPI_VOLATILE_REG_DUMMY (0U)
+
 static bool infineon_s28hx512t_is_register_volatile(uint32_t reg)
 {
 	return reg >= S28HX512T_SPI_NOR_STR1V_ADDR;
@@ -22,21 +28,35 @@ static bool infineon_s28hx512t_is_register_volatile(uint32_t reg)
 static int infineon_s28hx512t_read_register(const struct device *dev, uint32_t reg, uint8_t *value)
 {
 	struct flash_mspi_nor_data *dev_data = dev->data;
+	uint8_t buf[2] = {0};
+	int rc;
 
 	set_up_xfer_with_addr(dev, MSPI_RX, reg, MSPI_PIO);
 
 	if (infineon_s28hx512t_is_register_volatile(reg)) {
-		dev_data->xfer.rx_dummy = dev_data->cmd_info.rdsr_dummy;
+		/* cmd_info.rdsr_dummy describes the octal mode only */
+		if (in_octal_io(dev)) {
+			dev_data->xfer.rx_dummy = dev_data->cmd_info.rdsr_dummy;
+		} else {
+			dev_data->xfer.rx_dummy = S28HX512T_SPI_VOLATILE_REG_DUMMY;
+		}
 	} else {
 		uint8_t read_dummy_cycles = dev_data->cmd_info.read_dummy_cycles;
 
 		dev_data->xfer.rx_dummy = (read_dummy_cycles != 0) ? read_dummy_cycles : 8;
 	}
 
-	dev_data->packet.num_bytes = 1;
-	dev_data->packet.data_buf = value;
+	dev_data->packet.num_bytes = in_ddr(dev) ? 2 : 1;
+	dev_data->packet.data_buf = buf;
 
-	return perform_xfer(dev, S28HX512T_SPI_NOR_CMD_RREG);
+	rc = perform_xfer(dev, S28HX512T_SPI_NOR_CMD_RREG);
+	if (rc < 0) {
+		return rc;
+	}
+
+	*value = buf[0];
+
+	return 0;
 }
 
 static int infineon_s28hx512t_write_register(const struct device *dev, uint32_t reg, uint8_t value)
