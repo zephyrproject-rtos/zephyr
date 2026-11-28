@@ -554,6 +554,15 @@ PTP Clock
   addend register from its nominal value. All in-tree drivers have been converted.
   (:github:`120828`)
 
+Sensors
+=======
+
+* :dtcompatible:`vishay,veml7700` converts counts to lux with the resolution of the current
+  datasheet, 0.0042 lx per count at gain 2 and 800 ms integration time, instead of 0.0036 lx per
+  count. The reported illuminance is about 17 % higher than before, and the threshold attributes,
+  which are given in lux, are converted to correspondingly fewer counts. Applications that
+  compensated for the previous values must be adjusted.
+
 Serial
 ======
 
