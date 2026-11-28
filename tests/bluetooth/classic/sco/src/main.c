@@ -37,6 +37,12 @@ struct bt_conn *__wrap_bt_conn_add_sco(const bt_addr_t *addr, int link_type)
 	return &sco;
 }
 
+struct bt_conn *__wrap_bt_conn_lookup_addr_br(const bt_addr_t *addr)
+{
+	zassert_mem_equal(addr, &peer, sizeof(peer));
+	return bt_conn_ref(&acl);
+}
+
 struct bt_conn *__wrap_bt_conn_lookup_addr_sco(const bt_addr_t *addr)
 {
 	zassert_mem_equal(addr, &peer, sizeof(peer));
@@ -170,6 +176,8 @@ static void before(void *fixture)
 	memset(&acl, 0, sizeof(acl));
 	memset(&sco, 0, sizeof(sco));
 	memset(&chan, 0, sizeof(chan));
+	/* The reference of the ACL connection while it is up */
+	(void)atomic_set(&acl.ref, 1);
 	acl.handle = 0x0123;
 	acl.sec_level = BT_SECURITY_L1;
 	sco.type = BT_CONN_TYPE_SCO;
@@ -197,6 +205,7 @@ static void after(void *fixture)
 	zassert_ok(bt_sco_server_unregister(&server));
 	zassert_equal(send_count, 1);
 	zassert_equal(hook_count, 2);
+	zassert_equal(atomic_get(&acl.ref), 1, "ACL connection reference not released");
 	check_command_buffer_available();
 }
 

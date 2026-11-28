@@ -3389,7 +3389,8 @@ struct bt_br_conn_param {
 
 /** @brief Initiate an BR/EDR connection to a remote device.
  *
- *  Allows initiate new BR/EDR link to remote peer using its address.
+ *  Allows initiate new BR/EDR link to remote peer using its address. The object
+ *  of an earlier connection to the peer, when still referenced, is not used.
  *
  *  The caller gets a new reference to the connection object which must be
  *  released with bt_conn_unref() once done using the object.
@@ -3404,7 +3405,9 @@ struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
 
 /** @brief Look up an existing BR connection by address.
  *
- *  Look up an existing BR connection based on the remote address.
+ *  Look up an existing BR connection based on the remote address. A connection
+ *  that has been disconnected is not found, also when its object is still
+ *  referenced.
  *
  *  The caller gets a new reference to the connection object which must be
  *  released with bt_conn_unref() once done using the object.
