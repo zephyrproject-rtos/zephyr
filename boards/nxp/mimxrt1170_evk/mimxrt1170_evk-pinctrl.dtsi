@@ -37,9 +37,20 @@
 	};
 
 	pinmux_enet: pinmux_enet {
+		/*
+		 * KSZ8081 ENET_INT has an external EVK pull-up. Keep it out of
+		 * the RX group so it does not inherit the RX pull-down.
+		 */
+		enet_int {
+			pinmux = <&iomuxc_gpio_ad_12_gpio9_io11>;
+			/* Do not override the external pull-up. */
+			bias-disable;
+			/* ENET_INT is an input to the SoC. */
+			input-enable;
+		};
+
 		group0 {
-			pinmux = <&iomuxc_gpio_ad_12_gpio9_io11>,
-				 <&iomuxc_gpio_disp_b2_08_enet_rx_en>,
+			pinmux = <&iomuxc_gpio_disp_b2_08_enet_rx_en>,
 				 <&iomuxc_gpio_disp_b2_09_enet_rx_er>;
 			drive-strength = "high";
 			bias-pull-down;
