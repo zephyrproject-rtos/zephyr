@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+shield:
+  name: rakwireless_rak12047
+  full_name: RAK12047 WisBlock VOC Sensor Module
+  vendor: rakwireless
+  supported_features:
+    - sensor

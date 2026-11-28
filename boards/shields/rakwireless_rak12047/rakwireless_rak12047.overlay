@@ -1,0 +1,24 @@
+/*
+ * SPDX-FileCopyrightText: Copyright RAKwireless Technology Limited
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		voc-sensor = &sgp40_rak12047;
+	};
+};
+
+&wisblock_3v3_s {
+	status = "okay";
+};
+
+&wisblock_i2c1 {
+	status = "okay";
+
+	sgp40_rak12047: sgp40@59 {
+		compatible = "sensirion,sgp40";
+		reg = <0x59>;
+		power-domains = <&wisblock_3v3_s>;
+	};
+};
