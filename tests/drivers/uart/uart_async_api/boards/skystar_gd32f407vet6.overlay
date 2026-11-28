@@ -1,0 +1,26 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&dma0 {
+	status = "okay";
+};
+
+&pinctrl {
+	usart1_loopback: usart1_loopback {
+		group1 {
+			pinmux = <USART1_TX_PA2>, <USART1_RX_PA3>;
+		};
+	};
+};
+
+/* Connect PA2 to PA3 for loopback. USART0 remains the console. */
+dut: &usart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_loopback>;
+	pinctrl-names = "default";
+	dmas = <&dma0 6 4 0 0>, <&dma0 5 4 0 0>;
+	dma-names = "tx", "rx";
+	status = "okay";
+};
