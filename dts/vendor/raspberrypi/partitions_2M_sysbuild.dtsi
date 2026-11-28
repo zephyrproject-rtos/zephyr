@@ -21,7 +21,7 @@
 
 		boot_partition: partition@100 {
 			compatible = "zephyr,mapped-partition";
-			reg = <0x100 0xfe00>;
+			reg = <0x100 0xff00>;
 			label = "mcuboot";
 		};
 
