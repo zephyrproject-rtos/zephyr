@@ -1,0 +1,10 @@
+tests:
+  boards.stm32.sai.mclk:
+    tags:
+      - drivers
+      - i2s
+    harness: ztest
+    build_only: true
+    extra_args: DTC_OVERLAY_FILE="boards/stm32n6570_dk.overlay"
+    platform_allow:
+      - stm32n6570_dk/stm32n657xx/sb

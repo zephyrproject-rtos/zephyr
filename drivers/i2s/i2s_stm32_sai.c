@@ -82,8 +82,9 @@ struct stm32_sai_sub_cfg {
 	enum mclk_divider mclk_div;
 	bool synchronous;
 	enum i2s_dir dir;
+	bool is_sub_b;
 
-	const struct device *controller;
+	const struct device *sai;
 };
 
 struct stm32_sai_cfg {
@@ -491,6 +492,10 @@ static int stm32_sai_clock_en(const struct device *dev)
 		return -EIO;
 	}
 
+	if (!sai_cfg->has_sai_ker_ck && !sai_cfg->has_sai_b_ker_ck) {
+		LOG_WRN("%s: SAI kernel clock not configured", dev->name);
+	}
+
 	/* Configure shared SAIn_A & SAIn_B or dedicated SAIn_A kernel clock */
 	if (sai_cfg->has_sai_ker_ck) {
 		ret = clock_control_configure(clk, (clock_control_subsys_t)&sai_cfg->sai_ker_ck,
@@ -550,7 +555,7 @@ static int sai_sub_init(const struct device *dev)
 static int stm32_sai_sub_f4_clk_src_conf(const struct device *dev)
 {
 	const struct stm32_sai_sub_cfg *sub_cfg = dev->config;
-	const struct stm32_sai_cfg *sai_cfg = sub_cfg->controller->config;
+	const struct stm32_sai_cfg *sai_cfg = sub_cfg->sai->config;
 	struct stm32_sai_sub_data *sub_data = dev->data;
 	SAI_HandleTypeDef *hsai = &sub_data->hsai;
 	uint32_t clock_source = 0U;
@@ -1134,6 +1139,97 @@ static DEVICE_API(i2s, i2s_stm32_sai_api) = {
 	.config_get = stm32_sai_sub_conf_get,
 };
 
+#ifdef CONFIG_I2S_STM32_SAI_MCLK_CLOCK_CONTROL
+struct stm32_sai_sub_mclk_cfg {
+	const struct device *sai_sub;
+};
+
+/*
+ * MCLK gating follows the sub-block configuration (MCKEN and MCKDIV are set
+ * by stm32_sai_sub_conf()), so there is nothing to switch on here. Consumers
+ * may call .on() before the sub-block is configured.
+ */
+static int stm32_sai_sub_mclk_on(const struct device *dev, clock_control_subsys_t sys)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(sys);
+
+	return 0;
+}
+
+static int stm32_sai_sub_mclk_get_rate(const struct device *dev, clock_control_subsys_t sys,
+				       uint32_t *rate)
+{
+	const struct stm32_sai_sub_mclk_cfg *cfg = dev->config;
+	const struct stm32_sai_sub_data *sub_data = cfg->sai_sub->data;
+	const struct stm32_sai_sub_cfg *sub_cfg = cfg->sai_sub->config;
+	const struct stm32_sai_cfg *sai_cfg = sub_cfg->sai->config;
+	const struct stm32_pclken *ker_ck;
+	uint32_t cr1, mckdiv, ker_ck_freq;
+
+	ARG_UNUSED(sys);
+
+	/*
+	 * Most STM32 series provide an MCKEN bit in CR1 to indicate whether MCLK
+	 * is enabled. F4, F7 and older L4 series do not have this bit; on these
+	 * series, MCLK is always enabled when the sub-block operates as a controller.
+	 * CR1 cannot be used to determine the controller mode on these series,
+	 * since its reset value already selects controller mode. Instead, use the
+	 * configuration stored by the driver.
+	 */
+#if defined(SAI_xCR1_MCKEN)
+	if ((stm32_reg_read(&sub_data->hsai.Instance->CR1) & SAI_xCR1_MCKEN) == 0U) {
+		return -ENOTSUP;
+	}
+#else
+	if (!sub_cfg->mclk_enable || !sub_data->stream.master ||
+	    (sub_data->stream.state == I2S_STATE_NOT_READY)) {
+		return -ENOTSUP;
+	}
+#endif /* SAI_xCR1_MCKEN */
+
+	if (sub_cfg->is_sub_b && sai_cfg->has_sai_b_ker_ck) {
+		ker_ck = &sai_cfg->sai_b_ker_ck;
+	} else if (sai_cfg->has_sai_ker_ck) {
+		ker_ck = &sai_cfg->sai_ker_ck;
+	} else {
+		/* Kernel clock source not described in devicetree: rate unknown */
+		return -ENOTSUP;
+	}
+
+	if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+				   (clock_control_subsys_t)ker_ck, &ker_ck_freq) != 0) {
+		return -EIO;
+	}
+
+	cr1 = stm32_reg_read(&sub_data->hsai.Instance->CR1);
+	mckdiv = (cr1 & SAI_xCR1_MCKDIV_Msk) >> SAI_xCR1_MCKDIV_Pos;
+
+	/* MCKDIV = 0 divides by 1 on all series */
+	if (mckdiv == 0U) {
+		*rate = ker_ck_freq;
+	} else {
+#if defined(SAI_xCR1_OSR)
+		/* MCLK_x = SAI_CK_x / MCKDIV */
+		*rate = ker_ck_freq / mckdiv;
+#else
+		/* SAI without OSR (F4, F7, older L4): MCLK_x = SAI_CK_x / (MCKDIV * 2) */
+		*rate = ker_ck_freq / (mckdiv * 2U);
+#endif /* SAI_xCR1_OSR */
+	}
+
+	LOG_DBG("%s: ker_ck_freq=%u mckdiv=%u mclk=%u", cfg->sai_sub->name, ker_ck_freq,
+		mckdiv, *rate);
+
+	return 0;
+}
+
+static DEVICE_API(clock_control, stm32_sai_sub_mclk_api) = {
+	.on = stm32_sai_sub_mclk_on,
+	.get_rate = stm32_sai_sub_mclk_get_rate,
+};
+#endif /* CONFIG_I2S_STM32_SAI_MCLK_CLOCK_CONTROL */
+
 #define SAI_FIFO_THRESHOLD(node) sai_fifo_threshold[DT_ENUM_IDX(node, fifo_threshold)]
 
 #define SAI_SUB_DMA_CHANNEL_INIT(node, src, dest)                                                  \
@@ -1151,6 +1247,27 @@ static DEVICE_API(i2s, i2s_stm32_sai_api) = {
 		.stream_start = stream_start,                                                      \
 		.queue_drop = queue_drop,                                                          \
 	}
+
+/* Sub-block B is always at offset 0x24 from its parent SAI, block A at 0x04, on every series */
+#define SAI_IS_SUB_B(node)                                                                         \
+	((DT_REG_ADDR(node) - DT_REG_ADDR(DT_PARENT(node))) == 0x24U)
+
+#ifdef CONFIG_I2S_STM32_SAI_MCLK_CLOCK_CONTROL
+#define SAI_SUB_MCLK_DEV_INIT(node)                                                                \
+	static const struct stm32_sai_sub_mclk_cfg mclk_cfg_##node = {                             \
+		.sai_sub = DEVICE_DT_GET(DT_PARENT(node)),                                         \
+	};                                                                                         \
+	DEVICE_DT_DEFINE(node, NULL, NULL, NULL, &mclk_cfg_##node,                                 \
+			 POST_KERNEL, CONFIG_I2S_INIT_PRIORITY, &stm32_sai_sub_mclk_api);
+
+/* Extra level so mclk is expanded before SAI_SUB_MCLK_DEV_INIT pastes it */
+#define SAI_SUB_MCLK_CHILD_INIT(mclk)                                                              \
+	IF_ENABLED(DT_NODE_HAS_STATUS_OKAY(mclk), (SAI_SUB_MCLK_DEV_INIT(mclk)))
+
+#define SAI_SUB_MCLK_INIT(node) SAI_SUB_MCLK_CHILD_INIT(DT_CHILD(node, mclk))
+#else
+#define SAI_SUB_MCLK_INIT(node)
+#endif /* CONFIG_I2S_STM32_SAI_MCLK_CLOCK_CONTROL */
 
 #define SAI_SUB_INIT(node)                                                                         \
 	PINCTRL_DT_DEFINE(node);                                                                   \
@@ -1174,13 +1291,16 @@ static DEVICE_API(i2s, i2s_stm32_sai_api) = {
 		.mclk_enable = DT_PROP(node, mclk_enable),                                         \
 		.mclk_div = DT_ENUM_IDX(node, mclk_divider),                                       \
 		.synchronous = DT_PROP(node, synchronous),                                         \
-		.controller = DEVICE_DT_GET(DT_PARENT(node)),                                      \
+		.is_sub_b = SAI_IS_SUB_B(node),                                                    \
+		.sai = DEVICE_DT_GET(DT_PARENT(node)),                                             \
 		.dir = COND_CODE_1(DT_DMAS_HAS_NAME(node, tx), (I2S_DIR_TX), (I2S_DIR_RX)),        \
 	};                                                                                         \
 	DEVICE_DT_DEFINE(node, &sai_sub_init, NULL, &sub_data_##node, &sub_cfg_##node,             \
 			 POST_KERNEL, CONFIG_I2S_INIT_PRIORITY, &i2s_stm32_sai_api);               \
 	K_MSGQ_DEFINE_STATIC_TYPE(queue_##node, struct queue_item,                                 \
-				  CONFIG_I2S_STM32_SAI_BLOCK_COUNT);
+				  CONFIG_I2S_STM32_SAI_BLOCK_COUNT);                        \
+                                                                                                   \
+	SAI_SUB_MCLK_INIT(node)
 
 #define SAI_KER_CK_FIELD_INIT(inst, n)                                                             \
 	COND_CODE_1(DT_INST_CLOCKS_HAS_NAME(inst, n),                                              \
