@@ -62,6 +62,7 @@ if(NOT CONFIG_NRF_DONT_USE_STABLE_BSP)
 endif()
 
 zephyr_library_sources(nrfx_glue.c)
+zephyr_library_sources(nrfx_ain_dt_check.c)
 zephyr_library_sources(${HELPERS_DIR}/nrfx_flag32_allocator.c)
 zephyr_library_sources_ifdef(CONFIG_HAS_NORDIC_RAM_CTRL       ${HELPERS_DIR}/nrfx_ram_ctrl.c)
 

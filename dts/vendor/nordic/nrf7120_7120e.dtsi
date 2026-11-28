@@ -161,6 +161,24 @@
 		status = "disabled";
 	};
 
+	nrf_ain: analog-inputs {
+		compatible = "nordic,nrf-ain";
+		ain-gpios = <&gpio0 0 0>,
+			    <&gpio0 1 0>,
+			    <&gpio0 2 0>,
+			    <&gpio0 3 0>,
+			    <&gpio0 4 0>,
+			    <&gpio0 6 0>,
+			    <&gpio0 7 0>,
+			    <&gpio0 8 0>,
+			    <&gpio4 0 0>,
+			    <&gpio4 1 0>,
+			    <&gpio4 2 0>,
+			    <&gpio4 3 0>,
+			    <&gpio4 4 0>,
+			    <&gpio4 5 0>;
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;

@@ -73,6 +73,9 @@ BUILD_ASSERT((NRF_COMP_AIN0 == NRFX_ANALOG_EXTERNAL_AIN0) &&
 	     1,
 	     "Definitions from nrf-comp.h do not match those from nrfx_analog_common.h");
 
+NRF_DT_CHECK_AIN(DT_DRV_INST(0), psel, "psel", NRF_COMP_AIN_VDD_SHIM_OFFSET);
+NRF_DT_CHECK_AIN(DT_DRV_INST(0), extrefsel, "extrefsel", NRF_COMP_AIN_VDD_SHIM_OFFSET);
+
 #if !NRF_COMP_HAS_SP_MODE_NORMAL
 BUILD_ASSERT(SHIM_NRF_COMP_DT_INST_SP_MODE(0) != COMP_NRF_COMP_SP_MODE_NORMAL);
 #endif

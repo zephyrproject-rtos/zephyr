@@ -39,6 +39,14 @@ BUILD_ASSERT((NRF_SAADC_AIN0 == NRFX_ANALOG_EXTERNAL_AIN0) &&
 	     1,
 	     "Definitions from nrf-saadc.h do not match those from nrfx_analog_common.h");
 
+#define SAADC_CHECK_CHANNEL_AIN(node_id)                                                           \
+	NRF_DT_CHECK_AIN(node_id, zephyr_input_positive, "zephyr,input-positive",                  \
+			 NRF_SAADC_AIN_TEST_SHIM_OFFSET);                                          \
+	NRF_DT_CHECK_AIN(node_id, zephyr_input_negative, "zephyr,input-negative",                  \
+			 NRF_SAADC_AIN_TEST_SHIM_OFFSET);
+
+DT_INST_FOREACH_CHILD_STATUS_OKAY(0, SAADC_CHECK_CHANNEL_AIN)
+
 struct driver_data {
 	struct adc_context ctx;
 	uint8_t single_ended_channels;

@@ -77,6 +77,18 @@
 		};
 	};
 
+	nrf_ain: analog-inputs {
+		compatible = "nordic,nrf-ain";
+		ain-gpios = <&gpio1 4 0>,
+			    <&gpio1 5 0>,
+			    <&gpio1 6 0>,
+			    <&gpio1 7 0>,
+			    <&gpio1 11 0>,
+			    <&gpio1 12 0>,
+			    <&gpio1 13 0>,
+			    <&gpio1 14 0>;
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
