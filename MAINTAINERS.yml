@@ -2218,7 +2218,6 @@ Documentation Infrastructure:
 "Drivers: GPIO":
   status: odd fixes
   collaborators:
-    - henrikbrixandersen
     - dnltz
   files:
     - doc/hardware/peripherals/gpio.rst
@@ -2230,6 +2229,22 @@ Documentation Infrastructure:
     - tests/drivers/gpio/
     - tests/drivers/build_all/gpio/
     - samples/drivers/gpio/
+  file-groups:
+    - name: GPIO driver subsystem
+      collaborators:
+        - henrikbrixandersen
+      files:
+        - doc/hardware/peripherals/gpio.rst
+        - drivers/gpio/gpio_hogs.c
+        - drivers/gpio/gpio_shell.c
+        - drivers/gpio/gpio_handlers.c
+        - dts/bindings/gpio/gpio-*
+        - dts/bindings/gpio/zephyr,*
+        - include/zephyr/drivers/gpio.h
+        - include/zephyr/dt-bindings/gpio/gpio.h
+        - tests/drivers/gpio/
+        - tests/drivers/build_all/gpio/
+        - samples/drivers/gpio/
   labels:
     - "area: GPIO"
   tests:
