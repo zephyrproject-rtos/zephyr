@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Dotcom IoT LLP
+# SPDX-License-Identifier: Apache-2.0
+
+description: ST STHS34PF80 infrared presence and motion detection sensor (I2C)
+
+compatible: "st,sths34pf80"
+
+include: ["st,sths34pf80-common.yaml", i2c-device.yaml]
