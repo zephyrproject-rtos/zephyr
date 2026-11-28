@@ -10,11 +10,13 @@ if REALTEK_RTS5912_RTMR
 config PM
 	default y
 
+# RTOSTimer (RTMR) is clocked from the 25 MHz RC25M oscillator divided by 780
+# (25,000,000 Hz / 780 = 32,051.28 Hz).
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 32768
+	default 32051
 
 config SYS_CLOCK_TICKS_PER_SEC
-	default 32768
+	default 32051
 
 config ARCH_HAS_CUSTOM_BUSY_WAIT
 	default y
