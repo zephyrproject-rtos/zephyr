@@ -13,8 +13,12 @@
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/settings/settings.h>
 
+#include "common/long_wq.h"
+#include "conn_internal.h"
 #include "gatt_internal.h"
+#include "settings.h"
 
 /* Custom Service Variables */
 static const struct bt_uuid_128 test_uuid = BT_UUID_INIT_128(
@@ -97,7 +101,25 @@ static struct bt_gatt_attr test1_attrs[] = {
 
 static struct bt_gatt_service test1_svc = BT_GATT_SERVICE(test1_attrs);
 
-ZTEST_SUITE(test_gatt, NULL, NULL, NULL, NULL, NULL);
+static void *test_gatt_setup(void)
+{
+	/* Registrations after GATT is initialized need the settings loaded */
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		int err;
+
+		bt_gatt_init();
+
+		err = settings_subsys_init();
+		zassert_equal(err, 0, "settings init failed: %d", err);
+
+		err = settings_load();
+		zassert_equal(err, 0, "settings load failed: %d", err);
+	}
+
+	return NULL;
+}
+
+ZTEST_SUITE(test_gatt, NULL, test_gatt_setup, NULL, NULL, NULL);
 
 ZTEST(test_gatt, test_gatt_register)
 {
@@ -619,3 +641,416 @@ ZTEST(test_gatt, test_gatt_db_hash_psa_dynamic_register_no_leak)
 			     settle_ms, i);
 	}
 }
+
+static const struct bt_uuid_128 hash_before_uuid = BT_UUID_INIT_128(
+	0xf6, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
+	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
+
+static const struct bt_uuid_128 hash_hold_uuid = BT_UUID_INIT_128(
+	0xf7, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
+	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
+
+static K_SEM_DEFINE(hash_held, 0, 1);
+static K_SEM_DEFINE(hash_resume, 0, 1);
+
+/* Hold the current thread until hash_resume is given */
+static void hash_hold(void)
+{
+	__maybe_unused int err;
+
+	k_sem_give(&hash_held);
+
+	err = k_sem_take(&hash_resume, K_FOREVER);
+	__ASSERT_NO_MSG(err == 0);
+}
+
+/* Set to hold the next read of hash_hold_attrs' declaration, which the
+ * database hash computation does.
+ */
+static atomic_t hash_walk_armed;
+
+static ssize_t read_hash_hold_svc(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
+				  uint16_t len, uint16_t offset)
+{
+	if (atomic_cas(&hash_walk_armed, 1, 0)) {
+		hash_hold();
+	}
+
+	return bt_gatt_attr_read_service(conn, attr, buf, len, offset);
+}
+
+static struct bt_gatt_attr hash_before_attrs[] = {
+	BT_GATT_PRIMARY_SERVICE(&hash_before_uuid),
+};
+
+static struct bt_gatt_service hash_before_svc = BT_GATT_SERVICE(hash_before_attrs);
+
+static struct bt_gatt_attr hash_hold_attrs[] = {
+	BT_GATT_ATTRIBUTE(BT_UUID_GATT_PRIMARY, BT_GATT_PERM_READ, read_hash_hold_svc, NULL,
+			  (void *)&hash_hold_uuid),
+};
+
+static struct bt_gatt_service hash_hold_svc = BT_GATT_SERVICE(hash_hold_attrs);
+
+static ssize_t read_db_hash_conn(struct bt_conn *conn, uint8_t hash[BT_GATT_DB_HASH_SIZE])
+{
+	const struct bt_gatt_attr *attr;
+
+	attr = bt_gatt_find_by_uuid(NULL, 0, BT_UUID_GATT_DB_HASH);
+	if (attr == NULL) {
+		return -ENOENT;
+	}
+
+	return attr->read(conn, attr, hash, BT_GATT_DB_HASH_SIZE, 0U);
+}
+
+static ssize_t read_db_hash(uint8_t hash[BT_GATT_DB_HASH_SIZE])
+{
+	return read_db_hash_conn(NULL, hash);
+}
+
+static struct bt_conn *hash_read_conn;
+static uint8_t hash_read_value[BT_GATT_DB_HASH_SIZE];
+static ssize_t hash_read_len;
+static K_SEM_DEFINE(hash_read_done, 0, 1);
+
+static void hash_read_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	hash_read_len = read_db_hash_conn(hash_read_conn, hash_read_value);
+	k_sem_give(&hash_read_done);
+}
+
+static K_WORK_DEFINE(hash_read_work, hash_read_handler);
+
+static void long_wq_noop_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+}
+
+/* Wait for the hash work if it is running */
+static void long_wq_flush(void)
+{
+	struct k_work_sync sync;
+	struct k_work work;
+	int err;
+
+	/* Without it the tests are skipped: there is no work to wait for */
+	if (!IS_ENABLED(CONFIG_BT_LONG_WQ)) {
+		return;
+	}
+
+	k_work_init(&work, long_wq_noop_handler);
+
+	err = bt_long_wq_submit(&work);
+	zassert_true(err >= 0, "long workqueue submit failed: %d", err);
+
+	(void)k_work_flush(&work, &sync);
+}
+
+/* Register hash_before_svc and hash_hold_svc, in this order, so that the
+ * hash computation has walked past hash_before_svc when it is held.
+ */
+static void hash_svcs_register(void)
+{
+	int err;
+
+	err = bt_gatt_service_register(&hash_before_svc);
+	zassert_equal(err, 0, "registration failed: %d", err);
+	err = bt_gatt_service_register(&hash_hold_svc);
+	zassert_equal(err, 0, "registration failed: %d", err);
+}
+
+/* Check the hash against one computed for the database as it is */
+static void hash_check(const uint8_t hash[BT_GATT_DB_HASH_SIZE])
+{
+	uint8_t expected[BT_GATT_DB_HASH_SIZE];
+	ssize_t len;
+	int err;
+
+	/* A change and its revert make the next read compute the hash */
+	err = bt_gatt_service_register(&hash_before_svc);
+	zassert_equal(err, 0, "registration failed: %d", err);
+	err = bt_gatt_service_unregister(&hash_before_svc);
+	zassert_equal(err, 0, "unregistration failed: %d", err);
+
+	len = read_db_hash(expected);
+	zassert_equal(len, sizeof(expected), "hash read failed: %d", (int)len);
+	zassert_mem_equal(hash, expected, sizeof(expected),
+			  "hash is not the one of the database after the change");
+}
+
+static void test_gatt_db_hash_before(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	/* Without the long workqueue the hash work needs bt_enable() */
+	if (!IS_ENABLED(CONFIG_BT_GATT_CACHING) || !IS_ENABLED(CONFIG_BT_LONG_WQ)) {
+		ztest_test_skip();
+	}
+}
+
+static void *test_gatt_db_hash_setup(void)
+{
+	bt_gatt_init();
+
+	return test_gatt_setup();
+}
+
+static void hash_svc_cleanup(struct bt_gatt_service *svc)
+{
+	if (bt_gatt_service_is_registered(svc)) {
+		int err = bt_gatt_service_unregister(svc);
+
+		zassert_equal(err, 0, "unregistration failed: %d", err);
+	}
+}
+
+/* A peer that uses Robust Caching. The connection is not established, which
+ * the attribute handlers and the change-aware check do not need.
+ */
+static struct bt_conn hash_peer_conn = {
+	.type = BT_CONN_TYPE_LE,
+	.le.dst = {
+		.type = BT_ADDR_LE_RANDOM,
+		.a.val = { 0x01, 0x02, 0x03, 0x04, 0x05, 0xc6 },
+	},
+};
+
+/* Set to hold the next store of the hash, before it is written */
+static atomic_t hash_store_armed;
+
+#if defined(CONFIG_SETTINGS_CUSTOM)
+void bt_testing_settings_store_hook(const char *key, const void *value, size_t val_len)
+{
+	if (strcmp(key, "bt/hash") == 0 && atomic_cas(&hash_store_armed, 1, 0)) {
+		hash_hold();
+	}
+}
+#endif /* CONFIG_SETTINGS_CUSTOM */
+
+static void test_gatt_db_hash_after(void *fixture)
+{
+	struct k_work_sync sync;
+	int err;
+
+	ARG_UNUSED(fixture);
+
+	/* Let go of whatever a failed test left held */
+	(void)atomic_clear(&hash_walk_armed);
+	(void)atomic_clear(&hash_store_armed);
+	k_sem_give(&hash_resume);
+	(void)k_work_flush(&hash_read_work, &sync);
+	long_wq_flush();
+
+	k_sem_reset(&hash_held);
+	k_sem_reset(&hash_resume);
+	k_sem_reset(&hash_read_done);
+	hash_read_conn = NULL;
+
+	err = bt_gatt_clear(hash_peer_conn.id, &hash_peer_conn.le.dst);
+	zassert_equal(err, 0, "clearing the peer failed: %d", err);
+
+	hash_svc_cleanup(&hash_before_svc);
+	hash_svc_cleanup(&hash_hold_svc);
+}
+
+ZTEST_SUITE(test_gatt_db_hash, NULL, test_gatt_db_hash_setup, test_gatt_db_hash_before,
+	    test_gatt_db_hash_after, NULL);
+
+/* A database change while the hash work walks the database: the work is
+ * held in hash_hold_svc, past hash_before_svc, which is unregistered.
+ */
+static ZTEST(test_gatt_db_hash, test_change_during_work)
+{
+	uint8_t hash[BT_GATT_DB_HASH_SIZE];
+	ssize_t len;
+	int err;
+
+	/* The registrations schedule the hash work */
+	hash_svcs_register();
+	(void)atomic_set(&hash_walk_armed, 1);
+
+	err = k_sem_take(&hash_held, K_SECONDS(1));
+	zassert_equal(err, 0, "hash work not held");
+
+	err = bt_gatt_service_unregister(&hash_before_svc);
+	zassert_equal(err, 0, "unregistration failed: %d", err);
+
+	k_sem_give(&hash_resume);
+	long_wq_flush();
+	zassert_true(bt_gatt_is_db_hash_valid(), "hash not computed after the change");
+
+	len = read_db_hash(hash);
+	zassert_equal(len, sizeof(hash), "hash read failed: %d", (int)len);
+
+	hash_check(hash);
+}
+
+/* A database change while a Database Hash read computes the hash: the
+ * read is held in hash_hold_svc, past hash_before_svc, which is
+ * unregistered.
+ */
+static ZTEST(test_gatt_db_hash, test_change_during_read)
+{
+	int err;
+
+	/* The registrations leave the hash to compute: the read does it */
+	hash_svcs_register();
+	(void)atomic_set(&hash_walk_armed, 1);
+
+	err = k_work_submit(&hash_read_work);
+	zassert_true(err >= 0, "work submit failed: %d", err);
+
+	err = k_sem_take(&hash_held, K_SECONDS(1));
+	zassert_equal(err, 0, "hash read not held");
+
+	err = bt_gatt_service_unregister(&hash_before_svc);
+	zassert_equal(err, 0, "unregistration failed: %d", err);
+
+	k_sem_give(&hash_resume);
+
+	err = k_sem_take(&hash_read_done, K_SECONDS(1));
+	zassert_equal(err, 0, "hash read not done");
+	zassert_equal(hash_read_len, sizeof(hash_read_value), "hash read failed: %d",
+		      (int)hash_read_len);
+
+	hash_check(hash_read_value);
+}
+
+#if defined(CONFIG_SETTINGS_CUSTOM)
+/* The settings backend of the test, which keeps the last stored hash */
+static uint8_t test_stored_hash[BT_GATT_DB_HASH_SIZE];
+
+static int test_settings_load(struct settings_store *cs, const struct settings_load_arg *arg)
+{
+	ARG_UNUSED(cs);
+	ARG_UNUSED(arg);
+
+	return 0;
+}
+
+static int test_settings_save(struct settings_store *cs, const char *name, const char *value,
+			      size_t val_len)
+{
+	ARG_UNUSED(cs);
+
+	if (strcmp(name, "bt/hash") == 0 && val_len == sizeof(test_stored_hash)) {
+		(void)memcpy(test_stored_hash, value, sizeof(test_stored_hash));
+	}
+
+	return 0;
+}
+
+static struct settings_store_itf test_settings_itf = {
+	.csi_load = test_settings_load,
+	.csi_save = test_settings_save,
+};
+
+static struct settings_store test_settings_store = {
+	.cs_itf = &test_settings_itf,
+};
+
+int settings_backend_init(void);
+
+int settings_backend_init(void)
+{
+	settings_dst_register(&test_settings_store);
+	settings_src_register(&test_settings_store);
+
+	return 0;
+}
+
+/* Two stores of the hash that complete out of order: the hash work's store of
+ * the hash of an older database is held until the settings commit handler has
+ * computed and stored that of a newer one.
+ */
+static ZTEST(test_gatt_db_hash, test_store_order)
+{
+	uint8_t expected[BT_GATT_DB_HASH_SIZE];
+	ssize_t len;
+	int err;
+
+	/* The read leaves no hash work pending */
+	len = read_db_hash(expected);
+	zassert_equal(len, sizeof(expected), "hash read failed: %d", (int)len);
+
+	/* A change makes the hash work compute and store the hash */
+	(void)atomic_set(&hash_store_armed, 1);
+	err = bt_gatt_service_register(&hash_before_svc);
+	zassert_equal(err, 0, "registration failed: %d", err);
+
+	err = k_sem_take(&hash_held, K_SECONDS(1));
+	zassert_equal(err, 0, "hash store not held");
+
+	/* The settings commit handler computes and stores the hash after
+	 * another change
+	 */
+	err = bt_gatt_service_register(&hash_hold_svc);
+	zassert_equal(err, 0, "registration failed: %d", err);
+	err = settings_load_subtree("bt/hash");
+	zassert_equal(err, 0, "settings load failed: %d", err);
+
+	k_sem_give(&hash_resume);
+	long_wq_flush();
+
+	len = read_db_hash(expected);
+	zassert_equal(len, sizeof(expected), "hash read failed: %d", (int)len);
+	zassert_mem_equal(test_stored_hash, expected, sizeof(expected),
+			  "stored hash is not the current one");
+}
+
+/* A database change while a Database Hash read stores the hash, before it
+ * answers: the peer gets the hash of the database before the change and must
+ * stay change-unaware.
+ */
+static ZTEST(test_gatt_db_hash, test_change_during_read_store)
+{
+	const uint8_t robust_caching = BIT(0);
+	uint8_t hash[BT_GATT_DB_HASH_SIZE];
+	const struct bt_gatt_attr *attr;
+	ssize_t len;
+	int err;
+
+	attr = bt_gatt_find_by_uuid(NULL, 0, BT_UUID_GATT_CLIENT_FEATURES);
+	zassert_not_null(attr, "no Client Supported Features");
+
+	len = attr->write(&hash_peer_conn, attr, &robust_caching, sizeof(robust_caching), 0U, 0U);
+	zassert_equal(len, sizeof(robust_caching), "write failed: %d", (int)len);
+
+	/* A change makes the peer change-unaware, and leaves the hash to
+	 * compute and store: the read does it.
+	 */
+	err = bt_gatt_service_register(&hash_before_svc);
+	zassert_equal(err, 0, "registration failed: %d", err);
+
+	(void)atomic_set(&hash_store_armed, 1);
+	hash_read_conn = &hash_peer_conn;
+
+	err = k_work_submit(&hash_read_work);
+	zassert_true(err >= 0, "work submit failed: %d", err);
+
+	err = k_sem_take(&hash_held, K_SECONDS(1));
+	zassert_equal(err, 0, "hash store not held");
+
+	err = bt_gatt_service_register(&hash_hold_svc);
+	zassert_equal(err, 0, "registration failed: %d", err);
+
+	k_sem_give(&hash_resume);
+
+	err = k_sem_take(&hash_read_done, K_SECONDS(1));
+	zassert_equal(err, 0, "hash read not done");
+	zassert_equal(hash_read_len, sizeof(hash_read_value), "hash read failed: %d",
+		      (int)hash_read_len);
+
+	zassert_false(bt_gatt_change_aware(&hash_peer_conn, true),
+		      "peer change-aware after reading the hash of an older database");
+
+	/* A read of the current hash does make it change-aware */
+	len = read_db_hash_conn(&hash_peer_conn, hash);
+	zassert_equal(len, sizeof(hash), "hash read failed: %d", (int)len);
+	zassert_true(bt_gatt_change_aware(&hash_peer_conn, true),
+		     "peer change-unaware after reading the current hash");
+}
+#endif /* CONFIG_SETTINGS_CUSTOM */
