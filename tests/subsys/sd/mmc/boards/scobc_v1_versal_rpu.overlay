@@ -9,11 +9,3 @@
 		sdhc0 = &sdhci1;
 	};
 };
-
-&sdhci1 {
-	status = "okay";
-
-	mmc {
-		status = "okay";
-	};
-};
