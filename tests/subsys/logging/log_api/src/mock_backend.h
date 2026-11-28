@@ -21,7 +21,7 @@ struct mock_log_backend_msg {
 	uint16_t domain_id;
 	uint8_t level;
 	bool check;
-	char str[128];
+	char *str;
 	uint8_t data[32];
 	uint32_t data_len;
 };
@@ -29,11 +29,13 @@ struct mock_log_backend_msg {
 struct mock_log_backend {
 	bool do_check;
 	bool panic;
-	struct mock_log_backend_msg exp_msgs[64];
-	int msg_rec_idx;
-	int msg_proc_idx;
-	int exp_drop_cnt;
-	int drop_cnt;
+	struct mock_log_backend_msg exp_msgs[100];
+	char str_buf[4096];
+	size_t str_buf_idx;
+	uint32_t msg_rec_idx;
+	uint32_t msg_proc_idx;
+	uint32_t exp_drop_cnt;
+	uint32_t drop_cnt;
 
 #if defined(CONFIG_LOG_MODE_DEFERRED) && \
 	defined(CONFIG_LOG_PROCESS_THREAD)
@@ -45,9 +47,9 @@ void mock_log_backend_reset(const struct log_backend *backend);
 void mock_log_backend_check_enable(const struct log_backend *backend);
 void mock_log_backend_check_disable(const struct log_backend *backend);
 
-void mock_log_backend_dummy_record(const struct log_backend *backend, int cnt);
+void mock_log_backend_dummy_record(const struct log_backend *backend, uint32_t cnt);
 
-void mock_log_backend_drop_record(const struct log_backend *backend, int cnt);
+void mock_log_backend_drop_record(const struct log_backend *backend, uint32_t cnt);
 
 void mock_log_backend_generic_record(const struct log_backend *backend,
 				     uint16_t source_id,

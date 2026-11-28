@@ -12,6 +12,7 @@ void mock_log_backend_reset(const struct log_backend *backend)
 {
 	struct mock_log_backend *mock = backend->cb->ctx;
 
+	mock->str_buf_idx = 0;
 	mock->msg_rec_idx = 0;
 	mock->msg_proc_idx = 0;
 	mock->do_check = true;
@@ -34,18 +35,18 @@ void mock_log_backend_check_disable(const struct log_backend *backend)
 	mock->do_check = false;
 }
 
-void mock_log_backend_dummy_record(const struct log_backend *backend, int cnt)
+void mock_log_backend_dummy_record(const struct log_backend *backend, uint32_t cnt)
 {
 	struct mock_log_backend *mock = backend->cb->ctx;
 
-	for (int i = 0; i < cnt; i++) {
+	for (uint32_t i = 0; i < cnt; i++) {
 		mock->exp_msgs[mock->msg_rec_idx + i].check = false;
 	}
 
 	mock->msg_rec_idx += cnt;
 }
 
-void mock_log_backend_drop_record(const struct log_backend *backend, int cnt)
+void mock_log_backend_drop_record(const struct log_backend *backend, uint32_t cnt)
 {
 	struct mock_log_backend *mock = backend->cb->ctx;
 
@@ -78,9 +79,11 @@ void mock_log_backend_generic_record(const struct log_backend *backend,
 	exp->domain_id = domain_id;
 	exp->level = level;
 
-	int len = strlen(str);
+	size_t len = strlen(str);
 
-	__ASSERT_NO_MSG(len < sizeof(exp->str));
+	__ASSERT_NO_MSG(mock->str_buf_idx + len + 1 <= sizeof(mock->str_buf));
+	exp->str = &mock->str_buf[mock->str_buf_idx];
+	mock->str_buf_idx += (len + 1);
 
 	memcpy(exp->str, str, len);
 	exp->str[len] = 0;
@@ -91,6 +94,7 @@ void mock_log_backend_generic_record(const struct log_backend *backend,
 	exp->data_len = data_len;
 
 	mock->msg_rec_idx++;
+	zassert_true(mock->msg_rec_idx <= ARRAY_SIZE(mock->exp_msgs));
 }
 
 void mock_log_backend_validate(const struct log_backend *backend, bool panic)

@@ -92,9 +92,10 @@ struct backend_cb backend_ctrl_blk;
 	_cnt--; \
 	inc_cnt += _cnt; \
 	if (_print) { \
-		DBG_PRINT("%d log message with %d arguments fit in %d space.\n", \
+		PRINT("%d log message with %d arguments fit in %d space.\n", \
 			_cnt, nargs, CONFIG_LOG_BUFFER_SIZE); \
 	} \
+	log_flush(); \
 } while (0)
 
 /** Test how many messages fits in the logging buffer in deferred mode. Test
@@ -117,23 +118,132 @@ ZTEST(test_log_benchmark, test_log_capacity)
 	PRINT("In total %d message were stored.\n", total_cnt);
 }
 
-#define TEST_LOG_MESSAGE_STORE_NO_OVERFLOW(nargs, inc_time, inc_msg) do { \
-	int _msg_cnt = 0; \
-	TEST_LOG_CAPACITY(nargs, _msg_cnt, 0); \
+#define TEST_LOG_MESSAGE(inc_time, _repeat, ...) do { \
 	test_helpers_log_setup(); \
 	uint32_t cyc = test_helpers_cycle_get(); \
-	for (int i = 0; i < _msg_cnt; i++) { \
-		LOG_ERR("test" LISTIFY(nargs, TEST_FORMAT_SPEC, ()) \
-				LISTIFY(nargs, TEST_VALUE, ())); \
+	for (int i = 0; i < _repeat; i++) { \
+		LOG_ERR(__VA_ARGS__); \
 	} \
 	cyc = test_helpers_cycle_get() - cyc; \
 	inc_time += cyc; \
-	inc_msg += _msg_cnt; \
-	DBG_PRINT("%d arguments message logged in %u cycles (%u us). " \
-		  "%d message logged in %u cycles.\n", \
-			nargs, cyc / _msg_cnt, k_cyc_to_us_ceil32(cyc) / _msg_cnt, \
-			_msg_cnt, cyc); \
+	DBG_PRINT("Message logged in %u cycles (%u us). %d message logged in %u cycles.\n", \
+			cyc / _repeat, k_cyc_to_us_ceil32(cyc) / _repeat, _repeat, cyc); \
 } while (0)
+
+#define TEST_LOG_MESSAGE_STORE_NO_OVERFLOW(nargs, inc_time, inc_msg) do { \
+	int _msg_cnt = 0; \
+	TEST_LOG_CAPACITY(nargs, _msg_cnt, 0); \
+	TEST_LOG_MESSAGE(inc_time, _msg_cnt, \
+		"test" LISTIFY(nargs, TEST_FORMAT_SPEC, ()) \
+				LISTIFY(nargs, TEST_VALUE, ())); \
+	inc_msg += _msg_cnt; \
+} while (0)
+
+static void test_report(uint32_t cyc, uint32_t msg_cnt, int args_cnt, uint32_t init_usage)
+{
+	uint32_t us = k_cyc_to_us_ceil32(cyc);
+
+	if (IS_ENABLED(CONFIG_LOG_MEM_UTILIZATION)) {
+		uint32_t buf_size;
+		uint32_t curr_usage;
+
+		zassert_ok(log_mem_get_usage(&buf_size, &curr_usage));
+		PRINT("Memory per message:%d\n", (curr_usage - init_usage) / msg_cnt);
+	}
+	log_flush();
+	if (args_cnt < 0) {
+		PRINT("%sAverage logging a message with string argument:  %u cycles (%u.%03u us)\n",
+			k_is_user_context() ? "USERSPACE: " : "",
+			cyc / msg_cnt, us / msg_cnt, ((us % msg_cnt) * 1000) / msg_cnt);
+	} else {
+		PRINT("%sAverage logging a message with %d arguments:  %u cycles (%u.%03u us)\n",
+			k_is_user_context() ? "USERSPACE: " : "",
+			args_cnt, cyc / msg_cnt, us / msg_cnt, ((us % msg_cnt) * 1000) / msg_cnt);
+	}
+}
+
+ZTEST_USER(test_log_benchmark, test_log_message_store_time_log0)
+{
+	uint32_t total_cyc = 0;
+	uint32_t total_msg = 20;
+	uint32_t buf_size = 0;
+	uint32_t init_usage = 0;
+
+	if (IS_ENABLED(CONFIG_LOG_MEM_UTILIZATION)) {
+		zassert_ok(log_mem_get_usage(&buf_size, &init_usage));
+		PRINT("init_usage: %d, buf_size: %d\n", init_usage, buf_size);
+	}
+
+	TEST_LOG_MESSAGE(total_cyc, total_msg, "test");
+
+	test_report(total_cyc, total_msg, 0, init_usage);
+}
+
+ZTEST_USER(test_log_benchmark, test_log_message_store_time_log1)
+{
+	uint32_t total_cyc = 0;
+	uint32_t total_msg = 20;
+	uint32_t buf_size = 0;
+	uint32_t init_usage = 0;
+
+	if (IS_ENABLED(CONFIG_LOG_MEM_UTILIZATION)) {
+		zassert_ok(log_mem_get_usage(&buf_size, &init_usage));
+	}
+
+	TEST_LOG_MESSAGE(total_cyc, total_msg, "test %d", 1);
+
+	test_report(total_cyc, total_msg, 1, init_usage);
+}
+
+ZTEST_USER(test_log_benchmark, test_log_message_store_time_log2)
+{
+	uint32_t total_cyc = 0;
+	uint32_t total_msg = 20;
+	uint32_t buf_size = 0;
+	uint32_t init_usage = 0;
+
+	if (IS_ENABLED(CONFIG_LOG_MEM_UTILIZATION)) {
+		zassert_ok(log_mem_get_usage(&buf_size, &init_usage));
+	}
+
+	TEST_LOG_MESSAGE(total_cyc, total_msg, "test %d %d", 1, 2);
+
+	test_report(total_cyc, total_msg, 2, init_usage);
+}
+
+ZTEST_USER(test_log_benchmark, test_log_message_store_time_log3)
+{
+	uint32_t total_cyc = 0;
+	uint32_t total_msg = 20;
+	uint32_t buf_size = 0;
+	uint32_t init_usage = 0;
+
+	if (IS_ENABLED(CONFIG_LOG_MEM_UTILIZATION)) {
+		zassert_ok(log_mem_get_usage(&buf_size, &init_usage));
+	}
+
+	TEST_LOG_MESSAGE(total_cyc, total_msg, "test %d %d %d", 1, 2, 3);
+
+	test_report(total_cyc, total_msg, 3, init_usage);
+}
+
+ZTEST_USER(test_log_benchmark, test_log_message_store_time_log_string)
+{
+	uint32_t total_cyc = 0;
+	uint32_t total_msg = 20;
+	uint32_t buf_size = 0;
+	uint32_t init_usage = 0;
+
+	if (IS_ENABLED(CONFIG_LOG_MEM_UTILIZATION)) {
+		zassert_ok(log_mem_get_usage(&buf_size, &init_usage));
+	}
+
+	char str[] = "test string";
+
+	TEST_LOG_MESSAGE(total_cyc, total_msg, "test with string: %s", str);
+
+	test_report(total_cyc, total_msg, 1, init_usage);
+}
 
 static void run_log_message_store_time_no_overwrite(void)
 {
@@ -225,7 +335,7 @@ ZTEST(test_log_benchmark, test_log_message_with_string)
 	cyc = test_helpers_cycle_get() - cyc;
 	uint32_t us = k_cyc_to_us_ceil32(cyc);
 
-	PRINT("%slogging with transient string %u cycles (%u us).",
+	PRINT("%slogging with transient string %u cycles (%u us).\n",
 		k_is_user_context() ? "USERSPACE: " : "",
 		cyc / repeat, us / repeat);
 }
@@ -236,8 +346,11 @@ static void *log_benchmark_setup(void)
 	PRINT("LOGGING MODE:%s\n", IS_ENABLED(CONFIG_LOG_MODE_DEFERRED) ? "DEFERRED" : "IMMEDIATE");
 	PRINT("\tOVERWRITE: %d\n", IS_ENABLED(CONFIG_LOG_MODE_OVERFLOW));
 	PRINT("\tBUFFER_SIZE: %d\n", CONFIG_LOG_BUFFER_SIZE);
-	PRINT("\tSPEED: %d", IS_ENABLED(CONFIG_LOG_SPEED));
+	PRINT("\tSPEED: %d\n", IS_ENABLED(CONFIG_LOG_SPEED));
+	PRINT("\tSIMPLE_MSG_COMPRESS: %d\n", IS_ENABLED(CONFIG_LOG_SIMPLE_MSG_COMPRESS));
+	PRINT("\tMEM_UTILIZATION: %d\n", IS_ENABLED(CONFIG_LOG_MEM_UTILIZATION));
 
+	log_backend_enable(&backend, &backend_ctrl_blk, LOG_LEVEL_DBG);
 	return NULL;
 }
 
