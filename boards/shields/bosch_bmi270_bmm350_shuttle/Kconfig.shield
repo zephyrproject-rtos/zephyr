@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_BOSCH_BMI270_BMM350_SHUTTLE
+	def_bool $(shields_list_contains,bosch_bmi270_bmm350_shuttle)
