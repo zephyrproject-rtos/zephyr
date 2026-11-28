@@ -527,6 +527,129 @@ static int cmd_cat(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_tail(const struct shell *sh, size_t argc, char **argv)
+{
+	unsigned long lines = 10U;
+	char path[MAX_PATH_LEN];
+	struct fs_file_t file;
+	struct fs_dirent entry;
+	uint8_t buf[BUF_CNT];
+	off_t end;
+	off_t pos;
+	int close_err;
+	int err;
+
+	if (argc > 2U) {
+		char *count_end;
+
+		if (argc != 4U || strcmp(argv[2], "-n") != 0) {
+			shell_error(sh, "Usage: fs tail <path> [-n <lines>]");
+			return -EINVAL;
+		}
+
+		errno = 0;
+		lines = strtoul(argv[3], &count_end, 10);
+		if (argv[3][0] < '0' || argv[3][0] > '9' || *count_end != '\0' ||
+		    errno == ERANGE) {
+			shell_error(sh, "Invalid line count: %s", argv[3]);
+			return -EINVAL;
+		}
+	}
+
+	create_abs_path(argv[1], path, sizeof(path));
+	err = fs_stat(path, &entry);
+	if (err == 0 && entry.type != FS_DIR_ENTRY_FILE) {
+		err = -EISDIR;
+	}
+	if (err == 0) {
+		fs_file_t_init(&file);
+		err = fs_open(&file, path, FS_O_READ);
+	}
+	if (err < 0) {
+		goto report;
+	}
+	if (lines == 0U) {
+		goto close;
+	}
+
+	err = fs_seek(&file, 0, FS_SEEK_END);
+	if (err < 0) {
+		goto close;
+	}
+	end = fs_tell(&file);
+	if (end < 0) {
+		err = (int)end;
+		goto close;
+	}
+
+	pos = end;
+	while (pos > 0) {
+		/* Locate the file-aligned block containing the preceding byte. */
+		size_t len = 1U + (pos - 1) % (off_t)sizeof(buf);
+		/* A final newline terminates the last line. */
+		size_t start = pos == end ? len - 1U : len;
+
+		pos -= len;
+		err = fs_seek(&file, pos, FS_SEEK_SET);
+		if (err < 0) {
+			goto close;
+		}
+
+		for (size_t used = 0U; used < len;) {
+			ssize_t n = fs_read(&file, buf + used, len - used);
+
+			if (n <= 0) {
+				err = n < 0 ? (int)n : -EIO;
+				goto close;
+			}
+			used += n;
+		}
+
+		while (start > 0U) {
+			if (buf[start - 1U] == '\n') {
+				lines--;
+				if (lines == 0U) {
+					break;
+				}
+			}
+			start--;
+		}
+		if (lines == 0U || pos == 0) {
+			/* Emit the buffered suffix, then read subsequent blocks in order. */
+			for (size_t i = start; i < len; i++) {
+				shell_fprintf(sh, SHELL_NORMAL, "%c", buf[i]);
+			}
+			pos += len;
+			break;
+		}
+	}
+
+	while (pos < end) {
+		size_t len = MIN(end - pos, (off_t)sizeof(buf));
+		ssize_t n = fs_read(&file, buf, len);
+
+		if (n <= 0) {
+			err = n < 0 ? (int)n : -EIO;
+			goto close;
+		}
+		for (ssize_t i = 0; i < n; i++) {
+			shell_fprintf(sh, SHELL_NORMAL, "%c", buf[i]);
+		}
+		pos += n;
+	}
+
+close:
+	close_err = fs_close(&file);
+	if (err == 0) {
+		err = close_err;
+	}
+report:
+	if (err < 0) {
+		shell_error(sh, "Cannot tail %s (err: %d)", path, err);
+	}
+	return err;
+}
+
 static int cmd_statvfs(const struct shell *sh, size_t argc, char **argv)
 {
 	int err;
@@ -1117,6 +1240,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs,
 	SHELL_CMD_ARG(mv, NULL, SHELL_HELP("Move file", "<source> <dest>"), cmd_mv, 3, 0),
 	SHELL_CMD_ARG(statvfs, NULL, SHELL_HELP("Show file system state", "<path>"),
 		      cmd_statvfs, 2, 0),
+	SHELL_CMD_ARG(tail, NULL, SHELL_HELP("Print the last lines of a file (default: 10)",
+					    "<path> [-n <lines>]"), cmd_tail, 2, 2),
 	SHELL_CMD_ARG(trunc, NULL, SHELL_HELP("Truncate file", "<path> [<length>]"),
 		      cmd_trunc, 2, 255),
 	SHELL_CMD_ARG(write, NULL, SHELL_HELP("Write file", "<path> <data> [<data> ...]"),
