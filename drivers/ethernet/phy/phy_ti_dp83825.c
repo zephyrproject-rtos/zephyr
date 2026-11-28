@@ -68,6 +68,8 @@ struct ti_dp83825_data {
 
 static int phy_ti_dp83825_read(const struct device *dev, uint16_t reg_addr, uint32_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct ti_dp83825_config *config = dev->config;
 	int ret;
 
@@ -84,6 +86,8 @@ static int phy_ti_dp83825_read(const struct device *dev, uint16_t reg_addr, uint
 
 static int phy_ti_dp83825_write(const struct device *dev, uint16_t reg_addr, uint32_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct ti_dp83825_config *config = dev->config;
 	int ret;
 
@@ -164,6 +168,8 @@ static int phy_ti_dp83825_autonegotiate(const struct device *dev)
 
 static int phy_ti_dp83825_get_link(const struct device *dev, struct phy_link_state *state)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct ti_dp83825_config *config = dev->config;
 	struct ti_dp83825_data *data = dev->data;
 	int ret;
@@ -364,6 +370,8 @@ done:
 static int phy_ti_dp83825_cfg_link(const struct device *dev, enum phy_link_speed speeds,
 				   enum phy_cfg_link_flag flags)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct ti_dp83825_config *config = dev->config;
 	struct ti_dp83825_data *data = dev->data;
 	int ret;
@@ -432,6 +440,8 @@ done:
 
 static int phy_ti_dp83825_link_cb_set(const struct device *dev, phy_callback_t cb, void *user_data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct ti_dp83825_data *data = dev->data;
 
 	data->cb = cb;
@@ -450,6 +460,9 @@ static void phy_ti_dp83825_monitor_work_handler(struct k_work *work)
 	struct ti_dp83825_data *data =
 		CONTAINER_OF(dwork, struct ti_dp83825_data, phy_monitor_work);
 	const struct device *dev = data->dev;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
 	const struct ti_dp83825_config *config = dev->config;
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
@@ -485,6 +498,8 @@ static void phy_ti_dp83825_monitor_work_handler(struct k_work *work)
 
 static int phy_ti_dp83825_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct ti_dp83825_config *config = dev->config;
 	struct ti_dp83825_data *data = dev->data;
 	int ret;

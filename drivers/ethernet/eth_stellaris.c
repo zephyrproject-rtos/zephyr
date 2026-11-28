@@ -64,6 +64,8 @@ static void eth_stellaris_send_byte(const struct device *dev, uint8_t byte)
 
 static int eth_stellaris_send(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_stellaris_runtime *dev_data = dev->data;
 	struct net_buf *frag;
 	uint16_t i, data_len;
@@ -231,6 +233,8 @@ err_mem:
 
 static void eth_stellaris_isr(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_stellaris_runtime *dev_data = dev->data;
 	int isr_val = sys_read32(REG_MACRIS);
 	int num_packets;
@@ -283,6 +287,9 @@ static void eth_stellaris_isr(const struct device *dev)
 static void eth_stellaris_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_stellaris_config *dev_conf = dev->config;
 	struct eth_stellaris_runtime *dev_data = dev->data;
 
@@ -305,6 +312,8 @@ static void eth_stellaris_init(struct net_if *iface)
 static struct net_stats_eth *eth_stellaris_stats(const struct device *dev,
 						struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_stellaris_runtime *dev_data = dev->data;
 
 	return &dev_data->stats;
