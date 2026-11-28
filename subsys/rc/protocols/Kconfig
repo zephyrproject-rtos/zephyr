@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Protocols"
+
+config RC_PROTOCOL_NEC
+	bool "NEC protocol"
+	default y
+	help
+	  Decoder and encoder for NEC, extended NEC and 32 bit NEC.
+
+config RC_PROTOCOL_RC5
+	bool "RC5 protocol"
+	default y
+	help
+	  Decoder and encoder for Philips RC5 and 20 bit RC5X.
+
+config RC_PROTOCOL_RC6
+	bool "RC6 protocol"
+	default y
+	help
+	  Decoder and encoder for Philips RC6 mode 0, mode 6A with 20, 24 and
+	  32 bits, and the MCE variant of 6A 32 bit.
+
+config RC_PROTOCOL_SONY
+	bool "Sony protocol"
+	default y
+	help
+	  Decoder and encoder for Sony SIRC with 12, 15 and 20 bits.
+
+endmenu

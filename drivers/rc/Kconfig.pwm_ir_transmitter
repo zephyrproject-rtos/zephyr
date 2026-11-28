@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+config RC_PWM_IR_TRANSMITTER
+	bool "PWM infrared transmitter"
+	default y
+	depends on DT_HAS_PWM_IR_TRANSMITTER_ENABLED && PWM && COUNTER
+	select RC_TX
+	help
+	  Transmit driver for an infrared LED driven by a PWM carrier. A
+	  counter alarm switches the carrier on and off at each edge.
+
+config RC_PWM_IR_TRANSMITTER_GUARD_US
+	int "Minimum lead time of an edge alarm, in us"
+	default 2
+	range 0 1000
+	depends on RC_PWM_IR_TRANSMITTER
+	help
+	  An edge whose alarm would be armed less than this ahead, and at
+	  least one counter tick ahead, is late: the transmission stops with
+	  -ETIME. It covers the time from the check to the alarm being armed.
