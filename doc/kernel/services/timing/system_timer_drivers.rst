@@ -86,7 +86,9 @@ comparatively simple API.
 
   The hook is optional.  Without it, :c:func:`sys_clock_set_timeout` is called
   with its deprecated ``idle`` argument set to ``true``, so a driver still
-  keying its low-power handling on that argument keeps working.
+  keying its low-power handling on that argument keeps working.  That call is
+  made only when the power state has a non-zero exit latency and there is a
+  wakeup deadline, as it was before this hook existed.
 
 The last three entry points divide the four states a system can be in:
 

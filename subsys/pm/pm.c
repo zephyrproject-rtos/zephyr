@@ -37,6 +37,24 @@ static struct k_spinlock pm_forced_state_lock;
 static struct k_spinlock pm_notifier_lock;
 
 /*
+ * Default for a timer driver without its own sys_clock_idle_enter(). Before
+ * that hook existed, this path called sys_clock_set_timeout() with idle set
+ * only when the power state had an exit latency to bring the deadline forward
+ * by, and never without a deadline. A driver keying on the idle argument may
+ * reprogram its hardware on that call, so keep making it under the same
+ * conditions.
+ */
+void __weak sys_clock_idle_enter(uint32_t ticks)
+{
+	uint32_t exit_latency_ticks =
+		EXIT_LATENCY_US_TO_TICKS(z_cpus_pm_state[CPU_ID]->exit_latency_us);
+
+	if ((ticks != SYS_CLOCK_IDLE_FOREVER) && (exit_latency_ticks > 0U)) {
+		sys_clock_set_timeout(ticks, true);
+	}
+}
+
+/*
  * Function called to notify when the system is entering / exiting a
  * power state
  */
