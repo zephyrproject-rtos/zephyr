@@ -165,6 +165,10 @@ static void frag_transport_package_callback(uint8_t port, uint8_t flags, int16_t
 			tx_buf[tx_pos++] = FRAG_TRANSPORT_VERSION;
 			break;
 		case FRAG_TRANSPORT_CMD_FRAG_STATUS: {
+			if ((len - rx_pos) < sizeof(struct frag_transport_session_status_req)) {
+				LOG_ERR("FragSessionStatusReq too short");
+				return;
+			}
 			const struct frag_transport_session_status_req *req =
 				(const void *)(rx_buf + rx_pos);
 			uint8_t frag_status = req->param & 0x07;
@@ -289,6 +293,10 @@ static void frag_transport_package_callback(uint8_t port, uint8_t flags, int16_t
 			break;
 		}
 		case FRAG_TRANSPORT_CMD_FRAG_SESSION_DELETE: {
+			if ((len - rx_pos) < sizeof(struct frag_transport_delete_req)) {
+				LOG_ERR("FragSessionDeleteReq too short");
+				return;
+			}
 			const struct frag_transport_delete_req *req =
 				(const void *)(rx_buf + rx_pos);
 			uint8_t index = req->param & 0x03;
@@ -322,16 +330,18 @@ static void frag_transport_package_callback(uint8_t port, uint8_t flags, int16_t
 			uint8_t index = (hdr->frag_index_n >> 14) & 0x03;
 
 			rx_pos += sizeof(*hdr);
-			ctx.nb_frag_received++;
 
+			/* The fragment payload follows the header. Returning instead of
+			 * breaking keeps those bytes from being parsed as further commands.
+			 */
 			if (!ctx.is_active || index != ctx.frag_index) {
 				LOG_DBG("DataFragment received for inactive session %u", index);
-				break;
+				return;
 			}
 
 			if (frag_counter == 0U) {
 				LOG_DBG("Invalid fragment index 0");
-				break;
+				return;
 			}
 
 			/* The decoder reads ctx.frag_size bytes from rx_buf[rx_pos].
@@ -339,8 +349,10 @@ static void frag_transport_package_callback(uint8_t port, uint8_t flags, int16_t
 			 */
 			if ((len - rx_pos) < ctx.frag_size) {
 				LOG_ERR("DataFragment payload shorter than frag_size");
-				break;
+				return;
 			}
+
+			ctx.nb_frag_received++;
 
 			if (frag_counter > ctx.nb_frag) {
 				/* Additional fragments have to be cached in RAM for recovery
