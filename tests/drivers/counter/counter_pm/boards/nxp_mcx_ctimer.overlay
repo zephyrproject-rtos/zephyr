@@ -1,0 +1,22 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		counter-pm = &ctimer0;
+	};
+
+	chosen {
+		zephyr,system-timer = &systick;
+	};
+};
+
+&{/cpus/cpu@0} {
+	cpu-power-states = <&deepsleep &powerdown>;
+};
+
+&ctimer0 {
+	status = "okay";
+};
