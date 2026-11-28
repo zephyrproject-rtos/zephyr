@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_HISILICON_HI3861_UART := hisilicon,hi3861-uart
+
+config UART_HI3861
+	bool "HiSilicon Hi3861 UART"
+	default y
+	depends on DT_HAS_HISILICON_HI3861_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT if SYS_CLOCK_EXISTS
+	select PINCTRL if $(dt_compat_any_has_prop,$(DT_COMPAT_HISILICON_HI3861_UART),pinctrl-0)
+	help
+	  Enable the Hi3861 UART driver, with polling, runtime configuration
+	  and interrupt-driven transfers. Hardware RTS/CTS is available on
+	  UART1 and UART2, but not UART0.
+
+	  Interrupt-driven TX uses a one-shot kernel timer to seed the FIFO
+	  in ISR context, and requires the system clock.

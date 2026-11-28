@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_HI3861
+	select RISCV
+	select RISCV_SOC_INTERRUPT_INIT
+	select SOC_EARLY_INIT_HOOK

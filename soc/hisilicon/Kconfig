@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_HISILICON
+
+rsource "hi3861/Kconfig"
+
+endif # SOC_FAMILY_HISILICON
