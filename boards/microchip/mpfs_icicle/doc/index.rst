@@ -34,6 +34,23 @@ To build the default SMP capable variant
    :board: mpfs_icicle/polarfire/smp
    :goals: build
 
+QEMU
+====
+
+The ``qemu`` variants of the board run on the ``microchip-icicle-kit`` machine of QEMU, which
+emulates the Icicle Kit: ``mpfs_icicle/polarfire/e51/qemu`` on the E51 core, hart 0, and
+``mpfs_icicle/polarfire/u54/qemu`` and ``mpfs_icicle/polarfire/u54/smp/qemu`` on the U54 cores
+that follow it. The image is loaded into the DDR, as on the board, and the console is on MMUART0
+for all of them.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: mpfs_icicle/polarfire/u54/smp/qemu
+   :goals: build run
+
+The machine does not emulate the QSPI, SPI, I2C and RTC controllers, so these devices are
+disabled.
+
 Flashing
 ========
 
