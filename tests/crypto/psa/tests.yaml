@@ -21,6 +21,21 @@ common:
     - psa
 
 tests:
+  crypto.psa.threading:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim/native/64
+    extra_configs:
+      - CONFIG_ENTROPY_GENERATOR=y
+      - CONFIG_POSIX_API=y
+      - CONFIG_MAX_PTHREAD_MUTEX_COUNT=32
+      - CONFIG_MAX_PTHREAD_COND_COUNT=8
+      - CONFIG_TF_PSA_CRYPTO_USER_CONFIG_FILE="tf_psa_pthread.h"
+      - CONFIG_MBEDTLS_PSA_STATIC_KEY_SLOTS=n
+      - CONFIG_MBEDTLS_ENABLE_HEAP=y
+      - CONFIG_MBEDTLS_HEAP_SIZE=16384
   crypto.psa.with_entropy_driver:
     filter: CONFIG_CSPRNG_ENABLED
     # Pick a platform which has an entropy driver and enable it.
