@@ -1,0 +1,13 @@
+sample:
+  name: Status LED
+common:
+  tags:
+    - led
+    - input
+  filter: dt_alias_exists("led0") and dt_alias_exists("sw0")
+  build_only: true
+  integration_platforms:
+    - native_sim
+    - cc1352p7_lp
+tests:
+  sample.led.status_led: {}

@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2026 BayLibre SAS
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	led_1: led_1 {
+		compatible = "zephyr,fake-leds";
+
+		fake-led {
+			label = "Fake LED 1";
+		};
+	};
+
+	led_2: led_2 {
+		compatible = "zephyr,fake-leds";
+
+		fake-led {
+			label = "Fake LED 2";
+		};
+	};
+
+	led_3: led_3 {
+		compatible = "zephyr,fake-leds";
+
+		fake-led {
+			label = "Fake LED 3";
+		};
+	};
+};
