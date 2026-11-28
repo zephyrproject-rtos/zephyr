@@ -6,6 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/regulator.h>
+#include <zephyr/sys/util.h>
 
 static void regulator_delay(uint32_t delay_us)
 {
@@ -247,7 +248,7 @@ int regulator_set_voltage(const struct device *dev, int32_t min_uv,
 		return -EINVAL;
 	}
 
-	return api->set_voltage(dev, min_uv, max_uv);
+	return api->set_voltage(dev, MAX(min_uv, config->min_uv), MIN(max_uv, config->max_uv));
 }
 
 int regulator_set_current_limit(const struct device *dev, int32_t min_ua,
@@ -265,7 +266,8 @@ int regulator_set_current_limit(const struct device *dev, int32_t min_ua,
 		return -EINVAL;
 	}
 
-	return api->set_current_limit(dev, min_ua, max_ua);
+	return api->set_current_limit(dev, MAX(min_ua, config->min_ua),
+				      MIN(max_ua, config->max_ua));
 }
 
 int regulator_set_mode(const struct device *dev, regulator_mode_t mode)
