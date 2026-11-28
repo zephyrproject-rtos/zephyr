@@ -68,7 +68,7 @@ BLACK_F407ZG_PRO board provides the following hardware components:
 - 1x 8 to 12-bit Parallel Camera interface
 - Micro USB for power and comms
 - 2x jumpers for bootloader selection
-- 2x16 FMSC LCD Interface
+- 2x16 FSMC LCD Interface
 - NRF24L01 socket
 - Dimensions: 102.5mm x 74.56mm
 
@@ -100,11 +100,11 @@ Default Zephyr Peripheral Mapping:
 - UART_1_RX : PB7
 - UART_2_TX : PA2
 - UART_2_RX : PA3
-- USER_PB : PA0
-- LD3 : PD13
-- LD4 : PD12
-- LD5 : PD14
-- LD6 : PD15
+- K0 : PB9
+- K1 : PB8
+- WK_UP : PA0
+- LD1 : PF9
+- LD2 : PF10
 - USB DM : PA11
 - USB DP : PA12
 - CAN1_RX : PD0
