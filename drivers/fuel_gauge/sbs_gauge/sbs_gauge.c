@@ -102,13 +102,13 @@ static int sbs_gauge_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_CURRENT, &tmp_val);
 		val->current_ua = (int16_t)tmp_val * 1000;
 		break;
-	case FUEL_GAUGE_FULL_CHARGE_CAPACITY_UAH:
+	case FUEL_GAUGE_FULL_CHARGE_CAPACITY:
 		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_FULL_CAPACITY, &tmp_val);
-		val->full_charge_capacity_uah = tmp_val * 1000;
+		val->full_charge_capacity = tmp_val * 1000;
 		break;
-	case FUEL_GAUGE_REMAINING_CAPACITY_UAH:
+	case FUEL_GAUGE_REMAINING_CAPACITY:
 		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_REM_CAPACITY, &tmp_val);
-		val->remaining_capacity_uah = tmp_val * 1000;
+		val->remaining_capacity = tmp_val * 1000;
 		break;
 	case FUEL_GAUGE_RUNTIME_TO_EMPTY_MINS:
 		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_RUNTIME2EMPTY, &tmp_val);
