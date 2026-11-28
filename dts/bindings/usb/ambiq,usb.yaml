@@ -23,3 +23,9 @@ properties:
     type: phandle-array
     description: |
       Control VDDUSB0P9 via GPIO pin.
+
+  has-internal-usb-ldo:
+    type: boolean
+    description: |
+      If true, the USB controller has an internal LDO for the USB power.
+      When true, the driver will use internal LDO instead of external GPIO.

@@ -1,0 +1,136 @@
+/*
+ * Copyright (c) 2026 Ambiq Micro Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Pin mappings based on am_bsp_pins.h for apollo330mP_evb
+ */
+
+/ {
+	ambiq_header: connector {
+		compatible = "ambiq-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffff80>;
+		gpio-map-pass-thru = <0 0x7f>;
+		gpio-map = <0 0 &gpio0_31 0 0>,   /* IOSFD0_SCK, IOSFD0_SCL */
+			   <1 0 &gpio0_31 1 0>,   /* IOSFD0_MOSI, IOSFD0_SDA */
+			   <2 0 &gpio0_31 2 0>,   /* IOSFD0_MISO */
+			   <3 0 &gpio0_31 3 0>,   /* IOSFD0_CE */
+			   <4 0 &gpio0_31 4 0>,   /* IOSFD0_INT */
+			   <5 0 &gpio0_31 5 0>,   /* IOM0_SCK, IOM0_SCL, PDMI2S0_SDOUT */
+			   <6 0 &gpio0_31 6 0>,   /* IOM0_MOSI, IOM0_SDA, PDMI2S0_WS */
+			   <7 0 &gpio0_31 7 0>,   /* IOM0_MISO, UART0_RX */
+			   <8 0 &gpio0_31 8 0>,   /* IOM1_SCK, IOM1_SCL, TOUCH_M1SCL */
+			   <9 0 &gpio0_31 9 0>,   /* IOM1_MOSI, IOM1_SDA, TOUCH_M1SDA */
+			   <10 0 &gpio0_31 10 0>, /* IOM1_MISO */
+			   <11 0 &gpio0_31 11 0>, /* GPIO */
+			   <12 0 &gpio0_31 12 0>, /* COM_UART_CTS */
+			   <13 0 &gpio0_31 13 0>, /* COM_UART_RTS */
+			   <14 0 &gpio0_31 14 0>, /* COM_UART_TX */
+			   <15 0 &gpio0_31 15 0>, /* COM_UART_RX */
+			   <16 0 &gpio0_31 16 0>, /* GPIO */
+			   <17 0 &gpio0_31 17 0>, /* IOM0_CS, UART1_RTS */
+			   <18 0 &gpio0_31 18 0>, /* BUTTON0 */
+			   <19 0 &gpio0_31 19 0>, /* GPIO */
+			   <20 0 &gpio0_31 20 0>, /* SWDCK */
+			   <21 0 &gpio0_31 21 0>, /* SWDIO */
+			   <22 0 &gpio0_31 22 0>, /* LED2 */
+			   <23 0 &gpio0_31 23 0>, /* LED1 */
+			   <24 0 &gpio0_31 24 0>, /* IOM1_CS */
+			   <25 0 &gpio0_31 25 0>, /* IOM2_SCL_CB */
+			   <26 0 &gpio0_31 26 0>, /* IOM2_SDA_CB */
+			   <27 0 &gpio0_31 27 0>, /* SDIO0_RST */
+			   <28 0 &gpio0_31 28 0>, /* ITM_SWO */
+			   <29 0 &gpio0_31 29 0>, /* IOM3_SCK, IOM3_SCL, I2S0_SDIN */
+			   <30 0 &gpio0_31 30 0>, /* IOM3_MOSI, IOM3_SDA, I2S0_DATA, I2S0_SDOUT */
+			   <31 0 &gpio0_31 31 0>, /* IOM3_MISO, I2S0_WS */
+			   <32 0 &gpio32_63 0 0>, /* IOM4_SCK_CB, IOM4_SCL_CB */
+			   <33 0 &gpio32_63 1 0>, /* IOM4_MOSI_CB, IOM4_SDA_CB */
+			   <34 0 &gpio32_63 2 0>, /* IOM4_MISO_CB */
+			   <35 0 &gpio32_63 3 0>, /* MSPI0_SCK */
+			   <36 0 &gpio32_63 4 0>, /* MSPI0_D0 */
+			   <37 0 &gpio32_63 5 0>, /* MSPI0_D1 */
+			   <38 0 &gpio32_63 6 0>, /* MSPI0_D2 */
+			   <39 0 &gpio32_63 7 0>, /* MSPI0_D3 */
+			   <40 0 &gpio32_63 8 0>, /* SDIO1_RST */
+			   <41 0 &gpio32_63 9 0>, /* MSPI2_CE0, DISP_DEVICE_RST */
+			   <42 0 &gpio32_63 10 0>, /* RXEN */
+			   <43 0 &gpio32_63 11 0>, /* SDIO1_DAT4 */
+			   <44 0 &gpio32_63 12 0>, /* SDIO1_DAT5 */
+			   <45 0 &gpio32_63 13 0>, /* SDIO1_DAT6 */
+			   <46 0 &gpio32_63 14 0>, /* SDIO1_DAT7 */
+			   <47 0 &gpio32_63 15 0>, /* GPIO */
+			   <48 0 &gpio32_63 16 0>, /* GPIO */
+			   <49 0 &gpio32_63 17 0>, /* GPIO */
+			   <50 0 &gpio32_63 18 0>, /* GPIO */
+			   <51 0 &gpio32_63 19 0>, /* GPIO */
+			   <52 0 &gpio32_63 20 0>, /* BUTTON1 */
+			   <53 0 &gpio32_63 21 0>, /* MSPI2_SCK, TOUCH_RST */
+			   <54 0 &gpio32_63 22 0>, /* MSPI2_D0 */
+			   <55 0 &gpio32_63 23 0>, /* MSPI2_D1 */
+			   <56 0 &gpio32_63 24 0>, /* MSPI2_D2 */
+			   <57 0 &gpio32_63 25 0>, /* MSPI2_D3, TOUCH_INT */
+			   <58 0 &gpio32_63 26 0>, /* MSPI2_DQSDM */
+			   <59 0 &gpio32_63 27 0>, /* SDIO1_DAT0 */
+			   <60 0 &gpio32_63 28 0>, /* SDIO1_DAT1 */
+			   <61 0 &gpio32_63 29 0>, /* SDIO1_DAT2 */
+			   <62 0 &gpio32_63 30 0>, /* SDIO1_DAT3 */
+			   <63 0 &gpio32_63 31 0>, /* SDIO1_CLK */
+			   <64 0 &gpio64_95 0 0>,  /* SDIO1_CMD */
+			   <65 0 &gpio64_95 1 0>,  /* MSPI0_D4 */
+			   <66 0 &gpio64_95 2 0>,  /* MSPI0_D5 */
+			   <67 0 &gpio64_95 3 0>,  /* MSPI0_D6 */
+			   <68 0 &gpio64_95 4 0>,  /* MSPI0_D7 */
+			   <69 0 &gpio64_95 5 0>,  /* MSPI0_D8 */
+			   <70 0 &gpio64_95 6 0>,  /* MSPI0_D9 */
+			   <71 0 &gpio64_95 7 0>,  /* MSPI0_D10 */
+			   <72 0 &gpio64_95 8 0>,  /* MSPI0_D11 */
+			   <73 0 &gpio64_95 9 0>,  /* MSPI0_D12 */
+			   <74 0 &gpio64_95 10 0>, /* MSPI0_D13 */
+			   <75 0 &gpio64_95 11 0>, /* MSPI0_D14 */
+			   <76 0 &gpio64_95 12 0>, /* MSPI0_D15 */
+			   <77 0 &gpio64_95 13 0>, /* MSPI0_DQS1DM1 */
+			   <78 0 &gpio64_95 14 0>, /* MSPI0_CE0 */
+			   <79 0 &gpio64_95 15 0>, /* TXEN */
+			   <80 0 &gpio64_95 16 0>, /* DISP_DSI_TE */
+			   <81 0 &gpio64_95 17 0>, /* MSPI0_DQSDM */
+			   <82 0 &gpio64_95 18 0>, /* SDIO0_CLK */
+			   <83 0 &gpio64_95 19 0>, /* SDIO0_DAT0 */
+			   <84 0 &gpio64_95 20 0>, /* SDIO0_DAT1 */
+			   <85 0 &gpio64_95 21 0>, /* SDIO0_DAT2 */
+			   <86 0 &gpio64_95 22 0>, /* SDIO0_DAT3 */
+			   <87 0 &gpio64_95 23 0>, /* SDIO0_CMD */
+			   <88 0 &gpio64_95 24 0>, /* GPIO */
+			   <89 0 &gpio64_95 25 0>, /* GPIO */
+			   <90 0 &gpio64_95 26 0>, /* CLKOUT */
+			   <91 0 &gpio64_95 27 0>, /* VDDUSB33 */
+			   <92 0 &gpio64_95 28 0>, /* DISP_SPI_SD, DISP_SPI_SDO, DISP_QSPI_D0 */
+			   <93 0 &gpio64_95 29 0>, /* DISP_SPI_DCX, DISP_QSPI_D1 */
+			   <94 0 &gpio64_95 30 0>, /* DISP_SPI_SCK, DISP_QSPI_SCK */
+			   <95 0 &gpio64_95 31 0>, /* DISP_SDI, DISP_QSPI_D2 */
+			   <96 0 &gpio96_119 0 0>, /* DISP_QSPI_D3 */
+			   <97 0 &gpio96_119 1 0>, /* LED0 */
+			   <98 0 &gpio96_119 2 0>, /* GPIO */
+			   <99 0 &gpio96_119 3 0>, /* GPIO */
+			   <100 0 &gpio96_119 4 0>, /* UART1_CTS */
+			   <101 0 &gpio96_119 5 0>, /* DISP_SPI_CS_N, DISP_QSPI_CS_N */
+			   <102 0 &gpio96_119 6 0>, /* UART1_TX_CB */
+			   <103 0 &gpio96_119 7 0>, /* UART1_RX_CB */
+			   <104 0 &gpio96_119 8 0>, /* RST_CB */
+			   <105 0 &gpio96_119 9 0>, /* VDDUSB33_SWITCH */
+			   <106 0 &gpio96_119 10 0>, /* IOM4_CS */
+			   <107 0 &gpio96_119 11 0>, /* INT_CB, PDM0_CLK_CB */
+			   <108 0 &gpio96_119 12 0>, /* PDM0_DATA_CB */
+			   <109 0 &gpio96_119 13 0>, /* I2S0_CLK, PDMI2S0_CLK */
+			   <110 0 &gpio96_119 14 0>, /* UART0_CTS, UART1_TX */
+			   <111 0 &gpio96_119 15 0>, /* UART1_RX */
+			   <112 0 &gpio96_119 16 0>, /* UART0_TX */
+			   <113 0 &gpio96_119 17 0>, /* VDD18_SWITCH */
+			   <114 0 &gpio96_119 18 0>, /* SDIO0_DAT4 */
+			   <115 0 &gpio96_119 19 0>, /* SDIO0_DAT5 */
+			   <116 0 &gpio96_119 20 0>, /* SDIO0_DAT6 */
+			   <117 0 &gpio96_119 21 0>, /* SDIO0_DAT7 */
+			   <118 0 &gpio96_119 22 0>, /* IOM3_CS, I2S0_MCLK */
+			   <119 0 &gpio96_119 23 0>; /* UART0_RTS */
+	};
+};

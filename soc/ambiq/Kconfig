@@ -6,4 +6,14 @@ if SOC_FAMILY_AMBIQ
 
 rsource "*/Kconfig"
 
+config SOC_AMBIQ_HAS_CLKMGR
+	bool
+	help
+	  The SoC HAL provides the clock manager (am_hal_clkmgr) API.
+
+config SOC_AMBIQ_HAS_CRM
+	bool
+	help
+	  The SoC HAL provides the Clock and Reset Management (am_hal_crm) API.
+
 endif # SOC_FAMILY_AMBIQ

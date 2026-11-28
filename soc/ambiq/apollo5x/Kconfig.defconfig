@@ -4,7 +4,7 @@
 
 if SOC_SERIES_APOLLO5X
 
-rsource "Kconfig.defconfig.apollo5*"
+rsource "Kconfig.defconfig.apollo*"
 
 configdefault CACHE_MANAGEMENT
 	default y
