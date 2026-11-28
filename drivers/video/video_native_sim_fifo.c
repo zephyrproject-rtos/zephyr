@@ -6,9 +6,10 @@
 /*
  * Zephyr (top) half of the native simulator host FIFO video source.
  *
- * It exposes a host named pipe (FIFO) fed with raw frames as a regular Zephyr
- * video capture device. All the host C library accesses are delegated to the
- * bottom half, which is built in the native simulator runner context.
+ * It exposes a host named pipe (FIFO) fed with raw frames, or a host V4L2
+ * device, as a regular Zephyr video capture device. All the host C library
+ * accesses are delegated to the bottom half, which is built in the native
+ * simulator runner context.
  */
 
 #define DT_DRV_COMPAT zephyr_native_sim_video_fifo
@@ -25,7 +26,6 @@
 #include <zephyr/video/video.h>
 
 #include <nsi_errno.h>
-#include <nsi_host_trampolines.h>
 
 #include "cmdline.h"
 #include "soc.h"
@@ -96,6 +96,8 @@ struct video_nsi_fifo_data {
 	/** Number of bytes of the frame currently being read */
 	size_t frame_offset;
 	int fd;
+	/** The path is a V4L2 capture device rather than a FIFO */
+	bool v4l2;
 	bool streaming;
 	/** The frame being read was cancelled by a flush, drop it once complete */
 	bool discard;
@@ -106,7 +108,7 @@ struct video_nsi_fifo_data {
 static void video_nsi_fifo_close(struct video_nsi_fifo_data *data)
 {
 	if (data->fd >= 0) {
-		(void)nsi_host_close(data->fd);
+		video_nsi_fifo_close_bottom(data->fd);
 		data->fd = -1;
 	}
 
@@ -146,9 +148,10 @@ static void video_nsi_fifo_grow_pipe(struct video_nsi_fifo_data *data)
 
 static int video_nsi_fifo_open(struct video_nsi_fifo_data *data)
 {
+	int ret = 0;
 	int fd;
 
-	fd = video_nsi_fifo_open_bottom(data->path, &data->created);
+	fd = video_nsi_fifo_open_bottom(data->path, &data->created, &data->v4l2);
 	if (fd < 0) {
 		return -nsi_errno_from_mid(-fd);
 	}
@@ -156,9 +159,18 @@ static int video_nsi_fifo_open(struct video_nsi_fifo_data *data)
 	data->fd = fd;
 	data->frame_offset = 0;
 	data->discard = false;
-	video_nsi_fifo_grow_pipe(data);
+	if (data->v4l2) {
+		ret = video_nsi_fifo_v4l2_start_bottom(fd, data->fmt.pixelformat, data->fmt.width,
+						       data->fmt.height, data->fmt.pitch);
+		if (ret < 0) {
+			video_nsi_fifo_close(data);
+			ret = -nsi_errno_from_mid(-ret);
+		}
+	} else {
+		video_nsi_fifo_grow_pipe(data);
+	}
 
-	return 0;
+	return ret;
 }
 
 static void video_nsi_fifo_deliver(struct video_nsi_fifo_data *data, struct video_buffer *vbuf)
@@ -298,13 +310,28 @@ static int video_nsi_fifo_set_fmt(const struct device *dev, struct video_format 
 	}
 
 	k_mutex_lock(&data->lock, K_FOREVER);
-	data->fmt = *fmt;
-	if (data->fd >= 0) {
-		video_nsi_fifo_grow_pipe(data);
+	if (data->v4l2 && (data->fd >= 0)) {
+		/* The device streams the format it was started with: restart it */
+		struct video_format prev = data->fmt;
+
+		video_nsi_fifo_close(data);
+		data->fmt = *fmt;
+		ret = video_nsi_fifo_open(data);
+		if (ret < 0) {
+			/* Refused by the device: keep streaming the previous format */
+			data->fmt = prev;
+			(void)video_nsi_fifo_open(data);
+		}
+	} else {
+		data->fmt = *fmt;
+		ret = 0;
+		if (data->fd >= 0) {
+			video_nsi_fifo_grow_pipe(data);
+		}
 	}
 	k_mutex_unlock(&data->lock);
 
-	return 0;
+	return ret;
 }
 
 static int video_nsi_fifo_get_fmt(const struct device *dev, struct video_format *fmt)
@@ -362,7 +389,8 @@ static int video_nsi_fifo_set_stream(const struct device *dev, bool enable,
 		goto unlock;
 	}
 
-	LOG_INF("Reading frames from the host FIFO %s", data->path);
+	LOG_INF("Reading frames from the host %s %s", data->v4l2 ? "V4L2 device" : "FIFO",
+		data->path);
 
 	data->streaming = true;
 	k_sem_give(&data->wake_sem);
@@ -554,8 +582,8 @@ DT_INST_FOREACH_STATUS_OKAY(VIDEO_NSI_FIFO_DEFINE)
 		.name = "path",                                                                    \
 		.type = 's',                                                                       \
 		.dest = (void *)&video_nsi_fifo_data_##inst.fifo_path_arg,                         \
-		.descript = "Path of the host FIFO to read the video frames from. "                \
-			    "Overrides the fifo-path devicetree property",                         \
+		.descript = "Path of the host FIFO or V4L2 capture device to read the video "      \
+			    "frames from. Overrides the fifo-path devicetree property",            \
 	},
 
 static void video_nsi_fifo_options(void)
