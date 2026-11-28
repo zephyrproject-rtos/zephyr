@@ -65,6 +65,8 @@
 	OUTPUT_FORMAT("elf32-hexagon")
 #elif defined(CONFIG_TRICORE)
 	OUTPUT_FORMAT("elf32-tricore")
+#elif defined(CONFIG_RH850)
+	OUTPUT_FORMAT("elf32-v850-rh850")
 #else
 	#error Arch not supported.
 #endif
