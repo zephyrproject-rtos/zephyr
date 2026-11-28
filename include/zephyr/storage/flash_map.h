@@ -19,7 +19,7 @@
  *
  * @defgroup flash_area_api flash area Interface
  * @since 1.11
- * @version 1.1.1
+ * @version 2.0.0
  * @ingroup storage_apis
  * @{
  */
@@ -378,12 +378,6 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
 #define PARTITION_EXISTS(label) DT_PARTITION_EXISTS(DT_NODELABEL(label))
 
 /**
- * Deprecated macro, replace with PARTITION_EXISTS(), this cannot use __DEPRECATED_MACRO as it
- * causes usage of the macro to fail with compiler errors
- */
-#define FIXED_PARTITION_EXISTS(label) PARTITION_EXISTS(label)
-
-/**
  * Get flash area ID from partition DTS node label
  *
  * @param label DTS node label of a partition
@@ -394,9 +388,6 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
 	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_NODELABEL(label), zephyr_mapped_partition),	\
 		    (DT_MAPPED_PARTITION_ID(DT_NODELABEL(label))),			\
 		    (DT_FIXED_PARTITION_ID(DT_NODELABEL(label))))
-
-/** Deprecated macro, replace with PARTITION_ID() */
-#define FIXED_PARTITION_ID(label) PARTITION_ID(label) __DEPRECATED_MACRO
 
 /**
  * Get partition offset from DTS node label
@@ -412,9 +403,6 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
  */
 #define PARTITION_OFFSET(label) PARTITION_NODE_OFFSET(DT_NODELABEL(label))
 
-/** Deprecated macro, replace with PARTITION_OFFSET() */
-#define FIXED_PARTITION_OFFSET(label) PARTITION_OFFSET(label) __DEPRECATED_MACRO
-
 /**
  * Get partition address from DTS node label
  *
@@ -423,9 +411,6 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
  * @return address, as defined for the partition in DTS.
  */
 #define PARTITION_ADDRESS(label) PARTITION_NODE_ADDRESS(DT_NODELABEL(label))
-
-/** Deprecated macro, replace with PARTITION_ADDRESS() */
-#define FIXED_PARTITION_ADDRESS(label) PARTITION_ADDRESS(label) __DEPRECATED_MACRO
 
 /**
  * Get partition address from DTS node
@@ -440,9 +425,6 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
 		    (COND_CODE_1(DT_FIXED_SUBPARTITION_EXISTS(node),		\
 				 (DT_FIXED_SUBPARTITION_ADDR(node)),		\
 				 (DT_FIXED_PARTITION_ADDR(node)))))
-
-/** Deprecated macro, replace with PARTITION_NODE_ADDRESS() */
-#define FIXED_PARTITION_NODE_ADDRESS(node) PARTITION_NODE_ADDRESS(node) __DEPRECATED_MACRO
 
 /**
  * Get partition offset from DTS node
@@ -463,9 +445,6 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
 		    (DT_PROP_BY_IDX(DT_PARENT(node), reg, 0) + DT_PROP_BY_IDX(node, reg, 0)),	\
 		    ((DT_PROP_BY_IDX(node, reg, 0))))
 
-/** Deprecated macro, replace with PARTITION_NODE_OFFSET() */
-#define FIXED_PARTITION_NODE_OFFSET(label) PARTITION_NODE_OFFSET(label) __DEPRECATED_MACRO
-
 /**
  * Get partition size for DTS node label
  *
@@ -475,9 +454,6 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
  */
 #define PARTITION_SIZE(label) DT_REG_SIZE(DT_NODELABEL(label))
 
-/** Deprecated macro, replace with PARTITION_SIZE() */
-#define FIXED_PARTITION_SIZE(label) PARTITION_SIZE(label) __DEPRECATED_MACRO
-
 /**
  * Get fixed-partition size for DTS node
  *
@@ -486,9 +462,6 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
  * @return size, as defined for the partition in DTS.
  */
 #define PARTITION_NODE_SIZE(node) DT_REG_SIZE(node)
-
-/** Deprecated macro, replace with PARTITION_NODE_SIZE() */
-#define FIXED_PARTITION_NODE_SIZE(node) PARTITION_NODE_SIZE(node) __DEPRECATED_MACRO
 
 /**
  * Get device pointer for device the area/partition resides on
@@ -513,9 +486,6 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
  */
 #define PARTITION_DEVICE(label)	PARTITION_NODE_DEVICE(DT_NODELABEL(label))
 
-/** Deprecated macro, replace with PARTITION_DEVICE() */
-#define FIXED_PARTITION_DEVICE(label) PARTITION_DEVICE(label) __DEPRECATED_MACRO
-
 /**
  * Get device pointer for device the area/partition resides on
  *
@@ -530,9 +500,6 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
 				   (DT_MTD_FROM_FIXED_SUBPARTITION(node)),		\
 				   (DT_MTD_FROM_FIXED_PARTITION(node))))))
 
-/** Deprecated macro, replace with PARTITION_NODE_DEVICE() */
-#define FIXED_PARTITION_NODE_DEVICE(node) PARTITION_NODE_DEVICE(node) __DEPRECATED_MACRO
-
 /**
  * Get the node identifier of the flash controller the area/partition resides on
  *
@@ -541,9 +508,6 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
  * @return Pointer to a device.
  */
 #define PARTITION_MTD(label) PARTITION_NODE_MTD(DT_NODELABEL(label))
-
-/** Deprecated macro, replace with PARTITION_OFFSET() */
-#define FIXED_PARTITION_MTD(label) PARTITION_MTD(label) __DEPRECATED_MACRO
 
 /**
  * Get the node identifier of the flash controller the area/partition resides on
@@ -559,9 +523,6 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
 				 (DT_MTD_FROM_FIXED_SUBPARTITION(node)),	\
 				 (DT_MTD_FROM_FIXED_PARTITION(node)))))
 
-/** Deprecated macro, replace with PARTITION_NODE_MTD() */
-#define FIXED_PARTITION_NODE_MTD(node) PARTITION_NODE_MTD(node) __DEPRECATED_MACRO
-
 /**
  * Get pointer to flash_area object by partition label
  *
@@ -570,9 +531,6 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
  * @return Pointer to flash_area type object representing partition
  */
 #define PARTITION(label) PARTITION_BY_NODE(DT_NODELABEL(label))
-
-/** Deprecated macro, replace with PARTITION() */
-#define FIXED_PARTITION(label) PARTITION(label) __DEPRECATED_MACRO
 
 /**
  * Get pointer to flash_area object by partition node in DTS
@@ -585,9 +543,6 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
 	COND_CODE_1(DT_NODE_HAS_COMPAT(node, zephyr_mapped_partition),	\
 		    (MAPPED_PARTITION_1(node)),				\
 		    (FIXED_PARTITION_1(node)))
-
-/** Deprecated macro, replace with PARTITION_OFFSET() */
-#define FIXED_PARTITION_BY_NODE(node) PARTITION_BY_NODE(node) __DEPRECATED_MACRO
 
 /** @cond INTERNAL_HIDDEN */
 #define FIXED_PARTITION_1(node)	FIXED_PARTITION_0(DT_DEP_ORD(node))
