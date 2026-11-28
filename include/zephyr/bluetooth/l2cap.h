@@ -5,6 +5,7 @@
 /*
  * Copyright (c) 2015-2016 Intel Corporation
  * Copyright (c) 2023 Nordic Semiconductor
+ * Copyright (c) 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
