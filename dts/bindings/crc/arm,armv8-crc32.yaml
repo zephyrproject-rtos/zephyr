@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Nokia
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  CRC32 and CRC32C computed with the Armv8 CRC extension (FEAT_CRC32)
+  instructions of the CPU.
+
+  This node has no registers. It selects the instruction-based CRC driver and
+  can be referenced from the zephyr,crc chosen node. Only add it on SoCs whose
+  CPUs implement the CRC extension.
+
+compatible: "arm,armv8-crc32"
+
+include: base.yaml

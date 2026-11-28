@@ -1,0 +1,20 @@
+# Armv8 CRC32 instruction driver configuration options
+
+# Copyright (c) 2026 Nokia
+# SPDX-License-Identifier: Apache-2.0
+
+config CRC_ARMV8
+	bool "Armv8 CRC32 instruction driver"
+	default y
+	depends on DT_HAS_ARM_ARMV8_CRC32_ENABLED
+	depends on ARMV8_A || ARMV9_A || AARCH32_ARMV8_A
+	select CRC_DRIVER_HAS_CRC32_IEEE
+	select CRC_DRIVER_HAS_CRC32_C
+	help
+	  Enable CRC32 (IEEE) and CRC32C (Castagnoli) computation with the
+	  Armv8 CRC extension (FEAT_CRC32) instructions, in the AArch64 and
+	  AArch32 execution states.
+
+	  The CPU must implement the CRC extension. This is optional in
+	  Armv8.0-A (for example Cortex-A53 r0p4 and later) and mandatory
+	  from Armv8.1-A.

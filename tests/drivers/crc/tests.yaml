@@ -5,3 +5,10 @@ tests:
       - drivers
       - crc
     harness: ztest
+  drivers.crc.armv8:
+    platform_allow:
+      - qemu_cortex_a53/qemu_cortex_a53
+    tags:
+      - drivers
+      - crc
+    harness: ztest

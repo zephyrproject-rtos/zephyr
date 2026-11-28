@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2026 Nokia
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,crc = &crc0;
+	};
+
+	crc0: crc {
+		compatible = "arm,armv8-crc32";
+	};
+};
