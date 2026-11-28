@@ -677,6 +677,45 @@ ZTEST(modem_chat, test_release_cancels_work_items)
 	zassert_ok(modem_chat_attach(&cmd, mock_pipe), "Failed to reattach modem chat");
 }
 
+static void run_script_sync(void *p1, void *p2, void *p3)
+{
+	int *ret = p1;
+	struct k_sem *done = p2;
+
+	ARG_UNUSED(p3);
+
+	*ret = modem_chat_run_script(&cmd, &script_timeout_cmd);
+	k_sem_give(done);
+}
+
+ZTEST(modem_chat, test_release_wakes_sync_script_caller)
+{
+	static K_THREAD_STACK_DEFINE(stack, 2048);
+	static struct k_thread thread;
+	struct k_sem done;
+	bool returned;
+	int ret = 0;
+
+	k_sem_init(&done, 0, 1);
+	k_thread_create(&thread, stack, K_THREAD_STACK_SIZEOF(stack), run_script_sync, &ret, &done,
+			NULL, K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
+	k_msleep(100);
+	zassert_equal(modem_backend_mock_get(&mock, buffer, ARRAY_SIZE(buffer)),
+		      sizeof("AT\r\n") - 1, "Request not sent as expected");
+
+	/* The script waits for a response that never comes, then is released */
+	modem_chat_release(&cmd);
+	returned = (k_sem_take(&done, K_SECONDS(1)) == 0);
+	if (!returned) {
+		k_thread_abort(&thread);
+	}
+	k_thread_join(&thread, K_FOREVER);
+	zassert_ok(modem_chat_attach(&cmd, mock_pipe), "Failed to reattach modem chat");
+
+	zassert_true(returned, "modem_chat_run_script() did not return after the release");
+	zassert_equal(ret, -EAGAIN, "Released script returned %d", ret);
+}
+
 ZTEST(modem_chat, test_script_with_partial_matches)
 {
 	bool called;
