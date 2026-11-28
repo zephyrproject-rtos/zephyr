@@ -226,13 +226,6 @@ int bt_mesh_proxy_msg_send(struct bt_conn *conn, uint8_t type,
 	return 0;
 }
 
-static void buf_send_end(struct bt_conn *conn, void *user_data)
-{
-	struct bt_mesh_adv *adv = user_data;
-
-	bt_mesh_adv_unref(adv);
-}
-
 static int proxy_relay_send(struct bt_conn *conn, struct bt_mesh_adv *adv)
 {
 	int err;
@@ -246,18 +239,11 @@ static int proxy_relay_send(struct bt_conn *conn, struct bt_mesh_adv *adv)
 	net_buf_simple_add_mem(&msg, adv->b.data, adv->b.len);
 
 	err = bt_mesh_proxy_msg_send(conn, BT_MESH_PROXY_NET_PDU,
-				     &msg, buf_send_end, bt_mesh_adv_ref(adv));
+				     &msg, NULL, NULL);
 
 	bt_mesh_adv_send_start(0, err, &adv->ctx);
 	if (err) {
 		LOG_ERR("Failed to send proxy message (err %d)", err);
-
-		/* If segment_and_send() fails the buf_send_end() callback will
-		 * not be called, so we need to clear the user data (net_buf,
-		 * which is just opaque data to segment_and send) reference given
-		 * to segment_and_send() here.
-		 */
-		bt_mesh_adv_unref(adv);
 	}
 
 	return err;
