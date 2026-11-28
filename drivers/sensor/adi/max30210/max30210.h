@@ -16,6 +16,9 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/device.h>
 #include <zephyr/sys/byteorder.h>
+#ifdef CONFIG_MAX30210_STREAM
+#include <zephyr/rtio/rtio.h>
+#endif
 
 /** Register addresses */
 #define STATUS                0x00u
@@ -78,8 +81,8 @@
 /** FIFO Counter 1 Register Masks */
 #define FIFO_OVERFLOW_COUNTER_MASK GENMASK(5, 0)
 
-/** FIFO Counter 2 Register Masks */
-#define FIFO_DATA_COUNT_MSB_MASK GENMASK(5, 0)
+/** FIFO Data Count Register Masks */
+#define FIFO_DATA_COUNT_MASK GENMASK(6, 0)
 
 /** FIFO Data Masks */
 #define FIFO_DATA_MASK GENMASK(7, 0)
@@ -195,6 +198,10 @@
 
 struct max30210_config {
 	struct i2c_dt_spec i2c;
+	struct gpio_dt_spec pdb_gpio;
+	bool external_conversion;
+	uint8_t external_conversion_edge;
+	uint8_t fifo_watermark;
 
 #if defined(CONFIG_MAX30210_TRIGGER)
 	struct gpio_dt_spec interrupt_gpio; /* GPIO for interrupt */
@@ -217,6 +224,11 @@ struct max30210_data {
 	uint8_t int_status;
 	uint8_t fifo_data;
 	uint8_t ovf_counter;
+#ifdef CONFIG_PM_DEVICE
+	uint8_t pm_temp_convert;
+	uint8_t pm_pin_config;
+	bool pm_suspended;
+#endif
 
 	/** Temperature Configuration */
 	uint16_t temp_alarm_high_setup;
@@ -225,6 +237,7 @@ struct max30210_data {
 	uint8_t temp_dec_fast_thresh;
 	uint8_t temp_config_1;
 	uint8_t temp_config_2;
+	uint8_t sampling_rate;
 
 #ifdef CONFIG_MAX30210_TRIGGER
 	const struct device *dev;
@@ -253,8 +266,26 @@ struct max30210_data {
 	struct k_work work;
 #endif /* CONFIG_MAX30210_TRIGGER_OWN_THREAD || CONFIG_MAX30210_TRIGGER_GLOBAL_THREAD*/
 
+#ifdef CONFIG_MAX30210_STREAM
+	struct rtio_iodev_sqe *stream_sqe;
+#endif
+
 #endif /* CONFIG_MAX30210_TRIGGER */
 };
+
+#ifdef CONFIG_MAX30210_STREAM
+struct max30210_fifo_data {
+	uint64_t timestamp_ns;
+	uint64_t sample_period_ns;
+	uint16_t sample_count;
+	uint8_t fifo_count;
+	uint8_t status;
+};
+
+void max30210_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
+void max30210_stream_process(const struct device *dev, uint8_t status);
+int max30210_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder);
+#endif
 
 #ifdef CONFIG_MAX30210_TRIGGER
 int max30210_trigger_set(const struct device *dev, const struct sensor_trigger *trig,

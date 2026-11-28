@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+# Compile the decoder without requiring a hardware instance of the sensor.
+config MAX30210_STREAM
+	bool
+	default y

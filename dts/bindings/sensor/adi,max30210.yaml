@@ -12,11 +12,47 @@ properties:
   reg:
     required: true
 
+  pdb-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the sensor's CVT/PDB pin. The asserted state places
+      the sensor in power-down unless external-conversion is enabled. During
+      initialization, the driver deasserts this GPIO and waits 1 ms before
+      accessing the sensor over I2C. If this property is omitted, the sensor
+      must already be powered and ready for I2C communication.
+
+  external-conversion:
+    type: boolean
+    description: |
+      If true, configure the CVT/PDB pin to trigger a single temperature
+      conversion on the selected edge. The sensor returns to standby after
+      each conversion. This is mutually exclusive with
+      start-continuous-conversion. The application is responsible for driving
+      the CVT/PDB pin.
+
+  external-conversion-active-edge:
+    type: string
+    default: "falling"
+    enum:
+      - falling
+      - rising
+    description: |
+      Active edge on the CVT/PDB pin when external-conversion is enabled.
+
   interrupt-gpios:
     type: phandle-array
     description: |
       The INT1 pin defaults to active low when produced by the sensor. The property value should
       ensure the flags properly describe the signal that is presented to the driver.
+
+  fifo-watermark:
+    type: int
+    default: 32
+    min: 1
+    max: 64
+    description: |
+      Number of temperature samples to collect before the FIFO watermark
+      interrupt is asserted. The FIFO is 64 samples deep.
 
   sampling-rate:
     type: int

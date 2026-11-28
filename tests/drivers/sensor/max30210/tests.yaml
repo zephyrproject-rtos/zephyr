@@ -1,0 +1,7 @@
+tests:
+  drivers.sensor.max30210.decoder:
+    tags:
+      - drivers
+      - sensor
+    integration_platforms:
+      - qemu_cortex_m3

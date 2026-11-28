@@ -9,6 +9,7 @@
 #include <zephyr/device.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/kernel.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/drivers/sensor.h>
 #include "max30210.h"
 #include <zephyr/drivers/i2c.h>
@@ -16,6 +17,8 @@
 #include <zephyr/sys/byteorder.h>
 
 LOG_MODULE_REGISTER(MAX30210, CONFIG_SENSOR_LOG_LEVEL);
+
+#define MAX30210_POWER_UP_DELAY_US 1000
 
 /**
  * @brief Read from MAX30210 register
@@ -122,7 +125,13 @@ static inline void max30210_temp_to_bytes(int32_t temp_mc, uint8_t *msb, uint8_t
  */
 static int max30210_attr_set_continuous_conversion_mode(const struct device *dev)
 {
+	const struct max30210_config *config = dev->config;
 	int ret;
+
+	if (config->external_conversion) {
+		LOG_ERR("Continuous conversion is unavailable in external conversion mode");
+		return -ENOTSUP;
+	}
 
 	ret = max30210_reg_write(dev, TEMP_CONVERT, 0X03);
 	if (ret < 0) {
@@ -296,6 +305,8 @@ static int max30210_attr_set_sampling_frequency(const struct device *dev,
 		LOG_ERR("Failed to set SAMPLING FREQUENCY: %d\n", ret);
 		return ret;
 	}
+
+	((struct max30210_data *)dev->data)->sampling_rate = sampling_rate;
 	return 0;
 }
 
@@ -893,6 +904,29 @@ static int max30210_probe(const struct device *dev)
 	if (config->init_start) {
 		return max30210_attr_set_continuous_conversion_mode(dev);
 	}
+
+	if (config->external_conversion) {
+		ret = max30210_reg_update(dev, TEMP_CONVERT,
+					  AUTO_MODE_MASK | CONVERT_T_MASK, 0);
+		if (ret < 0) {
+			LOG_ERR("Failed to select standby for external conversion: %d", ret);
+			return ret;
+		}
+
+		ret = max30210_reg_update(dev, PIN_CONFIG, EXT_CVT_ICFG_MASK,
+					  config->external_conversion_edge);
+		if (ret < 0) {
+			LOG_ERR("Failed to configure external conversion edge: %d", ret);
+			return ret;
+		}
+
+		ret = max30210_reg_update(dev, PIN_CONFIG, EXT_CVT_EN_MASK, 1);
+		if (ret < 0) {
+			LOG_ERR("Failed to enable external conversion: %d", ret);
+			return ret;
+		}
+	}
+
 	return 0;
 }
 
@@ -907,12 +941,37 @@ static int max30210_init(const struct device *dev)
 	const struct max30210_config *config = dev->config;
 	uint8_t part_id;
 	uint8_t status;
+	int ret;
+
+	if (config->external_conversion && config->init_start) {
+		LOG_ERR("External and continuous conversion modes are mutually exclusive");
+		return -EINVAL;
+	}
 
 	if (!i2c_is_ready_dt(&config->i2c)) {
 		return -ENODEV;
 	}
+
+#ifdef CONFIG_GPIO
+	if (config->pdb_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&config->pdb_gpio)) {
+			LOG_ERR("PDB GPIO controller is not ready");
+			return -ENODEV;
+		}
+
+		ret = gpio_pin_configure_dt(&config->pdb_gpio, GPIO_OUTPUT_INACTIVE);
+		if (ret < 0) {
+			LOG_ERR("Failed to configure PDB GPIO: %d", ret);
+			return ret;
+		}
+
+		/* The sensor requires 700 us after leaving power-down before I2C access. */
+		k_busy_wait(MAX30210_POWER_UP_DELAY_US);
+	}
+#endif
+
 	/* Check PART_ID */
-	int ret = max30210_reg_read(dev, PART_ID, &part_id, 1);
+	ret = max30210_reg_read(dev, PART_ID, &part_id, 1);
 
 	if (ret < 0) {
 		LOG_ERR("Failed to read PART_ID: %d\n", ret);
@@ -953,7 +1012,101 @@ static int max30210_init(const struct device *dev)
 	return 0;
 }
 
-#define MAX30210_CONFIG(inst)                                                                      \
+#ifdef CONFIG_PM_DEVICE
+static int max30210_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct max30210_data *data = dev->data;
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		if (data->pm_suspended) {
+			return 0;
+		}
+
+		ret = max30210_reg_read(dev, TEMP_CONVERT, &data->pm_temp_convert, 1);
+		if (ret < 0) {
+			LOG_ERR("Failed to read conversion mode before suspend: %d", ret);
+			return ret;
+		}
+
+		ret = max30210_reg_read(dev, PIN_CONFIG, &data->pm_pin_config, 1);
+		if (ret < 0) {
+			LOG_ERR("Failed to read pin configuration before suspend: %d", ret);
+			return ret;
+		}
+
+		ret = max30210_reg_update(dev, PIN_CONFIG, EXT_CVT_EN_MASK, 0);
+		if (ret < 0) {
+			LOG_ERR("Failed to disable external conversion for suspend: %d", ret);
+			return ret;
+		}
+
+		ret = max30210_reg_update(dev, TEMP_CONVERT,
+					  AUTO_MODE_MASK | CONVERT_T_MASK, 0);
+		if (ret < 0) {
+			LOG_ERR("Failed to enter standby mode: %d", ret);
+			int restore_ret;
+
+			restore_ret = max30210_reg_write(dev, TEMP_CONVERT, data->pm_temp_convert);
+			if (restore_ret < 0) {
+				LOG_ERR("Failed to restore conversion mode after suspend "
+					"failure: %d", restore_ret);
+			}
+
+			restore_ret = max30210_reg_write(dev, PIN_CONFIG, data->pm_pin_config);
+
+			if (restore_ret < 0) {
+				LOG_ERR("Failed to restore pin configuration after suspend "
+					"failure: %d", restore_ret);
+			}
+			return ret;
+		}
+
+		data->pm_suspended = true;
+		return 0;
+
+	case PM_DEVICE_ACTION_RESUME:
+		if (!data->pm_suspended) {
+			return 0;
+		}
+
+		ret = max30210_reg_write(dev, PIN_CONFIG, data->pm_pin_config);
+		if (ret < 0) {
+			LOG_ERR("Failed to restore pin configuration: %d", ret);
+			return ret;
+		}
+
+		ret = max30210_reg_write(dev, TEMP_CONVERT, data->pm_temp_convert);
+		if (ret < 0) {
+			LOG_ERR("Failed to restore conversion mode: %d", ret);
+			if (data->pm_pin_config & EXT_CVT_EN_MASK) {
+				int disable_ret =
+					max30210_reg_update(dev, PIN_CONFIG, EXT_CVT_EN_MASK, 0);
+
+				if (disable_ret < 0) {
+					LOG_ERR("Failed to disable external conversion after "
+						"resume failure: %d", disable_ret);
+				}
+			}
+			return ret;
+		}
+
+		data->pm_suspended = false;
+		return 0;
+
+	default:
+		return -ENOTSUP;
+	}
+}
+#endif /* CONFIG_PM_DEVICE */
+
+#define MAX30210_CONFIG(inst)                                                                \
+	.pdb_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, pdb_gpios, {0}),                                \
+	.external_conversion = DT_INST_PROP_OR(inst, external_conversion, false),                  \
+	.external_conversion_edge =                                                               \
+		DT_INST_ENUM_IDX_OR(inst, external_conversion_active_edge, 0),                    \
+	.fifo_watermark = DT_INST_PROP_OR(inst, fifo_watermark, 32),                             \
 	.sampling_rate = DT_INST_PROP_OR(inst, sampling_rate, 0),                                  \
 	.hi_trip_count = DT_INST_PROP(inst, hi_trip_count),                                        \
 	.lo_trip_count = DT_INST_PROP(inst, lo_trip_count),                                        \
@@ -972,10 +1125,16 @@ static DEVICE_API(sensor, max30210_driver_api) = {
 #ifdef CONFIG_MAX30210_TRIGGER
 	.trigger_set = max30210_trigger_set,
 #endif
+#ifdef CONFIG_MAX30210_STREAM
+	.submit = max30210_submit,
+	.get_decoder = max30210_get_decoder,
+#endif
 };
 
 #define MAX30210_DEFINE(inst)                                                                      \
-	static struct max30210_data max30210_prv_data_##inst;                                      \
+	static struct max30210_data max30210_prv_data_##inst = {                                  \
+		.sampling_rate = DT_INST_PROP_OR(inst, sampling_rate, 0),                          \
+	};                                                                                         \
 	static const struct max30210_config max30210_config_##inst = {                             \
 		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		MAX30210_CONFIG(inst),                                                             \
@@ -983,7 +1142,9 @@ static DEVICE_API(sensor, max30210_driver_api) = {
 			    (.interrupt_gpio =			\
 					GPIO_DT_SPEC_INST_GET_OR( \
 					inst, interrupt_gpios, {0}),)) };        \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, &max30210_init, NULL, &max30210_prv_data_##inst,        \
+	PM_DEVICE_DT_INST_DEFINE(inst, max30210_pm_action);                                      \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, &max30210_init, PM_DEVICE_DT_INST_GET(inst),           \
+				     &max30210_prv_data_##inst,                                  \
 				     &max30210_config_##inst, POST_KERNEL,                         \
 				     CONFIG_SENSOR_INIT_PRIORITY, &max30210_driver_api);
 
