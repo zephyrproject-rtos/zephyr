@@ -1765,3 +1765,8 @@ test_i2c_ictx53xx: ictx53xx@e5 {
 	compatible = "invensense,ictx53xx";
 	reg = <0xe5>;
 };
+
+test_i2c_ak09940a: ak09940a@e6 {
+	compatible = "asahi-kasei,ak09940a";
+	reg = <0xe6>;
+};
