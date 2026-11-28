@@ -82,6 +82,12 @@
 		clocks = <&root_clock1>;
 	};
 
+	aon_lpcmp0: lpcmp@86000 {
+		compatible = "nxp,lpcmp";
+		reg = <0x86000 0x1000>;
+		status = "disabled";
+	};
+
 	aon_lptmr0: lptmr@88000 {
 		compatible = "nxp,lptmr";
 		reg = <0x88000 0x1000>;

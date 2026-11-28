@@ -79,6 +79,8 @@ tests:
     platform_allow:
       - frdm_mcxl255/mcxl255/cpu0
   drivers.comparator.gpio_loopback.nxp_lpcmp:
+    extra_args:
+      - platform:frdm_mcxl255/mcxl255/cpu0:FILE_SUFFIX="lpcmp"
     platform_allow:
       - frdm_mcxa153
       - frdm_mcxa156
@@ -88,6 +90,7 @@ tests:
       - frdm_mcxa366
       - frdm_mcxa577
       - frdm_mcxe31b
+      - frdm_mcxl255/mcxl255/cpu0
       - frdm_mcxn236
       - frdm_mcxn947/mcxn947/cpu0/qspi
       - frdm_mcxn947/mcxn947/cpu0

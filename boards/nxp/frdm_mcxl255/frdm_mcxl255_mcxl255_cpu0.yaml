@@ -24,5 +24,6 @@ supported:
   - input
   - wuc
   - adc
+  - comparator
   - counter
 vendor: nxp

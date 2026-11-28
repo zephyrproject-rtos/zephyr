@@ -171,6 +171,14 @@
 		clocks = <&syscon MCUX_LPADC1_CLK>;
 		status = "disabled";
 	};
+
+	lpcmp0: lpcmp@b1000 {
+		compatible = "nxp,lpcmp";
+		reg = <0xb1000 0x1000>;
+		interrupts = <64 0>;
+		clocks = <&syscon MCUX_LPCMP0_CLK>;
+		status = "disabled";
+	};
 };
 
 &rtc {
@@ -199,6 +207,10 @@
 
 &aon_lptmr0 {
 	interrupts = <155 0>;
+};
+
+&aon_lpcmp0 {
+	interrupts = <157 0>;
 };
 
 &lpacmp {
