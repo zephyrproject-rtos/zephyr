@@ -1,0 +1,17 @@
+# Copyright 2026 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - interrupt
+  platform_allow:
+    - native_sim
+
+tests:
+  drivers.interrupt_controller.intc_ite_it8xxx2.v1:
+    extra_configs:
+      - CONFIG_TEST_IT8XXX2_INTC_V1=y
+  drivers.interrupt_controller.intc_ite_it8xxx2.v2:
+    extra_configs:
+      - CONFIG_TEST_IT8XXX2_INTC_V2=y
