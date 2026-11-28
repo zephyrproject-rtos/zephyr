@@ -369,6 +369,8 @@ static int eth_dm9051_nsr_poll(const struct device *dev, k_timeout_t timeout)
 
 static int eth_dm9051_hw_start(const struct device *dev, struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const uint8_t imr = DM9051_IMR_PRI | DM9051_IMR_PTI | DM9051_IMR_LNKCHGI | DM9051_IMR_PAR;
 	const uint8_t rcr = DM9051_RCR_RXEN | DM9051_RCR_ALL |
 			    DM9051_RCR_DIS_CRC | DM9051_RCR_DIS_LONG;
@@ -425,6 +427,8 @@ static int eth_dm9051_hw_start(const struct device *dev, struct net_if *iface __
 
 static int eth_dm9051_hw_stop(const struct device *dev, struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int ret;
 
 	/* Power off the internal phy */
@@ -439,6 +443,8 @@ static int eth_dm9051_hw_stop(const struct device *dev, struct net_if *iface __u
 
 static int eth_dm9051_tx(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	uint16_t len = (uint16_t)net_pkt_get_len(pkt);
 	struct eth_dm9051_data *data = dev->data;
 	uint16_t len16;
@@ -665,6 +671,9 @@ static void eth_dm9051_rx_thread(void *p1, void *p2, void *p3)
 	int ret;
 
 	dev = p1;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	data = dev->data;
 
 	while (true) {
@@ -711,6 +720,9 @@ static void eth_dm9051_rx_thread(void *p1, void *p2, void *p3)
 static void eth_dm9051_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_dm9051_data *data = dev->data;
 
 	net_if_set_link_addr(iface, data->mac_addr, sizeof(data->mac_addr), NET_LINK_ETHERNET);
@@ -745,6 +757,8 @@ static int eth_dm9051_set_config(const struct device *dev,
 				 enum ethernet_config_type type,
 				 const struct ethernet_config *config)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_dm9051_data *data = dev->data;
 	uint8_t rcr;
 	int ret;
@@ -789,6 +803,8 @@ static int eth_dm9051_set_config(const struct device *dev,
 static const struct device *eth_dm9051_get_phy(const struct device *dev,
 					       struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_dm9051_config *config = dev->config;
 
 	return config->phy_dev;
@@ -921,6 +937,8 @@ static int eth_dm9051_set_mac_addr(const struct device *dev)
 
 static int eth_dm9051_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_dm9051_config *config = dev->config;
 	struct eth_dm9051_data *data = dev->data;
 	int ret;
