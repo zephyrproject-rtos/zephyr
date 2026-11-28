@@ -79,5 +79,7 @@ void holder_procedure(void);
 void writer_procedure(void);
 void execute_server_procedure(void);
 void executer_procedure(void);
+void kept_conn_dut_procedure(void);
+void kept_conn_peer_procedure(void);
 
 #endif /* ZEPHYR_TESTS_BSIM_BLUETOOTH_HOST_GATT_PREPARE_WRITE_QUOTA_SRC_COMMON_H_ */
