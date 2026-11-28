@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config CHARGER_BQ24190
-	bool "BQ24190 Battery Charger"
+	bool "BQ24190 battery charger driver"
 	default y
 	depends on DT_HAS_TI_BQ24190_ENABLED
 	select I2C
