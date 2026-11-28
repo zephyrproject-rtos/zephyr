@@ -914,6 +914,10 @@ static int dma_stm32_reload(const struct device *dev, uint32_t id,
 
 	/* The flags of the last transfer must be cleared before the stream is enabled */
 	dma_stm32_clear_stream_irq(dev, id);
+#if !defined(CONFIG_DMAMUX_STM32) \
+	|| defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32MP1X)
+	LL_DMA_EnableIT_TC(dma, dma_stm32_id_to_stream(id));
+#endif /* CONFIG_DMAMUX_STM32 */
 	stm32_dma_enable_stream(dma, id);
 
 	return 0;
@@ -943,6 +947,10 @@ static int dma_stm32_start(const struct device *dev, uint32_t id)
 	stream->busy = true;
 
 	dma_stm32_clear_stream_irq(dev, id);
+#if !defined(CONFIG_DMAMUX_STM32) \
+	|| defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32MP1X)
+	LL_DMA_EnableIT_TC(dma, dma_stm32_id_to_stream(id));
+#endif /* CONFIG_DMAMUX_STM32 */
 	stm32_dma_enable_stream(dma, id);
 
 	return 0;
@@ -979,10 +987,6 @@ static int dma_stm32_stop(const struct device *dev, uint32_t id)
 	|| defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32MP1X)
 	LL_DMA_DisableIT_TC(dma, dma_stm32_id_to_stream(id));
 #endif /* CONFIG_DMAMUX_STM32 */
-
-#if defined(CONFIG_DMA_STM32_V1)
-	stm32_dma_disable_fifo_irq(dma, id);
-#endif
 
 	dma_stm32_clear_stream_irq(dev, id);
 	dma_stm32_disable_stream(dma, id);
