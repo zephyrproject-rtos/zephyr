@@ -482,6 +482,34 @@
 			};
 		};
 
+		spi0: spi@8745c000 {
+			compatible = "renesas,rx-spi-b";
+			reg = <0x8745c000 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			channel = <0>;
+			clocks = <&pclka MSTPB 19>;
+			clock-names = "spiclk";
+			interrupts-extended = <&icu 172 1>, <&icu 173 1>, <&icu 174 1>,
+					      <&group_irq_al1 24 1>;
+			interrupt-names = "spri", "spti", "spci", "spei";
+			status = "disabled";
+		};
+
+		spi1: spi@8745c100 {
+			compatible = "renesas,rx-spi-b";
+			reg = <0x8745c100 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			channel = <1>;
+			clocks = <&pclka MSTPB 19>;
+			clock-names = "spiclk";
+			interrupts-extended = <&icu 175 1>, <&icu 176 1>, <&icu 177 1>,
+					      <&group_irq_al1 26 1>;
+			interrupt-names = "spri", "spti", "spci", "spei";
+			status = "disabled";
+		};
+
 		cmt: timer@87826000 {
 			compatible = "renesas,rx-timer-cmt-start-control";
 			reg = <0x87826000 0x02>;
