@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Disk exposing a USB mass storage device attached to a USB host
+  controller. The node is a child of the USB host controller node, and
+  with CONFIG_USB_MSC_DISK_INITIALIZE_AT_BOOT that controller is
+  initialized and enabled at boot, so no USB host code is needed in the
+  application.
+
+  The enabled nodes of this compatible are matched, in instance order, to
+  the mass storage devices the host stack serves. An attached device takes
+  the lowest free index, so with more than one device the disk a device
+  appears as depends on the order the devices were attached in. Only the
+  first logical unit of a device is used.
+
+compatible: "zephyr,usb-msc-disk"
+
+include: [base.yaml]
+
+properties:
+  disk-name:
+    type: string
+    required: true
+    description: |
+      Disk name.

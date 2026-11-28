@@ -1,0 +1,31 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config USB_MSC_DISK
+	bool "USB mass storage disk access"
+	depends on DT_HAS_ZEPHYR_USB_MSC_DISK_ENABLED
+	default y
+	select USB_HOST_STACK
+	select USBH_MSC
+	help
+	  Expose a USB mass storage device attached to the USB host stack
+	  as a disk access device, so a file system can be mounted on it.
+
+if USB_MSC_DISK
+
+config USB_MSC_DISK_INITIALIZE_AT_BOOT
+	bool "Initialize the USB host stack at boot"
+	default y
+	help
+	  Initialize and enable, at boot, the USB host controller that the
+	  zephyr,usb-msc-disk nodes are children of, so the application
+	  needs no USB host code. All the nodes must then share one
+	  controller. Disable it when the application initializes the USB
+	  host stack of that controller itself, for example to use other
+	  host classes on it.
+
+module = USB_MSC_DISK
+module-str = usb msc disk
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # USB_MSC_DISK

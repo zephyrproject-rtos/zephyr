@@ -23,7 +23,7 @@
  * @brief Interfaces for disks.
  * @defgroup disk_driver_interface Disk Access
  * @since 1.6
- * @version 1.1.0
+ * @version 1.2.0
  * @ingroup io_interfaces
  * @{
  *
@@ -58,7 +58,8 @@ extern "C" {
 /** Initialize the disk. This IOCTL must be issued before the disk can be
  * used for I/O. It is reference counted, so only the first successful
  * invocation of this macro on an uninitialized disk will initialize the IO
- * device
+ * device. A disk that reports @ref DISK_STATUS_UNINIT later, for example
+ * after its removable medium was changed, is initialized again.
  */
 #define DISK_IOCTL_CTRL_INIT			6
 /** Deinitialize the disk. This IOCTL can be used to de-initialize the disk,

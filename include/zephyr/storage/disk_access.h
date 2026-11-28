@@ -45,7 +45,8 @@ extern "C" {
  *
  * Disk initialization is reference counted, so only the first successful call
  * to initialize a uninitialized (or previously de-initialized) disk will
- * actually initialize the disk
+ * actually initialize the disk. A disk whose status is @ref DISK_STATUS_UNINIT,
+ * for example after its removable medium was changed, is initialized again.
  *
  * @param[in] pdrv          Disk name
  *

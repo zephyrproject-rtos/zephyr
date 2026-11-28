@@ -54,16 +54,27 @@ struct disk_info *disk_access_get_di(const char *name)
 	return disk;
 }
 
+/* A disk is initialized for its first user, and again when it reports itself uninitialized */
+static bool disk_needs_init(struct disk_info *disk)
+{
+	if (disk->refcnt == 0U) {
+		return true;
+	}
+
+	return (disk->ops != NULL) && (disk->ops->status != NULL) &&
+	       (disk->ops->status(disk) == DISK_STATUS_UNINIT);
+}
+
 int disk_access_init(const char *pdrv)
 {
 	struct disk_info *disk = disk_access_get_di(pdrv);
 	int rc = -EINVAL;
 
-	if ((disk != NULL) && (disk->refcnt == 0U)) {
+	if ((disk != NULL) && disk_needs_init(disk)) {
 		/* Disk has not been initialized, start it */
 		if ((disk->ops != NULL) && (disk->ops->init != NULL)) {
 			rc = disk->ops->init(disk);
-			if (rc == 0) {
+			if ((rc == 0) && (disk->refcnt < UINT16_MAX)) {
 				/* Increment reference count */
 				disk->refcnt++;
 			}
@@ -157,9 +168,9 @@ int disk_access_ioctl(const char *pdrv, uint8_t cmd, void *buf)
 				(disk->ops->ioctl != NULL)) {
 		switch (cmd) {
 		case DISK_IOCTL_CTRL_INIT:
-			if (disk->refcnt == 0U) {
+			if (disk_needs_init(disk)) {
 				rc = disk->ops->ioctl(disk, cmd, buf);
-				if (rc == 0) {
+				if ((rc == 0) && (disk->refcnt < UINT16_MAX)) {
 					disk->refcnt++;
 				}
 			} else if (disk->refcnt < UINT16_MAX) {

@@ -58,6 +58,8 @@ enum uhc_vrt_event_type {
 	UHC_VRT_EVT_SOF,
 	/* Request reply received */
 	UHC_VRT_EVT_REPLY,
+	/* Device removed */
+	UHC_VRT_EVT_DEV_REMOVED,
 };
 
 /* Structure for driver's endpoint events */
@@ -395,6 +397,24 @@ handle_reply_err:
 	return ret;
 }
 
+/* Return every queued transfer and forget the scheduled frame */
+static void vrt_xfer_drop_queued(const struct device *dev, const int err)
+{
+	struct uhc_vrt_data *const priv = uhc_get_private(dev);
+	struct uhc_data *const data = dev->data;
+	struct uhc_transfer *xfer, *tmp;
+
+	vrt_xfer_drop_active(dev, err);
+
+	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&data->ctrl_xfers, xfer, tmp, node) {
+		uhc_xfer_return(dev, xfer, err);
+	}
+
+	sys_dlist_init(&priv->frame.list);
+	priv->frame.ptr = NULL;
+	priv->frame.count = 0U;
+}
+
 static void vrt_xfer_cleanup_cancelled(const struct device *dev)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
@@ -428,6 +448,9 @@ static void xfer_work_handler(struct k_work *work)
 			vrt_xfer_cleanup_cancelled(dev);
 			vrt_assemble_frame(dev);
 			schedule = true;
+			break;
+		case UHC_VRT_EVT_DEV_REMOVED:
+			vrt_xfer_drop_queued(dev, -ENODEV);
 			break;
 		case UHC_VRT_EVT_REPLY:
 			err = vrt_handle_reply(dev, ev->pkt);
@@ -480,6 +503,8 @@ static void vrt_device_act(const struct device *dev,
 		break;
 	case UVB_DEVICE_ACT_REMOVED:
 		type = UHC_EVT_DEV_REMOVED;
+		k_timer_stop(&priv->sof_timer);
+		vrt_event_submit(dev, UHC_VRT_EVT_DEV_REMOVED, NULL);
 		break;
 	default:
 		type = UHC_EVT_ERROR;

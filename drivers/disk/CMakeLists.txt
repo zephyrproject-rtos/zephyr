@@ -16,4 +16,5 @@ zephyr_library_sources_ifdef(CONFIG_DISK_DRIVER_RAM ramdisk.c)
 zephyr_library_sources_ifdef(CONFIG_DISK_DRIVER_SEMIHOST semihost_disk.c)
 zephyr_library_sources_ifdef(CONFIG_DISK_DRIVER_VIRTIO_BLK virtio_blk.c)
 zephyr_library_sources_ifdef(CONFIG_SDMMC_STM32 sdmmc_stm32.c)
+zephyr_library_sources_ifdef(CONFIG_USB_MSC_DISK usb_msc_disk.c)
 # zephyr-keep-sorted-stop
