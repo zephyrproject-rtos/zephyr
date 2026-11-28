@@ -9,7 +9,7 @@ description: |
 
 compatible: "silabs,siwx91x-gpio-uulp"
 
-include: [gpio-controller.yaml, base.yaml]
+include: [gpio-controller.yaml, base.yaml, wuc-device.yaml]
 
 properties:
 
