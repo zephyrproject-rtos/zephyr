@@ -10507,3 +10507,28 @@ Under embargo until 2026-12-21
 ------------------
 
 Under embargo until 2026-12-21
+
+:cve:`2026-126957`
+------------------
+
+ICMPv4 Record Route / Timestamp option: stack OOB read via ptr underflow in icmpv4.c
+
+``icmpv4_update_record_route()`` and ``icmpv4_update_time_stamp()`` in
+``subsys/net/ip/icmpv4.c`` copy the already recorded part of an IPv4 Record Route or Timestamp
+option into the ICMP Echo Reply. The copy length is computed as ``ptr - ptr_offset`` in
+``uint8_t`` arithmetic, and the attacker-controlled Pointer field was only checked against the
+option length, not against the RFC 791 minimum (4 for Record Route, 5 for Timestamp). A Pointer
+below the minimum wraps the length to up to 252 bytes, and ``net_pkt_write()`` then reads past
+the 40-byte ``opt_data`` stack buffer, returning up to 213 bytes of stack memory in the reply.
+
+A single unauthenticated ICMP Echo Request triggers the leak, and the device does not crash, so
+it can be repeated. Builds with ``CONFIG_NET_IPV4_HDR_OPTIONS`` enabled are affected, including
+those where it is selected by ``CONFIG_NET_IPV4_IGMP``.
+
+- `Zephyr project bug tracker GHSA-cvv6-5f6x-87qf
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-cvv6-5f6x-87qf>`_
+
+This has been fixed in main for v4.5.0
+
+- `PR 111273 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/111273>`_
