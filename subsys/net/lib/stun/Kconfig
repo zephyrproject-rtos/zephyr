@@ -24,6 +24,9 @@ menuconfig STUN
 	  compute or verify an attribute return -EIO if the backend lacks
 	  what the attribute needs.
 
+	  The key of a long-term credential needs MD5 (PSA_WANT_ALG_MD5),
+	  which is not enabled by default.
+
 if STUN
 
 module = STUN

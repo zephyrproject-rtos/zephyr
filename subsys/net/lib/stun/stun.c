@@ -1132,6 +1132,79 @@ int stun_verify_integrity_sha256(const struct stun_msg *msg, const uint8_t *key,
 			   buf + attr_offset + ATTR_HEADER_SIZE, mac_len);
 }
 
+/* Hash username ":" realm ":" password with the algorithm into the key, which
+ * is key_len bytes, the length of that hash.
+ */
+static int long_term_key(psa_algorithm_t alg, const char *username, const char *realm,
+			 const char *password, uint8_t *key, size_t key_len)
+{
+	static const uint8_t colon = (uint8_t)':';
+	psa_hash_operation_t op = PSA_HASH_OPERATION_INIT;
+	psa_status_t status = PSA_SUCCESS;
+	size_t written = 0U;
+
+	if (username == NULL || realm == NULL || password == NULL || key == NULL) {
+		return -EINVAL;
+	}
+	if (!utf8_is_valid(username, strlen(username)) || !utf8_is_valid(realm, strlen(realm)) ||
+	    !utf8_is_valid(password, strlen(password))) {
+		return -EINVAL;
+	}
+	if (strlen(username) > STUN_USERNAME_MAX_LEN || strlen(realm) > STUN_TEXT_MAX_LEN) {
+		return -EINVAL;
+	}
+
+	/* Repeatable: once the backend is up, the call just succeeds. */
+	status = psa_crypto_init();
+	if (status != PSA_SUCCESS) {
+		LOG_ERR("PSA cannot initialise (%d)", (int)status);
+		return -EIO;
+	}
+
+	status = psa_hash_setup(&op, alg);
+	if (status == PSA_SUCCESS) {
+		status = psa_hash_update(&op, (const uint8_t *)username, strlen(username));
+	}
+	if (status == PSA_SUCCESS) {
+		status = psa_hash_update(&op, &colon, sizeof(colon));
+	}
+	if (status == PSA_SUCCESS) {
+		status = psa_hash_update(&op, (const uint8_t *)realm, strlen(realm));
+	}
+	if (status == PSA_SUCCESS) {
+		status = psa_hash_update(&op, &colon, sizeof(colon));
+	}
+	if (status == PSA_SUCCESS) {
+		status = psa_hash_update(&op, (const uint8_t *)password, strlen(password));
+	}
+	if (status == PSA_SUCCESS) {
+		status = psa_hash_finish(&op, key, key_len, &written);
+	}
+	if (status != PSA_SUCCESS) {
+		(void)psa_hash_abort(&op);
+		LOG_ERR("PSA cannot compute the long-term key (%d)", (int)status);
+		return -EIO;
+	}
+	if (written != key_len) {
+		LOG_ERR("PSA wrote %zu bytes of key, not %zu", written, key_len);
+		return -EIO;
+	}
+	return 0;
+}
+
+int stun_long_term_key(const char *username, const char *realm, const char *password,
+		       uint8_t key[STUN_LONG_TERM_KEY_LEN])
+{
+	return long_term_key(PSA_ALG_MD5, username, realm, password, key, STUN_LONG_TERM_KEY_LEN);
+}
+
+int stun_long_term_key_sha256(const char *username, const char *realm, const char *password,
+			      uint8_t key[STUN_LONG_TERM_KEY_SHA256_LEN])
+{
+	return long_term_key(PSA_ALG_SHA_256, username, realm, password, key,
+			     STUN_LONG_TERM_KEY_SHA256_LEN);
+}
+
 int stun_verify_fingerprint(const struct stun_msg *msg)
 {
 	size_t attr_offset = 0U;

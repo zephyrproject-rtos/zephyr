@@ -17,6 +17,9 @@ tests:
   net.stun.no_ipv6:
     extra_configs:
       - CONFIG_NET_IPV6=n
+  net.stun.no_md5:
+    extra_configs:
+      - CONFIG_PSA_WANT_ALG_MD5=n
   net.stun.no_client:
     extra_configs:
       - CONFIG_STUN_CLIENT=n

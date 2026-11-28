@@ -77,6 +77,11 @@ Message integrity
    :kconfig:option:`CONFIG_PSA_WANT_ALG_SHA_256` (MESSAGE-INTEGRITY-SHA256),
    all on by default. The library initializes the PSA Crypto API itself.
 
+Long-term credentials
+   :kconfig:option:`CONFIG_PSA_WANT_ALG_MD5`, off by default, for
+   :c:func:`stun_long_term_key`. :c:func:`stun_long_term_key_sha256` takes
+   :kconfig:option:`CONFIG_PSA_WANT_ALG_SHA_256`.
+
 Address families
    :kconfig:option:`CONFIG_NET_IPV6` for IPv6 addresses. Without it the address
    functions return ``-EAFNOSUPPORT`` for such an address, and the message
@@ -415,8 +420,10 @@ The following is not part of the library:
   :c:func:`stun_add_xor_address` and :c:func:`stun_get_xor_address` the ones in
   the XOR-MAPPED-ADDRESS format.
 * The long-term credential mechanism. The parser limits the length of REALM and
-  NONCE; the key derivation, USERHASH and PASSWORD-ALGORITHM are left to the
-  application.
+  NONCE, and :c:func:`stun_long_term_key` and
+  :c:func:`stun_long_term_key_sha256` compute the key; the request that answers
+  a 401 or 438 error, USERHASH, PASSWORD-ALGORITHMS and PASSWORD-ALGORITHM are
+  left to the application.
 * The OpaqueString profile (:rfc:`8265`), which USERNAME and the password of a
   short-term credential have to be processed with before they are given to the
   library. ICE credentials are ASCII and need no processing.
