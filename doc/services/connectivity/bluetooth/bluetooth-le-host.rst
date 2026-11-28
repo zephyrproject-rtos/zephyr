@@ -141,6 +141,20 @@ avoided:
   or :kconfig:option:`CONFIG_BT_ATT_TX_COUNT`) so that allocations made from
   callbacks do not have to wait.
 
+Losing the Controller
+=====================
+
+When an HCI driver reports that its Controller has gone away, the Host disables
+Bluetooth: commands fail, connections end with their ``disconnected`` callback,
+and :c:func:`bt_is_ready` returns ``false``. It also calls ``unavailable`` of each
+:c:struct:`bt_controller_cb` defined with :c:macro:`BT_CONTROLLER_CB_DEFINE`.
+
+To start again, call :c:func:`bt_enable` with a ready callback or from a thread of
+your own, and restore what :c:func:`bt_disable` clears: load the settings or create the identity, and start advertising or
+scanning. ``available`` tells that the Controller is back. Not every HCI driver can
+tell, so :c:func:`bt_enable` can also be tried at any time. It fails until the
+Controller is back, and :c:func:`bt_disable` is then called before the next try.
+
 Security
 ========
 
