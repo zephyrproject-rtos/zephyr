@@ -4,7 +4,11 @@
 
 set_linker_property(NO_CREATE PROPERTY c_library    "-lc")
 set_linker_property(NO_CREATE PROPERTY rt_library   "-lgcc")
-set_linker_property(NO_CREATE PROPERTY c++_library  "-lstdc++")
+if(CONFIG_XTENSA_LIBC)
+  set_linker_property(NO_CREATE PROPERTY c++_library  "-lc++")
+else()
+  set_linker_property(NO_CREATE PROPERTY c++_library  "-lstdc++")
+endif()
 set_linker_property(NO_CREATE PROPERTY hal_library  "-lhal")
 
 if(CONFIG_XTENSA_LIBC)
