@@ -979,9 +979,8 @@ static int uhc_ra_driver_preinit(const struct device *dev)
 {
 	const struct uhc_renesas_ra_config *config = dev->config;
 	struct uhc_renesas_ra_data *priv = uhc_get_private(dev);
-	struct uhc_data *data = dev->data;
 
-	k_mutex_init(&data->mutex);
+	uhc_common_init(dev);
 
 	sys_dlist_init(&priv->dcp.xfers_list);
 

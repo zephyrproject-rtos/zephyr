@@ -380,7 +380,8 @@ static int max3421e_schedule_xfer(const struct device *dev)
 		/* Do not restart last transfer */
 		hrsl = 0;
 
-		priv->last_xfer = uhc_xfer_get_next(dev);
+		priv->last_xfer =
+			uhc_xfer_get_next(dev, 0, UHC_XFER_MASK_ALL, NULL, NULL);
 		if (priv->last_xfer == NULL) {
 			LOG_DBG("Nothing to transfer");
 			return 0;
@@ -417,18 +418,12 @@ static void max3421e_xfer_drop_active(const struct device *dev, int err)
 static void max3421e_xfer_cleanup_cancelled(const struct device *dev)
 {
 	struct max3421e_data *priv = uhc_get_private(dev);
-	struct uhc_data *data = dev->data;
-	struct uhc_transfer *tmp;
 
 	if (priv->last_xfer != NULL && priv->last_xfer->err == -ECONNRESET) {
 		max3421e_xfer_drop_active(dev, -ECONNRESET);
 	}
 
-	SYS_DLIST_FOR_EACH_CONTAINER(&data->ctrl_xfers, tmp, node) {
-		if (tmp->err == -ECONNRESET) {
-			uhc_xfer_return(dev, tmp, -ECONNRESET);
-		}
-	}
+	uhc_xfer_cleanup_cancelled(dev, NULL, NULL);
 }
 
 static int max3421e_hrslt_success(const struct device *dev)
@@ -799,26 +794,13 @@ static int max3421e_bus_resume(const struct device *dev)
 static int max3421e_enqueue(const struct device *dev,
 			    struct uhc_transfer *const xfer)
 {
-	return uhc_xfer_append(dev, xfer);
+	return uhc_xfer_append(dev, xfer, 0);
 }
 
 static int max3421e_dequeue(const struct device *dev,
 			    struct uhc_transfer *const xfer)
 {
-	struct uhc_data *data = dev->data;
-	struct uhc_transfer *tmp;
-	unsigned int key;
-
-	key = irq_lock();
-	SYS_DLIST_FOR_EACH_CONTAINER(&data->ctrl_xfers, tmp, node) {
-		if (xfer == tmp) {
-			tmp->err = -ECONNRESET;
-		}
-	}
-
-	irq_unlock(key);
-
-	return 0;
+	return uhc_xfer_dequeue(xfer);
 }
 
 static int max3421e_reset(const struct device *dev)
@@ -1048,8 +1030,7 @@ static int uhc_max3421e_shutdown(const struct device *dev)
 static int max3421e_driver_init(const struct device *dev)
 {
 	const struct max3421e_config *config = dev->config;
-	struct uhc_data *data = dev->data;
-	struct max3421e_data *priv = data->priv;
+	struct max3421e_data *priv = uhc_get_private(dev);
 	int ret;
 
 	if (config->dt_rst.port) {
@@ -1097,7 +1078,7 @@ static int max3421e_driver_init(const struct device *dev)
 		return ret;
 	}
 
-	k_mutex_init(&data->mutex);
+	uhc_common_init(dev);
 	config->make_thread(dev);
 
 	LOG_DBG("MAX3421E CPU interface initialized");

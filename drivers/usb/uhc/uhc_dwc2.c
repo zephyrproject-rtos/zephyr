@@ -1543,7 +1543,7 @@ static void ch_schedule_interrupt(const struct device *dev,
 		 */
 
 		/* TODO: Consider the High-speed microframes as well, only Full-speed for now */
-		ch->data->scheduled_frame = (ch->data->scheduled_frame + xfer->interval) &
+		ch->data->scheduled_frame = (ch->data->scheduled_frame + xfer->bInterval) &
 					     PERIODIC_FRAME_MASK;
 		ch->data->periodic_scheduled = true;
 	}
@@ -1918,7 +1918,7 @@ static int submit_xfer(const struct device *const dev, struct uhc_transfer *cons
 	int ret;
 
 	LOG_DBG("addr=%u, ep=%02Xh, mps=%d, int=%d, start_frame=%d, stage=%d, no_status=%d",
-		xfer->udev->addr, xfer->ep, xfer->mps, xfer->interval,
+		xfer->udev->addr, xfer->ep, xfer->mps, xfer->bInterval,
 		xfer->start_frame, xfer->stage, xfer->no_status);
 
 	switch (xfer->type) {
@@ -2252,63 +2252,55 @@ static void uhc_dwc2_isr_handler(const struct device *dev)
  * halted and released with the controller interrupt disabled, so the ISR
  * cannot read or post an event for a channel being torn down.
  */
-static void dequeue_cancelled(const struct device *dev)
+static void cancel_xfer_cb(const struct device *dev, struct uhc_transfer *xfer, void *priv_data)
 {
+	ARG_UNUSED(priv_data);
 	const struct uhc_dwc2_config *const config = dev->config;
 	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
-	struct uhc_data *const data = dev->data;
-	struct uhc_transfer *xfer, *tmp;
+	struct uhc_dwc2_channel *ch = NULL;
+	bool halting = false;
 
-	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&data->ctrl_xfers, xfer, tmp, node) {
-		struct uhc_dwc2_channel *ch = NULL;
-		bool halting = false;
-
-		if (xfer->err != -ECONNRESET) {
-			continue;
+	/* Find the channel the transfer is assigned to, if any */
+	for (uint32_t idx = 0; idx < priv->numhstchnl; idx++) {
+		if (priv->ch[idx].xfer == xfer) {
+			ch = &priv->ch[idx];
+			break;
 		}
-
-		/* Find the channel the transfer is assigned to, if any */
-		for (uint32_t idx = 0; idx < priv->numhstchnl; idx++) {
-			if (priv->ch[idx].xfer == xfer) {
-				ch = &priv->ch[idx];
-				break;
-			}
-		}
-
-		if (ch != NULL) {
-			/*
-			 * Initiate halting with the controller interrupt
-			 * disabled, so the ISR cannot run for this channel
-			 * concurrently.
-			 */
-			config->irq_disable_func(dev);
-
-			halting = ch_halt_initiate(ch);
-			if (!halting) {
-				/*
-				 * Channel was no longer running, finish the
-				 * teardown here.
-				 */
-				atomic_set(&ch->events, 0);
-				k_event_clear(&priv->events,
-					BIT(UHC_DWC2_EVENT_PORT_PEND_CHANNEL + ch->index));
-				ch_release(dev, ch);
-			}
-
-			config->irq_enable_func(dev);
-		}
-
-		if (halting) {
-			/*
-			 * Halt initiated and will be finished in
-			 * ch_handle_events():
-			 */
-			continue;
-		}
-
-		/* Return pending or already-stopped transfer */
-		uhc_xfer_return(dev, xfer, -ECONNRESET);
 	}
+
+	if (ch != NULL) {
+		/*
+		 * Initiate halting with the controller interrupt
+		 * disabled, so the ISR cannot run for this channel
+		 * concurrently.
+		 */
+		config->irq_disable_func(dev);
+
+		halting = ch_halt_initiate(ch);
+		if (!halting) {
+			/*
+			 * Channel was no longer running, finish the
+			 * teardown here.
+			 */
+			atomic_set(&ch->events, 0);
+			k_event_clear(&priv->events,
+				BIT(UHC_DWC2_EVENT_PORT_PEND_CHANNEL + ch->index));
+			ch_release(dev, ch);
+		}
+
+		config->irq_enable_func(dev);
+	}
+
+	if (halting) {
+		/*
+		 * Halt initiated and will be finished in
+		 * ch_handle_events():
+		 */
+		return;
+	}
+
+	/* Return pending or already-stopped transfer */
+	uhc_xfer_return(dev, xfer, -ECONNRESET);
 }
 
 static void uhc_dwc2_thread(void *arg0, void *arg1, void *arg2)
@@ -2334,7 +2326,7 @@ static void uhc_dwc2_thread(void *arg0, void *arg1, void *arg2)
 
 		/* Cancel transfers marked for dequeue */
 		if (event_mask & BIT(UHC_DWC2_EVENT_DEQUEUE)) {
-			dequeue_cancelled(dev);
+			uhc_xfer_cleanup_cancelled(dev, cancel_xfer_cb, NULL);
 		}
 
 		/* Check if a new transfer can be started */
@@ -2405,7 +2397,7 @@ static int uhc_dwc2_bus_resume(const struct device *const dev)
 
 static int uhc_dwc2_enqueue(const struct device *const dev, struct uhc_transfer *const xfer)
 {
-	(void)uhc_xfer_append(dev, xfer);
+	(void)uhc_xfer_append(dev, xfer, 0);
 
 	/*
 	 * Try to start a new transfer. If no channel/endpoint is free it stays
@@ -2419,19 +2411,13 @@ static int uhc_dwc2_enqueue(const struct device *const dev, struct uhc_transfer 
 static int uhc_dwc2_dequeue(const struct device *const dev, struct uhc_transfer *const xfer)
 {
 	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
-	struct uhc_data *const data = dev->data;
-	struct uhc_transfer *tmp;
 
 	/*
 	 * Mark the queued transfer as cancelled. The dequeue process itself
 	 * will take place in the driver's thread.
 	 */
-	SYS_DLIST_FOR_EACH_CONTAINER(&data->ctrl_xfers, tmp, node) {
-		if (tmp == xfer) {
-			tmp->err = -ECONNRESET;
-			k_event_post(&priv->events, BIT(UHC_DWC2_EVENT_DEQUEUE));
-			break;
-		}
+	if (uhc_xfer_dequeue(xfer) == 0) {
+		k_event_post(&priv->events, BIT(UHC_DWC2_EVENT_DEQUEUE));
 	}
 
 	return 0;
@@ -2450,6 +2436,8 @@ static int uhc_dwc2_preinit(const struct device *const dev)
 		priv->ch[idx].regs =
 			(struct usb_dwc2_host_chan *)((mem_addr_t)base + USB_DWC2_HCCHAR(idx));
 	}
+
+	uhc_common_init(dev);
 
 	k_thread_create(&priv->thread,
 		config->stack,
@@ -2669,7 +2657,6 @@ static DEVICE_API(uhc, uhc_dwc2_api) = {
 	 };									\
 										\
 	static struct uhc_data uhc_data_##n = {					\
-		.mutex = Z_MUTEX_INITIALIZER(uhc_data_##n.mutex),		\
 		.priv = &uhc_dwc2_priv_##n,					\
 	};									\
 										\

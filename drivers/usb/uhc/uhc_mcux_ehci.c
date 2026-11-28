@@ -181,7 +181,7 @@ static int uhc_mcux_enqueue(const struct device *dev, struct uhc_transfer *const
 	usb_status_t status;
 	usb_host_transfer_t *mcux_xfer;
 
-	uhc_xfer_append(dev, xfer);
+	uhc_xfer_append(dev, xfer, 0);
 
 	/* firstly check and init the mcux endpoint handle */
 	mcux_ep = uhc_mcux_init_hal_ep(dev, xfer);
@@ -241,7 +241,6 @@ static int uhc_mcux_driver_preinit(const struct device *dev)
 {
 	const struct uhc_mcux_ehci_config *ehci_config = dev->config;
 	const struct uhc_mcux_config *config = &ehci_config->uhc_config;
-	struct uhc_data *data = dev->data;
 	struct uhc_mcux_data *priv = uhc_get_private(dev);
 	int err;
 
@@ -290,7 +289,7 @@ static int uhc_mcux_driver_preinit(const struct device *dev)
 		}
 	}
 
-	k_mutex_init(&data->mutex);
+	uhc_common_init(dev);
 	pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	LOG_DBG("MCUX controller initialized");
 
