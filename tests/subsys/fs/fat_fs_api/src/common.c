@@ -49,6 +49,59 @@ int check_file_dir_exists(const char *path)
 
 static uint8_t erase_buffer[4096] __aligned(32) = {0};
 
+#if defined(CONFIG_FS_FATFS_MULTI_PARTITION)
+/* Size of partition #1 created when the disk has none: 64 MiB of 512-byte sectors */
+#define NEW_PARTITION_SECTORS 131072U
+
+/* Holds the MBR; also the FatFs work buffer for f_fdisk() */
+static uint8_t mbr[FF_MAX_SS] __aligned(32);
+
+static int read_partition_1(uint32_t *part_lba, uint32_t *part_sectors)
+{
+	if (disk_access_read(DISK_NAME, mbr, 0, 1) != 0) {
+		TC_PRINT("Failed to read MBR from disk " DISK_NAME "\n");
+		return TC_FAIL;
+	}
+
+	/* Verify MBR signature 0x55AA */
+	if (mbr[510] != 0x55U || mbr[511] != 0xAAU) {
+		TC_PRINT("Invalid MBR signature on disk " DISK_NAME "\n");
+		return TC_FAIL;
+	}
+
+	/* First partition entry starts at offset 446. Start LBA is at +8, size at +12 */
+	*part_lba = sys_get_le32(&mbr[446 + 8]);
+	*part_sectors = sys_get_le32(&mbr[446 + 12]);
+
+	if (*part_lba == 0U || *part_sectors == 0U) {
+		TC_PRINT("MBR partition #1 not found/invalid on disk " DISK_NAME "\n");
+		return TC_FAIL;
+	}
+
+	return TC_PASS;
+}
+
+/*
+ * Write an MBR with a single partition #1. Needed when the start of the disk
+ * was overwritten, e.g. by a raw block test (tests/subsys/sd/sdmmc) that runs
+ * on the same card.
+ */
+static int create_partition_1(void)
+{
+	const LBA_t ptbl[] = {NEW_PARTITION_SECTORS, 0U};
+	FRESULT res;
+
+	TC_PRINT("Creating MBR partition #1 on disk " DISK_NAME "\n");
+	res = f_fdisk(VolToPart[0].pd, ptbl, mbr);
+	if (res != FR_OK) {
+		TC_PRINT("Failed to create MBR on disk " DISK_NAME " [%d]\n", res);
+		return TC_FAIL;
+	}
+
+	return TC_PASS;
+}
+#endif
+
 int wipe_partition(void)
 {
 	uint32_t sector_size;
@@ -61,7 +114,6 @@ int wipe_partition(void)
 	 * only wipe the beginning of the first partition.
 	 */
 #if defined(CONFIG_FS_FATFS_MULTI_PARTITION)
-	static uint8_t mbr[512] __aligned(32);
 	uint32_t part_lba;
 	uint32_t part_sectors;
 #endif
@@ -72,24 +124,11 @@ int wipe_partition(void)
 	}
 
 #if defined(CONFIG_FS_FATFS_MULTI_PARTITION)
-	if (disk_access_read(DISK_NAME, mbr, 0, 1)) {
-		TC_PRINT("Failed to read MBR from disk " DISK_NAME "\n");
-		return TC_FAIL;
-	}
-
-	/* Verify MBR signature 0x55AA */
-	if (mbr[510] != 0x55 || mbr[511] != 0xAA) {
-		TC_PRINT("Invalid MBR signature on disk " DISK_NAME "\n");
-		return TC_FAIL;
-	}
-
-	/* First partition entry starts at offset 446. Start LBA is at +8, size at +12 */
-	part_lba = sys_get_le32(&mbr[446 + 8]);
-	part_sectors = sys_get_le32(&mbr[446 + 12]);
-
-	if (part_lba == 0U || part_sectors == 0U) {
-		TC_PRINT("MBR partition #1 not found/invalid on disk " DISK_NAME "\n");
-		return TC_FAIL;
+	if (read_partition_1(&part_lba, &part_sectors) != TC_PASS) {
+		if (create_partition_1() != TC_PASS ||
+		    read_partition_1(&part_lba, &part_sectors) != TC_PASS) {
+			return TC_FAIL;
+		}
 	}
 #endif
 
