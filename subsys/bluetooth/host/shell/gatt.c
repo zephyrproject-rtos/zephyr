@@ -301,6 +301,15 @@ static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
 		}
 	}
 
+	if (ctx->discover.start_handle < BT_ATT_FIRST_ATTRIBUTE_HANDLE ||
+	    ctx->discover.end_handle > BT_ATT_LAST_ATTRIBUTE_HANDLE ||
+	    ctx->discover.start_handle > ctx->discover.end_handle) {
+		shell_error(sh, "Invalid handle range 0x%04x-0x%04x", ctx->discover.start_handle,
+			    ctx->discover.end_handle);
+		(void)memset(&ctx->discover, 0, sizeof(ctx->discover));
+		return -ENOEXEC;
+	}
+
 	if (!strcmp(argv[0], "discover")) {
 		ctx->discover.type = BT_GATT_DISCOVER_ATTRIBUTE;
 	} else if (!strcmp(argv[0], "discover-secondary")) {
@@ -459,6 +468,21 @@ static int cmd_read_uuid(const struct shell *sh, size_t argc, char *argv[])
 		}
 	}
 
+	if (ctx->read.by_uuid.uuid == NULL) {
+		(void)memset(&ctx->read, 0, sizeof(ctx->read));
+		shell_error(sh, "Invalid UUID %s", argv[1]);
+		return -ENOEXEC;
+	}
+
+	if (ctx->read.by_uuid.start_handle < BT_ATT_FIRST_ATTRIBUTE_HANDLE ||
+	    ctx->read.by_uuid.end_handle > BT_ATT_LAST_ATTRIBUTE_HANDLE ||
+	    ctx->read.by_uuid.start_handle > ctx->read.by_uuid.end_handle) {
+		shell_error(sh, "Invalid handle range 0x%04x-0x%04x",
+			    ctx->read.by_uuid.start_handle, ctx->read.by_uuid.end_handle);
+		(void)memset(&ctx->read, 0, sizeof(ctx->read));
+		return -ENOEXEC;
+	}
+
 	err = bt_gatt_read(default_conn, &ctx->read);
 	if (err) {
 		(void)memset(&ctx->read, 0, sizeof(ctx->read));
@@ -497,6 +521,12 @@ static int cmd_write(const struct shell *sh, size_t argc, char *argv[])
 
 	handle = strtoul(argv[1], NULL, 16);
 	offset = strtoul(argv[2], NULL, 16);
+
+	if (handle == 0U) {
+		(void)memset(&ctx->write, 0, sizeof(ctx->write));
+		shell_error(sh, "Invalid handle 0x%04x", handle);
+		return -ENOEXEC;
+	}
 
 	ctx->write.length = hex2bin(argv[3], strlen(argv[3]),
 				    ctx->write_buf, sizeof(ctx->write_buf));
@@ -558,6 +588,11 @@ static int cmd_write_without_rsp(const struct shell *sh,
 	}
 
 	handle = strtoul(argv[1], NULL, 16);
+	if (handle == 0U) {
+		shell_error(sh, "Invalid handle 0x%04x", handle);
+		return -ENOEXEC;
+	}
+
 	gatt_write_without_rsp_buf[0] = strtoul(argv[2], NULL, 16);
 	len = 1U;
 
@@ -624,6 +659,8 @@ static uint8_t notify_func(struct bt_conn *conn,
 
 static int cmd_subscribe(const struct shell *sh, size_t argc, char *argv[])
 {
+	uint16_t ccc_handle;
+	uint16_t value_handle;
 	int err;
 
 	if (subscribe_params.value_handle) {
@@ -637,8 +674,21 @@ static int cmd_subscribe(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	subscribe_params.ccc_handle = strtoul(argv[1], NULL, 16);
-	subscribe_params.value_handle = strtoul(argv[2], NULL, 16);
+	ccc_handle = strtoul(argv[1], NULL, 16);
+	value_handle = strtoul(argv[2], NULL, 16);
+	if (value_handle == 0U) {
+		shell_error(sh, "Invalid value handle 0x%04x", value_handle);
+		return -ENOEXEC;
+	}
+
+	/* A zero CCC handle requests automatic discovery, if supported */
+	if (!IS_ENABLED(CONFIG_BT_GATT_AUTO_DISCOVER_CCC) && ccc_handle == 0U) {
+		shell_error(sh, "Invalid CCC handle 0x%04x", ccc_handle);
+		return -ENOEXEC;
+	}
+
+	subscribe_params.ccc_handle = ccc_handle;
+	subscribe_params.value_handle = value_handle;
 	subscribe_params.value = BT_GATT_CCC_NOTIFY;
 	subscribe_params.notify = notify_func;
 	SET_CHAN_OPT_ANY(subscribe_params);
@@ -671,6 +721,8 @@ static int cmd_resubscribe(const struct shell *sh, size_t argc,
 				char *argv[])
 {
 	bt_addr_le_t addr;
+	uint16_t ccc_handle;
+	uint16_t value_handle;
 	int err;
 
 	if (subscribe_params.value_handle) {
@@ -685,8 +737,21 @@ static int cmd_resubscribe(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	subscribe_params.ccc_handle = strtoul(argv[2], NULL, 16);
-	subscribe_params.value_handle = strtoul(argv[3], NULL, 16);
+	/* Resubscribe does not support automatic CCC discovery */
+	ccc_handle = strtoul(argv[2], NULL, 16);
+	value_handle = strtoul(argv[3], NULL, 16);
+	if (ccc_handle == 0U) {
+		shell_error(sh, "Invalid CCC handle 0x%04x", ccc_handle);
+		return -ENOEXEC;
+	}
+
+	if (value_handle == 0U) {
+		shell_error(sh, "Invalid value handle 0x%04x", value_handle);
+		return -ENOEXEC;
+	}
+
+	subscribe_params.ccc_handle = ccc_handle;
+	subscribe_params.value_handle = value_handle;
 	subscribe_params.value = BT_GATT_CCC_NOTIFY;
 	subscribe_params.notify = notify_func;
 	SET_CHAN_OPT_ANY(subscribe_params);
