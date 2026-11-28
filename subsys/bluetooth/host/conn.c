@@ -1421,31 +1421,89 @@ static struct bt_conn *conn_lookup_handle(struct bt_conn *conns, size_t size,
 	return NULL;
 }
 
+/* Serializes the state transitions of all connections */
+static struct k_spinlock state_lock;
+
+static void conn_state_actions(struct bt_conn *conn, bt_conn_state_t old_state,
+			       bt_conn_state_t state);
+
 void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 {
 	bt_conn_state_t old_state;
+	k_spinlock_key_t key;
 
 	LOG_DBG("%s -> %s", state2str(conn->state), state2str(state));
 
-	if (conn->state == state) {
+	/* Application threads, bt_disable() and the Bluetooth work queue all
+	 * get here. Only one of them gets to act on a transition, and the
+	 * reference for the state is held as soon as the others can see the
+	 * state, or it is dropped twice or before it is taken.
+	 */
+	key = k_spin_lock(&state_lock);
+	old_state = conn->state;
+	conn->state = state;
+
+	if (old_state == state) {
+		k_spin_unlock(&state_lock, key);
 		LOG_WRN("no transition %s", state2str(state));
 		return;
 	}
 
-	old_state = conn->state;
-	conn->state = state;
+	/* Take a reference for the first state transition after
+	 * bt_conn_add_le() and keep it until reaching DISCONNECTED
+	 * again. The caller holds a reference, so the count is not zero,
+	 * and bt_conn_ref() is not for here: its logging can block.
+	 */
+	if (old_state == BT_CONN_DISCONNECTED && !bt_conn_is_iso(conn)) {
+		__ASSERT(atomic_get(&conn->ref) != 0, "Invalid conn %p", conn);
 
+		(void)atomic_inc(&conn->ref);
+	}
+
+#if defined(CONFIG_BT_CENTRAL)
+	/* Armed together with the state: the exit actions of a transition
+	 * that overtakes the entry actions below then find it armed and
+	 * cancel it, instead of it being armed on an object being torn down.
+	 */
+	if (state == BT_CONN_INITIATING && bt_conn_is_le(conn) &&
+	    bt_dev.create_param.timeout != 0U) {
+		(void)bt_work_schedule(&conn->deferred_work,
+				       K_MSEC(10 * bt_dev.create_param.timeout));
+	}
+#endif /* CONFIG_BT_CENTRAL */
+	k_spin_unlock(&state_lock, key);
+
+	conn_state_actions(conn, old_state, state);
+}
+
+bool bt_conn_set_disconnected_if(struct bt_conn *conn, bt_conn_state_t from, uint8_t err)
+{
+	k_spinlock_key_t key;
+
+	__ASSERT_NO_MSG(from != BT_CONN_DISCONNECTED);
+
+	key = k_spin_lock(&state_lock);
+	if (conn->state != from) {
+		k_spin_unlock(&state_lock, key);
+		return false;
+	}
+
+	conn->err = err;
+	conn->state = BT_CONN_DISCONNECTED;
+	k_spin_unlock(&state_lock, key);
+
+	LOG_DBG("%s -> %s", state2str(from), state2str(BT_CONN_DISCONNECTED));
+
+	conn_state_actions(conn, from, BT_CONN_DISCONNECTED);
+
+	return true;
+}
+
+static void conn_state_actions(struct bt_conn *conn, bt_conn_state_t old_state,
+			       bt_conn_state_t state)
+{
 	/* Actions needed for exiting the old state */
 	switch (old_state) {
-	case BT_CONN_DISCONNECTED:
-		/* Take a reference for the first state transition after
-		 * bt_conn_add_le() and keep it until reaching DISCONNECTED
-		 * again.
-		 */
-		if (!bt_conn_is_iso(conn)) {
-			bt_conn_ref(conn);
-		}
-		break;
 	case BT_CONN_INITIATING:
 		if (IS_ENABLED(CONFIG_BT_CENTRAL) && bt_conn_is_le(conn)) {
 			k_work_cancel_delayable(&conn->deferred_work);
@@ -1456,7 +1514,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 	}
 
 	/* Actions needed for entering the new state */
-	switch (conn->state) {
+	switch (state) {
 	case BT_CONN_CONNECTED:
 		if (bt_conn_is_sco(conn)) {
 			if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
@@ -1592,20 +1650,9 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 	case BT_CONN_ADV_DIR_CONNECTABLE:
 		break;
 	case BT_CONN_INITIATING:
-		if (bt_conn_is_sco(conn)) {
-			break;
-		}
-		/*
-		 * Timer is needed only for LE. For other link types controller
-		 * will handle connection timeout.
+		/* The LE timeout is armed with the state. For other link types
+		 * the controller handles the connection timeout.
 		 */
-#if defined(CONFIG_BT_CENTRAL)
-		if (bt_conn_is_le(conn) && bt_dev.create_param.timeout != 0U) {
-			bt_work_schedule(&conn->deferred_work,
-					 K_MSEC(10 * bt_dev.create_param.timeout));
-		}
-#endif /* CONFIG_BT_CENTRAL */
-
 		break;
 	case BT_CONN_DISCONNECTING:
 		break;
@@ -2493,8 +2540,12 @@ static int send_conn_le_param_update(struct bt_conn *conn,
 }
 
 #if defined(CONFIG_BT_CLASSIC)
+/* Several SCO connections can exist with a peer. One being set up comes first: the Synchronous
+ * Connection Complete event gives only the address.
+ */
 static struct bt_conn *conn_lookup_sco(struct bt_conn *conn)
 {
+	struct bt_conn *found = NULL;
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(sco_conns); i++) {
@@ -2504,14 +2555,26 @@ static struct bt_conn *conn_lookup_sco(struct bt_conn *conn)
 			continue;
 		}
 
-		if (sco->sco.acl == conn) {
+		/* The type tells that the object has been set up that far */
+		if (!bt_conn_is_sco(sco) || sco->sco.acl != conn) {
+			bt_conn_unref(sco);
+			continue;
+		}
+
+		if (sco->state == BT_CONN_INITIATING) {
+			bt_conn_drop(&found);
 			return sco;
 		}
 
-		bt_conn_unref(sco);
+		if (found != NULL) {
+			bt_conn_unref(sco);
+			continue;
+		}
+
+		found = bt_conn_take(&sco);
 	}
 
-	return NULL;
+	return found;
 }
 #endif /* CONFIG_BT_CLASSIC */
 
@@ -2584,6 +2647,15 @@ static void deferred_work(struct k_work *work)
 			}
 
 			bt_sco_cleanup_acl(sco);
+
+			/* Without a handle no Disconnection Complete event
+			 * can take it down, and without the ACL connection no
+			 * Synchronous Connection Complete event can find it.
+			 */
+			if (sco->state == BT_CONN_INITIATING) {
+				sco->err = conn->err;
+				bt_conn_set_state(sco, BT_CONN_DISCONNECTED);
+			}
 
 			bt_conn_unref(sco);
 			sco = conn_lookup_sco(conn);
@@ -2681,29 +2753,20 @@ static struct bt_conn *sco_conn_new(void)
 
 struct bt_conn *bt_conn_lookup_addr_sco(const bt_addr_t *peer)
 {
-	int i;
+	struct bt_conn *acl = bt_conn_lookup_addr_br(peer);
+	struct bt_conn *sco;
 
-	for (i = 0; i < ARRAY_SIZE(sco_conns); i++) {
-		struct bt_conn *conn = bt_conn_ref(&sco_conns[i]);
-
-		if (!conn) {
-			continue;
-		}
-
-		if (!bt_conn_is_sco(conn)) {
-			bt_conn_unref(conn);
-			continue;
-		}
-
-		if (!bt_addr_eq(peer, &conn->sco.acl->br.dst)) {
-			bt_conn_unref(conn);
-			continue;
-		}
-
-		return conn;
+	if (acl == NULL) {
+		return NULL;
 	}
 
-	return NULL;
+	/* An object that has lost its ACL connection, which the application
+	 * can still hold a reference to, does not match.
+	 */
+	sco = conn_lookup_sco(acl);
+	bt_conn_unref(acl);
+
+	return sco;
 }
 
 struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer)
@@ -2732,6 +2795,14 @@ struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer)
 			continue;
 		}
 
+		/* The application can hold a reference to the object of a
+		 * connection that is gone while the peer connects again.
+		 */
+		if (conn->state == BT_CONN_DISCONNECTED || bt_conn_br_setup_abandoned(conn)) {
+			bt_conn_unref(conn);
+			continue;
+		}
+
 		return conn;
 	}
 
@@ -2752,6 +2823,7 @@ struct bt_conn *bt_conn_add_sco(const bt_addr_t *peer, int link_type)
 		return NULL;
 	}
 
+	bt_addr_copy(&sco_conn->sco.dst, peer);
 	sco_conn->type = BT_CONN_TYPE_SCO;
 
 	if (link_type == BT_HCI_SCO) {
@@ -3211,11 +3283,7 @@ struct bt_conn_tmp_str bt_conn_dst_tmp_str(const struct bt_conn *conn)
 		(void)bt_addr_to_str(&conn->br.dst, val.str, sizeof(val.str));
 		break;
 	case BT_CONN_TYPE_SCO:
-		if (conn->sco.acl != NULL) {
-			(void)bt_addr_to_str(&conn->sco.acl->br.dst, val.str, sizeof(val.str));
-		} else {
-			val.str[0] = '\0';
-		}
+		(void)bt_addr_to_str(&conn->sco.dst, val.str, sizeof(val.str));
 		break;
 #endif /* CONFIG_BT_CLASSIC */
 	case BT_CONN_TYPE_LE:
@@ -3223,10 +3291,11 @@ struct bt_conn_tmp_str bt_conn_dst_tmp_str(const struct bt_conn *conn)
 		break;
 #if defined(CONFIG_BT_ISO_UNICAST)
 	case BT_CONN_TYPE_ISO:
-		if (conn->iso.acl != NULL) {
-			(void)bt_addr_le_to_str(&conn->iso.acl->le.dst, val.str, sizeof(val.str));
-		} else {
+		/* No peer: a BIS, or a CIS that has not been connected */
+		if (bt_addr_le_eq(&conn->iso.dst, BT_ADDR_LE_ANY)) {
 			val.str[0] = '\0';
+		} else {
+			(void)bt_addr_le_to_str(&conn->iso.dst, val.str, sizeof(val.str));
 		}
 		break;
 #endif /* CONFIG_BT_ISO_UNICAST */
@@ -3321,9 +3390,9 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 #if defined(CONFIG_BT_ISO_UNICAST)
 		if ((conn->iso.info.type == BT_ISO_CHAN_TYPE_CENTRAL ||
 		     conn->iso.info.type == BT_ISO_CHAN_TYPE_PERIPHERAL) &&
-		    conn->iso.acl != NULL) {
-			info->le.dst = &conn->iso.acl->le.dst;
-			info->le.src = &bt_dev.id_addr[conn->iso.acl->id];
+		    !bt_addr_le_eq(&conn->iso.dst, BT_ADDR_LE_ANY)) {
+			info->le.dst = &conn->iso.dst;
+			info->le.src = &bt_dev.id_addr[conn->id];
 		} else {
 			info->le.src = BT_ADDR_LE_NONE;
 			info->le.dst = BT_ADDR_LE_NONE;
