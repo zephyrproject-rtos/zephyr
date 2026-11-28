@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_RAKWIRELESS_RAK1903_SENSOR_A
+	def_bool $(shields_list_contains,rakwireless_rak1903_sensor_a)
+
+config SHIELD_RAKWIRELESS_RAK1903_SENSOR_C
+	def_bool $(shields_list_contains,rakwireless_rak1903_sensor_c)
+
+config SHIELD_RAKWIRELESS_RAK1903_SENSOR_D
+	def_bool $(shields_list_contains,rakwireless_rak1903_sensor_d)
+
+config SHIELD_RAKWIRELESS_RAK1903_SENSOR_E
+	def_bool $(shields_list_contains,rakwireless_rak1903_sensor_e)
+
+config SHIELD_RAKWIRELESS_RAK1903_SENSOR_F
+	def_bool $(shields_list_contains,rakwireless_rak1903_sensor_f)

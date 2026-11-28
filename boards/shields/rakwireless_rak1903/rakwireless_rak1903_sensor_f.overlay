@@ -1,0 +1,10 @@
+/*
+ * SPDX-FileCopyrightText: Copyright RAKwireless Technology Limited
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "rakwireless_rak1903_common.dtsi"
+
+&opt3001_rak1903 {
+	int-gpios = <&wisblock_sensor_f WISBLOCK_SENSOR_GPIO2 GPIO_ACTIVE_LOW>;
+};
