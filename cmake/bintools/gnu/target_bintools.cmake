@@ -141,3 +141,5 @@ set_property(TARGET bintools PROPERTY symbols_flag "")
 set_property(TARGET bintools PROPERTY symbols_final "")
 set_property(TARGET bintools PROPERTY symbols_infile "")
 set_property(TARGET bintools PROPERTY symbols_outfile ">;" )
+
+include(${ZEPHYR_BASE}/cmake/bintools/${BINTOOLS}/${LINKER}/target_bintools.cmake OPTIONAL)
