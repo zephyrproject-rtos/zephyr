@@ -344,6 +344,16 @@ void k_mem_page_frames_dump(void);
 #define K_MEM_VM_RESERVED	0
 #endif /* CONFIG_DEMAND_PAGING */
 
+/**
+ * @brief Get the core MMU spinlock.
+ *
+ * Synchronizes page-table updates with page-frame state transitions across
+ * architecture fault handlers and eviction callbacks.
+ *
+ * @return Pointer to the core MMU spinlock.
+ */
+struct k_spinlock *z_mm_lock_get(void);
+
 #ifdef CONFIG_DEMAND_PAGING
 /*
  * Core kernel demand paging APIs

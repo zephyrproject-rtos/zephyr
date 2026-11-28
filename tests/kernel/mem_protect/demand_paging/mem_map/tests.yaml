@@ -26,3 +26,13 @@ tests:
     platform_allow: qemu_x86_tiny
     extra_configs:
       - CONFIG_EVICTION_LRU=y
+  kernel.demand_paging.mem_map.nru:
+    tags:
+      - kernel
+      - mmu
+      - demand_paging
+    platform_allow:
+      - qemu_cortex_a53
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+    extra_configs:
+      - CONFIG_EVICTION_NRU=y

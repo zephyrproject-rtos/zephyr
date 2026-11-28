@@ -47,8 +47,14 @@ static inline void arch_switch(void *switch_to, void **switched_from)
 }
 
 extern void z_arm64_fatal_error(unsigned int reason, struct arch_esf *esf);
+extern void z_arm64_sync_exc_fatal(unsigned int reason, struct arch_esf *esf);
 extern void z_arm64_set_ttbr0(uint64_t ttbr0);
 extern void z_arm64_mem_cfg_ipi(void);
+
+#ifdef CONFIG_DEMAND_PAGING
+extern uint32_t z_arm64_el1_perm_retry_active;
+void z_arm64_el1_perm_retry_retire(const struct k_thread *thread, const struct arch_esf *esf);
+#endif
 
 #ifdef CONFIG_FPU_SHARING
 void arch_flush_local_fpu(void);
