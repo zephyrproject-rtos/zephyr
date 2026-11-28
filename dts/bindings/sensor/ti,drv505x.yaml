@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: Copyright RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+title: Texas Instruments DRV505x Hall-effect sensor read through an ADC.
+
+description: |
+  A DRV505x answers a magnetic field with an analog voltage, which an ADC
+  reads. The field is reported on SENSOR_CHAN_MAGN_Z, the axis being the one
+  normal to the top of the package.
+
+  Datasheets SBAS596, SBAS788 and SBAS644, equation 1, without the
+  temperature term:
+
+    VOUT = VQ + B * sensitivity
+
+  One compatible covers the series, because what sets its parts apart is
+  that pair of numbers, and both of them belong to the board: the quiescent
+  voltage of a DRV5055 is half of whatever supply it runs from, and the
+  sensitivity of a ratiometric part scales with that supply too.
+
+  A DRV5056 is unipolar and answers a south pole only, so the field it
+  reports never falls below zero by more than the tolerance on its quiescent
+  voltage.
+
+compatible: "ti,drv505x"
+
+include: sensor-device.yaml
+
+properties:
+  io-channels:
+    type: phandle-array
+    required: true
+    description: |
+      ADC that reads the output voltage: <&adc_node channel>
+
+  sensitivity-microvolts-per-millitesla:
+    type: int
+    required: true
+    description: |
+      Output change per millitesla, at the supply the part runs from. It is
+      negative on the DRV5053 versions whose output falls as a south pole
+      approaches.
+
+  quiescent-microvolts:
+    type: int
+    required: true
+    description: |
+      Output with no field present. The datasheets give 1020000 for the
+      DRV5053, half the supply for the DRV5055 and 600000 for the DRV5056.
