@@ -204,90 +204,54 @@ mikrobus_spi: &scb2 {
 	status = "okay";
 };
 
-&fll0 {
-	clock-frequency = <96000000>;
+&fll {
+	clocks = <&iho>;
+	clock-frequency = <DT_FREQ_M(96)>;
 	status = "okay";
 };
 
-/* For the dpll clocks declared below
- * The clock-frequency value is here for dts reference, but
- * it does not affect the frequency set by the clock_control
- * driver. That is decided by the rest of the variables in
- * this block. They result in the set clock-frequency. For other
- * frequencies, they need to be calculated separately and
- * entered into the devicetree dpll_* block.
- */
-
-/* This dpll_lp0 is on "clock path" 1. So HF clocks sourced
- * from *_CLKPATH1 will receive this frequency, when the
- * dpll_lp0 is set to "okay".
- */
-&dpll_lp0 {
-	clock-frequency = <180000000>;
-
+&pll0 {
+	clocks = <&iho>;
 	feedback-div = <45>;
 	reference-div = <6>;
 	output-div = <2>;
-	fraction-div = <0>;
-	dco-mode-enable;
+	clock-frequency = <DT_FREQ_M(180)>;
 	status = "okay";
 };
 
-/* This dpll_lp1 is on "clock path" 2. So HF clocks sourced
- * from *_CLKPATH2 will receive this frequency instead, when the
- * dpll_lp1 is set to "okay".
- */
-&dpll_lp1 {
-	clock-frequency = <240000000>;
-
+&pll1 {
+	clocks = <&iho>;
 	feedback-div = <60>;
 	reference-div = <6>;
 	output-div = <2>;
-	fraction-div = <0>;
-	dco-mode-enable;
-	status = "okay";
-};
-
-&path_mux0 {
-	status = "okay";
-};
-
-&path_mux1 {
-	status = "okay";
-};
-
-&path_mux2 {
-	status = "okay";
-};
-
-&path_mux3 {
+	clock-frequency = <DT_FREQ_M(240)>;
 	status = "okay";
 };
 
 &clk_hf0 {
-	source-path = <IFX_CLK_HF_IN_CLKPATH1>;
+	clocks = <&pll0>;
 	status = "okay";
 };
 
 &clk_hf1 {
-	source-path = <IFX_CLK_HF_IN_CLKPATH1>;
+	clocks = <&pll0>;
 	status = "okay";
 };
 
 /*
  * CLK_HF2 feeds peri group 4 (UART, CAN, SPI, counter).
- * Source from dpll_lp1 (CLKPATH2, 240 MHz) / 3 = 80 MHz
+ * Source from pll1 (240 MHz) / 3 = 80 MHz
  * for CiA 601-3 compliant CAN FD bit rates.
  * The UART driver dynamically recalculates its peri divider.
  */
 &clk_hf2 {
-	source-path = <IFX_CLK_HF_IN_CLKPATH2>;
-	clock-div = <IFX_CLK_HF_DIVIDE_BY_3>;
+	clocks = <&pll1>;
+	clock-div = <3>;
 	status = "okay";
 };
 
 &clk_hf3 {
-	source-path = <IFX_CLK_HF_IN_CLKPATH2>;
+	clocks = <&pll1>;
 	status = "okay";
 };
 

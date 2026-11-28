@@ -90,6 +90,22 @@ void soc_early_init_hook(void)
 	SystemInit();
 }
 
+#if defined(CONFIG_CLOCK_CONTROL_IFX_SRSS_CONFIGURE)
+BUILD_ASSERT(CONFIG_CLOCK_CONTROL_INIT_PRIORITY <
+	     CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+
+/* Refresh the PDL clock variables; remove once all drivers are native. */
+static int pse84_core_clock_update(void)
+{
+	SystemCoreClockUpdate();
+
+	return 0;
+}
+
+SYS_INIT(pse84_core_clock_update, PRE_KERNEL_1,
+	 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#endif /* CONFIG_CLOCK_CONTROL_IFX_SRSS_CONFIGURE */
+
 void soc_late_init_hook(void)
 {
 /* Skip the SAU init when running the MCUBoot as it

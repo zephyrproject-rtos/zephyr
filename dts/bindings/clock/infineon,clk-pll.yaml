@@ -4,13 +4,28 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-title: Infineon PLL
+title: Infineon SRSS FLL and PLL
 
-description: Infineon PLL Clock
+description: |
+  FLL or PLL on a clock path. reg is the clock path number.
+
+  output = input * (feedback-div + fraction-div / 2^F) /
+           (reference-div * output-div)
+
+    type     feedback  reference  output  F   VCO / DCO (MHz)
+    pll400m  16-200    1-16       2-16    24  400-800
+    pll200m  22-112    1-18       2-16    -   200-400
+    dpll-lp  16-200    1-16       1-16    24  PFD 4-8 MHz
+    dpll-hp  8-250     1-8        2-8     21  DCO 400-1000, PFD 17-50 MHz
+    fll      calculated from clock-frequency, output divider fixed to 2
+
+  An okay PLL is programmed at init with feedback-div, reference-div
+  and output-div and is not changed afterwards. The FLL is configured
+  from clock-frequency.
 
 compatible: "infineon,clk-pll"
 
-include: [base.yaml, clock-controller.yaml]
+include: [clock-controller.yaml, base.yaml]
 
 properties:
   reg:
@@ -18,31 +33,43 @@ properties:
 
   clocks:
     required: true
-    description: |
-      Clock reference source
-
-  p-div:
-    type: int
-    required: true
-    description: |
-      pdiv is the feedback-divider of the output.
-
-  q-div:
-    type: int
-    required: true
-    description: |
-      qdiv functions as a refernce-divider value.
-
-  frac-div:
-    type: int
-    description: |
-      Fractional divider value. The final fraction divider value is 1/2^24 of
-      this setting. Set to 0 if fractional division is not used.
-
-  output-div:
-    type: int
-    description: |
-      Output Divider of the pll clock out.
+    description: Input oscillator.
 
   "#clock-cells":
     const: 0
+
+  infineon,pll-type:
+    type: string
+    required: true
+    enum:
+      - "fll"
+      - "pll200m"
+      - "pll400m"
+      - "dpll-lp"
+      - "dpll-hp"
+    description: Hardware type of the PLL.
+
+  clock-frequency:
+    type: int
+    description: |
+      Output frequency in Hz. Required for the FLL. For a PLL it is
+      optional and must equal the integer part of the frequency given
+      by the dividers.
+
+  feedback-div:
+    type: int
+    description: Feedback divider.
+
+  reference-div:
+    type: int
+    description: Reference divider.
+
+  output-div:
+    type: int
+    description: Output divider.
+
+  fraction-div:
+    type: int
+    description: |
+      Fractional part of the feedback divider in units of 1/2^F.
+      Enables fractional mode.

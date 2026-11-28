@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+title: Infineon SRSS clock controller
+
+description: |
+  SRSS clock block. One clock_control device for the oscillators,
+  PLLs, paths and CLK_HF roots below it. The SRSS generation
+  (MXS40SRSS, MXS40SSRSS, MXS22SRSS) is selected by the SoC Kconfig.
+
+  Child nodes:
+    oscillators: infineon,clk-osc, reg is the CLK_PATH_SELECT code.
+    pll:         infineon,clk-pll, reg is the clock path number.
+    rootclocks:  infineon,clk-hf, reg is the CLK_HF root number.
+
+  The clocks are configured at init from the devicetree and are not
+  changed afterwards. Only get_rate is supported; it reads the
+  hardware.
+
+compatible: "infineon,clk-srss"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

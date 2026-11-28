@@ -10,6 +10,7 @@
 #define DIV_16_5_BIT 02
 #define DIV_24_5_BIT 03
 
+#include <freq.h>
 #include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
 #include <zephyr/dt-bindings/clock/ifx_clock_source_psc3xx.h>
 
@@ -21,152 +22,143 @@
 		status = "okay";
 	};
 
-	clocks {
-		/* iho */
-		clk_iho: clk_iho {
-			compatible = "infineon,fixed-clock";
-			#clock-cells = <0>;
-			clock-frequency = <48000000>;
-			system-clock = <IFX_IHO>;
-			status = "okay";
-		};
+	soc {
+		clocks: clock-controller@52200000 {
+			compatible = "infineon,clk-srss";
+			reg = <0x52200000 0x4000>, <0x52220000 0x100>;
+			reg-names = "srss", "backup";
 
-		/* imo */
-		clk_imo: clk_imo {
-			compatible = "infineon,fixed-clock";
-			#clock-cells = <0>;
-			clock-frequency = <8000000>;
-			system-clock = <IFX_IMO>;
-			status = "okay";
-		};
+			oscillators {
+				#address-cells = <1>;
+				#size-cells = <0>;
 
-		/* wco */
-		clk_wco: clk_wco {
-			compatible = "infineon,fixed-clock";
-			#clock-cells = <0>;
-			clock-frequency = <32768>;
-			system-clock = <IFX_WCO>;
-			status = "okay";
-		};
+				imo: imo@0 {
+					compatible = "infineon,clk-osc";
+					reg = <0x0>;
+					#clock-cells = <0>;
+					clock-frequency = <DT_FREQ_M(8)>;
+					status = "okay";
+				};
 
-		/* fll */
-		fll0: fll0 {
-			compatible = "infineon,fixed-clock";
-			#clock-cells = <0>;
-			clock-frequency = <96000000>;
-			system-clock = <IFX_FLL>;
-			status = "disabled";
-		};
+				eco: eco@2 {
+					compatible = "infineon,clk-osc";
+					reg = <0x2>;
+					#clock-cells = <0>;
+					status = "disabled";
+				};
 
-		dpll_lp0: dpll_lp0 {
-			compatible = "infineon,fixed-clock";
-			#clock-cells = <0>;
-			clock-frequency = <0>;
-			system-clock = <IFX_DPLL250_0>;
-			status = "disabled";
-		};
+				iho: iho@6 {
+					compatible = "infineon,clk-osc";
+					reg = <0x6>;
+					#clock-cells = <0>;
+					clock-frequency = <DT_FREQ_M(48)>;
+					status = "okay";
+				};
 
-		dpll_lp1: dpll_lp1 {
-			compatible = "infineon,fixed-clock";
-			#clock-cells = <0>;
-			clock-frequency = <0>;
-			system-clock = <IFX_DPLL250_1>;
-			status = "disabled";
-		};
+				wco: wco@111 {
+					compatible = "infineon,clk-osc";
+					reg = <0x111>;
+					#clock-cells = <0>;
+					clock-frequency = <32768>;
+					status = "okay";
+				};
+			};
 
-		/* path mux0 */
-		path_mux0: path_mux0 {
-			compatible = "infineon,fixed-factor-clock";
-			#clock-cells = <0>;
-			system-clock = <IFX_PATHMUX>;
-			instance = <0>;
-			source-path = <IFX_CAT1_CLKPATH_IN_IHO>;
-			status = "disabled";
-		};
+			pll {
+				#address-cells = <1>;
+				#size-cells = <0>;
 
-		/* path mux1 */
-		path_mux1: path_mux1 {
-			compatible = "infineon,fixed-factor-clock";
-			#clock-cells = <0>;
-			system-clock = <IFX_PATHMUX>;
-			instance = <1>;
-			source-path = <IFX_CAT1_CLKPATH_IN_IHO>;
-			status = "disabled";
-		};
+				fll: pll@0 {
+					compatible = "infineon,clk-pll";
+					reg = <0x0>;
+					#clock-cells = <0>;
+					infineon,pll-type = "fll";
+					status = "disabled";
+				};
 
-		/* path mux2 */
-		path_mux2: path_mux2 {
-			compatible = "infineon,fixed-factor-clock";
-			#clock-cells = <0>;
-			system-clock = <IFX_PATHMUX>;
-			instance = <2>;
-			source-path = <IFX_CAT1_CLKPATH_IN_IHO>;
-			status = "disabled";
-		};
+				pll0: pll@1 {
+					compatible = "infineon,clk-pll";
+					reg = <0x1>;
+					#clock-cells = <0>;
+					infineon,pll-type = "dpll-lp";
+					status = "disabled";
+				};
 
-		/* path mux3 */
-		path_mux3: path_mux3 {
-			compatible = "infineon,fixed-factor-clock";
-			#clock-cells = <0>;
-			system-clock = <IFX_PATHMUX>;
-			instance = <3>;
-			source-path = <IFX_CAT1_CLKPATH_IN_IHO>;
-			status = "disabled";
-		};
+				pll1: pll@2 {
+					compatible = "infineon,clk-pll";
+					reg = <0x2>;
+					#clock-cells = <0>;
+					infineon,pll-type = "dpll-lp";
+					status = "disabled";
+				};
+			};
 
-		/* clk_hf0 */
-		clk_hf0: clk_hf0 {
-			compatible = "infineon,fixed-factor-clock";
-			#clock-cells = <0>;
-			clock-div = <IFX_CLK_HF_NO_DIVIDE>;
-			system-clock = <IFX_HF>;
-			instance = <0>;
-			source-path = <IFX_CLK_HF_IN_CLKPATH0>;
-			status = "disabled";
-		};
+			rootclocks {
+				#address-cells = <1>;
+				#size-cells = <0>;
 
-		/* clk_hf1 */
-		clk_hf1: clk_hf1 {
-			compatible = "infineon,fixed-factor-clock";
-			#clock-cells = <0>;
-			clock-div = <IFX_CLK_HF_NO_DIVIDE>;
-			system-clock = <IFX_HF>;
-			instance = <1>;
-			source-path = <IFX_CLK_HF_IN_CLKPATH0>;
-			status = "disabled";
-		};
+				clk_hf0: clk_hf@0 {
+					compatible = "infineon,clk-hf";
+					reg = <0x0>;
+					#clock-cells = <0>;
+					infineon,max-frequency =
+						<DT_FREQ_M(180)>;
+					status = "disabled";
+				};
 
-		/* clk_hf2 */
-		clk_hf2: clk_hf2 {
-			compatible = "infineon,fixed-factor-clock";
-			#clock-cells = <0>;
-			clock-div = <IFX_CLK_HF_NO_DIVIDE>;
-			system-clock = <IFX_HF>;
-			instance = <2>;
-			source-path = <IFX_CLK_HF_IN_CLKPATH0>;
-			status = "disabled";
-		};
+				clk_hf1: clk_hf@1 {
+					compatible = "infineon,clk-hf";
+					reg = <0x1>;
+					#clock-cells = <0>;
+					infineon,max-frequency =
+						<DT_FREQ_M(180)>;
+					status = "disabled";
+				};
 
-		/* clk_hf3 */
-		clk_hf3: clk_hf3 {
-			compatible = "infineon,fixed-factor-clock";
-			#clock-cells = <0>;
-			clock-div = <IFX_CLK_HF_NO_DIVIDE>;
-			system-clock = <IFX_HF>;
-			instance = <3>;
-			source-path = <IFX_CLK_HF_IN_CLKPATH0>;
-			status = "disabled";
-		};
+				clk_hf2: clk_hf@2 {
+					compatible = "infineon,clk-hf";
+					reg = <0x2>;
+					#clock-cells = <0>;
+					infineon,max-frequency =
+						<DT_FREQ_M(100)>;
+					status = "disabled";
+				};
 
-		/* clk_hf4 */
-		clk_hf4: clk_hf4 {
-			compatible = "infineon,fixed-factor-clock";
-			#clock-cells = <0>;
-			clock-div = <IFX_CLK_HF_NO_DIVIDE>;
-			system-clock = <IFX_HF>;
-			instance = <4>;
-			source-path = <IFX_CLK_HF_IN_CLKPATH0>;
-			status = "disabled";
+				clk_hf3: clk_hf@3 {
+					compatible = "infineon,clk-hf";
+					reg = <0x3>;
+					#clock-cells = <0>;
+					infineon,max-frequency =
+						<DT_FREQ_M(240)>;
+					status = "disabled";
+				};
+
+				clk_hf4: clk_hf@4 {
+					compatible = "infineon,clk-hf";
+					reg = <0x4>;
+					#clock-cells = <0>;
+					infineon,max-frequency =
+						<DT_FREQ_M(240)>;
+					status = "disabled";
+				};
+
+				clk_hf5: clk_hf@5 {
+					compatible = "infineon,clk-hf";
+					reg = <0x5>;
+					#clock-cells = <0>;
+					infineon,max-frequency =
+						<DT_FREQ_M(80)>;
+					status = "disabled";
+				};
+
+				clk_hf6: clk_hf@6 {
+					compatible = "infineon,clk-hf";
+					reg = <0x6>;
+					#clock-cells = <0>;
+					infineon,max-frequency = <DT_FREQ_M(8)>;
+					status = "disabled";
+				};
+			};
 		};
 	};
 

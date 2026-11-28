@@ -189,6 +189,7 @@ static int enter_deepsleep(void)
 #define IFX_WARM_BOOT_CLOCK_DEV(node_id) DEVICE_DT_GET(node_id),
 
 static const struct device *const ifx_warm_boot_clock_devs[] = {
+	DT_FOREACH_STATUS_OKAY(infineon_clk_srss, IFX_WARM_BOOT_CLOCK_DEV)
 	DT_FOREACH_STATUS_OKAY(infineon_fixed_clock, IFX_WARM_BOOT_CLOCK_DEV)
 		DT_FOREACH_STATUS_OKAY(infineon_fixed_factor_clock, IFX_WARM_BOOT_CLOCK_DEV)
 			DT_FOREACH_STATUS_OKAY(infineon_peri_div, IFX_WARM_BOOT_CLOCK_DEV)};
