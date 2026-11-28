@@ -493,6 +493,11 @@ int bt_opp_client_pull(struct bt_opp_client *client, struct net_buf *buf);
  * stack closes the transport, which only
  * @ref bt_opp_client_cb.transport_disconnected() reports.
  *
+ * The abort request follows a response. While the response to the last request
+ * is due the call fails with -EBUSY: call it again from the
+ * @ref bt_opp_client_cb.push() or @ref bt_opp_client_cb.pull() callback, in
+ * place of sending the next request, unless that response ended the operation.
+ *
  * @note Buffer ownership is transferred to the stack in case of success, in case
  *       of an error the caller retains the ownership of the buffer.
  *
@@ -503,6 +508,7 @@ int bt_opp_client_pull(struct bt_opp_client *client, struct net_buf *buf);
  * @retval -EINVAL Invalid parameter, @p buf carries a header the profile
  *         excludes, or no operation is in progress.
  * @retval -ENOTCONN OBEX connection is not established.
+ * @retval -EBUSY The response to the last request is due.
  * @retval -errno Error code of the underlying OBEX layer on failure.
  */
 int bt_opp_client_abort(struct bt_opp_client *client, struct net_buf *buf);

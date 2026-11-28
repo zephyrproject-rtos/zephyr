@@ -2,6 +2,7 @@
 
 /*
  * Copyright 2026 NXP
+ * Copyright (c) 2026 Silicon Laboratories Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -85,6 +86,12 @@ static bool opp_cli_transport_active;
  */
 static bool opp_cli_exchange_pending;
 
+/*
+ * Set by 'opp abort', which the shell thread runs, and still set after it when the abort is held
+ * for the next response. Taken by that response, the abort response or a disconnect.
+ */
+static atomic_t opp_cli_abort_held;
+
 /* Small static demo payloads for push commands. */
 static const char opp_demo_vcard[] =
 	"BEGIN:VCARD\r\nVERSION:2.1\r\nFN:Zephyr Shell\r\nEND:VCARD\r\n";
@@ -141,6 +148,7 @@ static void opp_cli_transport_disconnected(struct bt_opp_client *client)
 {
 	opp_cli_transport_active = false;
 	opp_cli_exchange_pending = false;
+	(void)atomic_clear(&opp_cli_abort_held);
 
 	bt_shell_print("OPP: transport disconnected");
 }
@@ -156,6 +164,32 @@ static void opp_cli_disconnect(struct bt_opp_client *client, uint8_t rsp_code, s
 {
 	bt_shell_print("OPP: OBEX disconnect rsp=0x%02x", rsp_code);
 	opp_cli_exchange_pending = false;
+	(void)atomic_clear(&opp_cli_abort_held);
+}
+
+/*
+ * Send the abort that 'opp abort' held, in place of the next request. A final response has ended
+ * the operation, leaving nothing to abort.
+ */
+static bool opp_cli_send_held_abort(struct bt_opp_client *client, uint8_t rsp_code)
+{
+	int err;
+
+	if (!atomic_cas(&opp_cli_abort_held, 1, 0) || (rsp_code != BT_OPP_RSP_CODE_CONTINUE)) {
+		return false;
+	}
+
+	/* On a failure the transfer goes on and the next response tries again */
+	err = bt_opp_client_abort(client, NULL);
+	if (err != 0) {
+		bt_shell_print("OPP: abort failed (err %d)", err);
+		(void)atomic_set(&opp_cli_abort_held, 1);
+		return false;
+	}
+
+	bt_shell_print("OPP: abort sent");
+
+	return true;
 }
 
 static void opp_cli_push(struct bt_opp_client *client, uint8_t rsp_code, struct net_buf *buf)
@@ -164,6 +198,10 @@ static void opp_cli_push(struct bt_opp_client *client, uint8_t rsp_code, struct 
 	int err;
 
 	bt_shell_print("OPP: push rsp=0x%02x", rsp_code);
+
+	if (opp_cli_send_held_abort(client, rsp_code)) {
+		return;
+	}
 
 	/* Only the final response to a Business Card Exchange push goes on. */
 	if (!opp_cli_exchange_pending || rsp_code == BT_OPP_RSP_CODE_CONTINUE) {
@@ -219,6 +257,10 @@ static void opp_cli_pull(struct bt_opp_client *client, uint8_t rsp_code, struct 
 
 	bt_shell_print("OPP: pull rsp=0x%02x", rsp_code);
 
+	if (opp_cli_send_held_abort(client, rsp_code)) {
+		return;
+	}
+
 	if ((rsp_code != BT_OPP_RSP_CODE_SUCCESS && rsp_code != BT_OPP_RSP_CODE_CONTINUE) ||
 	    buf == NULL) {
 		return;
@@ -251,6 +293,8 @@ static void opp_cli_pull(struct bt_opp_client *client, uint8_t rsp_code, struct 
 static void opp_cli_abort(struct bt_opp_client *client, struct net_buf *buf)
 {
 	bt_shell_print("OPP: abort succeeded");
+
+	(void)atomic_clear(&opp_cli_abort_held);
 
 	/* An abort cancels any in-progress exchange; clear the pending flag so
 	 * a subsequent push does not mistakenly trigger the pull phase.
@@ -596,7 +640,26 @@ failed:
 /* opp abort - abort current operation */
 static int cmd_opp_abort(const struct shell *sh, size_t argc, char *argv[])
 {
-	int err = bt_opp_client_abort(&opp_client, NULL);
+	int err;
+
+	/*
+	 * Set before the call: the response that ends the wait can arrive before
+	 * bt_opp_client_abort() returns.
+	 */
+	(void)atomic_set(&opp_cli_abort_held, 1);
+
+	/* The abort request follows a response, so the push or pull callback sends it */
+	err = bt_opp_client_abort(&opp_client, NULL);
+	if (err == -EBUSY) {
+		shell_print(sh, "OPP abort held until the response");
+		return 0;
+	}
+
+	/* A response got in first and its callback has dealt with the abort */
+	if (!atomic_cas(&opp_cli_abort_held, 1, 0)) {
+		shell_print(sh, "OPP abort overtaken by a response");
+		return 0;
+	}
 
 	if (err != 0) {
 		shell_error(sh, "abort failed (err %d)", err);
