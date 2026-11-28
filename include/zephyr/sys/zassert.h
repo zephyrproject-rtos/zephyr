@@ -38,9 +38,13 @@
  * the optimizer. An individual file may set its level explicitly, overriding the
  * module default.
  *
- * For headers and inline functions, place ZASSERT_MODULE() inside the function
- * body so the selection does not leak into the includer, or use ZASSERT_TERSE(),
- * ZASSERT_NORMAL() or ZASSERT_VERBOSE() for an assertion with a fixed level.
+ * For headers and inline functions, use ZASSERT_IN() to name the module at the
+ * call site; it is the only form that works in a macro, since that expands in
+ * translation units which select a different module, or none. Placing
+ * ZASSERT_MODULE() inside the function body also keeps the selection out of the
+ * includer, and pays off once a scope holds several assertions. Use
+ * ZASSERT_TERSE(), ZASSERT_NORMAL() or ZASSERT_VERBOSE() for an assertion with a
+ * fixed level.
  */
 
 /** Assertions are disabled and compiled out. */
@@ -195,6 +199,29 @@ static inline __printf_like(1, 2) void zassert_print(const char *fmt, ...)
  */
 #define ZASSERT_VERBOSE(_test, ...) \
 	ZASSERT_IMPL_LEVEL(ZASSERT_LEVEL_VERBOSE, (_test), ##__VA_ARGS__)
+
+/**
+ * @brief Assertion gated by a named module, selected at the call site.
+ *
+ * Behaves like ZASSERT(), but takes the module as an argument instead of
+ * reading the one selected by ZASSERT_MODULE(). Nothing has to be in scope at
+ * the point of use, which makes this the form to use in a macro defined in a
+ * header: the macro expands in translation units that select a different
+ * module, or none at all, and those call sites keep the module chosen here.
+ *
+ * Prefer ZASSERT() in ordinary code, and the fixed-level ZASSERT_TERSE(),
+ * ZASSERT_NORMAL() or ZASSERT_VERBOSE() when the level must not be
+ * configurable.
+ *
+ * @param _module The assertion module name (an UPPERCASE identifier). The level
+ *                is taken from the Kconfig symbol
+ *                CONFIG_ASSERT_MODULE_<module>_LEVEL, which must exist (the name
+ *                is pasted verbatim, so it must match).
+ * @param _test Condition to check. A fatal error is raised if it is false.
+ * @param ...  Optional message format string followed by its arguments.
+ */
+#define ZASSERT_IN(_module, _test, ...) \
+	ZASSERT_IMPL_LEVEL(ZASSERT_IMPL_MODULE_LEVEL(_module), (_test), ##__VA_ARGS__)
 
 /**
  * @brief Select the Kconfig-defined assertion module used by ZASSERT() in this file.
