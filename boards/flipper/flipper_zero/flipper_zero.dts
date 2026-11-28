@@ -1,0 +1,287 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/wb/stm32wb55Xg.dtsi>
+#include <st/wb/stm32wb55rgvx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	compatible = "flipper,flipper-zero";
+	model = "Flipper Zero";
+
+	aliases {
+		buzzer0 = &speaker;
+		die-temp0 = &die_temp;
+		rtc = &rtc;
+		sw0 = &button_ok;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
+		watchdog0 = &iwdg;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,system-timer = &lptim1;
+		zephyr,display = &st7567;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		button_up: button_up {
+			label = "Up";
+			gpios = <&gpiob 10 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_UP>;
+		};
+
+		button_down: button_down {
+			label = "Down";
+			gpios = <&gpioc 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_DOWN>;
+		};
+
+		button_left: button_left {
+			label = "Left";
+			gpios = <&gpiob 11 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_LEFT>;
+		};
+
+		button_right: button_right {
+			label = "Right";
+			gpios = <&gpiob 12 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_RIGHT>;
+		};
+
+		button_ok: button_ok {
+			label = "OK";
+			gpios = <&gpioh 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_ENTER>;
+		};
+
+		button_back: button_back {
+			label = "Back";
+			gpios = <&gpioc 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_BACK>;
+		};
+	};
+
+	flipper_header: connector {
+		compatible = "flipper,gpio-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <2 0 &gpioa 7 0>,	/* PA7 */
+			   <3 0 &gpioa 6 0>,	/* PA6 */
+			   <4 0 &gpioa 4 0>,	/* PA4 */
+			   <5 0 &gpiob 3 0>,	/* PB3 */
+			   <6 0 &gpiob 2 0>,	/* PB2 */
+			   <7 0 &gpioc 3 0>,	/* PC3 */
+			   <10 0 &gpioa 14 0>,	/* PA14, SWCLK */
+			   <12 0 &gpioa 13 0>,	/* PA13, SWDIO */
+			   <13 0 &gpiob 6 0>,	/* PB6, USART1 TX */
+			   <14 0 &gpiob 7 0>,	/* PB7, USART1 RX */
+			   <15 0 &gpioc 1 0>,	/* PC1 */
+			   <16 0 &gpioc 0 0>,	/* PC0 */
+			   <17 0 &gpiob 14 0>;	/* PB14, 1-Wire */
+	};
+
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&spi2>;
+		dc-gpios = <&gpiob 1 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		st7567: st7567@0 {
+			compatible = "sitronix,st7567";
+			reg = <0>;
+			mipi-max-frequency = <DT_FREQ_M(4)>;
+			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			width = <128>;
+			height = <64>;
+			column-offset = <0>;
+			line-offset = <0>;
+			regulation-ratio = <5>;
+			com-invdir;
+		};
+	};
+
+	speaker: speaker {
+		compatible = "pwm-buzzer";
+		pwms = <&pwm16 1 PWM_HZ(1000) PWM_POLARITY_NORMAL>;
+	};
+};
+
+&clk_hse {
+	status = "okay";
+};
+
+&clk_lse {
+	status = "okay";
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&clk48 {
+	clocks = <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
+};
+
+&rcc {
+	clocks = <&clk_hse>;
+	clock-frequency = <DT_FREQ_M(32)>;
+	cpu1-prescaler = <1>;
+	cpu2-prescaler = <1>;
+	ahb4-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
+&lptim1 {
+	clocks = <&rcc STM32_CLOCK(APB1, 31)>,
+		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB1, 10)>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	status = "okay";
+};
+
+&timers16 {
+	st,prescaler = <31>;
+	status = "okay";
+
+	pwm16: pwm {
+		pinctrl-0 = <&tim16_ch1_pb8>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+zephyr_udc0: &usb {
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+#include <../boards/common/usb/cdc_acm_serial.dtsi>
+
+/* GPIO header pins 13 (TX) and 14 (RX) */
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+/* Power I2C bus */
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pa9 &i2c1_sda_pa10>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
+
+	/* RGB LED (R, G, B) and display backlight (W) */
+	lp5562: led-controller@30 {
+		compatible = "ti,lp5562";
+		reg = <0x30>;
+		red-output-current = <50>;
+		green-output-current = <50>;
+		blue-output-current = <50>;
+		white-output-current = <150>;
+	};
+
+	bq25896: charger@6b {
+		compatible = "ti,bq25896";
+		reg = <0x6b>;
+
+		/* Reset defaults of the device, about 1C for the 2100 mAh battery */
+		charger: charger {
+			compatible = "ti,bq25896-charger";
+			constant-charge-current-max-microamp = <2048000>;
+			constant-charge-voltage-max-microvolt = <4208000>;
+		};
+
+		/* USB OTG boost, supplies VBUS and GPIO header pin 1 from the battery */
+		vbus_otg: regulator {
+			compatible = "ti,bq25896-regulator";
+			regulator-name = "vbus-otg";
+			regulator-init-microvolt = <5062000>;
+			regulator-min-microvolt = <5062000>;
+			regulator-max-microvolt = <5062000>;
+			regulator-init-microamp = <1400000>;
+			regulator-boot-off;
+		};
+	};
+};
+
+/* Display and SD card share this bus */
+&spi2 {
+	pinctrl-0 = <&spi2_sck_pd1 &spi2_mosi_pb15 &spi2_miso_pc2>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpioc 11 GPIO_ACTIVE_LOW>,
+		   <&gpioc 12 GPIO_ACTIVE_LOW>;
+	status = "okay";
+
+	sdhc0: sdhc@1 {
+		compatible = "zephyr,sdhc-spi-slot";
+		reg = <1>;
+		spi-max-frequency = <DT_FREQ_M(16)>;
+		cd-gpios = <&gpioc 10 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		status = "okay";
+
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			disk-name = "SD";
+			status = "okay";
+		};
+	};
+};
+
+&rng {
+	status = "okay";
+};
+
+&aes1 {
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&adc1_common {
+	st,adc-clock-source = "SYNC";
+	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_in9_pa4 &adc1_in11_pa6 &adc1_in12_pa7
+		     &adc1_in1_pc0 &adc1_in2_pc1 &adc1_in4_pc3>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&die_temp {
+	status = "okay";
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
+	status = "okay";
+};
