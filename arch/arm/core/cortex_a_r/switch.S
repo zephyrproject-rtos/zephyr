@@ -81,9 +81,9 @@ SECTION_FUNC(TEXT, z_arm_context_switch)
 #endif
 
 #ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
-	push {lr}
+	push {r0, lr}
 	bl z_thread_mark_switched_in
-	pop {lr}
+	pop {r0, lr}
 #endif
 
 	bx lr
@@ -135,20 +135,7 @@ offload:
     add r3, r3, #1
     str r3, [r2, #___cpu_t_nested_OFFSET]
 
-    /*
-     * If not nested: switch to the IRQ stack and save current sp on it.
-     * Stay in SYS mode so that a nested IRQ does not clobber lr_irq.
-     */
-    cmp r3, #1
-    bhi 1f
-    mov r0, sp
-    cps #MODE_IRQ
-    mov r1, sp
-    cps #MODE_SYS
-    mov sp, r1
-    push {r0}
-
-1:
+    irq_stack_enter r3
     blx z_irq_do_offload
     b z_arm_cortex_ar_irq_done
 #endif
