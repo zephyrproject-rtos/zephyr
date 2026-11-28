@@ -1150,21 +1150,37 @@ static sl_hal_eusart_hw_flow_control_t eusart_cfg2ll_hwctrl(enum uart_config_flo
 	return SL_HAL_EUSART_HW_FLOW_CONTROL_NONE;
 }
 
-static int eusart_configure_peripheral(const struct device *dev, bool enable)
+static int eusart_oversampling(uint32_t clock_rate, uint32_t baudrate, sl_hal_eusart_ovs_t *ovs)
+{
+	static const struct {
+		uint8_t factor;
+		sl_hal_eusart_ovs_t ovs;
+	} options[] = {
+		{16, SL_HAL_EUSART_OVS_16},
+		{8, SL_HAL_EUSART_OVS_8},
+		{6, SL_HAL_EUSART_OVS_6},
+		{4, SL_HAL_EUSART_OVS_4},
+	};
+
+	ARRAY_FOR_EACH(options, i) {
+		if (baudrate <= clock_rate / options[i].factor) {
+			*ovs = options[i].ovs;
+			return 0;
+		}
+	}
+
+	return -ENOTSUP;
+}
+
+static void eusart_configure_peripheral(const struct device *dev, uint32_t clock_rate,
+					sl_hal_eusart_ovs_t ovs, bool enable)
 {
 	sl_hal_eusart_uart_advanced_init_t advanced_init = SL_HAL_EUSART_UART_ADVANCED_INIT_DEFAULT;
 	sl_hal_eusart_uart_init_t init = SL_HAL_EUSART_UART_INIT_DEFAULT_HF;
 	const struct eusart_config *config = dev->config;
 	const struct eusart_data *data = dev->data;
-	uint32_t clock_rate;
-	int err;
 
-	err = clock_control_get_rate(config->clock_dev, (clock_control_subsys_t)&config->clock_cfg,
-				     &clock_rate);
-	if (err < 0) {
-		return err;
-	}
-
+	init.oversampling = ovs;
 	init.clock_div = sl_hal_eusart_uart_calculate_clock_div(clock_rate,
 								data->uart_cfg.baudrate,
 								init.oversampling);
@@ -1185,19 +1201,22 @@ static int eusart_configure_peripheral(const struct device *dev, bool enable)
 		sl_hal_eusart_enable_tx(config->eusart);
 		sl_hal_eusart_enable_rx(config->eusart);
 	}
-
-	return 0;
 }
 
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 static int eusart_configure(const struct device *dev, const struct uart_config *cfg)
 {
+	const struct eusart_config *config = dev->config;
 	struct eusart_data *data = dev->data;
 	struct uart_config *uart_cfg = &data->uart_cfg;
+	sl_hal_eusart_ovs_t ovs;
+	uint32_t clock_rate;
+	unsigned int key;
+	uint32_t ien;
 	int err;
 
 #ifdef CONFIG_UART_SILABS_EUSART_ASYNC
-	if (data->dma_rx.enabled || data->dma_tx.enabled) {
+	if (data->dma_rx.enabled || data->dma_tx.buffer_length) {
 		return -EBUSY;
 	}
 #endif
@@ -1219,16 +1238,31 @@ static int eusart_configure(const struct device *dev, const struct uart_config *
 		return -EINVAL;
 	}
 
+	err = clock_control_get_rate(config->clock_dev, (clock_control_subsys_t)&config->clock_cfg,
+				     &clock_rate);
+	if (err < 0) {
+		return err;
+	}
+
+	err = eusart_oversampling(clock_rate, cfg->baudrate, &ovs);
+	if (err < 0) {
+		return err;
+	}
+
 	*uart_cfg = *cfg;
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	eusart_irq_tx_abort_drain(dev);
 #endif
 
-	err = eusart_configure_peripheral(dev, true);
-	if (err < 0) {
-		return err;
-	}
+	key = irq_lock();
+	ien = config->eusart->IEN;
+	config->eusart->IEN = 0;
+	irq_unlock(key);
+
+	eusart_configure_peripheral(dev, clock_rate, ovs, true);
+
+	config->eusart->IEN = ien;
 
 	return 0;
 };
@@ -1248,6 +1282,9 @@ static int eusart_init(const struct device *dev)
 {
 	int err;
 	const struct eusart_config *config = dev->config;
+	const struct eusart_data *data = dev->data;
+	sl_hal_eusart_ovs_t ovs;
+	uint32_t clock_rate;
 
 	/* The peripheral and gpio clock are already enabled from soc and gpio driver */
 	/* Enable EUSART clock */
@@ -1256,10 +1293,18 @@ static int eusart_init(const struct device *dev)
 		return err;
 	}
 
-	err = eusart_configure_peripheral(dev, false);
+	err = clock_control_get_rate(config->clock_dev, (clock_control_subsys_t)&config->clock_cfg,
+				     &clock_rate);
 	if (err < 0) {
 		return err;
 	}
+
+	err = eusart_oversampling(clock_rate, data->uart_cfg.baudrate, &ovs);
+	if (err < 0) {
+		return err;
+	}
+
+	eusart_configure_peripheral(dev, clock_rate, ovs, false);
 
 	config->irq_config_func(dev);
 

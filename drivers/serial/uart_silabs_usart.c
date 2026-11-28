@@ -985,12 +985,37 @@ static inline USART_HwFlowControl_TypeDef uart_silabs_cfg2ll_hwctrl(
 	return usartHwFlowControlNone;
 }
 
-static void uart_silabs_configure_peripheral(const struct device *dev, bool enable)
+static int uart_silabs_oversampling(uint32_t ref_freq, uint32_t baudrate, USART_OVS_TypeDef *ovs)
+{
+	static const struct {
+		uint8_t factor;
+		USART_OVS_TypeDef ovs;
+	} options[] = {
+		{16, usartOVS16},
+		{8, usartOVS8},
+		{6, usartOVS6},
+		{4, usartOVS4},
+	};
+
+	ARRAY_FOR_EACH(options, i) {
+		if (baudrate <= ref_freq / options[i].factor) {
+			*ovs = options[i].ovs;
+			return 0;
+		}
+	}
+
+	return -ENOTSUP;
+}
+
+static void uart_silabs_configure_peripheral(const struct device *dev, uint32_t ref_freq,
+					     USART_OVS_TypeDef ovs, bool enable)
 {
 	const struct uart_silabs_config *config = dev->config;
 	const struct uart_silabs_data *data = dev->data;
 	USART_InitAsync_TypeDef usartInit = USART_INITASYNC_DEFAULT;
 
+	usartInit.refFreq = ref_freq;
+	usartInit.oversampling = ovs;
 	usartInit.baudrate = data->uart_cfg->baudrate;
 	usartInit.parity = uart_silabs_cfg2ll_parity(data->uart_cfg->parity);
 	usartInit.stopbits = uart_silabs_cfg2ll_stopbits(data->uart_cfg->stop_bits);
@@ -1008,9 +1033,14 @@ static int uart_silabs_configure(const struct device *dev,
 	const struct uart_silabs_config *config = dev->config;
 	USART_TypeDef *base = config->base;
 	struct uart_silabs_data *data = dev->data;
+	USART_OVS_TypeDef ovs;
+	uint32_t ref_freq;
+	unsigned int key;
+	uint32_t ien;
+	int err;
 
 #ifdef CONFIG_UART_SILABS_USART_ASYNC
-	if (data->dma_rx.enabled || data->dma_tx.enabled) {
+	if (data->dma_rx.enabled || data->dma_tx.buffer_length) {
 		return -EBUSY;
 	}
 #endif
@@ -1033,15 +1063,37 @@ static int uart_silabs_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
+	if (cfg->baudrate == 0) {
+		return -EINVAL;
+	}
+
+	err = clock_control_get_rate(config->clock_dev, (clock_control_subsys_t)&config->clock_cfg,
+				     &ref_freq);
+	if (err < 0) {
+		return err;
+	}
+
+	err = uart_silabs_oversampling(ref_freq, cfg->baudrate, &ovs);
+	if (err < 0) {
+		return err;
+	}
+
 	*data->uart_cfg = *cfg;
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_silabs_irq_tx_abort_drain(dev);
 #endif
 
+	key = irq_lock();
+	ien = base->IEN;
+	base->IEN = 0;
+	irq_unlock(key);
+
 	USART_Enable(base, usartDisable);
 
-	uart_silabs_configure_peripheral(dev, true);
+	uart_silabs_configure_peripheral(dev, ref_freq, ovs, true);
+
+	base->IEN = ien;
 
 	return 0;
 };
@@ -1066,6 +1118,9 @@ static int uart_silabs_init(const struct device *dev)
 {
 	int err;
 	const struct uart_silabs_config *config = dev->config;
+	const struct uart_silabs_data *data = dev->data;
+	USART_OVS_TypeDef ovs;
+	uint32_t ref_freq;
 
 	/* The peripheral and gpio clock are already enabled from soc and gpio driver */
 	/* Enable USART clock */
@@ -1074,7 +1129,18 @@ static int uart_silabs_init(const struct device *dev)
 		return err;
 	}
 
-	uart_silabs_configure_peripheral(dev, false);
+	err = clock_control_get_rate(config->clock_dev, (clock_control_subsys_t)&config->clock_cfg,
+				     &ref_freq);
+	if (err < 0) {
+		return err;
+	}
+
+	err = uart_silabs_oversampling(ref_freq, data->uart_cfg->baudrate, &ovs);
+	if (err < 0) {
+		return err;
+	}
+
+	uart_silabs_configure_peripheral(dev, ref_freq, ovs, false);
 
 	config->irq_config_func(dev);
 
