@@ -24,7 +24,7 @@ extern void CC1352R1_LAUNCHXL_shutDownExtFlash(void);
 
 int main(void)
 {
-	uint32_t config, status;
+	uint32_t status;
 
 	printk("\n%s system off demo\n", CONFIG_BOARD);
 
@@ -37,12 +37,7 @@ int main(void)
 		return 0;
 	}
 
-	gpio_pin_configure_dt(&sw0_gpio, GPIO_INPUT);
-
-	/* Set wakeup bits for button gpio */
-	config = IOCPortConfigureGet(sw0_gpio.pin);
-	config |= IOC_WAKE_ON_LOW;
-	IOCPortConfigureSet(sw0_gpio.pin, IOC_PORT_GPIO, config);
+	gpio_pin_configure_dt(&sw0_gpio, GPIO_INPUT | GPIO_INT_WAKEUP);
 
 	printk("Busy-wait %u s\n", BUSY_WAIT_S);
 	k_busy_wait(BUSY_WAIT_S * USEC_PER_SEC);

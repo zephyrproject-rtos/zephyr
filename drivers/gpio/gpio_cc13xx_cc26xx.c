@@ -74,7 +74,14 @@ static int gpio_cc13xx_cc26xx_config(const struct device *port,
 		return -ENOTSUP;
 	}
 
-	config |= IOC_SLEW_DISABLE | IOC_NO_WAKE_UP;
+	config |= IOC_SLEW_DISABLE;
+
+	/* Wake up from shutdown when the pin becomes active */
+	if ((flags & GPIO_INT_WAKEUP) != 0) {
+		config |= ((flags & GPIO_ACTIVE_LOW) != 0) ? IOC_WAKE_ON_LOW : IOC_WAKE_ON_HIGH;
+	} else {
+		config |= IOC_NO_WAKE_UP;
+	}
 
 	config |= (flags & CC13XX_CC26XX_GPIO_DEBOUNCE) ?
 		IOC_HYST_ENABLE : IOC_HYST_DISABLE;
@@ -175,6 +182,9 @@ static int gpio_cc13xx_cc26xx_pin_interrupt_configure(const struct device *port,
 						      enum gpio_int_trig trig)
 {
 	uint32_t config = 0;
+
+	/* Wake up source is configured in gpio_cc13xx_cc26xx_config(). Strip the bit. */
+	trig &= ~GPIO_INT_WAKEUP;
 
 	if (mode != GPIO_INT_MODE_DISABLED) {
 		if (mode == GPIO_INT_MODE_EDGE) {
