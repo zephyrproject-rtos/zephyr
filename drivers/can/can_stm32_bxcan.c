@@ -106,6 +106,11 @@ static void can_stm32_rx_fifo_pop(CAN_FIFOMailBox_TypeDef *mbox, struct can_fram
 	}
 
 	frame->dlc = mbox->RDTR & (CAN_RDT0R_DLC >> CAN_RDT0R_DLC_Pos);
+
+	/* A classical CAN frame with a DLC greater than 8 carries 8 data bytes */
+	if (frame->dlc > CAN_MAX_DLC) {
+		frame->dlc = CAN_MAX_DLC;
+	}
 #ifdef CONFIG_CAN_RX_TIMESTAMP
 	frame->timestamp = ((mbox->RDTR & CAN_RDT0R_TIME) >> CAN_RDT0R_TIME_Pos);
 #endif
