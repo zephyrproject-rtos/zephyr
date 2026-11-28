@@ -24,11 +24,11 @@ static ALWAYS_INLINE void usbc_handler(void *port_dev)
 {
 	const struct device *dev = (const struct device *)port_dev;
 	struct usbc_port_data *port = dev->data;
-	struct request_value *req;
 	int32_t request;
 
-	req = k_fifo_get(&port->request_fifo, K_NO_WAIT);
-	request = (req != NULL) ? req->val : REQUEST_NOP;
+	if (k_msgq_get(&port->request_msgq, &request, K_NO_WAIT) != 0) {
+		request = REQUEST_NOP;
+	}
 	pe_run(dev, request);
 	prl_run(dev);
 	tc_run(dev, request);
@@ -102,10 +102,16 @@ DT_INST_FOREACH_STATUS_OKAY(USBC_SUBSYS_INIT)
 int usbc_start(const struct device *dev)
 {
 	struct usbc_port_data *data = dev->data;
+	int32_t req = PRIV_PORT_REQUEST_START;
 
-	/* Add private start request to fifo */
-	data->request.val = PRIV_PORT_REQUEST_START;
-	k_fifo_put(&data->request_fifo, &data->request);
+	/*
+	 * Anything still queued was meant for the port before it was
+	 * suspended, and a suspend left there would stop it again at once.
+	 */
+	k_msgq_purge(&data->request_msgq);
+	if (k_msgq_put(&data->request_msgq, &req, K_NO_WAIT) != 0) {
+		return -EBUSY;
+	}
 
 	/* Start the port thread */
 	k_thread_resume(data->port_thread);
@@ -119,12 +125,11 @@ int usbc_start(const struct device *dev)
 int usbc_suspend(const struct device *dev)
 {
 	struct usbc_port_data *data = dev->data;
+	int32_t req = PRIV_PORT_REQUEST_SUSPEND;
 
-	/* Add private suspend request to fifo */
-	data->request.val = PRIV_PORT_REQUEST_SUSPEND;
-	k_fifo_put(&data->request_fifo, &data->request);
-
-	return 0;
+	/* Pending requests are moot, and would otherwise run after a restart. */
+	k_msgq_purge(&data->request_msgq);
+	return (k_msgq_put(&data->request_msgq, &req, K_NO_WAIT) == 0) ? 0 : -EBUSY;
 }
 
 /**
@@ -134,12 +139,14 @@ int usbc_suspend(const struct device *dev)
 int usbc_request(const struct device *dev, const enum usbc_policy_request_t req)
 {
 	struct usbc_port_data *data = dev->data;
+	int32_t val = req;
 
-	/* Add public request to fifo */
-	data->request.val = req;
-	k_fifo_put(&data->request_fifo, &data->request);
-
-	return 0;
+	/*
+	 * By value. Linking one shared node into a FIFO, as this did, made a
+	 * second request before the first was taken append the node to
+	 * itself, and the port then ran that request on every cycle forever.
+	 */
+	return (k_msgq_put(&data->request_msgq, &val, K_NO_WAIT) == 0) ? 0 : -EBUSY;
 }
 
 void usbc_bypass_next_sleep(const struct device *dev)
@@ -386,8 +393,9 @@ static int usbc_subsys_init(const struct device *dev)
 	pe_subsys_init(dev);
 	prl_subsys_init(dev);
 
-	/* Initialize the request fifo */
-	k_fifo_init(&data->request_fifo);
+	/* Initialize the request queue */
+	k_msgq_init(&data->request_msgq, (char *)data->request_buf, sizeof(int32_t),
+		    USBC_REQUEST_QUEUE_DEPTH);
 
 	/* Create the thread for this port */
 	config->create_thread(dev);

@@ -335,6 +335,7 @@ typedef int (*policy_cb_src_en_t)(const struct device *dev, bool en);
  * @param dev Runtime device structure
  *
  * @retval 0 on success
+ * @retval -EBUSY if the port's request queue is full
  */
 int usbc_start(const struct device *dev);
 
@@ -344,6 +345,7 @@ int usbc_start(const struct device *dev);
  * @param dev Runtime device structure
  *
  * @retval 0 on success
+ * @retval -EBUSY if the port's request queue is full
  */
 int usbc_suspend(const struct device *dev);
 
@@ -354,6 +356,7 @@ int usbc_suspend(const struct device *dev);
  * @param req request
  *
  * @retval 0 on success
+ * @retval -EBUSY if the port's request queue is full
  */
 int usbc_request(const struct device *dev, const enum usbc_policy_request_t req);
 

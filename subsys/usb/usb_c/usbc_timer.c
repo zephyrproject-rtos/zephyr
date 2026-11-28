@@ -23,6 +23,16 @@ static void usbc_timer_handler(struct k_timer *timer)
 
 void usbc_timer_init(struct usbc_timer_t *usbc_timer, uint32_t timeout_ms)
 {
+	/*
+	 * The layers initialise their timers every time they start, and a
+	 * Soft Reset restarts the Protocol Layer with tTxTimeout still running.
+	 * k_timer_init() on a running timer zeroes a node the kernel's timeout
+	 * list still links, and the next timer operation faults on it. Stopping
+	 * first is safe on a timer that was never started: its node is not
+	 * linked, and the port data holding it is zero-initialised.
+	 */
+	k_timer_stop(&usbc_timer->timer);
+	atomic_clear(&usbc_timer->flags);
 	k_timer_init(&usbc_timer->timer, usbc_timer_handler, NULL);
 	k_timer_user_data_set(&usbc_timer->timer, usbc_timer);
 	usbc_timer->timeout_ms = timeout_ms;
