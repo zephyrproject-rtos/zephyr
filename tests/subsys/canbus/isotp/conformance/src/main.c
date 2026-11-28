@@ -502,6 +502,40 @@ ZTEST(isotp_conformance, test_receive_sf_ext)
 	isotp_unbind(&recv_ctx);
 }
 
+ZTEST(isotp_conformance, test_receive_sf_fd_length_overflow)
+{
+	/* The CAN FD SF escape length must not be truncated to a value that
+	 * fits the frame. An escape length larger than the frame payload has to
+	 * be rejected instead.
+	 */
+#if TX_DL < 12
+	ztest_test_skip();
+#else
+	struct frame_desired single_frame = {0};
+	struct frame_desired sf_frame;
+	int ret;
+
+	ret = isotp_bind(&recv_ctx, can_dev, &rx_addr, &tx_addr, &fc_opts_single, K_NO_WAIT);
+	zassert_equal(ret, ISOTP_N_OK, "Binding failed [%d]", ret);
+
+	/* SF declaring 255 payload bytes in a 12 byte CAN FD frame */
+	single_frame.length = 12;
+	single_frame.data[0] = SF_PCI_BYTE_1;
+	single_frame.data[1] = 0xFF;
+
+	send_frame_series(&single_frame, 1, rx_addr.std_id);
+
+	get_sf_ignore();
+
+	/* The receiver must be ready for the next message */
+	prepare_sf_frame(&sf_frame, random_data);
+	send_frame_series(&sf_frame, 1, rx_addr.std_id);
+	get_sf(DATA_SIZE_SF);
+
+	isotp_unbind(&recv_ctx);
+#endif
+}
+
 ZTEST(isotp_conformance, test_send_sf_fixed)
 {
 	int filter_id, ret;
