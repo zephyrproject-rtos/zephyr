@@ -32,7 +32,7 @@ typedef struct {
 #define LPC84X_SWM_NONE          0xFFFF
 
 /* IOCON decoding macros */
-#define LPC84X_IOCON_INDEX(cfg) ((cfg) & 0xFF)
+#define LPC84X_IOCON_IDX(cfg)   ((cfg) & 0xFF)
 #define LPC84X_IOCON_CFG(cfg)   (((cfg) >> 8) & 0xFF)
 
 /**
