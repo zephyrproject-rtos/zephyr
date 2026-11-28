@@ -14,9 +14,11 @@ struct _cpu_arch {
 #if CONFIG_MP_MAX_NUM_CPUS > 1
 	atomic_ptr_val_t save_cp;  /* Save on IPI if match cp_owner */
 #endif
-#elif defined(__cplusplus)
+#elif defined(CONFIG_CPP)
 	/* An empty struct is not valid C, and compilers that accept it give
-	 * it size 0 while C++ gives 1. Keep a byte so both languages agree.
+	 * it size 0 while C++ gives 1. Keep a byte whenever C++ is enabled, so
+	 * that C and C++ translation units agree on the layout of struct _cpu
+	 * and struct z_kernel.
 	 */
 	uint8_t dummy;
 #endif

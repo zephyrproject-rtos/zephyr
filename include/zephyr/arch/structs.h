@@ -41,9 +41,11 @@
 
 /* Per CPU architecture specifics (empty) */
 struct _cpu_arch {
-#ifdef __cplusplus
+#ifdef CONFIG_CPP
 	/* An empty struct is not valid C, and compilers that accept it give
-	 * it size 0 while C++ gives 1. Keep a byte so both languages agree.
+	 * it size 0 while C++ gives 1. Keep a byte whenever C++ is enabled, so
+	 * that C and C++ translation units agree on the layout of struct _cpu
+	 * and struct z_kernel.
 	 */
 	uint8_t dummy;
 #endif
