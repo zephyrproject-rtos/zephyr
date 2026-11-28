@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
+#include <limits.h>
 #include <zephyr/device.h>
+#include <zephyr/drivers/interrupt_controller/gic.h>
 #include <zephyr/drivers/interrupt_controller/gicv3_its.h>
+#include <zephyr/ztest.h>
 
 #define DT_DRV_COMPAT   arm_gic_v3_its
 
@@ -72,7 +74,22 @@ ZTEST(arm64_gicv3_its, test_gicv3_its_alloc)
 		device_id = ITS_TEST_DEV(devn);
 
 		if (devn == 0) {
+			const unsigned int invalid[] = {CONFIG_NUM_IRQS, 65536U, 73728U, UINT_MAX};
+
 			zassert_true(its_setup_deviceid(dev, device_id, 1) == 0, "");
+			zassert_equal(its_map_intid(dev, device_id, 0U, ITS_TEST_LPI_INT_BASE - 1U),
+				      -EINVAL);
+
+			for (size_t i = 0U; i < ARRAY_SIZE(invalid); i++) {
+				zassert_equal(its_map_intid(dev, device_id, 0U, invalid[i]),
+					      -EINVAL);
+				arm_gic_irq_enable(invalid[i]);
+				zassert_false(arm_gic_irq_is_enabled(invalid[i]));
+				arm_gic_irq_set_priority(invalid[i], 0U, 0U);
+				arm_gic_irq_disable(invalid[i]);
+				zassert_false(arm_gic_irq_is_enabled(invalid[i]));
+			}
+
 			vectors[devn][0] = first;
 			zassert_true(vectors[devn][0] >= ITS_TEST_LPI_INT_BASE, "");
 			zassert_true(its_map_intid(dev, device_id, 0, vectors[devn][0]) == 0, "");
@@ -121,9 +138,20 @@ ZTEST(arm64_gicv3_its, test_gicv3_its_alloc)
 	}
 
 	if (CONFIG_NUM_IRQS == (ITS_TEST_LPI_INT_BASE + ITS_TEST_NUM_DEVS * ITS_TEST_NUM_ITES)) {
+		const unsigned int event = ITS_TEST_NUM_ITES - 1U;
+		const unsigned int last = vectors[ITS_TEST_NUM_DEVS - 1U][event];
+
 		zassert_equal(its_alloc_intids(dev, 1U, &intid), -ENOSPC, "");
-		zassert_equal(its_map_intid(dev, ITS_TEST_DEV(0), 0U, CONFIG_NUM_IRQS), -EINVAL,
-			      "");
+		zassert_equal(last, CONFIG_NUM_IRQS - 1U);
+
+		last_lpi_irq_num = 0U;
+		zassert_equal(
+			irq_connect_dynamic(last, 0U, lpi_irq_handle, (void *)(uintptr_t)last, 0U),
+			last);
+		irq_enable(last);
+		zassert_ok(its_send_int(dev, ITS_TEST_DEV(ITS_TEST_NUM_DEVS - 1U), event));
+		zassert_true(WAIT_FOR(last_lpi_irq_num == last, 100000U, k_yield()));
+		irq_disable(last);
 	}
 }
 

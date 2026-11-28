@@ -1,5 +1,17 @@
+common:
+  platform_allow:
+    - qemu_cortex_a53
+    - qemu_cortex_a53/qemu_cortex_a53/smp
 tests:
   arch.arm64.gicv3_its:
-    platform_allow:
-      - qemu_cortex_a53
-      - qemu_cortex_a53/qemu_cortex_a53/smp
+    testcases:
+      - arm64_gicv3_its.gicv3_its_alloc
+      - arm64_gicv3_its.gicv3_its_connect
+      - arm64_gicv3_its.gicv3_its_irq_simple
+      - arm64_gicv3_its.gicv3_its_irq_disable
+      - arm64_gicv3_its.gicv3_its_irq
+  arch.arm64.gicv3_its.bounds.small:
+    extra_configs:
+      - CONFIG_TEST_GICV3_ITS_SMALL_LPI_POOL=y
+    testcases:
+      - arm64_gicv3_its.gicv3_its_concurrent_exhaustion
