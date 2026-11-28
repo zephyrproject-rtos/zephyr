@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# MCU series
+config SOC_SERIES_PSOC4HVPASPM10
+	bool
+	select SOC_FAMILY_INFINEON_PSOC4
+	help
+	  PSOC4 HVPA-SPM 1.0 Series MCU
+
+config SOC_SERIES
+	default "psoc4hvpaspm10" if SOC_SERIES_PSOC4HVPASPM10
+
+config SOC_CY8C4147LDE_HV504
+	bool
+	select SOC_SERIES_PSOC4HVPASPM10
+
+config SOC_CY8C4147LDE_HV534
+	bool
+	select SOC_SERIES_PSOC4HVPASPM10
+
+config SOC_CY8C4147LDE_HV604
+	bool
+	select SOC_SERIES_PSOC4HVPASPM10
+
+config SOC_CY8C4147LDE_HV634
+	bool
+	select SOC_SERIES_PSOC4HVPASPM10
+
+config SOC_CY8C4147LDE_HV704
+	bool
+	select SOC_SERIES_PSOC4HVPASPM10
+
+config SOC_CY8C4147LDE_HV734
+	bool
+	select SOC_SERIES_PSOC4HVPASPM10
+
+config SOC
+	default "cy8c4147lde_hv504" if SOC_CY8C4147LDE_HV504
+	default "cy8c4147lde_hv534" if SOC_CY8C4147LDE_HV534
+	default "cy8c4147lde_hv604" if SOC_CY8C4147LDE_HV604
+	default "cy8c4147lde_hv634" if SOC_CY8C4147LDE_HV634
+	default "cy8c4147lde_hv704" if SOC_CY8C4147LDE_HV704
+	default "cy8c4147lde_hv734" if SOC_CY8C4147LDE_HV734

@@ -23,11 +23,28 @@ config CLOCK_CONTROL_IFX_FIXED_CLOCK
 config INFINEON_SYSCLK_LOCK_NONE
 	bool
 	default y if SOC_FAMILY_INFINEON_PSOC4 && !SOC_SERIES_PSOC4000T && \
-		!SOC_SERIES_PSOC4HVMS64K && !SOC_SERIES_PSOC4HVMS128K
+		!SOC_SERIES_PSOC4HVMS64K && !SOC_SERIES_PSOC4HVMS128K && \
+		!SOC_SERIES_PSOC4HVPASPM10
 	help
 	  Hidden option enabled for SoC series whose IMO clock must be explicitly
 	  unlocked from the WCO (Cy_SysClk_ImoLock(CY_SYSCLK_IMO_LOCK_NONE)) after
 	  being reconfigured. Not all Infineon CAT1 SoCs have this capability.
+
+config INFINEON_SYSCLK_HAS_HPOSC
+	bool
+	default y if SOC_SERIES_PSOC4HVMS64K || SOC_SERIES_PSOC4HVMS128K || \
+		SOC_SERIES_PSOC4HVPASPM10
+	help
+	  Hidden option enabled for SoC series that have a high precision oscillator
+	  (HPOSC) IP block. Not all Infineon CAT1 SoCs have this capability.
+
+config INFINEON_SYSCLK_WDT_UNLOCK
+	bool
+	default y if SOC_SERIES_PSOC4HVMS64K || SOC_SERIES_PSOC4HVMS128K || \
+		SOC_SERIES_PSOC4HVPASPM10
+	help
+	  Hidden option enabled for SoC series whose WDT must be unlocked to enable the ILO
+	  and PILO or to switch the LFCLK source.
 
 config CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK
 	bool "Infineon fixed factor clock driver"
