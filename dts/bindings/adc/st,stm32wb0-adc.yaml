@@ -13,6 +13,14 @@ properties:
   clocks:
     required: true
 
+  clock-names:
+    required: true
+    const: ["digital", "analog"]
+    description: |
+      The two ADC clock domains can be controlled independently:
+      - "digital" for the digital part of the ADC block
+      - "analog" for the analog part of the ADC block
+
   interrupts:
     required: true
 
