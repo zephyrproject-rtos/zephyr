@@ -9,6 +9,7 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys/clock.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/irq.h>
 #include <zephyr/arch/riscv/csr.h>
@@ -20,18 +21,10 @@ const int32_t z_sys_timer_irq_for_test = IRQ_S_TIMER;
 
 static void sbi_set_timer(uint64_t deadline)
 {
-	register unsigned long a0 __asm__("a0") = (unsigned long)deadline;
-#ifndef CONFIG_64BIT
-	register unsigned long a1 __asm__("a1") = (unsigned long)(deadline >> 32);
-#endif
-	register unsigned long a6 __asm__("a6") = SBI_FUNC_SET_TIMER;
-	register unsigned long a7 __asm__("a7") = SBI_EXT_TIME;
+	unsigned long deadline_hi = IS_ENABLED(CONFIG_64BIT) ? 0 : (unsigned long)(deadline >> 32);
 
-#ifdef CONFIG_64BIT
-	__asm__ volatile("ecall" : "+r"(a0) : "r"(a6), "r"(a7) : "a1", "memory");
-#else
-	__asm__ volatile("ecall" : "+r"(a0), "+r"(a1) : "r"(a6), "r"(a7) : "memory");
-#endif
+	(void)sbi_ecall((unsigned long)deadline, deadline_hi, 0, 0, 0, 0,
+			SBI_FUNC_SET_TIMER, SBI_EXT_TIME);
 }
 
 static uint64_t stime(void)
