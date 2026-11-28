@@ -2240,8 +2240,13 @@ static int tls_mbedtls_reset_session(struct tls_context *context)
 	return 0;
 }
 
+/* Run the handshake, waiting at most timeout. With unlocked_wait, the waits
+ * release the socket lock, so close() and shutdown() from another thread are
+ * not held up; the caller must then handle TLS_WAIT_CTX_RELEASED, after which
+ * the context must not be touched, and TLS_WAIT_RX_SHUTDOWN.
+ */
 static int tls_mbedtls_handshake(struct tls_context *context,
-				 k_timeout_t timeout)
+				 k_timeout_t timeout, bool unlocked_wait)
 {
 	k_timepoint_t end;
 	int ret;
@@ -2296,7 +2301,15 @@ static int tls_mbedtls_handshake(struct tls_context *context,
 			}
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
-			ret = wait_for_reason(context->sock, timeout_ms, ret);
+			if (unlocked_wait) {
+				ret = tls_wait_unlocked(context, timeout_ms, ret);
+				if (ret == TLS_WAIT_CTX_RELEASED) {
+					return ret;
+				}
+			} else {
+				ret = wait_for_reason(context->sock, timeout_ms, ret);
+			}
+
 			if (ret != 0) {
 				break;
 			}
@@ -2382,7 +2395,7 @@ static int tls_deferred_handshake(struct tls_context *ctx, k_timeout_t timeout)
 			return 0;
 		}
 
-		ret = tls_mbedtls_handshake(ctx, K_NO_WAIT);
+		ret = tls_mbedtls_handshake(ctx, K_NO_WAIT, false);
 		if (ret == 0) {
 			/* From now on the socket behaves like one accepted with
 			 * the handshake done.
@@ -3734,7 +3747,7 @@ int ztls_connect_ctx(struct tls_context *ctx, const struct net_sockaddr *addr,
 		 * even for non-blocking socket.
 		 */
 		ret = tls_mbedtls_handshake(
-			ctx, K_MSEC(CONFIG_NET_SOCKETS_TLS_CONNECT_TIMEOUT));
+			ctx, K_MSEC(CONFIG_NET_SOCKETS_TLS_CONNECT_TIMEOUT), false);
 		if (ret < 0) {
 			if ((ret == -EAGAIN) && !is_non_block) {
 				ret = -ETIMEDOUT;
@@ -3823,7 +3836,7 @@ int ztls_accept_ctx(struct tls_context *parent, struct net_sockaddr *addr,
 	 * non-blocking socket, unless TLS_HANDSHAKE_ON_ACCEPT is cleared.
 	 */
 	ret = tls_mbedtls_handshake(
-		child, K_MSEC(CONFIG_NET_SOCKETS_TLS_CONNECT_TIMEOUT));
+		child, K_MSEC(CONFIG_NET_SOCKETS_TLS_CONNECT_TIMEOUT), false);
 	if (ret < 0) {
 		if ((ret == -EAGAIN) && is_blocking(parent->sock, 0)) {
 			ret = -ETIMEDOUT;
@@ -3985,7 +3998,7 @@ static ssize_t sendto_dtls_client(struct tls_context *ctx, const void *buf,
 		 * mbed TLS, so K_FOREVER is fine here, the function will not
 		 * block indefinitely.
 		 */
-		ret = tls_mbedtls_handshake(ctx, K_FOREVER);
+		ret = tls_mbedtls_handshake(ctx, K_FOREVER, false);
 		if (ret < 0) {
 			goto error;
 		}
@@ -4534,7 +4547,19 @@ static ssize_t recvfrom_dtls_server(struct tls_context *ctx, void *buf,
 		(void)dtls_server_check_expired_sessions(ctx);
 
 		if (!is_handshake_complete(ctx->active_session)) {
-			ret = tls_mbedtls_handshake(ctx, timeout);
+			/* With no client, this waits until one connects, so
+			 * wait without the socket lock, as the data loop does.
+			 */
+			ret = tls_mbedtls_handshake(ctx, timeout, true);
+			if (ret == TLS_WAIT_CTX_RELEASED) {
+				ret = -EINTR;
+				break;
+			}
+
+			if (ret == TLS_WAIT_RX_SHUTDOWN) {
+				return 0;
+			}
+
 			if (ret < 0) {
 				/* In case of EAGAIN, check if it's needed to swap sessions,
 				 * otherwise just exit.
@@ -5120,7 +5145,7 @@ again:
 	}
 
 	if (!is_handshake_complete(ctx->active_session)) {
-		ret = tls_mbedtls_handshake(ctx, K_NO_WAIT);
+		ret = tls_mbedtls_handshake(ctx, K_NO_WAIT, false);
 		if (ret < 0) {
 			if (ret == -EAGAIN) {
 				if (is_server) {

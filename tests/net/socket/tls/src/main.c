@@ -1306,7 +1306,7 @@ ZTEST(net_socket_tls, test_dtls_client_shutdown_rd_while_recv)
 	test_eof_after_shutdown_rd(c_sock);
 }
 
-ZTEST(net_socket_tls, test_dtls_server_shutdown_rd_no_session)
+static void test_prepare_dtls_server_no_session(void)
 {
 	struct net_sockaddr_in6 s_saddr;
 	int role = ZSOCK_TLS_DTLS_ROLE_SERVER;
@@ -1317,8 +1317,28 @@ ZTEST(net_socket_tls, test_dtls_server_shutdown_rd_no_session)
 				    sizeof(role)),
 		   "setsockopt() failed (%d)", errno);
 	test_bind(s_sock, (struct net_sockaddr *)&s_saddr, sizeof(s_saddr));
+}
+
+ZTEST(net_socket_tls, test_dtls_server_shutdown_rd_no_session)
+{
+	test_prepare_dtls_server_no_session();
 
 	zassert_ok(zsock_shutdown(s_sock, ZSOCK_SHUT_RD), "shutdown() failed (%d)", errno);
+	test_eof_after_shutdown_rd(s_sock);
+}
+
+ZTEST(net_socket_tls, test_dtls_server_close_while_recv_no_session)
+{
+	test_prepare_dtls_server_no_session();
+
+	test_stop_while_recv(&s_sock, stopper_close, -1, EINTR);
+}
+
+ZTEST(net_socket_tls, test_dtls_server_shutdown_rd_while_recv_no_session)
+{
+	test_prepare_dtls_server_no_session();
+
+	test_stop_while_recv(&s_sock, stopper_shutdown_rd, 0, 0);
 	test_eof_after_shutdown_rd(s_sock);
 }
 
