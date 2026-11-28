@@ -54,6 +54,15 @@ config GENVIF_INPUT_VIF_XML_PATH
 	  Absolute path or relative path (w.r.to the application source
 	  directory) of the GenVIF input VIF XML file.
 
+config USBC_CHUNKING
+	bool "Chunked Extended Message support"
+	help
+	  Send and receive Extended Messages longer than
+	  MaxExtendedMsgChunkLen (26 bytes) as Chunked Messages, with the
+	  Chunked Rx and Tx Handlers of the USB PD specification. Needed by
+	  features built on Extended Messages, such as firmware update over
+	  USB PD (PDFU).
+
 config USBC_CSM_SUPPORTS_SINK
 	bool
 	help
@@ -153,6 +162,8 @@ config USBC_LOG_PD_MSG_NAMES
 	  Layer SEND and RECV log lines. Enabling this setting simplifies
 	  debugging, but the message name tables result in a larger code
 	  size.
+
+rsource "pdfu/Kconfig"
 
 module = USBC_STACK
 module-str = usbc stack

@@ -23,6 +23,8 @@ struct fusb307_data {
 	struct k_work_delayable init_dwork;
 	int init_retries;
 	bool initialized;
+	/* USB-PD Specification Revision for the Message Header Info register */
+	enum pd_rev_type pd_rev;
 
 	/* TCPCI Specification Revision */
 	uint8_t pd_int_rev;
@@ -217,13 +219,28 @@ static int fusb307_tcpc_set_roles(const struct device *dev, enum tc_power_role p
 	struct fusb307_data *data = dev->data;
 	int ret;
 
-	ret = tcpci_tcpm_set_roles(&cfg->bus, PD_REV20, power_role, data_role);
+	ret = tcpci_tcpm_set_roles(&cfg->bus, data->pd_rev, power_role, data_role);
 	if (ret != 0) {
 		return ret;
 	}
 
 	data->power_role = power_role;
 	return 0;
+}
+
+static int fusb307_tcpc_set_pd_rev(const struct device *dev, enum pd_rev_type rev)
+{
+	const struct fusb307_cfg *cfg = dev->config;
+	struct fusb307_data *data = dev->data;
+
+	data->pd_rev = rev;
+
+	/* Otherwise set_roles() writes it once the part is initialized. */
+	if (!data->initialized) {
+		return 0;
+	}
+
+	return tcpci_tcpm_set_pd_rev(&cfg->bus, rev);
 }
 
 static int fusb307_tcpc_get_rx_pending_msg(const struct device *dev, struct pd_msg *msg)
@@ -506,6 +523,7 @@ static DEVICE_API(tcpc, fusb307_driver_api) = {
 	.vconn_discharge = fusb307_tcpc_vconn_discharge,
 	.set_vconn = fusb307_tcpc_set_vconn,
 	.set_roles = fusb307_tcpc_set_roles,
+	.set_pd_rev = fusb307_tcpc_set_pd_rev,
 	.get_rx_pending_msg = fusb307_tcpc_get_rx_pending_msg,
 	.set_rx_enable = fusb307_tcpc_set_rx_enable,
 	.set_cc_polarity = fusb307_tcpc_set_cc_polarity,
@@ -727,6 +745,7 @@ static int fusb307_dev_init(const struct device *dev)
 		.dev = DEVICE_DT_GET(DT_DRV_INST(inst)),                                           \
 		.init_retries = 0,                                                                 \
 		.cc_changed = true,                                                                \
+		.pd_rev = PD_REV20,                                                                \
 	};                                                                                         \
 	static struct fusb307_cfg drv_cfg_fusb307##inst = {                                        \
 		.bus = I2C_DT_SPEC_GET(DT_DRV_INST(inst)),                                         \

@@ -603,6 +603,12 @@ int tcpci_tcpm_set_roles(const struct i2c_dt_spec *bus, enum pd_rev_type pd_rev,
 				 TCPC_REG_MSG_HDR_INFO_SET(pd_rev, data_role, power_role));
 }
 
+int tcpci_tcpm_set_pd_rev(const struct i2c_dt_spec *bus, enum pd_rev_type pd_rev)
+{
+	return tcpci_update_reg8(bus, TCPC_REG_MSG_HDR_INFO, TCPC_REG_MSG_HDR_INFO_PD_REV_MASK,
+				 FIELD_PREP(TCPC_REG_MSG_HDR_INFO_PD_REV_MASK, pd_rev));
+}
+
 int tcpci_tcpm_set_drp_toggle(const struct i2c_dt_spec *bus, uint8_t pd_int_rev, bool enable)
 {
 	int ret;

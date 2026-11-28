@@ -239,6 +239,28 @@ typedef void (*policy_cb_notify_t)(const struct device *dev,
 typedef uint32_t (*policy_cb_get_rdo_t)(const struct device *dev);
 
 /**
+ * @brief Callback delivering a received Extended Message to the DPM
+ *
+ * The message arrives reassembled, so @p data is the payload with the
+ * Extended Message Header already removed and @p len is its Data Size.
+ *
+ * The callback runs on the USB-C stack thread and must not block. A DPM that
+ * needs to do slow work should copy the message and defer, then answer later
+ * with usbc_send_ext_msg().
+ *
+ * @param dev Runtime device structure
+ * @param type Extended Message type
+ * @param data Message payload
+ * @param len Number of payload bytes
+ *
+ * @retval true if the DPM has taken the message
+ * @retval false to let the Policy Engine reply Not_Supported
+ */
+typedef bool (*policy_cb_ext_msg_received_t)(const struct device *dev,
+					     const enum pd_ext_msg_type type, const uint8_t *data,
+					     const uint32_t len);
+
+/**
  * @brief Callback type used to check if the sink power supply is at
  *        the default level
  *
@@ -454,6 +476,37 @@ void usbc_set_policy_cb_set_src_cap(const struct device *dev, const policy_cb_se
  * @param cb callback
  */
 void usbc_set_policy_cb_get_rdo(const struct device *dev, const policy_cb_get_rdo_t cb);
+
+/**
+ * @brief Set the callback for received Extended Messages
+ *
+ * Without a callback the Policy Engine replies Not_Supported to every
+ * Extended Message, which is the behaviour when this is left unset.
+ *
+ * @param dev Runtime device structure
+ * @param cb callback
+ */
+void usbc_set_policy_cb_ext_msg_received(const struct device *dev,
+					 const policy_cb_ext_msg_received_t cb);
+
+/**
+ * @brief Send an Extended Message
+ *
+ * Chunked as needed by the Protocol Layer. Intended for a DPM answering a
+ * request it took through policy_cb_ext_msg_received_t.
+ *
+ * @param dev Runtime device structure
+ * @param type Extended Message type
+ * @param data Payload, without the Extended Message Header
+ * @param len Number of payload bytes
+ *
+ * @retval 0 on success
+ * @retval -EBUSY if a chunked transmission is already in progress
+ * @retval -EMSGSIZE if the payload exceeds PD_MAX_EXTENDED_MSG_LEN
+ * @retval -ENOTSUP if built without CONFIG_USBC_CHUNKING
+ */
+int usbc_send_ext_msg(const struct device *dev, const enum pd_ext_msg_type type,
+		      const uint8_t *data, const uint32_t len);
 
 /**
  * @brief Set the callback used to check if the sink power supply is at

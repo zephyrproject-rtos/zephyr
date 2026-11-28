@@ -545,6 +545,24 @@ void extended_message_not_supported(const struct device *dev)
 {
 	struct usbc_port_data *data = dev->data;
 	struct protocol_layer_rx_t *prl_rx = data->prl_rx;
+
+#ifdef CONFIG_USBC_CHUNKING
+	/*
+	 * With chunking enabled the Rx handler has already reassembled the
+	 * message and stripped the Extended Message Header, so emsg.data is
+	 * the payload and emsg.len is the Data Size. Offer it to the Device
+	 * Policy Manager; only fall through to Not_Supported if nothing takes
+	 * it.
+	 */
+	if (data->policy_cb_ext_msg_received != NULL) {
+		if (data->policy_cb_ext_msg_received(dev, prl_rx->emsg.header.message_type,
+						     prl_rx->emsg.data, prl_rx->emsg.len)) {
+			return;
+		}
+	}
+
+	pe_set_state(dev, PE_SEND_NOT_SUPPORTED);
+#else
 	uint32_t *payload = (uint32_t *)prl_rx->emsg.data;
 	union pd_ext_header ext_header;
 
@@ -555,6 +573,7 @@ void extended_message_not_supported(const struct device *dev)
 	} else {
 		pe_set_state(dev, PE_SEND_NOT_SUPPORTED);
 	}
+#endif /* CONFIG_USBC_CHUNKING */
 }
 
 /**

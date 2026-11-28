@@ -34,3 +34,7 @@ zephyr_library_sources_ifdef(
   usbc_tc_src_states.c
   usbc_pe_src_states.c
 )
+
+if(CONFIG_USBC_PDFU_RESPONDER OR CONFIG_USBC_PDFU_INITIATOR)
+  add_subdirectory(pdfu)
+endif()

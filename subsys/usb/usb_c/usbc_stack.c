@@ -55,6 +55,10 @@ static ALWAYS_INLINE void usbc_handler(void *port_dev)
 	static struct protocol_layer_rx_t prl_rx_##inst;                                           \
 	static struct protocol_layer_tx_t prl_tx_##inst;                                           \
 	static struct protocol_hard_reset_t prl_hr_##inst;                                         \
+	IF_ENABLED(CONFIG_USBC_CHUNKING,                                                           \
+		   (static struct protocol_layer_rch_t prl_rch_##inst;))                           \
+	IF_ENABLED(CONFIG_USBC_CHUNKING,                                                           \
+		   (static struct protocol_layer_tch_t prl_tch_##inst;))                           \
                                                                                                    \
 	static void run_usbc_##inst(void *port_dev, void *unused1, void *unused2)                  \
 	{                                                                                          \
@@ -78,6 +82,8 @@ static ALWAYS_INLINE void usbc_handler(void *port_dev)
 		.tc = &tc_##inst,                                                                  \
 		.pe = &pe_##inst,                                                                  \
 		.prl_rx = &prl_rx_##inst,                                                          \
+		IF_ENABLED(CONFIG_USBC_CHUNKING, (.prl_rch = &prl_rch_##inst,                      \
+						  .prl_tch = &prl_tch_##inst,))                    \
 		.prl_tx = &prl_tx_##inst,                                                          \
 		.prl_hr = &prl_hr_##inst,                                                          \
 		.tcpc = DEVICE_DT_GET(DT_INST_PROP(inst, tcpc)),                                   \
@@ -353,6 +359,29 @@ void usbc_set_policy_cb_notify(const struct device *dev, const policy_cb_notify_
 	struct usbc_port_data *data = dev->data;
 
 	data->policy_cb_notify = policy_cb_notify;
+}
+
+void usbc_set_policy_cb_ext_msg_received(const struct device *dev,
+					 const policy_cb_ext_msg_received_t cb)
+{
+	struct usbc_port_data *data = dev->data;
+
+	data->policy_cb_ext_msg_received = cb;
+}
+
+int usbc_send_ext_msg(const struct device *dev, const enum pd_ext_msg_type type,
+		      const uint8_t *data, const uint32_t len)
+{
+#ifdef CONFIG_USBC_CHUNKING
+	return prl_send_ext_data_msg(dev, PD_PACKET_SOP, type, data, len);
+#else
+	ARG_UNUSED(dev);
+	ARG_UNUSED(type);
+	ARG_UNUSED(data);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
 }
 
 /**

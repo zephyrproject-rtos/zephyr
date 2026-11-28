@@ -210,6 +210,18 @@ int tcpci_tcpm_set_roles(const struct i2c_dt_spec *bus, enum pd_rev_type pd_rev,
 			 enum tc_power_role power_role, enum tc_data_role data_role);
 
 /**
+ * @brief Function to set the USB-PD Specification Revision of the PD message header.
+ *
+ * Changes only the revision field of the Message Header Info register; the roles are
+ * left as they are.
+ *
+ * @param bus I2C bus
+ * @param pd_rev Enum representing the USB-PD Specification Revision to be set
+ * @return int Status of I2C operation, 0 in case of success
+ */
+int tcpci_tcpm_set_pd_rev(const struct i2c_dt_spec *bus, enum pd_rev_type pd_rev);
+
+/**
  * @brief Function to set the RX type.
  *
  * @param bus I2C bus

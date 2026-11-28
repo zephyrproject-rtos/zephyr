@@ -27,6 +27,8 @@ struct rt1715_data {
 	int init_retries;
 	/** Boolean value if chip was successfully initialized */
 	bool initialized;
+	/** USB-PD Specification Revision for the Message Header Info register */
+	enum pd_rev_type pd_rev;
 	/** TCPCI Specification Revision */
 	uint8_t pd_int_rev;
 
@@ -244,8 +246,24 @@ static int rt1715_tcpc_set_roles(const struct device *dev, enum tc_power_role po
 				 enum tc_data_role data_role)
 {
 	const struct rt1715_cfg *cfg = dev->config;
+	struct rt1715_data *data = dev->data;
 
-	return tcpci_tcpm_set_roles(&cfg->bus, PD_REV30, power_role, data_role);
+	return tcpci_tcpm_set_roles(&cfg->bus, data->pd_rev, power_role, data_role);
+}
+
+static int rt1715_tcpc_set_pd_rev(const struct device *dev, enum pd_rev_type rev)
+{
+	const struct rt1715_cfg *cfg = dev->config;
+	struct rt1715_data *data = dev->data;
+
+	data->pd_rev = rev;
+
+	/* Otherwise set_roles() writes it once the part is initialized. */
+	if (!data->initialized) {
+		return 0;
+	}
+
+	return tcpci_tcpm_set_pd_rev(&cfg->bus, rev);
 }
 
 static int rt1715_tcpc_get_rx_pending_msg(const struct device *dev, struct pd_msg *msg)
@@ -471,6 +489,7 @@ static DEVICE_API(tcpc, rt1715_driver_api) = {
 	.vconn_discharge = rt1715_tcpc_vconn_discharge,
 	.set_vconn = rt1715_tcpc_set_vconn,
 	.set_roles = rt1715_tcpc_set_roles,
+	.set_pd_rev = rt1715_tcpc_set_pd_rev,
 	.get_rx_pending_msg = rt1715_tcpc_get_rx_pending_msg,
 	.set_rx_enable = rt1715_tcpc_set_rx_enable,
 	.set_cc_polarity = rt1715_tcpc_set_cc_polarity,
@@ -686,6 +705,7 @@ static int rt1715_dev_init(const struct device *dev)
 		.dev = DEVICE_DT_GET(node),                                                        \
 		.init_retries = 0,                                                                 \
 		.cc_changed = true,                                                                \
+		.pd_rev = PD_REV30,                                                                \
 	}
 
 #define VCONN_CTRL_GPIO(node)                                                                      \
