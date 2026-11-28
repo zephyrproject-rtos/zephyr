@@ -297,6 +297,15 @@ tests:
       - CONF_FILE=prj_h5_dbg.conf
       - DTC_OVERLAY_FILE=h5.overlay
     platform_allow: qemu_cortex_m3
+  bluetooth.init.test_usbh:
+    extra_args:
+      - CONF_FILE=prj_usbh.conf
+      - DTC_OVERLAY_FILE=usbh.overlay
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
   bluetooth.init.test_llcp:
     extra_args: CONF_FILE=prj_llcp.conf
     extra_configs:

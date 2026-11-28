@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config USBH_BT_HCI
+	bool "USB host Bluetooth HCI transport [EXPERIMENTAL]"
+	default y
+	depends on DT_HAS_ZEPHYR_BT_HCI_USBH_ENABLED
+	depends on BT_HCI
+	select EXPERIMENTAL
+	help
+	  Bluetooth HCI driver for a USB Bluetooth controller (Wireless
+	  Controller class 0xE0/0x01/0x01) attached to the USB host. HCI
+	  commands, events and ACL data are supported, synchronous data
+	  over the isochronous endpoints is not.
+
+if USBH_BT_HCI
+
+config USBH_BT_HCI_OPEN_TIMEOUT
+	int "Time to wait for a controller when opening the transport (ms)"
+	default 5000
+	help
+	  Opening the HCI transport waits this long for a USB Bluetooth
+	  controller to be connected and enumerated before it fails.
+
+config USBH_BT_HCI_RX_STACK_SIZE
+	int "RX thread stack size"
+	default 1024
+	help
+	  Stack size of the thread that reassembles HCI events and ACL data
+	  from the IN endpoints and delivers them to the Bluetooth host.
+
+module = USBH_BT_HCI
+module-str = usbh bt hci
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # USBH_BT_HCI
