@@ -6,6 +6,7 @@ set(EXTRA_CONF_FILE
         ../../../samples/bluetooth/hci_uart_async/prj.conf
 )
 
+list(APPEND DTS_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../common/fake_hci)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 project(test_samples_bluetooth_hci_uart_async)
