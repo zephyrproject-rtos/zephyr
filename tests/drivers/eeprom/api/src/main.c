@@ -190,6 +190,29 @@ ZTEST_USER(eeprom, test_addr_does_not_alias)
 		"High bank did not retain its own data");
 }
 
+#if defined(CONFIG_EEPROM_AT2X_EMUL) && \
+	DT_NODE_EXISTS(DT_NODELABEL(i2c_eeprom))
+
+ZTEST_USER(eeprom, test_at24_negative_offset)
+{
+	const struct device *at24 = DEVICE_DT_GET(DT_NODELABEL(i2c_eeprom));
+	const off_t invalid_offset = (off_t)-1;
+	uint8_t data = 0x5a;
+	int rc;
+
+	if (eeprom != at24) {
+		return;
+	}
+
+	rc = eeprom_read(eeprom, invalid_offset, &data, 1);
+	zassert_equal(-EINVAL, rc, "Unexpected read result (%d)", rc);
+
+	rc = eeprom_write(eeprom, invalid_offset, &data, 1);
+	zassert_equal(-EINVAL, rc, "Unexpected write result (%d)", rc);
+}
+
+#endif
+
 static void *eeprom_setup(void)
 {
 	zassert_true(device_is_ready(eeprom), "EEPROM device not ready");
