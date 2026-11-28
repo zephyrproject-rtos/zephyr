@@ -345,6 +345,20 @@ struct k_thread {
 
 	/** current syscall frame pointer */
 	void *syscall_frame;
+
+#if defined(CONFIG_DYNAMIC_OBJECTS)
+	/**
+	 * Metadata of the dynamically allocated thread object, kept from
+	 * being freed until the thread has switched out for the last time
+	 */
+	struct k_object *held_thread_obj;
+
+	/**
+	 * Metadata of the dynamically allocated stack, kept from being
+	 * freed until the thread has switched out for the last time
+	 */
+	struct k_object *held_stack_obj;
+#endif /* CONFIG_DYNAMIC_OBJECTS */
 #endif /* CONFIG_USERSPACE */
 
 

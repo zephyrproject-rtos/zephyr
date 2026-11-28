@@ -185,6 +185,12 @@ struct dyn_obj {
 	struct k_object kobj;
 	sys_dnode_t dobj_list;
 
+	/* Number of threads that use the object as their thread object or
+	 * stack and may not have switched away from it for the last time,
+	 * see z_object_hold(). Protected by lists_lock.
+	 */
+	unsigned int held;
+
 	/* The object itself */
 	void *data;
 };
@@ -455,6 +461,7 @@ static struct k_object *dynamic_object_create(enum k_objects otype, size_t align
 
 	dyn->kobj.type = otype;
 	dyn->kobj.flags = 0;
+	dyn->held = 0U;
 	(void)memset(dyn->kobj.perms, 0, CONFIG_MAX_THREAD_BYTES);
 
 	k_spinlock_key_t key = k_spin_lock(&lists_lock);
@@ -549,6 +556,30 @@ void *z_impl_k_object_alloc_size(enum k_objects otype, size_t size)
 	return z_object_alloc(otype, size);
 }
 
+/* Release the memory of a dynamic object that is off obj_list */
+static void dyn_obj_free(struct dyn_obj *dyn)
+{
+	void *data = dyn->data;
+
+#ifdef CONFIG_OBJ_CORE
+	if (dyn->kobj.type != K_OBJ_THREAD_STACK_ELEMENT) {
+		k_obj_core_evict_range(data, obj_size_get(dyn->kobj.type));
+	}
+#endif /* CONFIG_OBJ_CORE */
+#ifdef CONFIG_DYNAMIC_OBJECTS_FORCE_STACK_CACHED
+	/* We may have nudged the pointer to point to the cached area
+	 * in dynamic_object_create() when we first created the thread
+	 * stack object. So we need to restore the uncached one before
+	 * freeing it.
+	 */
+	if ((dyn->kobj.type == K_OBJ_THREAD_STACK_ELEMENT) && sys_cache_is_ptr_cached(data)) {
+		data = sys_cache_uncached_ptr_get(data);
+	}
+#endif /* CONFIG_DYNAMIC_OBJECTS_FORCE_STACK_CACHED */
+	k_free(data);
+	k_free(dyn);
+}
+
 void k_object_free(void *obj)
 {
 	struct dyn_obj *dyn = NULL;
@@ -575,6 +606,14 @@ void k_object_free(void *obj)
 			free_thread_idx = true;
 			thread_idx = dyn->kobj.data.thread_id;
 		}
+
+		if (dyn->held != 0U) {
+			/* A thread may still run on this object or not have
+			 * switched away from it yet. z_object_hold_release()
+			 * frees the memory once it has.
+			 */
+			dyn = NULL;
+		}
 	}
 	k_spin_unlock(&lists_lock, key);
 
@@ -587,33 +626,74 @@ void k_object_free(void *obj)
 	}
 
 	if (dyn != NULL) {
-#ifdef CONFIG_OBJ_CORE
-		if (dyn->kobj.type != K_OBJ_THREAD_STACK_ELEMENT) {
-			k_obj_core_evict_range(obj, obj_size_get(dyn->kobj.type));
-		}
-#endif /* CONFIG_OBJ_CORE */
-#ifdef CONFIG_DYNAMIC_OBJECTS_FORCE_STACK_CACHED
-		/* We may have nudged the pointer to point to the cached area
-		 * in dynamic_object_create() when we first created the thread
-		 * stack object. So we need to restore the uncached one before
-		 * freeing it.
-		 */
-		if (dyn->kobj.type == K_OBJ_THREAD_STACK_ELEMENT) {
-			uint8_t *stack;
+		dyn_obj_free(dyn);
+	}
+}
 
-			if (sys_cache_is_ptr_cached(dyn->data)) {
-				stack = sys_cache_uncached_ptr_get(dyn->data);
-			} else {
-				stack = dyn->data;
+struct k_object *z_object_hold(struct k_object *ko)
+{
+	if ((ko == NULL) || ((ko->flags & K_OBJ_FLAG_ALLOC) == 0U)) {
+		/* A static object, never freed */
+		return NULL;
+	}
+
+	void *vko = ko;
+	struct dyn_obj *dyn = CONTAINER_OF(vko, struct dyn_obj, kobj);
+	k_spinlock_key_t key = k_spin_lock(&lists_lock);
+
+	dyn->held++;
+	k_spin_unlock(&lists_lock, key);
+
+	return ko;
+}
+
+void z_object_hold_release(struct k_object *ko)
+{
+	bool unused = false;
+
+	if ((ko == NULL) || ((ko->flags & K_OBJ_FLAG_ALLOC) == 0U)) {
+		return;
+	}
+
+	void *vko = ko;
+	struct dyn_obj *dyn = CONTAINER_OF(vko, struct dyn_obj, kobj);
+
+	/* Same locking as unref_check(), which clears permission bits with
+	 * both locks held, so that a permission dropped concurrently is
+	 * either seen here or finds the object still held.
+	 */
+	k_spinlock_key_t key = k_spin_lock(&lists_lock);
+	k_spinlock_key_t obj_key = k_spin_lock(&obj_lock);
+
+	__ASSERT(dyn->held != 0U, "object %p is not held", ko->name);
+	dyn->held--;
+
+	if (dyn->held == 0U) {
+		if (!sys_dnode_is_linked(&dyn->dobj_list)) {
+			/* k_object_free() was called while it was held */
+			unused = true;
+		} else {
+			/* Same check as unref_check(): free it if no thread
+			 * has permission on it anymore.
+			 */
+			unused = true;
+			for (int i = 0; i < CONFIG_MAX_THREAD_BYTES; i++) {
+				if (ko->perms[i] != 0U) {
+					unused = false;
+					break;
+				}
 			}
 
-			k_free(stack);
-		} else
-#endif /* CONFIG_DYNAMIC_OBJECTS_FORCE_STACK_CACHED */
-		{
-			k_free(dyn->data);
+			if (unused) {
+				sys_dlist_remove(&dyn->dobj_list);
+			}
 		}
-		k_free(dyn);
+	}
+	k_spin_unlock(&obj_lock, obj_key);
+	k_spin_unlock(&lists_lock, key);
+
+	if (unused) {
+		dyn_obj_free(dyn);
 	}
 }
 
@@ -731,6 +811,14 @@ static void unref_check(struct k_object *ko, uintptr_t index, bool locked)
 		}
 	}
 
+	if (dyn->held != 0U) {
+		/* The thread object or stack of a thread that may still run
+		 * on it. z_object_hold_release() frees it once the thread is
+		 * gone.
+		 */
+		goto out;
+	}
+
 	/* This object has no more references. Some objects may have
 	 * dynamically allocated resources, require cleanup, or need to be
 	 * marked as uninitialized when all references are gone. What
@@ -811,9 +899,11 @@ static void perms_set_index(struct k_object *ko, int index)
 static void perms_clear_index(struct k_object *ko, int index)
 {
 	if (index != PERM_INDEX_NONE) {
-		sys_bitfield_clear_bit((mem_addr_t)&ko->perms, index);
-		/* unref_check() requires lists_lock so its dlist remove is
-		 * SMP-safe.
+		/* unref_check() clears the bit. It requires lists_lock so its
+		 * dlist remove is SMP-safe, and so that clearing the bit and
+		 * checking the bitmap are one step: clearing it before would
+		 * let another CPU dropping the last other permission free the
+		 * object while this one is about to look at it.
 		 */
 #ifdef CONFIG_DYNAMIC_OBJECTS
 		k_spinlock_key_t key = k_spin_lock(&lists_lock);

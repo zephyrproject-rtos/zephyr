@@ -1484,6 +1484,10 @@ static void unmap_thread_stack(void *addr, size_t sz)
 }
 #endif /* CONFIG_THREAD_STACK_MEM_MAPPED */
 
+#ifdef CONFIG_DYNAMIC_OBJECTS
+static struct z_thread_user_hold thread_cleanup_hold;
+#endif /* CONFIG_DYNAMIC_OBJECTS */
+
 void defer_thread_cleanup(struct k_thread *thread)
 {
 	/* Note when adding new deferred cleanup steps:
@@ -1514,6 +1518,14 @@ void defer_thread_cleanup(struct k_thread *thread)
 	thread->stack_info.mapped.addr = NULL;
 	thread->stack_info.mapped.sz = 0;
 #endif /* CONFIG_THREAD_STACK_MEM_MAPPED */
+
+#ifdef CONFIG_DYNAMIC_OBJECTS
+	/* The thread still runs on its stack and uses its thread object
+	 * until it has switched away. Stash which of them are held for it,
+	 * so they are released after that.
+	 */
+	z_thread_user_hold_get(thread, &thread_cleanup_hold);
+#endif /* CONFIG_DYNAMIC_OBJECTS */
 }
 
 void do_deferred_thread_cleanup(void)
@@ -1530,6 +1542,15 @@ void do_deferred_thread_cleanup(void)
 	thread_cleanup_stack_addr = NULL;
 	thread_cleanup_stack_sz = 0;
 #endif /* CONFIG_THREAD_STACK_MEM_MAPPED */
+
+#ifdef CONFIG_DYNAMIC_OBJECTS
+	/* This may free the thread and stack objects. It reads the thread
+	 * object only when it has one of them to free, and only if the
+	 * thread object is a kernel object, which is static or held, and
+	 * not reused before this has run.
+	 */
+	z_thread_user_hold_put(&thread_cleanup_hold);
+#endif /* CONFIG_DYNAMIC_OBJECTS */
 }
 
 void do_thread_cleanup(struct k_thread *thread)
@@ -1558,7 +1579,13 @@ void do_thread_cleanup(struct k_thread *thread)
 void k_thread_abort_cleanup(struct k_thread *thread)
 {
 	K_SPINLOCK(&thread_cleanup_lock) {
-		if (thread_to_cleanup != NULL) {
+		/* An interrupt taken by the thread pending cleanup before it
+		 * switched away still finds it _current, on uniprocessor
+		 * builds that switch in an exception after unlocking
+		 * interrupts. Leave it pending: its context is still saved
+		 * into it.
+		 */
+		if ((thread_to_cleanup != NULL) && (thread_to_cleanup != _current)) {
 			/* Finish the pending one first. */
 			do_deferred_thread_cleanup();
 			thread_to_cleanup = NULL;
