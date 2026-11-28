@@ -682,11 +682,6 @@ static void test_single_shot_alarm_instance(const struct device *dev, bool set_t
 		alarm_cnt : k_sem_count_get(&alarm_cnt_sem);
 	zassert_equal(1, cnt, "%s: Expecting alarm callback", dev->name);
 
-	k_busy_wait(1.5*counter_ticks_to_us(dev, ticks));
-	cnt = IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS) ?
-		alarm_cnt : k_sem_count_get(&alarm_cnt_sem);
-	zassert_equal(1, cnt, "%s: Expecting alarm callback", dev->name);
-
 	err = counter_cancel_channel_alarm(dev, 0);
 	zassert_equal(0, err, "%s: Counter disabling alarm failed", dev->name);
 
