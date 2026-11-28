@@ -170,6 +170,15 @@
 	status = "okay";
 };
 
+&i2c3 {
+	/* Arduino D14 (SDA) / D15 (SCL) */
+	pinctrl-0 = <&i2c3_sda_pc9 &i2c3_scl_pc8>;
+	pinctrl-names = "default";
+	scl-gpios = <&gpioc 8 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpioc 9 GPIO_ACTIVE_HIGH>;
+	status = "okay";
+};
+
 /* User LEDs PWMs */
 &timers5 {
 	st,prescaler = <10000>;
