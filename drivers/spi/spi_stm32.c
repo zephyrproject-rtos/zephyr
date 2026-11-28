@@ -2571,6 +2571,8 @@ static int spi_stm32_pm_action(const struct device *dev, enum pm_device_action a
 	__maybe_unused struct spi_stm32_data *data = dev->data;
 	const struct spi_stm32_config *config = dev->config;
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct spi_config *cached_config;
+	int clock_err;
 	int err;
 
 	switch (action) {
@@ -2602,9 +2604,47 @@ static int spi_stm32_pm_action(const struct device *dev, enum pm_device_action a
 		/* Configure pins for sleep mode */
 		return spi_stm32_pinctrl_apply(dev, PINCTRL_STATE_SLEEP);
 	case PM_DEVICE_ACTION_TURN_ON:
-		/* Configure pins for sleep mode */
-		return spi_stm32_pinctrl_apply(dev, PINCTRL_STATE_SLEEP);
+		/* TURN_ON leaves the device suspended, so keep the pins in their sleep state. */
+		err = spi_stm32_pinctrl_apply(dev, PINCTRL_STATE_SLEEP);
+		if (err < 0) {
+			return err;
+		}
+
+		/* STM32WBA65 loses its SPI register values when the power domain turns off. */
+		if (IS_ENABLED(CONFIG_SOC_STM32WBA65XX)) {
+			cached_config = data->ctx.config;
+			if (cached_config == NULL) {
+				return 0;
+			}
+
+			/* enable clock to configure SPI before turning it on */
+			err = clock_control_on(clk, (clock_control_subsys_t)&config->pclken[0]);
+			if (err != 0) {
+				LOG_ERR("Could not enable SPI clock");
+				return err;
+			}
+
+			data->ctx.config = NULL;
+			err = spi_stm32_configure(dev, cached_config, false, false);
+
+			/* disable clock after configuring SPI */
+			clock_err =
+				clock_control_off(clk, (clock_control_subsys_t)&config->pclken[0]);
+			if (err != 0) {
+				return err;
+			}
+			if (clock_err != 0) {
+				LOG_ERR("Could not disable SPI clock");
+				return clock_err;
+			}
+		}
+		break;
 	case PM_DEVICE_ACTION_TURN_OFF:
+		/*
+		 * Domain handling suspends active children before TURN_OFF. The suspend action
+		 * already gates the SPI clock and applies the sleep pin state; already-suspended
+		 * children have completed the same transition.
+		 */
 		break;
 	default:
 		return -ENOTSUP;

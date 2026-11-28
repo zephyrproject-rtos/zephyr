@@ -21,6 +21,19 @@
 				min-residency-us = <900>;
 			};
 		};
+
+		/* Stop2 gates various peripherals (SPI, I2C, etc.) which implies
+		 * that they loose there hardware register values. This domain hands
+		 * the affected drivers a TURN_OFF before the transition and a TURN_ON after it,
+		 * which is what lets them reconfigure their hardware on resume. It follows
+		 * &stop2, so it stays inert until the application enables that
+		 * state.
+		 */
+		core_domain: core-domain {
+			compatible = "power-domain-soc-state-change";
+			#power-domain-cells = <0>;
+			onoff-power-states = <&stop2>;
+		};
 	};
 
 	soc {
@@ -64,6 +77,7 @@
 			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
 			fifo-size = <16>;
 			fifo-max-transfer-size = <65535>;
+			power-domains = <&core_domain>;
 			st,spi-data-width = "full-4-to-32-bit";
 			status = "disabled";
 		};
@@ -162,4 +176,12 @@
 			};
 		};
 	};
+};
+
+&spi1 {
+	power-domains = <&core_domain>;
+};
+
+&spi3 {
+	power-domains = <&core_domain>;
 };
