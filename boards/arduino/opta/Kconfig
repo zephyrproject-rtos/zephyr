@@ -3,8 +3,18 @@
 
 config BOARD_ARDUINO_OPTA
 	select BOARD_EARLY_INIT_HOOK
-	select BOARD_LATE_INIT_HOOK if FLASH_STM32_QSPI_GENERIC_READ
 
 config HEAP_MEM_POOL_ADD_SIZE_BOARD
 	int
 	default 20480 if WIFI_AIROC
+
+config BOARD_ARDUINO_OPTA_FACTORY_MAC
+	bool "Configure the eth device to use mac address from factory configuration"
+	imply FLASH_STM32_QSPI_GENERIC_READ
+	imply FLASH_EX_OP_ENABLED
+	select BOARD_LATE_INIT_HOOK if FLASH_EX_OP_ENABLED && FLASH_STM32_QSPI_GENERIC_READ
+	default y if NET_L2_ETHERNET
+	help
+	  Arduino opta boards have configurations written in qspi flash secure registers,
+	  in particular the ethernet mac arduino provides is written there.
+	  With this option enabled we set that value for ethernet interface
