@@ -757,7 +757,9 @@ void z_log_vprintk(const char *fmt, va_list ap);
 
 #define _LOG_MODULE_DATA_CREATE(_name, _level)                                                     \
 	_LOG_MODULE_CONST_DATA_CREATE(_name, _level);                                              \
-	_LOG_MODULE_DYNAMIC_DATA_COND_CREATE(_name)
+	_LOG_MODULE_DYNAMIC_DATA_COND_CREATE(_name);                                               \
+	IF_ENABLED(LOG_IN_CPLUSPLUS, (extern))                                                     \
+	Z_LOG_SOURCE_ANCHOR_REGISTER(_name);
 
 /* Determine if data for the module shall be created. It is created if logging
  * is enabled, override level is set or module specific level is set (not off).
@@ -785,22 +787,18 @@ extern struct k_mem_partition k_log_partition;
  */
 #define Z_LOG_MODULE_DECLARE_EXTERN(...)                                                           \
 	extern const struct log_source_const_data Z_LOG_ITEM_CONST_DATA(                           \
-		GET_ARG_N(1, __VA_ARGS__));                                                        \
-	extern struct log_source_dynamic_data LOG_ITEM_DYNAMIC_DATA(GET_ARG_N(1, __VA_ARGS__))
+		GET_ARG_N(1, __VA_ARGS__)) __unused;                                               \
+	extern struct log_source_dynamic_data LOG_ITEM_DYNAMIC_DATA(                               \
+		GET_ARG_N(1, __VA_ARGS__)) __unused;                                               \
+	extern const volatile struct log_source_anchor                                             \
+		Z_LOG_ITEM_ANCHOR(GET_ARG_N(1, __VA_ARGS__))
 
 /* Create the file local pointers to the data of the log module. */
 #define Z_LOG_MODULE_DECLARE_LOCAL(...)                                                            \
 	Z_LOG_MODULE_PARTITION(K_APP_DMEM)                                                         \
-	static const struct log_source_const_data *__log_current_const_data __unused =             \
+	static const volatile struct log_source_anchor *__log_current_data __unused =              \
 		Z_DO_LOG_MODULE_REGISTER(__VA_ARGS__)                                              \
-			? &Z_LOG_ITEM_CONST_DATA(GET_ARG_N(1, __VA_ARGS__))                        \
-			: NULL;                                                                    \
-                                                                                                   \
-	Z_LOG_MODULE_PARTITION(K_APP_DMEM)                                                         \
-	static struct log_source_dynamic_data *__log_current_dynamic_data __unused =               \
-		(Z_DO_LOG_MODULE_REGISTER(__VA_ARGS__) &&                                          \
-		 IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING))                                         \
-			? &LOG_ITEM_DYNAMIC_DATA(GET_ARG_N(1, __VA_ARGS__))                        \
+			? &Z_LOG_ITEM_ANCHOR(GET_ARG_N(1, __VA_ARGS__))                            \
 			: NULL;                                                                    \
                                                                                                    \
 	Z_LOG_MODULE_PARTITION(K_APP_BMEM)                                                         \
