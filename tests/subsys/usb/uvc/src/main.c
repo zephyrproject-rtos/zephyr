@@ -66,14 +66,8 @@ void *uvc_test_enable(void)
 	ret = usbh_enable(uhs_ctx);
 	zassert_ok(ret, "Failed to enable USB host");
 
-	ret = uhc_bus_reset(uhs_ctx->dev);
-	zassert_ok(ret, "Failed to signal bus reset");
-
 	ret = uhc_bus_resume(uhs_ctx->dev);
 	zassert_ok(ret, "Failed to signal bus resume");
-
-	ret = uhc_sof_enable(uhs_ctx->dev);
-	zassert_ok(ret, "Failed to enable SoF generator");
 
 	LOG_INF("Host controller enabled");
 
@@ -88,8 +82,11 @@ void *uvc_test_enable(void)
 
 	LOG_INF("Device support enabled");
 
-	/* Allow the host time to reset the device. */
-	k_msleep(200);
+	/*
+	 * Allow the host time to see the device on the root hub, which it polls,
+	 * and to reset it.
+	 */
+	k_msleep(CONFIG_USBH_HUB_ROOT_POLL_INTERVAL_MS + 200);
 
 	return NULL;
 }

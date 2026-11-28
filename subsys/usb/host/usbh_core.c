@@ -41,48 +41,6 @@ static int usbh_event_carrier(const struct device *dev,
 	return err;
 }
 
-static void dev_connected_handler(struct usbh_context *const ctx,
-				  const struct uhc_event *const event)
-{
-	struct usb_device *udev;
-
-	udev = usbh_device_alloc(ctx);
-
-	if (udev == NULL) {
-		LOG_ERR("Failed allocate new device");
-		return;
-	}
-
-	switch (event->type) {
-	case UHC_EVT_DEV_CONNECTED_HS:
-		udev->speed = USB_SPEED_SPEED_HS;
-		break;
-	case UHC_EVT_DEV_CONNECTED_FS:
-		udev->speed = USB_SPEED_SPEED_FS;
-		break;
-	case UHC_EVT_DEV_CONNECTED_LS:
-		udev->speed = USB_SPEED_SPEED_LS;
-		break;
-	default:
-		LOG_ERR("USB device speed not supported");
-		return;
-	}
-
-	usbh_device_connect(ctx, udev);
-}
-
-static void dev_removed_handler(struct usbh_context *const ctx)
-{
-	struct usb_device *udev = NULL;
-
-	udev = usbh_device_get_root(ctx);
-	if (udev != NULL) {
-		usbh_device_disconnect(ctx, udev);
-	} else {
-		LOG_DBG("Spurious device removed event");
-	}
-}
-
 static int discard_ep_request(struct usbh_context *const ctx,
 			      struct uhc_transfer *const xfer)
 {
@@ -104,25 +62,8 @@ static ALWAYS_INLINE int usbh_event_handler(struct usbh_context *const ctx,
 	int ret = 0;
 
 	switch (event->type) {
-	case UHC_EVT_DEV_CONNECTED_LS:
-	case UHC_EVT_DEV_CONNECTED_FS:
-	case UHC_EVT_DEV_CONNECTED_HS:
-		dev_connected_handler(ctx, event);
-		break;
-	case UHC_EVT_DEV_REMOVED:
-		dev_removed_handler(ctx);
-		break;
-	case UHC_EVT_RESETED:
-		LOG_DBG("Bus reset");
-		break;
-	case UHC_EVT_SUSPENDED:
-		LOG_DBG("Bus suspended");
-		break;
 	case UHC_EVT_RESUMED:
 		LOG_DBG("Bus resumed");
-		break;
-	case UHC_EVT_RWUP:
-		LOG_DBG("RWUP event");
 		break;
 	case UHC_EVT_ERROR:
 		LOG_DBG("Error event %d", event->status);
@@ -158,6 +99,7 @@ static void usbh_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 
 	struct usbh_context *uhs_ctx;
+	struct usbh_class_data *c_data;
 	struct uhc_event event;
 	usbh_udev_cb_t cb;
 	int ret;
@@ -169,10 +111,21 @@ static void usbh_thread(void *p1, void *p2, void *p3)
 		uhs_ctx = (void *)uhc_get_event_ctx(event.dev);
 		cb = event.xfer->cb;
 
+		/*
+		 * Unanchor before the completion callback so a driver may free
+		 * or resubmit the transfer from within its callback, and release
+		 * the accounting after it so a drain waits for the callback.
+		 */
+		c_data = usbh_class_xfer_unanchor(event.xfer);
+
 		if (event.xfer->cb) {
 			ret = cb(event.xfer->udev, event.xfer);
 		} else {
 			ret = discard_ep_request(uhs_ctx, event.xfer);
+		}
+
+		if (c_data != NULL) {
+			usbh_class_xfer_release(c_data);
 		}
 
 		if (ret) {

@@ -10,6 +10,7 @@
 #include "usbh_ch9.h"
 #include "usbh_class.h"
 #include "usbh_class_api.h"
+#include "usbh_host.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usbh_dev, CONFIG_USBH_LOG_LEVEL);
@@ -18,6 +19,24 @@ K_MEM_SLAB_DEFINE_STATIC_TYPE(usb_device_slab, struct usb_device,
 			      CONFIG_USBH_USB_DEVICE_MAX);
 
 K_HEAP_DEFINE(usb_device_heap, CONFIG_USBH_USB_DEVICE_HEAP);
+
+static void usbh_device_release(struct sys_ref *const ref)
+{
+	struct usb_device *const udev = CONTAINER_OF(ref, struct usb_device, ref);
+	struct usb_device *const hub = udev->hub;
+
+	if (udev->cfg_desc != NULL) {
+		k_heap_free(&usb_device_heap, udev->cfg_desc);
+		udev->cfg_desc = NULL;
+	}
+
+	k_mem_slab_free(&usb_device_slab, (void *)udev);
+
+	/* A device holds a reference to the hub it is connected to */
+	if (hub != NULL) {
+		usb_device_unref(hub);
+	}
+}
 
 struct usb_device *usbh_device_alloc(struct usbh_context *const uhs_ctx)
 {
@@ -30,47 +49,53 @@ struct usb_device *usbh_device_alloc(struct usbh_context *const uhs_ctx)
 
 	memset(udev, 0, sizeof(struct usb_device));
 	udev->ctx = uhs_ctx;
-	sys_dlist_append(&uhs_ctx->udevs, &udev->node);
+	/* The first reference is the one of the connection */
+	sys_ref_init(&udev->ref);
+	udev->release = usbh_device_release;
 	k_mutex_init(&udev->mutex);
+
+	usbh_host_lock(uhs_ctx);
+	sys_dlist_append(&uhs_ctx->udevs, &udev->node);
+	usbh_host_unlock(uhs_ctx);
 
 	return udev;
 }
 
-void usbh_device_free(struct usb_device *const udev)
+/*
+ * End the connection of a device. Its address can be used by the next device,
+ * as its endpoints are disabled, and the device is released once the last
+ * reference to it is dropped.
+ */
+static void usbh_device_drop(struct usb_device *const udev)
 {
 	struct usbh_context *const uhs_ctx = udev->ctx;
 
+	usbh_host_lock(uhs_ctx);
 	sys_bitarray_clear_bit(uhs_ctx->addr_ba, udev->addr);
 	sys_dlist_remove(&udev->node);
-	if (udev->cfg_desc != NULL) {
-		k_heap_free(&usb_device_heap, udev->cfg_desc);
-		udev->cfg_desc = NULL;
-	}
+	usbh_host_unlock(uhs_ctx);
 
-	k_mem_slab_free(&usb_device_slab, (void *)udev);
-}
-
-struct usb_device *usbh_device_get_any(struct usbh_context *const uhs_ctx)
-{
-	sys_dnode_t *const node = sys_dlist_peek_head(&uhs_ctx->udevs);
-	struct usb_device *udev;
-
-	udev = SYS_DLIST_CONTAINER(node, udev, node);
-
-	return udev;
+	usb_device_unref(udev);
 }
 
 struct usb_device *usbh_device_get(struct usbh_context *const uhs_ctx, const uint8_t addr)
 {
 	struct usb_device *udev;
+	struct usb_device *found = NULL;
+
+	usbh_host_lock(uhs_ctx);
 
 	SYS_DLIST_FOR_EACH_CONTAINER(&uhs_ctx->udevs, udev, node) {
 		if (addr == udev->addr) {
-			return udev;
+			/* A device in the list holds the reference of its connection */
+			found = usb_device_ref(udev);
+			break;
 		}
 	}
 
-	return NULL;
+	usbh_host_unlock(uhs_ctx);
+
+	return found;
 }
 
 static int validate_device_mps0(const struct usb_device *const udev)
@@ -133,22 +158,78 @@ enum ep_op {
 	EP_OP_DOWN, /* Disable endpoint and update endpoint pointers */
 };
 
-static void assign_ep_desc_ptr(struct usb_device *const udev,
-			       const uint8_t ep, void *const ptr)
+static void assign_ep(struct usb_device *const udev, const uint8_t ep,
+		      const struct usb_ep_descriptor *const ep_desc)
 {
-	uint8_t idx = USB_EP_GET_IDX(ep) & 0xF;
+	struct usb_host_ep *host_ep = uhc_get_udev_ep(udev, ep);
 
-	if (USB_EP_DIR_IS_IN(ep)) {
-		udev->ep_in[idx].desc = ptr;
-	} else {
-		udev->ep_out[idx].desc = ptr;
+	if (ep_desc == NULL) {
+		memset(host_ep, 0, sizeof(*host_ep));
+		return;
 	}
+
+	host_ep->addr = ep_desc->bEndpointAddress;
+	host_ep->attributes = ep_desc->bmAttributes;
+	host_ep->mps = ep_desc->wMaxPacketSize;
+	host_ep->interval = ep_desc->bInterval;
+}
+
+/*
+ * A control endpoint has no descriptor, its maximum packet size comes from the
+ * device descriptor and the remaining attributes are implied.
+ */
+static void assign_control_ep(struct usb_device *const udev)
+{
+	const uint8_t eps[] = {USB_CONTROL_EP_OUT, USB_CONTROL_EP_IN};
+
+	for (unsigned int i = 0; i < ARRAY_SIZE(eps); i++) {
+		struct usb_host_ep *host_ep = uhc_get_udev_ep(udev, eps[i]);
+
+		host_ep->addr = eps[i];
+		host_ep->attributes = USB_EP_TYPE_CONTROL;
+		host_ep->mps = udev->dev_desc.bMaxPacketSize0;
+		host_ep->interval = 0U;
+	}
+}
+
+/*
+ * The root hub is emulated by the stack, its requests never reach the
+ * controller, so its endpoints are not enabled there. This is the same check
+ * that usbh_req_setup() uses to divert the root hub requests.
+ */
+static bool is_root_hub(const struct usb_device *const udev)
+{
+	return udev->level == 1;
+}
+
+static int device_ep_enable(struct usb_device *const udev, const uint8_t ep)
+{
+	struct usbh_context *const uhs_ctx = udev->ctx;
+
+	if (is_root_hub(udev)) {
+		return 0;
+	}
+
+	return uhc_ep_enable(uhs_ctx->dev, udev, ep);
+}
+
+static int device_ep_disable(struct usb_device *const udev, const uint8_t ep)
+{
+	struct usbh_context *const uhs_ctx = udev->ctx;
+
+	if (is_root_hub(udev)) {
+		return 0;
+	}
+
+	return uhc_ep_disable(uhs_ctx->dev, udev, ep);
 }
 
 static int handle_ep_op(struct usb_device *const udev,
 			const enum ep_op op, const uint8_t ep,
 			struct usb_ep_descriptor *const ep_desc)
 {
+	int err;
+
 	switch (op) {
 	case EP_OP_TEST:
 		break;
@@ -157,14 +238,85 @@ static int handle_ep_op(struct usb_device *const udev,
 			return -ENOTSUP;
 		}
 
-		assign_ep_desc_ptr(udev, ep_desc->bEndpointAddress, ep_desc);
+		assign_ep(udev, ep_desc->bEndpointAddress, ep_desc);
+
+		err = device_ep_enable(udev, ep);
+		if (err != 0) {
+			return err;
+		}
 		break;
 	case EP_OP_DOWN:
-		assign_ep_desc_ptr(udev, ep, NULL);
+		err = device_ep_disable(udev, ep);
+		if (err != 0) {
+			return err;
+		}
+
+		assign_ep(udev, ep, NULL);
 		break;
 	}
 
 	return 0;
+}
+
+static int enable_control_ep(struct usb_device *const udev)
+{
+	int err;
+
+	assign_control_ep(udev);
+
+	/*
+	 * The OUT direction is enabled first: a driver that shares one
+	 * controller resource between both directions claims it there and
+	 * attaches it to the IN direction as well.
+	 */
+	err = device_ep_enable(udev, USB_CONTROL_EP_OUT);
+	if (err != 0) {
+		return err;
+	}
+
+	err = device_ep_enable(udev, USB_CONTROL_EP_IN);
+	if (err != 0) {
+		(void)device_ep_disable(udev, USB_CONTROL_EP_OUT);
+	}
+
+	return err;
+}
+
+static int disable_control_ep(struct usb_device *const udev)
+{
+	int err_in;
+	int err_out;
+
+	/*
+	 * Reverse of the enable order, and both directions are attempted, so
+	 * that neither of them accepts a transfer once the controller resource
+	 * they share is released.
+	 */
+	err_in = device_ep_disable(udev, USB_CONTROL_EP_IN);
+	err_out = device_ep_disable(udev, USB_CONTROL_EP_OUT);
+
+	return err_in != 0 ? err_in : err_out;
+}
+
+static void disable_config_eps(struct usb_device *const udev)
+{
+	k_mutex_lock(&udev->mutex, K_FOREVER);
+
+	for (uint8_t i = 1; i < ARRAY_SIZE(udev->ep_out); i++) {
+		(void)handle_ep_op(udev, EP_OP_DOWN, USB_EP_DIR_OUT | i, NULL);
+		(void)handle_ep_op(udev, EP_OP_DOWN, USB_EP_DIR_IN | i, NULL);
+	}
+
+	k_mutex_unlock(&udev->mutex);
+}
+
+static void disable_all_eps(struct usb_device *const udev)
+{
+	disable_config_eps(udev);
+
+	k_mutex_lock(&udev->mutex, K_FOREVER);
+	(void)disable_control_ep(udev);
+	k_mutex_unlock(&udev->mutex);
 }
 
 static int device_interface_modify(struct usb_device *const udev,
@@ -223,7 +375,7 @@ int usbh_device_interface_set(struct usb_device *const udev,
 			      const uint8_t iface, const uint8_t alt,
 			      const bool dry)
 {
-	uint8_t cur_alt;
+	int16_t cur_alt;
 	int err;
 
 	if (iface > UHC_INTERFACES_MAX) {
@@ -246,7 +398,7 @@ int usbh_device_interface_set(struct usb_device *const udev,
 	}
 
 	cur_alt = udev->ifaces[iface].alternate;
-	LOG_INF("Set Interfaces %u, alternate %u -> %u", iface, cur_alt, alt);
+	LOG_INF("Set Interfaces %u, alternate %d -> %u", iface, cur_alt, alt);
 	if (alt == cur_alt) {
 		LOG_DBG("Already active interface alternate");
 		goto error;
@@ -259,17 +411,21 @@ int usbh_device_interface_set(struct usb_device *const udev,
 		goto error;
 	}
 
-	/* Shutdown current interface alternate */
-	err = device_interface_modify(udev, EP_OP_DOWN, iface, cur_alt);
-	if (err) {
-		LOG_ERR("Failed to shutdown interface %u alternate %u", iface, alt);
-		goto error;
+	/* Shutdown current interface alternate, skip when this is the
+	 * first time an alternate is selected for this interface.
+	 */
+	if (cur_alt != USBH_IFACE_ALT_NONE) {
+		err = device_interface_modify(udev, EP_OP_DOWN, iface, cur_alt);
+		if (err) {
+			LOG_ERR("Failed to shutdown interface %u alternate %u", iface, alt);
+			goto error;
+		}
 	}
 
 	/* Setup new interface alternate */
 	err = device_interface_modify(udev, EP_OP_UP, iface, alt);
 	if (err) {
-		LOG_ERR("Failed to setup interface %u alternate %u", iface, cur_alt);
+		LOG_ERR("Failed to setup interface %u alternate %d", iface, cur_alt);
 		goto error;
 	}
 
@@ -334,10 +490,6 @@ static int parse_configuration_descriptor(struct usb_device *const udev)
 			ep_desc->wMaxPacketSize = sys_le16_to_cpu(ep_desc->wMaxPacketSize);
 			LOG_DBG("bEndpointAddress 0x%02x wMaxPacketSize %u",
 				ep_desc->bEndpointAddress, ep_desc->wMaxPacketSize);
-
-			if (if_desc != NULL && if_desc->bAlternateSetting == 0) {
-				assign_ep_desc_ptr(udev, ep_desc->bEndpointAddress, ep_desc);
-			}
 		}
 
 		dhp = (void *)((uint8_t *)dhp + dhp->bLength);
@@ -351,14 +503,24 @@ static int parse_configuration_descriptor(struct usb_device *const udev)
 	return 0;
 }
 
+static void reset_interface(struct usb_device *const udev)
+{
+	memset(udev->ifaces, 0, sizeof(udev->ifaces));
+
+	for (uint8_t i = 0; i < ARRAY_SIZE(udev->ifaces); i++) {
+		udev->ifaces[i].alternate = USBH_IFACE_ALT_NONE;
+	}
+}
+
 static void reset_configuration(struct usb_device *const udev)
 {
-	/* Reset all endpoint pointers */
-	memset(udev->ep_in, 0, sizeof(udev->ep_in));
-	memset(udev->ep_out, 0, sizeof(udev->ep_out));
+	disable_config_eps(udev);
 
-	/* Reset all interface pointers */
-	memset(udev->ifaces, 0, sizeof(udev->ifaces));
+	/* Reset all endpoint pointers, except the control endpoints */
+	memset(&udev->ep_in[1], 0, sizeof(udev->ep_in) - sizeof(udev->ep_in[0]));
+	memset(&udev->ep_out[1], 0, sizeof(udev->ep_out) - sizeof(udev->ep_out[0]));
+
+	reset_interface(udev);
 
 	udev->actual_cfg = 0;
 	udev->state = USB_STATE_ADDRESSED;
@@ -513,7 +675,6 @@ struct usb_device *usbh_device_get_root(struct usbh_context *const ctx)
 
 int usbh_device_init(struct usb_device *const udev)
 {
-	struct usbh_context *const uhs_ctx = udev->ctx;
 	uint8_t new_addr;
 	int err;
 
@@ -528,19 +689,17 @@ int usbh_device_init(struct usb_device *const udev)
 		return err;
 	}
 
-	if (usbh_device_is_root(uhs_ctx, udev)) {
-		err = uhc_bus_reset(uhs_ctx->dev);
-		if (err) {
-			LOG_ERR("Failed to signal bus reset");
-			return err;
-		}
-	}
-
 	/*
 	 * Limit mps0 to the minimum supported by full-speed devices until the
 	 * device descriptor is read.
 	 */
 	udev->dev_desc.bMaxPacketSize0 = 8;
+	err = enable_control_ep(udev);
+	if (err != 0) {
+		LOG_ERR("Failed to enable control endpoint");
+		goto error;
+	}
+
 	err = usbh_req_desc_dev(udev, 8, &udev->dev_desc);
 	if (err) {
 		LOG_ERR("Failed to read device descriptor");
@@ -550,6 +709,23 @@ int usbh_device_init(struct usb_device *const udev)
 	err = validate_device_mps0(udev);
 	if (err) {
 		goto error;
+	}
+
+	if (udev->dev_desc.bMaxPacketSize0 != 8) {
+		/* Re-enable the control endpoint with the mps0 of the device,
+		 * because an endpoint cannot be reconfigured.
+		 */
+		err = disable_control_ep(udev);
+		if (err != 0) {
+			LOG_ERR("Failed to disable control endpoint");
+			goto error;
+		}
+
+		err = enable_control_ep(udev);
+		if (err != 0) {
+			LOG_ERR("Failed to enable control endpoint");
+			goto error;
+		}
 	}
 
 	err = alloc_device_address(udev, &new_addr);
@@ -605,7 +781,9 @@ int usbh_device_connect(struct usbh_context *const ctx,
 			ctx->root = NULL;
 		}
 
-		usbh_device_free(udev);
+		udev->state = USB_STATE_NOTCONNECTED;
+		disable_all_eps(udev);
+		usbh_device_drop(udev);
 		return err;
 	}
 
@@ -634,13 +812,47 @@ int usbh_device_connect(struct usbh_context *const ctx,
 
 void usbh_device_disconnect(struct usbh_context *ctx, struct usb_device *udev)
 {
+	/* Holders of a reference see it, and new transfers are refused */
+	udev->state = USB_STATE_NOTCONNECTED;
+
 	usbh_class_remove_all(udev);
 
 	if (usbh_device_is_root(ctx, udev)) {
 		ctx->root = NULL;
 	}
 
-	usbh_device_free(udev);
+	disable_all_eps(udev);
+	usbh_device_drop(udev);
 
 	LOG_DBG("Device removed");
+}
+
+int usbh_xfer_enqueue(const struct usb_device *const udev,
+		      struct uhc_transfer *const xfer)
+{
+	struct usbh_context *const ctx = udev->ctx;
+	int ret;
+
+	if (!usb_device_is_connected(udev)) {
+		return -ENODEV;
+	}
+
+	/*
+	 * Increase the number of queued transfers before enqueue and decrease
+	 * it on enqueue error.
+	 */
+	if (xfer->anchor != NULL) {
+		ret = usbh_class_xfer_acquire(xfer->anchor);
+		if (ret != 0) {
+			/* Removal has started, instance is no longer bound */
+			return ret;
+		}
+	}
+
+	ret = uhc_ep_enqueue(ctx->dev, xfer);
+	if (ret != 0 && xfer->anchor != NULL) {
+		usbh_class_xfer_release(xfer->anchor);
+	}
+
+	return ret;
 }

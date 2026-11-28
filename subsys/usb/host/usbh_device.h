@@ -10,22 +10,24 @@
 #include <zephyr/usb/usbh.h>
 #include <zephyr/drivers/usb/uhc.h>
 
+/** Value of usb_host_interface.alternate before any alternate is selected */
+#define USBH_IFACE_ALT_NONE	(-1)
+
 /* Callback type to be used for e.g. synchronous requests */
 typedef int (*usbh_udev_cb_t)(struct usb_device *const udev,
 			      struct uhc_transfer *const xfer);
 
 /*
- * This will return the first available USB device; for a single-point
- * connection without hub support, this is the device connected directly to the
- * host controller.
+ * Look up a connected device by its address. The device is returned with a
+ * reference, which the caller drops with usb_device_unref().
  */
-struct usb_device *usbh_device_get_any(struct usbh_context *const ctx);
-
 struct usb_device *usbh_device_get(struct usbh_context *const uhs_ctx, const uint8_t addr);
 
-/* Allocate/free USB device */
+/*
+ * Allocate a USB device. It holds one reference, the one of its connection,
+ * which usbh_device_disconnect() drops.
+ */
 struct usb_device *usbh_device_alloc(struct usbh_context *const uhs_ctx);
-void usbh_device_free(struct usb_device *const udev);
 
 /* Reset and configure new USB device */
 int usbh_device_init(struct usb_device *const udev);
@@ -90,13 +92,8 @@ static inline void usbh_xfer_buf_free(const struct usb_device *udev,
 	uhc_xfer_buf_free(ctx->dev, buf);
 }
 
-static inline int usbh_xfer_enqueue(const struct usb_device *udev,
-				    struct uhc_transfer *const xfer)
-{
-	struct usbh_context *const ctx = udev->ctx;
-
-	return uhc_ep_enqueue(ctx->dev, xfer);
-}
+int usbh_xfer_enqueue(const struct usb_device *const udev,
+		      struct uhc_transfer *const xfer);
 
 static inline int usbh_xfer_dequeue(const struct usb_device *udev,
 				    struct uhc_transfer *const xfer)

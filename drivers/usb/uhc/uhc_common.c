@@ -97,12 +97,9 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 				    void *const cb,
 				    void *const cb_priv)
 {
-	uint8_t ep_idx = USB_EP_GET_IDX(ep) & 0xF;
 	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
 	struct uhc_transfer *xfer = NULL;
-	uint16_t mps;
-	uint16_t interval;
-	uint8_t type;
+	struct usb_host_ep *host_ep;
 
 	api->lock(dev);
 
@@ -110,30 +107,13 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 		goto xfer_alloc_error;
 	}
 
-	if (ep_idx == 0) {
-		interval = 0;
-		type = USB_EP_TYPE_CONTROL;
-		mps = udev->dev_desc.bMaxPacketSize0;
-	} else {
-		struct usb_ep_descriptor *ep_desc;
-
-		if (USB_EP_DIR_IS_IN(ep)) {
-			ep_desc = udev->ep_in[ep_idx].desc;
-		} else {
-			ep_desc = udev->ep_out[ep_idx].desc;
-		}
-
-		if (ep_desc == NULL) {
-			LOG_ERR("Endpoint 0x%02x is not configured", ep);
-			goto xfer_alloc_error;
-		}
-
-		mps = ep_desc->wMaxPacketSize;
-		interval = ep_desc->bInterval;
-		type = ep_desc->bmAttributes & USB_EP_TRANSFER_TYPE_MASK;
+	host_ep = uhc_get_udev_ep(udev, ep);
+	if (!host_ep->enabled) {
+		LOG_ERR("Endpoint 0x%02x is not enabled", ep);
+		goto xfer_alloc_error;
 	}
 
-	LOG_DBG("Allocate xfer, ep 0x%02x mps %u cb %p", ep, mps, cb);
+	LOG_DBG("Allocate xfer, ep 0x%02x mps %u cb %p", ep, host_ep->mps, cb);
 
 	if (k_mem_slab_alloc(&uhc_xfer_pool, (void **)&xfer, K_NO_WAIT)) {
 		LOG_ERR("Failed to allocate transfer");
@@ -142,11 +122,9 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 
 	memset(xfer, 0, sizeof(struct uhc_transfer));
 	sys_ref_init(&xfer->ref);
-	xfer->ep = ep;
-	xfer->mps = mps;
-	xfer->interval = interval;
-	xfer->type = type;
-	xfer->udev = udev;
+	xfer->ep = host_ep;
+	xfer->interval = host_ep->interval;
+	xfer->udev = usb_device_ref(udev);
 	xfer->cb = cb;
 	xfer->priv = cb_priv;
 
@@ -185,8 +163,10 @@ struct uhc_transfer *uhc_xfer_alloc_with_buf(const struct device *dev,
 static void uhc_xfer_release(struct sys_ref *const ref)
 {
 	struct uhc_transfer *const xfer = CONTAINER_OF(ref, struct uhc_transfer, ref);
+	struct usb_device *const udev = xfer->udev;
 
 	k_mem_slab_free(&uhc_xfer_pool, (void *)xfer);
+	usb_device_unref(udev);
 }
 
 void uhc_xfer_ref(struct uhc_transfer *const xfer)
@@ -227,6 +207,80 @@ int uhc_xfer_buf_add(const struct device *dev,
 	return ret;
 }
 
+int uhc_ep_enable(const struct device *dev, struct usb_device *const udev, const uint8_t ep)
+{
+	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
+	struct usb_host_ep *host_ep;
+	int ret = 0;
+
+	api->lock(dev);
+
+	if (!uhc_is_initialized(dev)) {
+		ret = -EPERM;
+		goto ep_enable_error;
+	}
+
+	host_ep = uhc_get_udev_ep(udev, ep);
+	if (host_ep->enabled) {
+		LOG_WRN("Endpoint 0x%02x is already enabled", ep);
+		ret = -EALREADY;
+		goto ep_enable_error;
+	}
+
+	/* A driver may need the device to configure the endpoint */
+	host_ep->udev = udev;
+
+	if (api->ep_enable != NULL) {
+		ret = api->ep_enable(dev, host_ep);
+	}
+
+	if (ret == 0) {
+		host_ep->enabled = true;
+	} else {
+		host_ep->udev = NULL;
+	}
+
+ep_enable_error:
+	api->unlock(dev);
+
+	return ret;
+}
+
+int uhc_ep_disable(const struct device *dev, struct usb_device *const udev, const uint8_t ep)
+{
+	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
+	struct usb_host_ep *host_ep;
+	int ret = 0;
+
+	api->lock(dev);
+
+	if (!uhc_is_initialized(dev)) {
+		ret = -EPERM;
+		goto ep_disable_error;
+	}
+
+	host_ep = uhc_get_udev_ep(udev, ep);
+	if (!host_ep->enabled) {
+		ret = -EALREADY;
+		goto ep_disable_error;
+	}
+
+	if (api->ep_disable != NULL) {
+		ret = api->ep_disable(dev, host_ep);
+	}
+
+	if (ret == 0) {
+		host_ep->enabled = false;
+		host_ep->priv = NULL;
+		host_ep->udev = NULL;
+	}
+
+ep_disable_error:
+	api->unlock(dev);
+
+	return ret;
+}
+
 int uhc_ep_enqueue(const struct device *dev, struct uhc_transfer *const xfer)
 {
 	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
@@ -239,6 +293,11 @@ int uhc_ep_enqueue(const struct device *dev, struct uhc_transfer *const xfer)
 		goto ep_enqueue_error;
 	}
 
+	if (!xfer->ep->enabled) {
+		ret = -ENODEV;
+		goto ep_enqueue_error;
+	}
+
 	xfer->queued = 1;
 	uhc_xfer_ref(xfer);
 	ret = api->ep_enqueue(dev, xfer);
@@ -246,7 +305,6 @@ int uhc_ep_enqueue(const struct device *dev, struct uhc_transfer *const xfer)
 		xfer->queued = 0;
 		uhc_xfer_unref(xfer);
 	}
-
 
 ep_enqueue_error:
 	api->unlock(dev);
@@ -266,10 +324,62 @@ int uhc_ep_dequeue(const struct device *dev, struct uhc_transfer *const xfer)
 		goto ep_dequeue_error;
 	}
 
+	if (!xfer->ep->enabled) {
+		ret = -ENODEV;
+		goto ep_dequeue_error;
+	}
+
 	ret = api->ep_dequeue(dev, xfer);
 	xfer->queued = 0;
 
 ep_dequeue_error:
+	api->unlock(dev);
+
+	return ret;
+}
+
+int uhc_root_hub_control(const struct device *dev,
+			 const struct usb_setup_packet *const setup,
+			 struct net_buf *const buf)
+{
+	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
+	int ret = -ENOTSUP;
+
+	api->lock(dev);
+
+	if (!uhc_is_initialized(dev)) {
+		ret = -EPERM;
+		goto error;
+	}
+
+	if (api->root_hub_control != NULL) {
+		ret = api->root_hub_control(dev, setup, buf);
+	}
+
+error:
+	api->unlock(dev);
+
+	return ret;
+}
+
+int uhc_root_hub_status(const struct device *dev,
+			struct net_buf_simple *const buf)
+{
+	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
+	int ret = -ENOTSUP;
+
+	api->lock(dev);
+
+	if (!uhc_is_initialized(dev)) {
+		ret = -EPERM;
+		goto error;
+	}
+
+	if (api->root_hub_status != NULL) {
+		ret = api->root_hub_status(dev, buf);
+	}
+
+error:
 	api->unlock(dev);
 
 	return ret;

@@ -20,6 +20,9 @@
 
 LOG_MODULE_REGISTER(usbh_test, LOG_LEVEL_INF);
 
+/* The root hub has address 1, the first device connected to it gets 2 */
+#define TEST_DEV_ADDR 2U
+
 static const struct usbh_class_filter filter_rules_vid_pid[] = {
 	{
 		.vid = FOO_TEST_VID,
@@ -154,10 +157,10 @@ ZTEST(usbh_test, test_class_matching)
 
 ZTEST(usbh_test, test_get_next_desc)
 {
-	const struct usb_device *udev;
 	const struct usb_desc_header *desc;
+	struct usb_device *udev;
 
-	udev = usbh_device_get_any(uhs_ctx);
+	udev = usbh_device_get(uhs_ctx, TEST_DEV_ADDR);
 	zassert_not_null(udev);
 
 	desc = udev->cfg_desc;
@@ -212,15 +215,18 @@ ZTEST(usbh_test, test_get_next_desc)
 
 	/* #14 nil_desc */
 	zassert_is_null(desc);
+
+	usb_device_unref(udev);
 }
 
 ZTEST(usbh_test, test_get_types)
 {
 	const struct usb_desc_header *desc;
+	struct usb_host_ep *host_ep;
 	struct usb_device *udev;
 	int err;
 
-	udev = usbh_device_get_any(uhs_ctx);
+	udev = usbh_device_get(uhs_ctx, TEST_DEV_ADDR);
 	zassert_not_null(udev);
 
 	/* if0 */
@@ -233,24 +239,24 @@ ZTEST(usbh_test, test_get_types)
 	zassert_ok(err, "Failed to set interface alternate");
 
 	/* if0_out_ep */
-	desc = usbh_desc_get_endpoint(udev, 0x01);
-	zassert_not_null(desc);
-	zassert_equal(desc->bDescriptorType, USB_DESC_ENDPOINT);
-	zassert_equal(((struct usb_ep_descriptor *)desc)->bEndpointAddress, 0x01);
+	host_ep = usbh_desc_get_endpoint(udev, 0x01);
+	zassert_not_null(host_ep);
+	zassert_equal(host_ep->addr, 0x01);
 
 	/* if0_in_ep */
-	desc = usbh_desc_get_endpoint(udev, 0x81);
-	zassert_not_null(desc);
-	zassert_equal(desc->bDescriptorType, USB_DESC_ENDPOINT);
-	zassert_equal(((struct usb_ep_descriptor *)desc)->bEndpointAddress, 0x81);
+	host_ep = usbh_desc_get_endpoint(udev, 0x81);
+	zassert_not_null(host_ep);
+	zassert_equal(host_ep->addr, 0x81);
+
+	usb_device_unref(udev);
 }
 
 ZTEST(usbh_test, test_get_next_function)
 {
-	const struct usb_device *udev;
 	const struct usb_desc_header *desc;
+	struct usb_device *udev;
 
-	udev = usbh_device_get_any(uhs_ctx);
+	udev = usbh_device_get(uhs_ctx, TEST_DEV_ADDR);
 	zassert_not_null(udev);
 
 	desc = udev->cfg_desc;
@@ -264,6 +270,8 @@ ZTEST(usbh_test, test_get_next_function)
 	/* end */
 	desc = usbh_desc_get_next_function(desc);
 	zassert_is_null(desc);
+
+	usb_device_unref(udev);
 }
 
 static struct usbd_context *test_usbd;
@@ -271,6 +279,203 @@ static struct usbd_context *test_usbd;
 USBH_CONTROLLER_DEFINE(test_uhs_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_uhc0)));
 
 struct usbh_context *const uhs_ctx = &test_uhs_ctx;
+
+/* Wait until the device is configured, and return it with a reference */
+static struct usb_device *wait_device_configured(void)
+{
+	for (int i = 0; i < 100; i++) {
+		struct usb_device *udev = usbh_device_get(uhs_ctx, TEST_DEV_ADDR);
+
+		if (udev != NULL && udev->state == USB_STATE_CONFIGURED) {
+			return udev;
+		}
+
+		if (udev != NULL) {
+			usb_device_unref(udev);
+		}
+
+		k_msleep(10);
+	}
+
+	return NULL;
+}
+
+/* Wait until the device is gone from the list of devices */
+static bool wait_device_gone(void)
+{
+	for (int i = 0; i < 100; i++) {
+		struct usb_device *udev = usbh_device_get(uhs_ctx, TEST_DEV_ADDR);
+
+		if (udev == NULL) {
+			return true;
+		}
+
+		usb_device_unref(udev);
+		k_msleep(10);
+	}
+
+	return false;
+}
+
+ZTEST(usbh_test, test_device_ref_outlives_disconnect)
+{
+	struct usb_device *new_udev;
+	struct usb_device *udev;
+	uint8_t addr;
+
+	udev = wait_device_configured();
+	zassert_not_null(udev, "No configured device");
+	zassert_true(usb_device_is_connected(udev));
+	addr = udev->addr;
+
+	zassert_ok(usbd_disable(test_usbd));
+	zassert_true(wait_device_gone(), "Device still in the list");
+
+	zassert_false(usb_device_is_connected(udev));
+	zassert_is_null(usbh_device_get(uhs_ctx, addr), "Lookup found a disconnected device");
+
+	/*
+	 * Connect the device again while the reference is held. A device that
+	 * was released despite the reference would be reused for the new one.
+	 */
+	zassert_ok(usbd_enable(test_usbd));
+	new_udev = wait_device_configured();
+	zassert_not_null(new_udev, "Device not configured after reconnect");
+	zassert_not_equal(new_udev, udev, "Referenced device was reused");
+
+	zassert_false(usb_device_is_connected(udev));
+	zassert_equal(udev->dev_desc.idVendor, CONFIG_SAMPLE_USBD_VID);
+	zassert_equal(udev->dev_desc.idProduct, CONFIG_SAMPLE_USBD_PID);
+
+	usb_device_unref(udev);
+	usb_device_unref(new_udev);
+}
+
+ZTEST(usbh_test, test_device_reconnect_no_leak)
+{
+	struct usb_device *udev;
+
+	/* A device that is not released would use up the device slots */
+	for (int i = 0; i < 2 * CONFIG_USBH_USB_DEVICE_MAX; i++) {
+		zassert_ok(usbd_disable(test_usbd));
+		zassert_true(wait_device_gone(), "Device %d still in the list", i);
+
+		zassert_ok(usbd_enable(test_usbd));
+		udev = wait_device_configured();
+		zassert_not_null(udev, "Device %d not configured", i);
+		usb_device_unref(udev);
+	}
+}
+
+/*
+ * A device pointer kept across a disconnect must not refer to the device that
+ * connects next. Otherwise a holder, such as the shell or USB/IP, acts on the
+ * wrong device without noticing.
+ */
+ZTEST(usbh_test, test_device_stale_pointer_after_reconnect)
+{
+	struct usb_device *new_udev;
+	struct usb_device *udev;
+
+	udev = wait_device_configured();
+	zassert_not_null(udev, "No configured device");
+
+	zassert_ok(usbd_disable(test_usbd));
+	zassert_true(wait_device_gone(), "Device still in the list");
+
+	zassert_ok(usbd_enable(test_usbd));
+	new_udev = wait_device_configured();
+	zassert_not_null(new_udev, "Device not configured after reconnect");
+
+	zassert_not_equal(new_udev, udev, "Kept pointer refers to the device that connected next");
+
+	usb_device_unref(udev);
+	usb_device_unref(new_udev);
+}
+
+static K_SEM_DEFINE(late_xfer_done, 0, 1);
+static struct usb_device *late_xfer_udev;
+static int late_xfer_err;
+
+static int late_xfer_cb(struct usb_device *const udev, struct uhc_transfer *const xfer)
+{
+	/* Keep the device for the checks, the transfer drops its reference */
+	late_xfer_udev = usb_device_ref(udev);
+	late_xfer_err = xfer->err;
+
+	if (xfer->buf != NULL) {
+		net_buf_unref(xfer->buf);
+	}
+
+	(void)uhc_xfer_unref(xfer);
+	k_sem_give(&late_xfer_done);
+
+	return 0;
+}
+
+/*
+ * A transfer that completes after its device was disconnected must be given
+ * the device it was queued for, not the device that connected next.
+ */
+ZTEST(usbh_test, test_xfer_completion_after_disconnect)
+{
+	const struct usb_setup_packet req = {
+		.bmRequestType = USB_REQTYPE_DIR_TO_HOST << 7,
+		.bRequest = USB_SREQ_GET_DESCRIPTOR,
+		.wValue = sys_cpu_to_le16(USB_DESC_DEVICE << 8),
+		.wLength = sys_cpu_to_le16(sizeof(struct usb_device_descriptor)),
+	};
+	struct usb_device *new_udev;
+	struct uhc_transfer *xfer;
+	struct usb_device *udev;
+	struct net_buf *buf;
+
+	udev = wait_device_configured();
+	zassert_not_null(udev, "No configured device");
+
+	/* Stop the frames, so that the transfer stays queued */
+	zassert_ok(uhc_bus_suspend(uhs_ctx->dev));
+
+	xfer = usbh_xfer_alloc(udev, USB_CONTROL_EP_IN, late_xfer_cb, NULL);
+	zassert_not_null(xfer);
+	memcpy(xfer->setup_pkt, &req, sizeof(req));
+	buf = usbh_xfer_buf_alloc(udev, sizeof(struct usb_device_descriptor));
+	zassert_not_null(buf);
+	zassert_ok(usbh_xfer_buf_add(udev, xfer, buf));
+	zassert_ok(usbh_xfer_enqueue(udev, xfer));
+
+	/* Only the transfer holds the device now, udev is only compared */
+	usb_device_unref(udev);
+
+	/*
+	 * Cancel the transfer, and disconnect the device. The controller
+	 * returns the transfer at the next frame, after the device connects
+	 * again and the bus is resumed.
+	 */
+	zassert_ok(usbh_xfer_dequeue(udev, xfer));
+
+	zassert_ok(usbd_disable(test_usbd));
+	zassert_true(wait_device_gone(), "Device still in the list");
+
+	zassert_ok(usbd_enable(test_usbd));
+
+	/* The first frame returns the cancelled transfer */
+	zassert_ok(uhc_bus_resume(uhs_ctx->dev));
+
+	zassert_ok(k_sem_take(&late_xfer_done, K_SECONDS(1)), "Transfer not returned");
+	zassert_equal(late_xfer_err, -ECONNRESET);
+
+	new_udev = wait_device_configured();
+	zassert_not_null(new_udev, "Device not configured after reconnect");
+
+	zassert_equal(late_xfer_udev, udev, "Completion got another device");
+	zassert_not_equal(late_xfer_udev, new_udev,
+			  "Completion got the device that connected next");
+	zassert_false(usb_device_is_connected(late_xfer_udev));
+
+	usb_device_unref(late_xfer_udev);
+	usb_device_unref(new_udev);
+}
 
 void *usbh_test_enable(void)
 {
@@ -282,14 +487,8 @@ void *usbh_test_enable(void)
 	ret = usbh_enable(uhs_ctx);
 	zassert_ok(ret, "Failed to enable USB host");
 
-	ret = uhc_bus_reset(uhs_ctx->dev);
-	zassert_ok(ret, "Failed to signal bus reset");
-
 	ret = uhc_bus_resume(uhs_ctx->dev);
 	zassert_ok(ret, "Failed to signal bus resume");
-
-	ret = uhc_sof_enable(uhs_ctx->dev);
-	zassert_ok(ret, "Failed to enable SoF generator");
 
 	LOG_INF("Host controller enabled");
 
@@ -304,8 +503,11 @@ void *usbh_test_enable(void)
 
 	LOG_INF("Device support enabled");
 
-	/* Allow the host time to reset the device. */
-	k_msleep(200);
+	/*
+	 * Allow the host time to see the device on the root hub, which it polls,
+	 * and to reset it.
+	 */
+	k_msleep(CONFIG_USBH_HUB_ROOT_POLL_INTERVAL_MS + 200);
 
 	return NULL;
 }

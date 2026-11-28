@@ -12,6 +12,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/usb/uhc.h>
 #include <zephyr/usb/usb_ch9.h>
+#include <zephyr/usb/class/usb_hub.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uhc_dwc2, CONFIG_UHC_DRIVER_LOG_LEVEL);
@@ -151,8 +152,12 @@ struct uhc_dwc2_data {
 	uint32_t free_chs;
 	/* Root port does the debounce of connection/disconnection */
 	bool debouncing;
-	/* Root port has an attached device */
-	bool has_device;
+	/*
+	 * Root hub status and change bits. The HPRT change bits are cleared
+	 * in the ISR, and reset and suspend changes have no HPRT bit at all.
+	 */
+	struct usb_hub_status hub_status;
+	struct usb_hub_port_status port_status;
 };
 
 struct usb_dwc2_reg *uhc_dwc2_get_base(const struct device *dev)
@@ -692,6 +697,7 @@ static int port_reset(const struct device *dev)
 
 static int port_suspend(const struct device *const dev)
 {
+	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
 	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
 	uint32_t hprt;
 
@@ -714,7 +720,7 @@ static int port_suspend(const struct device *const dev)
 	for (int i = 0; i < 10; i++) {
 		hprt = sys_read32((mem_addr_t)&base->hprt);
 		if (hprt & USB_DWC2_HPRT_PRTSUSP) {
-			uhc_submit_event(dev, UHC_EVT_SUSPENDED, 0);
+			priv->port_status.wPortStatus |= USB_HUB_PORT_STATUS_SUSPEND;
 			return 0;
 		}
 
@@ -726,8 +732,8 @@ static int port_suspend(const struct device *const dev)
 
 static int port_resume(const struct device *const dev)
 {
+	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
 	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
-	enum uhc_event_type type;
 	uint32_t hprt;
 	int ret;
 
@@ -740,14 +746,11 @@ static int port_resume(const struct device *const dev)
 		}
 
 		/* Remote Wakeup - Resume signaling started by core */
-		type = UHC_EVT_RWUP;
 	} else {
 		/* Start driving Resume signaling */
 		hprt &= ~(USB_DWC2_HPRT_PRTSUSP | USB_DWC2_HPRT_W1C_MSK);
 		hprt |= USB_DWC2_HPRT_PRTRES;
 		sys_write32(hprt, (mem_addr_t)&base->hprt);
-
-		type = UHC_EVT_RESUMED;
 	}
 
 	k_msleep(CONFIG_UHC_DWC2_RESUME_DURATION_MS);
@@ -761,9 +764,9 @@ static int port_resume(const struct device *const dev)
 	} else {
 		/* Resume succeeded */
 		ret = 0;
+		priv->port_status.wPortStatus &= ~USB_HUB_PORT_STATUS_SUSPEND;
+		priv->port_status.wPortChange |= USB_HUB_PORT_CHANGE_SUSPEND;
 	}
-
-	uhc_submit_event(dev, type, 0);
 
 	/* Stop driving resume */
 	hprt &= ~(USB_DWC2_HPRT_PRTRES | USB_DWC2_HPRT_W1C_MSK);
@@ -848,7 +851,7 @@ static inline void ch_process_control(const struct device *dev,
 	}
 
 	/* Calculate new packet count */
-	pkt_cnt  = calc_packet_count(size, xfer->mps);
+	pkt_cnt  = calc_packet_count(size, xfer->ep->mps);
 
 	if (next_dir_is_in) {
 		sys_set_bits((mem_addr_t)&ch->regs->hcchar, USB_DWC2_HCCHAR_EPDIR);
@@ -882,7 +885,7 @@ static inline void ch_process_control(const struct device *dev,
 
 static bool xfer_is_done(const struct uhc_transfer *xfer)
 {
-	return xfer->type != USB_EP_TYPE_CONTROL ||
+	return uhc_ep_type(xfer->ep) != USB_EP_TYPE_CONTROL ||
 	       xfer->stage == UHC_CONTROL_STAGE_STATUS;
 }
 
@@ -1082,6 +1085,7 @@ static uint32_t ch_handle_irq_events(const struct device *dev,
 				     struct uhc_dwc2_channel *const ch)
 {
 	struct uhc_transfer *const xfer = ch->xfer;
+	const uint8_t type = uhc_ep_type(xfer->ep);
 	uint32_t ch_events;
 	uint32_t hcint;
 
@@ -1117,15 +1121,15 @@ static uint32_t ch_handle_irq_events(const struct device *dev,
 		ch->hcint_cplt_pending = 0U;
 	}
 
-	if (xfer->type == USB_EP_TYPE_BULK || xfer->type == USB_EP_TYPE_CONTROL) {
+	if (type == USB_EP_TYPE_BULK || type == USB_EP_TYPE_CONTROL) {
 		/* Bulk & Control */
-		if (USB_EP_DIR_IS_IN(xfer->ep)) {
+		if (USB_EP_DIR_IS_IN(xfer->ep->addr)) {
 			ch_events = ch_handle_in_bulk_control(dev, ch, hcint);
 		} else {
 			ch_events = ch_handle_out_bulk_control(dev, ch, hcint);
 		}
-	} else if (xfer->type == USB_EP_TYPE_INTERRUPT) {
-		if (USB_EP_DIR_IS_IN(xfer->ep)) {
+	} else if (type == USB_EP_TYPE_INTERRUPT) {
+		if (USB_EP_DIR_IS_IN(xfer->ep->addr)) {
 			ch_events = ch_handle_in_interrupt(ch, hcint);
 		} else {
 			LOG_ERR("Interrupt OUT isn't supported yet");
@@ -1133,7 +1137,7 @@ static uint32_t ch_handle_irq_events(const struct device *dev,
 				    BIT(UHC_DWC2_CHANNEL_DO_RELEASE);
 		}
 	} else {
-		LOG_ERR("Unhandled transfer type %u, HCINT 0x%08x", xfer->type, hcint);
+		LOG_ERR("Unhandled transfer type %u, HCINT 0x%08x", type, hcint);
 		ch_events = BIT(UHC_DWC2_CHANNEL_EVENT_ERROR) |
 			    BIT(UHC_DWC2_CHANNEL_DO_RELEASE);
 	}
@@ -1163,20 +1167,36 @@ static inline bool port_debounce(const struct device *dev, const enum uhc_dwc2_e
 
 static inline void port_enable(const struct device *dev)
 {
+	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
 	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
 
 	sys_clear_bits((mem_addr_t)&base->haintmsk, 0xFFFFFFFFUL);
 	sys_set_bits((mem_addr_t)&base->gintmsk, USB_DWC2_GINTSTS_BITS);
 	dwc2_set_power(base, true);
+	priv->port_status.wPortStatus |= USB_HUB_PORT_STATUS_POWER;
 }
 
 static inline void port_disable(const struct device *dev)
 {
+	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
 	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
 
 	sys_clear_bits((mem_addr_t)&base->haintmsk, 0xFFFFFFFFUL);
 	sys_clear_bits((mem_addr_t)&base->gintmsk, USB_DWC2_GINTSTS_BITS);
 	dwc2_set_power(base, false);
+	priv->port_status.wPortStatus &= ~USB_HUB_PORT_STATUS_POWER;
+}
+
+static void port_status_disconnect(const struct device *dev)
+{
+	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
+
+	if ((priv->port_status.wPortStatus & USB_HUB_PORT_STATUS_CONNECTION) == 0U) {
+		return;
+	}
+
+	priv->port_status.wPortStatus &= USB_HUB_PORT_STATUS_POWER;
+	priv->port_status.wPortChange |= USB_HUB_PORT_CHANGE_CONNECTION;
 }
 
 static inline int soft_reset(const struct device *dev)
@@ -1227,30 +1247,31 @@ static int ch_claim(const struct device *const dev,
 		}
 
 		if (cand->xfer->udev->addr == xfer->udev->addr &&
-		    cand->xfer->ep == xfer->ep) {
+		    cand->xfer->ep->addr == xfer->ep->addr) {
 			LOG_DBG("Endpoint 0x%02x on addr %u already busy",
-				xfer->ep, xfer->udev->addr);
+				xfer->ep->addr, xfer->udev->addr);
 			return -EBUSY;
 		}
 	}
 
 	if (ch == NULL) {
-		LOG_DBG("No free channel for ep 0x%02x", xfer->ep);
+		LOG_DBG("No free channel for ep 0x%02x", xfer->ep->addr);
 		return -EBUSY;
 	}
 
 	LOG_DBG("Claimed channel%d for ep 0x%02x, xfer=%p, channel=%p",
-		ch->index, xfer->ep, (void *)xfer, (void *)ch);
+		ch->index, xfer->ep->addr, (void *)xfer, (void *)ch);
 
 	ch->error_count = 0U;
 	ch->hcint_cplt_pending = 0U;
 
 	/* Save channel characteristics of the underlying channel */
 	ch->xfer = xfer;
-	ch->data = ch_data_get(priv, xfer->udev, xfer->ep);
+	ch->data = ch_data_get(priv, xfer->udev, xfer->ep->addr);
 
 	if (ch->data == NULL) {
-		LOG_ERR("No channel data slot for addr %u ep 0x%02x", xfer->udev->addr, xfer->ep);
+		LOG_ERR("No channel data slot for addr %u ep 0x%02x",
+			xfer->udev->addr, xfer->ep->addr);
 		return -ENOMEM;
 	}
 
@@ -1292,13 +1313,13 @@ static int ch_configure(const struct device *const dev, struct uhc_dwc2_channel 
 	sys_write32(hcintmsk, (mem_addr_t)&ch->regs->hcintmsk);
 
 	/* Configure the channel main properties */
-	hcchar = usb_dwc2_set_hcchar_mps(xfer->mps);
-	hcchar |= usb_dwc2_set_hcchar_epnum(USB_EP_GET_IDX(xfer->ep));
-	hcchar |= usb_dwc2_set_hcchar_eptype(xfer->type);
+	hcchar = usb_dwc2_set_hcchar_mps(xfer->ep->mps);
+	hcchar |= usb_dwc2_set_hcchar_epnum(USB_EP_GET_IDX(xfer->ep->addr));
+	hcchar |= usb_dwc2_set_hcchar_eptype(uhc_ep_type(xfer->ep));
 	hcchar |= usb_dwc2_set_hcchar_ec(1UL /* TODO: ep_config->mult */);
 	hcchar |= usb_dwc2_set_hcchar_devaddr(udev->addr);
 
-	if (USB_EP_DIR_IS_IN(xfer->ep)) {
+	if (USB_EP_DIR_IS_IN(xfer->ep->addr)) {
 		hcchar |= USB_DWC2_HCCHAR_EPDIR;
 	}
 
@@ -1320,7 +1341,7 @@ static void ch_complete_data(const struct device *dev, struct uhc_dwc2_channel *
 	uint32_t remaining;
 
 	/* Add net buffer after IN stage */
-	if (USB_EP_DIR_IS_IN(xfer->ep)) {
+	if (USB_EP_DIR_IS_IN(xfer->ep->addr)) {
 		hctsiz = sys_read32((mem_addr_t)&ch->regs->hctsiz);
 		remaining = usb_dwc2_get_hctsiz_xfersize(hctsiz);
 
@@ -1331,12 +1352,12 @@ static void ch_complete_data(const struct device *dev, struct uhc_dwc2_channel *
 	}
 
 	/* Precalculate next pid based on the packets actually transferred */
-	pkt_cnt = calc_packet_count(actual_len, xfer->mps);
+	pkt_cnt = calc_packet_count(actual_len, xfer->ep->mps);
 	ch->data->next_pid = calc_next_pid(ch->data->next_pid, pkt_cnt);
 
 	LOG_DBG("Data on channel%u, prog=%u, act=%u, len=%u, mps=%u, next_pid=%u",
 		ch->index, ch->length, actual_len, xfer->buf->len,
-		xfer->mps, ch->data->next_pid);
+		xfer->ep->mps, ch->data->next_pid);
 }
 
 static void ch_complete(const struct device *dev, struct uhc_dwc2_channel *const ch)
@@ -1344,7 +1365,7 @@ static void ch_complete(const struct device *dev, struct uhc_dwc2_channel *const
 	struct uhc_transfer *const xfer = ch->xfer;
 	const struct usb_setup_packet *setup;
 
-	switch (xfer->type) {
+	switch (uhc_ep_type(xfer->ep)) {
 	case USB_EP_TYPE_CONTROL:
 		/* Apply a delay if request was Set Address */
 		setup = (const struct usb_setup_packet *)xfer->setup_pkt;
@@ -1440,7 +1461,7 @@ static void ch_start_control(const struct device *dev,
 	/* Control stage is always OUT */
 	sys_clear_bits((mem_addr_t)&ch->regs->hcchar, USB_DWC2_HCCHAR_EPDIR);
 
-	pkt_cnt  = calc_packet_count(sizeof(struct usb_setup_packet), xfer->mps);
+	pkt_cnt  = calc_packet_count(sizeof(struct usb_setup_packet), xfer->ep->mps);
 	hctsiz = usb_dwc2_set_hctsiz_pid(USB_DWC2_HCTSIZ_PID_SETUP) |
 		usb_dwc2_set_hctsiz_pktcnt(pkt_cnt) |
 		usb_dwc2_set_hctsiz_xfersize(sizeof(struct usb_setup_packet));
@@ -1477,7 +1498,7 @@ static void ch_start_bulk(const struct device *dev,
 
 	/* TODO: Do split */
 
-	if (USB_EP_DIR_IS_IN(xfer->ep)) {
+	if (USB_EP_DIR_IS_IN(xfer->ep->addr)) {
 		/* For IN, receive into the buffer tailroom */
 		ch->length = net_buf_tailroom(xfer->buf);
 		dma_addr = (mem_addr_t)(net_buf_tail(xfer->buf));
@@ -1491,14 +1512,14 @@ static void ch_start_bulk(const struct device *dev,
 		LOG_HEXDUMP_DBG(xfer->buf->data, ch->length, "BULK OUT");
 	}
 
-	pkt_cnt = calc_packet_count(ch->length, xfer->mps);
+	pkt_cnt = calc_packet_count(ch->length, xfer->ep->mps);
 
 	hctsiz = usb_dwc2_set_hctsiz_pid(ch->data->next_pid) |
 		usb_dwc2_set_hctsiz_pktcnt(pkt_cnt) |
 		usb_dwc2_set_hctsiz_xfersize(ch->length);
 
 	if (ch->length > 0) {
-		if (USB_EP_DIR_IS_IN(xfer->ep)) {
+		if (USB_EP_DIR_IS_IN(xfer->ep->addr)) {
 			sys_cache_data_invd_range((void *)dma_addr, ch->length);
 		} else {
 			sys_cache_data_flush_range((void *)dma_addr, ch->length);
@@ -1561,19 +1582,19 @@ static void ch_start_interrupt(const struct device *dev,
 	uint32_t hfnum;
 	uint16_t frame;
 
-	ch->length = MIN(net_buf_tailroom(xfer->buf), xfer->mps);
+	ch->length = MIN(net_buf_tailroom(xfer->buf), xfer->ep->mps);
 	dma_addr = (mem_addr_t)net_buf_tail(xfer->buf);
 
 	LOG_DBG("INT IN, ch=%u, ep=%02Xh, mps=%u, interval=%u, size=%u, pid=%u, frame=%u",
 		ch->index,
-		xfer->ep,
-		xfer->mps,
+		xfer->ep->addr,
+		xfer->ep->mps,
 		xfer->interval,
 		ch->length,
 		ch->data->next_pid,
 		ch->data->scheduled_frame);
 
-	pkt_cnt = calc_packet_count(ch->length, xfer->mps);
+	pkt_cnt = calc_packet_count(ch->length, xfer->ep->mps);
 
 	/* TODO: Do not forget to flush pids on the device disconnection */
 
@@ -1582,7 +1603,7 @@ static void ch_start_interrupt(const struct device *dev,
 		 usb_dwc2_set_hctsiz_xfersize(ch->length);
 
 	if (ch->length > 0) {
-		if (USB_EP_DIR_IS_IN(xfer->ep)) {
+		if (USB_EP_DIR_IS_IN(xfer->ep->addr)) {
 			sys_cache_data_invd_range((void *)dma_addr, ch->length);
 		} else {
 			sys_cache_data_flush_range((void *)dma_addr, ch->length);
@@ -1626,7 +1647,7 @@ static void ch_reinit(const struct device *dev,
 
 	/* TODO: check, if it might be a good this to do anything before the re-init */
 
-	switch (ch->xfer->type) {
+	switch (uhc_ep_type(ch->xfer->ep)) {
 	case USB_EP_TYPE_CONTROL:
 		/* Re-enable the channel using the already-programmed HCTSIZ/HCDMA. */
 		hcchar = sys_read32((mem_addr_t)&ch->regs->hcchar);
@@ -1642,7 +1663,8 @@ static void ch_reinit(const struct device *dev,
 		ch_start_interrupt(dev, ch);
 		break;
 	default:
-		LOG_ERR("Reinit channel with type=%u isn't supported yet", ch->xfer->type);
+		LOG_ERR("Reinit channel with type=%u isn't supported yet",
+			uhc_ep_type(ch->xfer->ep));
 		break;
 	}
 }
@@ -1674,31 +1696,6 @@ static void port_start_periodic(const struct device *dev)
 	}
 }
 
-static inline void submit_new_device(const struct device *dev)
-{
-	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
-	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
-	uint32_t hprt = sys_read32((mem_addr_t)&base->hprt);
-
-	switch (usb_dwc2_get_hprt_prtspd(hprt)) {
-	case USB_DWC2_HPRT_PRTSPD_HIGH:
-		uhc_submit_event(dev, UHC_EVT_DEV_CONNECTED_HS, 0);
-		break;
-	case USB_DWC2_HPRT_PRTSPD_FULL:
-		uhc_submit_event(dev, UHC_EVT_DEV_CONNECTED_FS, 0);
-		break;
-	case USB_DWC2_HPRT_PRTSPD_LOW:
-		uhc_submit_event(dev, UHC_EVT_DEV_CONNECTED_LS, 0);
-		break;
-	default:
-		LOG_WRN("Port has unexpected speed, submit as full speed");
-		uhc_submit_event(dev, UHC_EVT_DEV_CONNECTED_FS, 0);
-		break;
-	}
-
-	priv->has_device = true;
-}
-
 /*
  * Give back the channels of a device that is gone. Its transfers are not
  * returned: the host stack frees them along with the device.
@@ -1722,33 +1719,21 @@ static void ch_release_all(const struct device *dev)
 	}
 }
 
-static inline void submit_dev_gone(const struct device *dev)
-{
-	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
-
-	if (!priv->has_device) {
-		return;
-	}
-
-	uhc_submit_event(dev, UHC_EVT_DEV_REMOVED, 0);
-	priv->has_device = false;
-}
-
 static int validate_control_xfer(const struct uhc_transfer *xfer)
 {
 	const struct usb_setup_packet *setup;
 	uint16_t wLength;
 
 	/* Only via EP0 */
-	if (USB_EP_GET_IDX(xfer->ep) != 0) {
+	if (USB_EP_GET_IDX(xfer->ep->addr) != 0) {
 		LOG_ERR("Control transfer must use endpoint 0");
 		return -EINVAL;
 	}
 
 	/* Has correct MPS */
-	if ((xfer->mps != 8) && (xfer->mps != 16) &&
-	    (xfer->mps != 32) && (xfer->mps != 64)) {
-		LOG_ERR("Invalid control MPS %u", xfer->mps);
+	if ((xfer->ep->mps != 8) && (xfer->ep->mps != 16) &&
+	    (xfer->ep->mps != 32) && (xfer->ep->mps != 64)) {
+		LOG_ERR("Invalid control MPS %u", xfer->ep->mps);
 		return -EINVAL;
 	}
 
@@ -1805,20 +1790,20 @@ static int validate_bulk_xfer(const struct uhc_transfer *xfer)
 {
 	uint32_t size;
 
-	if (USB_EP_GET_IDX(xfer->ep) == 0) {
+	if (USB_EP_GET_IDX(xfer->ep->addr) == 0) {
 		LOG_ERR("Bulk transfer cannot use endpoint 0");
 		return -EINVAL;
 	}
 
-	if (xfer->mps == 0) {
+	if (xfer->ep->mps == 0) {
 		LOG_ERR("Bulk transfer MPS is zero");
 		return -EINVAL;
 	}
 
-	if ((xfer->mps != 8) && (xfer->mps != 16) &&
-	    (xfer->mps != 32) && (xfer->mps != 64) &&
-	    (xfer->mps != 512)) {
-		LOG_ERR("Invalid bulk MPS %u", xfer->mps);
+	if ((xfer->ep->mps != 8) && (xfer->ep->mps != 16) &&
+	    (xfer->ep->mps != 32) && (xfer->ep->mps != 64) &&
+	    (xfer->ep->mps != 512)) {
+		LOG_ERR("Invalid bulk MPS %u", xfer->ep->mps);
 		return -EINVAL;
 	}
 
@@ -1827,7 +1812,7 @@ static int validate_bulk_xfer(const struct uhc_transfer *xfer)
 		return -EINVAL;
 	}
 
-	if (USB_EP_DIR_IS_IN(xfer->ep)) {
+	if (USB_EP_DIR_IS_IN(xfer->ep->addr)) {
 		size = net_buf_tailroom(xfer->buf);
 
 		if (size == 0) {
@@ -1862,7 +1847,7 @@ static int validate_bulk_xfer(const struct uhc_transfer *xfer)
 
 static int validate_interrupt_xfer(const struct uhc_transfer *xfer)
 {
-	if (USB_EP_GET_IDX(xfer->ep) == 0) {
+	if (USB_EP_GET_IDX(xfer->ep->addr) == 0) {
 		LOG_ERR("Interrupt transfer cannot use endpoint 0");
 		return -EINVAL;
 	}
@@ -1872,18 +1857,18 @@ static int validate_interrupt_xfer(const struct uhc_transfer *xfer)
 		return -EINVAL;
 	}
 	/* TODO: Support only IN EP for now */
-	if (!USB_EP_DIR_IS_IN(xfer->ep)) {
+	if (!USB_EP_DIR_IS_IN(xfer->ep->addr)) {
 		LOG_ERR("Interrupt OUT is not supported yet");
 		return -ENOTSUP;
 	}
 
-	if (xfer->mps == 0U || xfer->mps > 1024U) {
-		LOG_ERR("Invalid interrupt MPS %u", xfer->mps);
+	if (xfer->ep->mps == 0U || xfer->ep->mps > 1024U) {
+		LOG_ERR("Invalid interrupt MPS %u", xfer->ep->mps);
 		return -EINVAL;
 	}
 
 	/* TODO: Support High-bandwidth with several transactions per microframe */
-	if (USB_MPS_ADDITIONAL_TRANSACTIONS(xfer->mps) != 0U) {
+	if (USB_MPS_ADDITIONAL_TRANSACTIONS(xfer->ep->mps) != 0U) {
 		LOG_ERR("High-bandwidth interrupt endpoints are not supported yet");
 		return -ENOTSUP;
 	}
@@ -1918,10 +1903,10 @@ static int submit_xfer(const struct device *const dev, struct uhc_transfer *cons
 	int ret;
 
 	LOG_DBG("addr=%u, ep=%02Xh, mps=%d, int=%d, start_frame=%d, stage=%d, no_status=%d",
-		xfer->udev->addr, xfer->ep, xfer->mps, xfer->interval,
+		xfer->udev->addr, xfer->ep->addr, xfer->ep->mps, xfer->interval,
 		xfer->start_frame, xfer->stage, xfer->no_status);
 
-	switch (xfer->type) {
+	switch (uhc_ep_type(xfer->ep)) {
 	case USB_EP_TYPE_CONTROL:
 		ret = validate_control_xfer(xfer);
 		break;
@@ -1932,12 +1917,12 @@ static int submit_xfer(const struct device *const dev, struct uhc_transfer *cons
 		ret = validate_interrupt_xfer(xfer);
 		break;
 	default:
-		LOG_ERR("Submit xfer with type=%u isn't supported yet", xfer->type);
+		LOG_ERR("Submit xfer with type=%u isn't supported yet", uhc_ep_type(xfer->ep));
 		return -EINVAL;
 	}
 
 	if (ret != 0) {
-		LOG_ERR("Invalid xfer for transfer: type=%u, err=%d", xfer->type, ret);
+		LOG_ERR("Invalid xfer for transfer: type=%u, err=%d", uhc_ep_type(xfer->ep), ret);
 		return ret;
 	}
 
@@ -1956,7 +1941,7 @@ static int submit_xfer(const struct device *const dev, struct uhc_transfer *cons
 		return ret;
 	}
 
-	switch (xfer->type) {
+	switch (uhc_ep_type(xfer->ep)) {
 	case USB_EP_TYPE_CONTROL:
 		ch_start_control(dev, ch);
 		break;
@@ -1968,7 +1953,7 @@ static int submit_xfer(const struct device *const dev, struct uhc_transfer *cons
 		ch_start_interrupt(dev, ch);
 		break;
 	default:
-		LOG_ERR("Start channel with type %d isn't supported yet", xfer->type);
+		LOG_ERR("Start channel with type %d isn't supported yet", uhc_ep_type(xfer->ep));
 		ch_release(dev, ch);
 		return -EINVAL;
 	}
@@ -2026,6 +2011,7 @@ static void submit_pending(const struct device *const dev)
 
 static void port_handle_events(const struct device *dev, uint32_t event_mask)
 {
+	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
 	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
 
 	LOG_DBG("Port events: %08Xh", event_mask);
@@ -2035,10 +2021,8 @@ static void port_handle_events(const struct device *dev, uint32_t event_mask)
 		LOG_DBG("Port connected");
 		/* Debounce port connection */
 		if (port_debounce(dev, UHC_DWC2_EVENT_PORT_CONNECTION)) {
-			/* Do first reset in the driver */
-			port_reset(dev);
-			/* Notify the higher logic about the new device */
-			submit_new_device(dev);
+			priv->port_status.wPortStatus |= USB_HUB_PORT_STATUS_CONNECTION;
+			priv->port_status.wPortChange |= USB_HUB_PORT_CHANGE_CONNECTION;
 		} else {
 			/* TODO: Implement handling */
 			LOG_ERR("Port changed during debouncing connect");
@@ -2057,8 +2041,7 @@ static void port_handle_events(const struct device *dev, uint32_t event_mask)
 		}
 
 		ch_release_all(dev);
-		/* Notify upper layer */
-		submit_dev_gone(dev);
+		port_status_disconnect(dev);
 		/* Reset the controller to handle new connection */
 		soft_reset(dev);
 		/* Prepare for device connection */
@@ -2068,8 +2051,7 @@ static void port_handle_events(const struct device *dev, uint32_t event_mask)
 	if (event_mask & BIT(UHC_DWC2_EVENT_PORT_ERROR)) {
 		LOG_DBG("Port error");
 		ch_release_all(dev);
-		/* Notify upper layer */
-		submit_dev_gone(dev);
+		port_status_disconnect(dev);
 		/* TODO: recover from the error */
 
 		/* Reset the controller to handle new connection */
@@ -2080,10 +2062,16 @@ static void port_handle_events(const struct device *dev, uint32_t event_mask)
 
 	if (event_mask & BIT(UHC_DWC2_EVENT_PORT_OVERCURRENT)) {
 		LOG_ERR("Port overcurrent");
-		/* TODO: Handle overcurrent */
-		LOG_WRN("Handle overcurrent is not implemented");
+		/* TODO: restore port power once the overcurrent condition is gone */
 		/* Just power off the port via registers */
 		dwc2_set_power(base, false);
+
+		priv->port_status.wPortStatus = 0U;
+		if ((sys_read32((mem_addr_t)&base->hprt) & USB_DWC2_HPRT_PRTOVRCURRACT) != 0U) {
+			priv->port_status.wPortStatus = USB_HUB_PORT_STATUS_OVER_CURRENT;
+		}
+
+		priv->port_status.wPortChange |= USB_HUB_PORT_CHANGE_OVER_CURRENT;
 	}
 
 	if (event_mask & BIT(UHC_DWC2_EVENT_SUSPEND)) {
@@ -2358,12 +2346,6 @@ static int uhc_dwc2_unlock(const struct device *const dev)
 	return k_mutex_unlock(&data->mutex);
 }
 
-static int uhc_dwc2_sof_enable(const struct device *const dev)
-{
-	/* Controller automatically enables SOFs */
-	return 0;
-}
-
 static int uhc_dwc2_bus_suspend(const struct device *const dev)
 {
 	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
@@ -2379,26 +2361,284 @@ static int uhc_dwc2_bus_suspend(const struct device *const dev)
 	return 0;
 }
 
-static int uhc_dwc2_bus_reset(const struct device *const dev)
-{
-	int ret;
-
-	ret = port_reset(dev);
-	if (ret != 0) {
-		LOG_ERR("Unable to reset root port");
-		return ret;
-	}
-
-	uhc_submit_event(dev, UHC_EVT_RESETED, 0);
-
-	return 0;
-}
-
 static int uhc_dwc2_bus_resume(const struct device *const dev)
 {
 	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
 
 	k_event_post(&priv->events, BIT(UHC_DWC2_EVENT_RESUME));
+
+	return 0;
+}
+
+/*
+ * Hub Descriptor. The controller has a single physical port and no TT.
+ * D1:D0 Logical Power Switching Mode, Individual port power switching
+ * D4:D3 Over-current Protection Mode, Individual port Over-current Protection
+ */
+#define UHC_DWC2_HUB_CHARACTERISTICS (BIT(0) | BIT(3))
+
+struct uhc_dwc2_hub_desc {
+	struct usb_hub_descriptor hub;
+	uint8_t DeviceRemovable[DIV_ROUND_UP(1 + 1, 8)];
+	uint8_t PortPwrCtrlMask[DIV_ROUND_UP(1 + 1, 8)];
+} __packed;
+
+/* USB 2.0 11.23.2.1: PortPwrCtrlMask should have all bits set to 1B. */
+static const struct uhc_dwc2_hub_desc hub_desc = {
+	.hub = {
+		.bDescLength = sizeof(struct uhc_dwc2_hub_desc),
+		.bDescriptorType = USB_HUB_DESCRIPTOR_TYPE,
+		.bNbrPorts = 1,
+		.wHubCharacteristics = sys_cpu_to_le16(UHC_DWC2_HUB_CHARACTERISTICS),
+	},
+	.PortPwrCtrlMask = {0xFF},
+};
+
+static int hub_get_hub_desc(const struct device *dev,
+			    const struct usb_setup_packet *const setup,
+			    struct net_buf *const buf)
+{
+	size_t len;
+
+	ARG_UNUSED(dev);
+
+	len = MIN(sizeof(hub_desc), setup->wLength);
+	net_buf_add_mem(buf, &hub_desc, len);
+
+	return 0;
+}
+
+static int hub_get_hub_status(const struct device *dev,
+			      const struct usb_setup_packet *const setup,
+			      struct net_buf *const buf)
+{
+	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
+	size_t len;
+
+	len = MIN(sizeof(priv->hub_status), setup->wLength);
+	net_buf_add_mem(buf, &priv->hub_status, len);
+
+	return 0;
+}
+
+static int hub_get_port_status(const struct device *dev,
+			       const struct usb_setup_packet *const setup,
+			       struct net_buf *const buf)
+{
+	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
+	size_t len;
+
+	if (setup->wIndex != 1) {
+		return -EPIPE;
+	}
+
+	len = MIN(sizeof(priv->port_status), setup->wLength);
+	net_buf_add_mem(buf, &priv->port_status, len);
+
+	return 0;
+}
+
+static int hub_set_hub_feature(const struct device *dev,
+			       const struct usb_setup_packet *const setup)
+{
+	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
+
+	/* USB 2.0 Table 11-17: C_HUB_x selector value is its bit number in wHubChange. */
+	if (setup->wValue > USB_HCFS_C_HUB_OVER_CURRENT) {
+		return -EPIPE;
+	}
+
+	priv->hub_status.wHubChange |= BIT(setup->wValue);
+
+	return 0;
+}
+
+static int hub_clear_hub_feature(const struct device *dev,
+				 const struct usb_setup_packet *const setup)
+{
+	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
+
+	if (setup->wValue > USB_HCFS_C_HUB_OVER_CURRENT) {
+		return -EPIPE;
+	}
+
+	priv->hub_status.wHubChange &= ~BIT(setup->wValue);
+
+	return 0;
+}
+
+static int hub_port_reset(const struct device *dev)
+{
+	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
+	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
+	int ret;
+
+	if ((priv->port_status.wPortStatus & USB_HUB_PORT_STATUS_CONNECTION) == 0U) {
+		return 0;
+	}
+
+	priv->port_status.wPortStatus &= (USB_HUB_PORT_STATUS_POWER |
+					  USB_HUB_PORT_STATUS_CONNECTION);
+	priv->port_status.wPortStatus |= USB_HUB_PORT_STATUS_RESET;
+
+	ret = port_reset(dev);
+
+	priv->port_status.wPortStatus &= ~USB_HUB_PORT_STATUS_RESET;
+
+	/*
+	 * The port stays disabled if the reset failed. The host stack detects
+	 * the missing reset change and retries.
+	 */
+	if (ret != 0 || (priv->port_status.wPortStatus & USB_HUB_PORT_STATUS_CONNECTION) == 0U) {
+		return 0;
+	}
+
+	switch (usb_dwc2_get_hprt_prtspd(sys_read32((mem_addr_t)&base->hprt))) {
+	case USB_DWC2_HPRT_PRTSPD_HIGH:
+		priv->port_status.wPortStatus |= USB_HUB_PORT_STATUS_HIGH_SPEED;
+		break;
+	case USB_DWC2_HPRT_PRTSPD_LOW:
+		priv->port_status.wPortStatus |= USB_HUB_PORT_STATUS_LOW_SPEED;
+		break;
+	default:
+		break;
+	}
+
+	priv->port_status.wPortStatus |= USB_HUB_PORT_STATUS_ENABLE;
+	priv->port_status.wPortChange |= USB_HUB_PORT_CHANGE_RESET;
+
+	return 0;
+}
+
+static int hub_set_port_feature(const struct device *dev,
+				const struct usb_setup_packet *const setup)
+{
+	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
+	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
+
+	if (setup->wIndex != 1) {
+		return -EPIPE;
+	}
+
+	switch (setup->wValue) {
+	case USB_HCFS_PORT_POWER:
+		dwc2_set_power(base, true);
+		priv->port_status.wPortStatus |= USB_HUB_PORT_STATUS_POWER;
+		break;
+	case USB_HCFS_PORT_RESET:
+		return hub_port_reset(dev);
+	case USB_HCFS_PORT_SUSPEND:
+		if ((priv->port_status.wPortStatus & USB_HUB_PORT_STATUS_ENABLE) != 0U) {
+			k_event_post(&priv->events, BIT(UHC_DWC2_EVENT_SUSPEND));
+		}
+		break;
+	default:
+		return -EPIPE;
+	}
+
+	return 0;
+}
+
+static int hub_clear_port_feature(const struct device *dev,
+				  const struct usb_setup_packet *const setup)
+{
+	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
+	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
+	uint32_t hprt;
+	uint16_t c_bit;
+
+	if (setup->wIndex != 1) {
+		return -EPIPE;
+	}
+
+	switch (setup->wValue) {
+	case USB_HCFS_PORT_POWER:
+		dwc2_set_power(base, false);
+		priv->port_status.wPortStatus &= ~USB_HUB_PORT_STATUS_POWER;
+		break;
+	case USB_HCFS_PORT_ENABLE:
+		hprt = sys_read32((mem_addr_t)&base->hprt);
+		hprt &= ~USB_DWC2_HPRT_W1C_MSK;
+		hprt |= USB_DWC2_HPRT_PRTENA;
+		sys_write32(hprt, (mem_addr_t)&base->hprt);
+		priv->port_status.wPortStatus &= ~USB_HUB_PORT_STATUS_ENABLE;
+		break;
+	case USB_HCFS_PORT_SUSPEND:
+		/*
+		 * USB 2.0 11.24.2.13: if the port is not suspended, treat this
+		 * as a no-op. The status bit and C_PORT_SUSPEND are updated
+		 * once resume signaling completes, in port_resume().
+		 */
+		if ((priv->port_status.wPortStatus & USB_HUB_PORT_STATUS_SUSPEND) != 0U) {
+			k_event_post(&priv->events, BIT(UHC_DWC2_EVENT_RESUME));
+		}
+		break;
+	case USB_HCFS_C_PORT_CONNECTION:
+	case USB_HCFS_C_PORT_ENABLE:
+	case USB_HCFS_C_PORT_SUSPEND:
+	case USB_HCFS_C_PORT_OVER_CURRENT:
+	case USB_HCFS_C_PORT_RESET:
+		/* USB 2.0 Table 11-17: C_PORT_x selector value is 16 plus its bit number. */
+		c_bit = BIT(setup->wValue - USB_HCFS_C_PORT_CONNECTION);
+		priv->port_status.wPortChange &= ~c_bit;
+		break;
+	default:
+		return -EPIPE;
+	}
+
+	return 0;
+}
+
+static int uhc_dwc2_root_hub_control(const struct device *const dev,
+				     const struct usb_setup_packet *const setup,
+				     struct net_buf *const buf)
+{
+	switch (USB_HUB_CLASS_REQUEST(setup->bmRequestType, setup->bRequest)) {
+	case USB_HUB_GET_HUB_DESCRIPTOR:
+		return hub_get_hub_desc(dev, setup, buf);
+	case USB_HUB_GET_HUB_STATUS:
+		return hub_get_hub_status(dev, setup, buf);
+	case USB_HUB_GET_PORT_STATUS:
+		return hub_get_port_status(dev, setup, buf);
+	case USB_HUB_SET_HUB_FEATURE:
+		return hub_set_hub_feature(dev, setup);
+	case USB_HUB_SET_PORT_FEATURE:
+		return hub_set_port_feature(dev, setup);
+	case USB_HUB_CLEAR_HUB_FEATURE:
+		return hub_clear_hub_feature(dev, setup);
+	case USB_HUB_CLEAR_PORT_FEATURE:
+		return hub_clear_port_feature(dev, setup);
+	default:
+		/* The root port is not connected through a TT. */
+		return -EPIPE;
+	}
+}
+
+/*
+ * Hub and Port Status Change Bitmap, USB 2.0 11.12.4: bit 0 is the hub's
+ * own change, bit 1 is the single port's change.
+ */
+static int uhc_dwc2_root_hub_status(const struct device *const dev,
+				    struct net_buf_simple *const buf)
+{
+	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
+	uint8_t bitmap[DIV_ROUND_UP(1 + 1, 8)] = {0};
+	bool changed = false;
+
+	if (priv->hub_status.wHubChange != 0U) {
+		bitmap[0] |= BIT(0);
+		changed = true;
+	}
+
+	if (priv->port_status.wPortChange != 0U) {
+		bitmap[0] |= BIT(1);
+		changed = true;
+	}
+
+	if (changed) {
+		net_buf_simple_add_mem(buf, bitmap,
+				       MIN(sizeof(bitmap), net_buf_simple_tailroom(buf)));
+	}
 
 	return 0;
 }
@@ -2578,7 +2818,7 @@ static int uhc_dwc2_disable(const struct device *const dev)
 	int ret;
 	/* TODO: Check ongoing transfer? */
 
-	submit_dev_gone(dev);
+	port_status_disconnect(dev);
 
 	config->irq_disable_func(dev);
 
@@ -2618,13 +2858,13 @@ static DEVICE_API(uhc, uhc_dwc2_api) = {
 	.disable = uhc_dwc2_disable,
 	.shutdown = uhc_dwc2_shutdown,
 	/* Bus related */
-	.bus_reset = uhc_dwc2_bus_reset,
-	.sof_enable = uhc_dwc2_sof_enable,
 	.bus_suspend = uhc_dwc2_bus_suspend,
 	.bus_resume = uhc_dwc2_bus_resume,
 	/* EP related */
 	.ep_enqueue = uhc_dwc2_enqueue,
 	.ep_dequeue = uhc_dwc2_dequeue,
+	.root_hub_control = uhc_dwc2_root_hub_control,
+	.root_hub_status = uhc_dwc2_root_hub_status,
 };
 
 #define UHC_DWC2_DT_INST_REG_ADDR(n)						\

@@ -12,4 +12,6 @@
 
 int usbh_init_device_intl(struct usbh_context *const uhs_ctx);
 
+int usbh_root_hub_init(struct usbh_context *uhs_ctx);
+
 #endif /* ZEPHYR_INCLUDE_USBH_INTERNAL_H */

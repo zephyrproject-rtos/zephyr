@@ -12,11 +12,9 @@ zephyr_library_sources(
   usbh_device.c
   usbh_desc.c
   usbh_class.c
+  usbh_ch11.c
+  class/usbh_hub.c
 )
-
-if(CONFIG_USBH_SHELL OR CONFIG_USBH_HUB_CLASS)
-  zephyr_library_sources(usbh_ch11.c)
-endif()
 
 zephyr_library_sources_ifdef(
   CONFIG_USBH_SHELL
@@ -29,13 +27,13 @@ zephyr_library_sources_ifdef(
 )
 
 zephyr_library_sources_ifdef(
-  CONFIG_USBH_HUB_CLASS
-  class/usbh_hub.c
+  CONFIG_USBIP
+  usbip.c
 )
 
 zephyr_library_sources_ifdef(
-  CONFIG_USBIP
-  usbip.c
+  CONFIG_USBH_TESTUSB
+  class/usbh_testusb.c
 )
 
 zephyr_linker_sources(DATA_SECTIONS usbh_data.ld)

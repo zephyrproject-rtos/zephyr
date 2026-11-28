@@ -37,6 +37,9 @@ USBD_DEVICE_DEFINE(test_usbd,
 
 USBH_CONTROLLER_DEFINE(uhs_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_uhc0)));
 
+/* The root hub has address 1, the first device connected to it gets 2 */
+#define TEST_DEV_ADDR 2U
+
 static int test_cmp_string_desc(struct net_buf *const buf, const int idx)
 {
 	static struct usbd_desc_node *desc_nd;
@@ -83,7 +86,7 @@ ZTEST(device_next, test_get_desc_string)
 	struct net_buf *buf;
 	int err;
 
-	udev = usbh_device_get_any(&uhs_ctx);
+	udev = usbh_device_get(&uhs_ctx, TEST_DEV_ADDR);
 	zassert_not_null(udev, "No USB device available");
 
 	buf = usbh_xfer_buf_alloc(udev, UINT8_MAX);
@@ -111,6 +114,7 @@ ZTEST(device_next, test_get_desc_string)
 
 	k_mutex_unlock(&udev->mutex);
 	usbh_xfer_buf_free(udev, buf);
+	usb_device_unref(udev);
 }
 
 ZTEST(device_next, test_vendor_control_in)
@@ -128,7 +132,7 @@ ZTEST(device_next, test_vendor_control_in)
 		return;
 	}
 
-	udev = usbh_device_get_any(&uhs_ctx);
+	udev = usbh_device_get(&uhs_ctx, TEST_DEV_ADDR);
 	zassert_not_null(udev, "No USB device available");
 
 	buf = usbh_xfer_buf_alloc(udev, wLength);
@@ -169,6 +173,7 @@ ZTEST(device_next, test_vendor_control_in)
 
 	k_mutex_unlock(&udev->mutex);
 	usbh_xfer_buf_free(udev, buf);
+	usb_device_unref(udev);
 }
 
 ZTEST(device_next, test_vendor_control_out)
@@ -186,7 +191,7 @@ ZTEST(device_next, test_vendor_control_out)
 		return;
 	}
 
-	udev = usbh_device_get_any(&uhs_ctx);
+	udev = usbh_device_get(&uhs_ctx, TEST_DEV_ADDR);
 	zassert_not_null(udev, "No USB device available");
 
 	buf = usbh_xfer_buf_alloc(udev, wLength);
@@ -239,6 +244,7 @@ ZTEST(device_next, test_vendor_control_out)
 
 	k_mutex_unlock(&udev->mutex);
 	usbh_xfer_buf_free(udev, buf);
+	usb_device_unref(udev);
 }
 
 ZTEST(device_next, test_control_nodata)
@@ -255,7 +261,7 @@ ZTEST(device_next, test_control_nodata)
 		return;
 	}
 
-	udev = usbh_device_get_any(&uhs_ctx);
+	udev = usbh_device_get(&uhs_ctx, TEST_DEV_ADDR);
 	zassert_not_null(udev, "No USB device available");
 
 	err = k_mutex_lock(&udev->mutex, K_MSEC(200));
@@ -289,6 +295,7 @@ ZTEST(device_next, test_control_nodata)
 	}
 
 	k_mutex_unlock(&udev->mutex);
+	usb_device_unref(udev);
 }
 
 /* Get Configuration request test */
@@ -298,7 +305,7 @@ ZTEST(device_next, test_get_configuration)
 	uint8_t cfg = 0;
 	int err;
 
-	udev = usbh_device_get_any(&uhs_ctx);
+	udev = usbh_device_get(&uhs_ctx, TEST_DEV_ADDR);
 	zassert_not_null(udev, "No USB device available");
 
 	err = k_mutex_lock(&udev->mutex, K_MSEC(200));
@@ -325,6 +332,7 @@ ZTEST(device_next, test_get_configuration)
 	default:
 		break;
 	}
+	usb_device_unref(udev);
 }
 
 /* Set Interface request test */
@@ -333,7 +341,7 @@ ZTEST(device_next, test_set_interface)
 	struct usb_device *udev;
 	int err;
 
-	udev = usbh_device_get_any(&uhs_ctx);
+	udev = usbh_device_get(&uhs_ctx, TEST_DEV_ADDR);
 	zassert_not_null(udev, "No USB device available");
 
 	err = k_mutex_lock(&udev->mutex, K_MSEC(200));
@@ -355,6 +363,7 @@ ZTEST(device_next, test_set_interface)
 	default:
 		break;
 	}
+	usb_device_unref(udev);
 }
 
 static int test_get_interface(struct usb_device *const udev, const uint8_t iface,
@@ -423,10 +432,11 @@ ZTEST(device_next, test_set_configuration_again)
 	uint8_t cfg = 0;
 	int err;
 
-	udev = usbh_device_get_any(&uhs_ctx);
+	udev = usbh_device_get(&uhs_ctx, TEST_DEV_ADDR);
 	zassert_not_null(udev, "No USB device available");
 
 	if (udev->state != USB_STATE_CONFIGURED) {
+		usb_device_unref(udev);
 		ztest_test_skip();
 	}
 
@@ -475,6 +485,7 @@ ZTEST(device_next, test_set_configuration_again)
 	}
 
 	k_mutex_unlock(&udev->mutex);
+	usb_device_unref(udev);
 }
 
 static void *usb_test_enable(void)
@@ -487,14 +498,8 @@ static void *usb_test_enable(void)
 	err = usbh_enable(&uhs_ctx);
 	zassert_equal(err, 0, "Failed to enable USB host");
 
-	err = uhc_bus_reset(uhs_ctx.dev);
-	zassert_equal(err, 0, "Failed to signal bus reset");
-
 	err = uhc_bus_resume(uhs_ctx.dev);
 	zassert_equal(err, 0, "Failed to signal bus resume");
-
-	err = uhc_sof_enable(uhs_ctx.dev);
-	zassert_equal(err, 0, "Failed to enable SoF generator");
 
 	LOG_INF("Host controller enabled");
 
@@ -548,8 +553,11 @@ static void *usb_test_enable(void)
 
 	LOG_INF("Device support enabled");
 
-	/* Allow the host time to reset the device. */
-	k_msleep(200);
+	/*
+	 * Allow the host time to see the device on the root hub, which it polls,
+	 * and to reset it.
+	 */
+	k_msleep(CONFIG_USBH_HUB_ROOT_POLL_INTERVAL_MS + 200);
 
 	return NULL;
 }

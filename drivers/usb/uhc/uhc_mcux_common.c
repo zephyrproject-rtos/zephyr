@@ -59,7 +59,9 @@ int uhc_mcux_bus_control(const struct device *dev, usb_host_bus_control_t type)
 int uhc_mcux_enable(const struct device *dev)
 {
 	const struct uhc_mcux_config *config = dev->config;
+	struct uhc_mcux_data *priv = uhc_get_private(dev);
 
+	priv->port_status.wPortStatus |= USB_HUB_PORT_STATUS_POWER;
 	config->irq_enable_func(dev);
 
 	return 0;
@@ -86,19 +88,6 @@ int uhc_mcux_shutdown(const struct device *dev)
 	return 0;
 }
 
-/* Signal bus reset, 50ms SE0 signal */
-int uhc_mcux_bus_reset(const struct device *dev)
-{
-	return uhc_mcux_bus_control(dev, kUSB_HostBusReset);
-}
-
-/* Enable SOF generator */
-int uhc_mcux_sof_enable(const struct device *dev)
-{
-	/* MCUX doesn't need it. */
-	return 0;
-}
-
 /* Disable SOF generator and suspend bus */
 int uhc_mcux_bus_suspend(const struct device *dev)
 {
@@ -116,7 +105,7 @@ int uhc_mcux_dequeue(const struct device *dev, struct uhc_transfer *const xfer)
 	usb_host_pipe_t *mcux_ep;
 	usb_host_cancel_param_t cancel_param;
 
-	mcux_ep = uhc_mcux_init_hal_ep(dev, xfer);
+	mcux_ep = xfer->ep->priv;
 	if (mcux_ep == NULL) {
 		return -ENOMEM;
 	}
@@ -126,24 +115,265 @@ int uhc_mcux_dequeue(const struct device *dev, struct uhc_transfer *const xfer)
 	return uhc_mcux_control(dev, kUSB_HostCancelTransfer, &cancel_param);
 }
 
+/*
+ * Hub Descriptor. The HAL exposes a single port without power switching, TT or
+ * over-current reporting.
+ * D1:D0 Logical Power Switching Mode, Individual port power switching
+ * D4:D3 Over-current Protection Mode, No over-current protection
+ */
+#define UHC_MCUX_HUB_CHARACTERISTICS (BIT(0) | BIT(4))
+
+struct uhc_mcux_hub_desc {
+	struct usb_hub_descriptor hub;
+	uint8_t DeviceRemovable[DIV_ROUND_UP(1 + 1, 8)];
+	uint8_t PortPwrCtrlMask[DIV_ROUND_UP(1 + 1, 8)];
+} __packed;
+
+/* USB 2.0 11.23.2.1: PortPwrCtrlMask should have all bits set to 1B. */
+static const struct uhc_mcux_hub_desc hub_desc = {
+	.hub = {
+		.bDescLength = sizeof(struct uhc_mcux_hub_desc),
+		.bDescriptorType = USB_HUB_DESCRIPTOR_TYPE,
+		.bNbrPorts = 1,
+		.wHubCharacteristics = sys_cpu_to_le16(UHC_MCUX_HUB_CHARACTERISTICS),
+	},
+	.PortPwrCtrlMask = {0xFF},
+};
+
+static int hub_get_hub_desc(const struct device *dev,
+			    const struct usb_setup_packet *const setup,
+			    struct net_buf *const buf)
+{
+	size_t len;
+
+	ARG_UNUSED(dev);
+
+	len = MIN(sizeof(hub_desc), setup->wLength);
+	net_buf_add_mem(buf, &hub_desc, len);
+
+	return 0;
+}
+
+static int hub_get_hub_status(const struct device *dev,
+			      const struct usb_setup_packet *const setup,
+			      struct net_buf *const buf)
+{
+	struct uhc_mcux_data *priv = uhc_get_private(dev);
+	size_t len;
+
+	len = MIN(sizeof(priv->hub_status), setup->wLength);
+	net_buf_add_mem(buf, &priv->hub_status, len);
+
+	return 0;
+}
+
+static int hub_get_port_status(const struct device *dev,
+			       const struct usb_setup_packet *const setup,
+			       struct net_buf *const buf)
+{
+	struct uhc_mcux_data *priv = uhc_get_private(dev);
+	size_t len;
+
+	if (setup->wIndex != 1) {
+		return -EPIPE;
+	}
+
+	len = MIN(sizeof(priv->port_status), setup->wLength);
+	net_buf_add_mem(buf, &priv->port_status, len);
+
+	return 0;
+}
+
+static int hub_set_hub_feature(const struct device *dev,
+			       const struct usb_setup_packet *const setup)
+{
+	struct uhc_mcux_data *priv = uhc_get_private(dev);
+
+	/* USB 2.0 Table 11-17: C_HUB_x selector value is its bit number in wHubChange. */
+	if (setup->wValue > USB_HCFS_C_HUB_OVER_CURRENT) {
+		return -EPIPE;
+	}
+
+	priv->hub_status.wHubChange |= BIT(setup->wValue);
+
+	return 0;
+}
+
+static int hub_clear_hub_feature(const struct device *dev,
+				 const struct usb_setup_packet *const setup)
+{
+	struct uhc_mcux_data *priv = uhc_get_private(dev);
+
+	if (setup->wValue > USB_HCFS_C_HUB_OVER_CURRENT) {
+		return -EPIPE;
+	}
+
+	priv->hub_status.wHubChange &= ~BIT(setup->wValue);
+
+	return 0;
+}
+
+static int hub_port_reset(const struct device *dev)
+{
+	struct uhc_mcux_data *priv = uhc_get_private(dev);
+	int ret;
+
+	if ((priv->port_status.wPortStatus & USB_HUB_PORT_STATUS_CONNECTION) == 0U) {
+		return 0;
+	}
+
+	priv->port_status.wPortStatus &= (USB_HUB_PORT_STATUS_POWER |
+					  USB_HUB_PORT_STATUS_CONNECTION |
+					  USB_HUB_PORT_STATUS_LOW_SPEED |
+					  USB_HUB_PORT_STATUS_HIGH_SPEED);
+	priv->port_status.wPortStatus |= USB_HUB_PORT_STATUS_RESET;
+
+	ret = uhc_mcux_bus_control(dev, kUSB_HostBusReset);
+
+	priv->port_status.wPortStatus &= ~USB_HUB_PORT_STATUS_RESET;
+	if (ret != 0) {
+		return ret;
+	}
+
+	priv->port_status.wPortStatus |= USB_HUB_PORT_STATUS_ENABLE;
+	priv->port_status.wPortChange |= USB_HUB_PORT_CHANGE_RESET;
+
+	return 0;
+}
+
+static int hub_set_port_feature(const struct device *dev,
+				const struct usb_setup_packet *const setup)
+{
+	struct uhc_mcux_data *priv = uhc_get_private(dev);
+
+	if (setup->wIndex != 1) {
+		return -EPIPE;
+	}
+
+	switch (setup->wValue) {
+	case USB_HCFS_PORT_POWER:
+		/* The HAL has no VBUS switch. VBUS is always supplied. */
+		priv->port_status.wPortStatus |= USB_HUB_PORT_STATUS_POWER;
+		break;
+	case USB_HCFS_PORT_RESET:
+		return hub_port_reset(dev);
+	default:
+		return -EPIPE;
+	}
+
+	return 0;
+}
+
+static int hub_clear_port_feature(const struct device *dev,
+				  const struct usb_setup_packet *const setup)
+{
+	struct uhc_mcux_data *priv = uhc_get_private(dev);
+	uint16_t c_bit;
+
+	if (setup->wIndex != 1) {
+		return -EPIPE;
+	}
+
+	switch (setup->wValue) {
+	case USB_HCFS_PORT_POWER:
+		/* The HAL has no VBUS switch. VBUS stays supplied. */
+		priv->port_status.wPortStatus &= ~USB_HUB_PORT_STATUS_POWER;
+		break;
+	case USB_HCFS_PORT_ENABLE:
+		/* The HAL cannot disable the port. */
+		priv->port_status.wPortStatus &= ~USB_HUB_PORT_STATUS_ENABLE;
+		break;
+	case USB_HCFS_PORT_SUSPEND:
+		/* USB 2.0 11.24.2.13: the port is never suspended, treat this as a no-op. */
+		break;
+	case USB_HCFS_C_PORT_CONNECTION:
+	case USB_HCFS_C_PORT_ENABLE:
+	case USB_HCFS_C_PORT_SUSPEND:
+	case USB_HCFS_C_PORT_OVER_CURRENT:
+	case USB_HCFS_C_PORT_RESET:
+		/* USB 2.0 Table 11-17: C_PORT_x selector value is 16 plus its bit number. */
+		c_bit = BIT(setup->wValue - USB_HCFS_C_PORT_CONNECTION);
+		priv->port_status.wPortChange &= ~c_bit;
+		break;
+	default:
+		return -EPIPE;
+	}
+
+	return 0;
+}
+
+int uhc_mcux_root_hub_control(const struct device *dev,
+			      const struct usb_setup_packet *const setup,
+			      struct net_buf *const buf)
+{
+	switch (USB_HUB_CLASS_REQUEST(setup->bmRequestType, setup->bRequest)) {
+	case USB_HUB_GET_HUB_DESCRIPTOR:
+		return hub_get_hub_desc(dev, setup, buf);
+	case USB_HUB_GET_HUB_STATUS:
+		return hub_get_hub_status(dev, setup, buf);
+	case USB_HUB_GET_PORT_STATUS:
+		return hub_get_port_status(dev, setup, buf);
+	case USB_HUB_SET_HUB_FEATURE:
+		return hub_set_hub_feature(dev, setup);
+	case USB_HUB_SET_PORT_FEATURE:
+		return hub_set_port_feature(dev, setup);
+	case USB_HUB_CLEAR_HUB_FEATURE:
+		return hub_clear_hub_feature(dev, setup);
+	case USB_HUB_CLEAR_PORT_FEATURE:
+		return hub_clear_port_feature(dev, setup);
+	default:
+		/* The root port is not connected through a TT. */
+		return -EPIPE;
+	}
+}
+
+/*
+ * Hub and Port Status Change Bitmap, USB 2.0 11.12.4: bit 0 is the hub's
+ * own change, bit 1 is the single port's change.
+ */
+int uhc_mcux_root_hub_status(const struct device *dev, struct net_buf_simple *const buf)
+{
+	struct uhc_mcux_data *priv = uhc_get_private(dev);
+	uint8_t bitmap[DIV_ROUND_UP(1 + 1, 8)] = {0};
+	bool changed = false;
+
+	if (priv->hub_status.wHubChange != 0U) {
+		bitmap[0] |= BIT(0);
+		changed = true;
+	}
+
+	if (priv->port_status.wPortChange != 0U) {
+		bitmap[0] |= BIT(1);
+		changed = true;
+	}
+
+	if (changed) {
+		net_buf_simple_add_mem(buf, bitmap,
+				       MIN(sizeof(bitmap), net_buf_simple_tailroom(buf)));
+	}
+
+	return 0;
+}
+
 /* Controller driver calls this function when device attach. */
 usb_status_t USB_HostAttachDevice(usb_host_handle hostHandle, uint8_t speed, uint8_t hubNumber,
 				  uint8_t portNumber, uint8_t level,
 				  usb_device_handle *deviceHandle)
 {
-	enum uhc_event_type type;
-	struct uhc_mcux_data *priv;
+	struct uhc_mcux_data *priv = PRV_DATA_HANDLE(hostHandle);
+	uint16_t status = USB_HUB_PORT_STATUS_CONNECTION;
 
 	if (speed == USB_SPEED_HIGH) {
-		type = UHC_EVT_DEV_CONNECTED_HS;
-	} else if (speed == USB_SPEED_FULL) {
-		type = UHC_EVT_DEV_CONNECTED_FS;
-	} else {
-		type = UHC_EVT_DEV_CONNECTED_LS;
+		status |= USB_HUB_PORT_STATUS_HIGH_SPEED;
+	} else if (speed != USB_SPEED_FULL) {
+		status |= USB_HUB_PORT_STATUS_LOW_SPEED;
 	}
 
-	priv = (struct uhc_mcux_data *)(PRV_DATA_HANDLE(hostHandle));
-	uhc_submit_event(priv->dev, type, 0);
+	uhc_mcux_lock(priv->dev);
+	priv->port_status.wPortStatus &= USB_HUB_PORT_STATUS_POWER;
+	priv->port_status.wPortStatus |= status;
+	priv->port_status.wPortChange |= USB_HUB_PORT_CHANGE_CONNECTION;
+	uhc_mcux_unlock(priv->dev);
 
 	return kStatus_USB_Success;
 }
@@ -151,13 +381,26 @@ usb_status_t USB_HostAttachDevice(usb_host_handle hostHandle, uint8_t speed, uin
 /* Controller driver calls this function when device detaches. */
 usb_status_t USB_HostDetachDevice(usb_host_handle hostHandle, uint8_t hubNumber, uint8_t portNumber)
 {
-	struct uhc_mcux_data *priv;
+	struct uhc_mcux_data *priv = PRV_DATA_HANDLE(hostHandle);
 
-	priv = (struct uhc_mcux_data *)(PRV_DATA_HANDLE(hostHandle));
-	uhc_submit_event(priv->dev, UHC_EVT_DEV_REMOVED, 0);
+	uhc_mcux_lock(priv->dev);
+	priv->port_status.wPortStatus &= USB_HUB_PORT_STATUS_POWER;
+	priv->port_status.wPortChange |= USB_HUB_PORT_CHANGE_CONNECTION;
+	uhc_mcux_unlock(priv->dev);
+
 	uhc_mcux_bus_control(priv->dev, kUSB_HostBusEnableAttach);
 
 	return kStatus_USB_Success;
+}
+
+/* The HAL does not know about the root hub, a device on the root port has no parent hub. */
+static const struct usb_device *uhc_mcux_parent_hub(const struct usb_device *udev)
+{
+	if (udev->hub == NULL || udev->hub->hub == NULL) {
+		return NULL;
+	}
+
+	return udev->hub;
 }
 
 /* MCUX Controller driver calls this function to get the device information. */
@@ -178,7 +421,7 @@ usb_status_t USB_HostHelperGetPeripheralInformation(usb_device_handle deviceHand
 		break;
 
 	case kUSB_HostGetDeviceHubNumber:
-		if (udev->hub != NULL) {
+		if (uhc_mcux_parent_hub(udev) != NULL) {
 			*infoValue = udev->hub->addr;
 		} else {
 			*infoValue = 0;
@@ -186,11 +429,15 @@ usb_status_t USB_HostHelperGetPeripheralInformation(usb_device_handle deviceHand
 		break;
 
 	case kUSB_HostGetDevicePortNumber:
-		*infoValue = udev->hub_port;
+		if (uhc_mcux_parent_hub(udev) != NULL) {
+			*infoValue = udev->hub_port;
+		} else {
+			*infoValue = 0;
+		}
 		break;
 
 	case kUSB_HostGetDeviceHSHubNumber:
-		for (; udev->hub != NULL; udev = udev->hub) {
+		for (; uhc_mcux_parent_hub(udev) != NULL; udev = udev->hub) {
 			if (udev->hub->speed == USB_SPEED_SPEED_HS) {
 				*infoValue = udev->hub->addr;
 				return kStatus_USB_Success;
@@ -200,7 +447,7 @@ usb_status_t USB_HostHelperGetPeripheralInformation(usb_device_handle deviceHand
 		break;
 
 	case kUSB_HostGetDeviceHSHubPort:
-		for (; udev->hub != NULL; udev = udev->hub) {
+		for (; uhc_mcux_parent_hub(udev) != NULL; udev = udev->hub) {
 			if (udev->hub->speed == USB_SPEED_SPEED_HS) {
 				*infoValue = udev->hub_port;
 				return kStatus_USB_Success;
@@ -222,7 +469,7 @@ usb_status_t USB_HostHelperGetPeripheralInformation(usb_device_handle deviceHand
 	}
 
 	case kUSB_HostGetDeviceLevel:
-		*infoValue = udev->level;
+		*infoValue = udev->level - 1U;
 		break;
 
 	case kUSB_HostGetDeviceSpeed:
@@ -252,118 +499,76 @@ usb_status_t USB_HostHelperGetPeripheralInformation(usb_device_handle deviceHand
 	return kStatus_USB_Success;
 }
 
-static usb_host_pipe_handle uhc_mcux_check_hal_ep(const struct device *dev,
-						  struct uhc_transfer *const xfer)
+int uhc_mcux_ep_enable(const struct device *dev, struct usb_host_ep *const host_ep)
 {
-	struct uhc_mcux_data *priv = uhc_get_private(dev);
-	usb_host_pipe_t *mcux_ep = NULL;
-	uint8_t i;
-	usb_status_t status;
-
-	/* if already initialized */
-	for (i = 0; i < USB_HOST_CONFIG_MAX_PIPES; i++) {
-		uint8_t direction;
-
-		if (USB_EP_GET_IDX(xfer->ep) == 0) {
-			direction = 0;
-		} else {
-			direction = USB_EP_GET_DIR(xfer->ep) ? USB_IN : USB_OUT;
-		}
-
-		if (priv->mcux_eps[i] != NULL &&
-		    priv->mcux_eps[i]->endpointAddress == USB_EP_GET_IDX(xfer->ep) &&
-		    priv->mcux_eps[i]->direction == direction &&
-		    priv->mcux_eps[i]->deviceHandle == xfer->udev) {
-			mcux_ep = priv->mcux_eps[i];
-			break;
-		}
-	}
-
-	if (mcux_ep == NULL) {
-		return NULL;
-	}
-
-	/* If the ep's attributes have changed, close the ep and return NULL.
-	 * The ep will be re-initialized with new attributes.
-	 */
-	if (mcux_ep->pipeType != xfer->type ||
-	    mcux_ep->maxPacketSize != USB_MPS_EP_SIZE(xfer->mps) ||
-	    mcux_ep->numberPerUframe != USB_MPS_ADDITIONAL_TRANSACTIONS(xfer->mps) + 1 ||
-	    priv->mcux_eps_interval[i] != xfer->interval) {
-		status = priv->mcux_if->controllerClosePipe(priv->mcux_host.controllerHandle,
-							    mcux_ep);
-		if (status != kStatus_USB_Success) {
-			return NULL;
-		}
-
-		uhc_mcux_lock(dev);
-		priv->mcux_eps[i] = NULL;
-		priv->mcux_eps_interval[i] = 0;
-		uhc_mcux_unlock(dev);
-		mcux_ep = NULL;
-	}
-
-	return mcux_ep;
-}
-
-usb_host_pipe_t *uhc_mcux_init_hal_ep(const struct device *dev, struct uhc_transfer *const xfer)
-{
-	usb_status_t status;
-	usb_host_pipe_t *mcux_ep;
 	struct uhc_mcux_data *priv = uhc_get_private(dev);
 	usb_host_pipe_init_t pipe_init;
-	uint8_t i;
+	usb_host_pipe_t *mcux_ep;
+	usb_status_t status;
 
-	/* if already initialized */
-	mcux_ep = uhc_mcux_check_hal_ep(dev, xfer);
-	if (mcux_ep != NULL) {
-		return mcux_ep;
+	/*
+	 * Both directions of the control endpoint use one pipe. It is opened
+	 * for the OUT direction and attached to the IN direction below, so
+	 * there is nothing to do for the IN direction.
+	 */
+	if (host_ep->addr == USB_CONTROL_EP_IN) {
+		return 0;
 	}
 
 	/* USB_HostHelperGetPeripheralInformation uses this value as first parameter */
-	pipe_init.devInstance = xfer->udev;
+	pipe_init.devInstance = host_ep->udev;
 	pipe_init.nakCount = USB_HOST_CONFIG_MAX_NAK;
-	pipe_init.maxPacketSize = USB_MPS_EP_SIZE(xfer->mps);
-	pipe_init.endpointAddress = USB_EP_GET_IDX(xfer->ep);
-	pipe_init.direction = USB_EP_GET_IDX(xfer->ep) == 0 ? USB_OUT :
-			      USB_EP_GET_DIR(xfer->ep) ? USB_IN : USB_OUT;
-	/* Current Zephyr Host stack is experimental, the endpoint's interval,
-	 * 'number per uframe' and the endpoint type cannot be got yet.
-	 */
-	pipe_init.numberPerUframe = USB_MPS_ADDITIONAL_TRANSACTIONS(xfer->mps);
-	pipe_init.interval = xfer->interval;
-	pipe_init.pipeType = xfer->type;
+	pipe_init.maxPacketSize = USB_MPS_EP_SIZE(host_ep->mps);
+	pipe_init.endpointAddress = USB_EP_GET_IDX(host_ep->addr);
+	pipe_init.direction = USB_EP_GET_IDX(host_ep->addr) == 0 ? USB_OUT :
+			      USB_EP_DIR_IS_IN(host_ep->addr) ? USB_IN : USB_OUT;
+	pipe_init.numberPerUframe = USB_MPS_ADDITIONAL_TRANSACTIONS(host_ep->mps);
+	pipe_init.interval = host_ep->interval;
+	pipe_init.pipeType = uhc_ep_type(host_ep);
 
 	status = priv->mcux_if->controllerOpenPipe(priv->mcux_host.controllerHandle,
 						   (usb_host_pipe_handle *)&mcux_ep, &pipe_init);
-
 	if (status != kStatus_USB_Success) {
-		return NULL;
+		return -ENOMEM;
 	}
 
-	/* Initialize mcux hal endpoint pipe
-	 * TODO: Need one way to release the pipe.
-	 * Otherwise the priv->mcux_eps will be used up after
-	 * supporting hub and connecting/disconnecting multiple times.
-	 * For example: add endpoint/pipe init and de-init controller
-	 * interface to resolve the issue.
+	host_ep->priv = mcux_ep;
+
+	if (host_ep->addr == USB_CONTROL_EP_OUT) {
+		struct usb_host_ep *ep_in;
+
+		/* The IN direction uses the pipe opened for the OUT direction */
+		ep_in = uhc_get_udev_ep(host_ep->udev, USB_CONTROL_EP_IN);
+		ep_in->priv = mcux_ep;
+	}
+
+	return 0;
+}
+
+int uhc_mcux_ep_disable(const struct device *dev, struct usb_host_ep *const host_ep)
+{
+	struct uhc_mcux_data *priv = uhc_get_private(dev);
+	usb_status_t status;
+
+	/*
+	 * The pipe of the control endpoint belongs to the OUT direction, so
+	 * there is nothing to do for the IN direction.
 	 */
-	uhc_mcux_lock(dev);
-	for (i = 0; i < USB_HOST_CONFIG_MAX_PIPES; i++) {
-		if (priv->mcux_eps[i] == NULL) {
-			priv->mcux_eps[i] = mcux_ep;
-			priv->mcux_eps_interval[i] = xfer->interval;
-			break;
-		}
-	}
-	uhc_mcux_unlock(dev);
-
-	if (i >= USB_HOST_CONFIG_MAX_PIPES) {
-		priv->mcux_if->controllerClosePipe(priv->mcux_host.controllerHandle, mcux_ep);
-		mcux_ep = NULL;
+	if (host_ep->addr == USB_CONTROL_EP_IN) {
+		return 0;
 	}
 
-	return mcux_ep;
+	if (host_ep->priv == NULL) {
+		return 0;
+	}
+
+	status = priv->mcux_if->controllerClosePipe(priv->mcux_host.controllerHandle,
+						    host_ep->priv);
+	if (status != kStatus_USB_Success) {
+		return -EIO;
+	}
+
+	return 0;
 }
 
 int uhc_mcux_hal_init_transfer_common(const struct device *dev, usb_host_transfer_t *mcux_xfer,
@@ -380,7 +585,7 @@ int uhc_mcux_hal_init_transfer_common(const struct device *dev, usb_host_transfe
 	mcux_xfer->callbackParam = (void *)dev;
 	mcux_xfer->setupPacket = (usb_setup_struct_t *)&xfer->setup_pkt[0];
 	if (xfer->buf != NULL) {
-		if (USB_EP_DIR_IS_OUT(xfer->ep)) {
+		if (USB_EP_DIR_IS_OUT(xfer->ep->addr)) {
 			mcux_xfer->transferLength = xfer->buf->len;
 			mcux_xfer->transferBuffer = xfer->buf->data;
 		} else {
@@ -392,12 +597,12 @@ int uhc_mcux_hal_init_transfer_common(const struct device *dev, usb_host_transfe
 		mcux_xfer->transferLength = 0;
 	}
 
-	if (USB_EP_GET_IDX(xfer->ep) == 0) {
+	if (USB_EP_GET_IDX(xfer->ep->addr) == 0) {
 		mcux_xfer->direction = USB_REQTYPE_GET_DIR(mcux_xfer->setupPacket->bmRequestType)
 					       ? USB_IN
 					       : USB_OUT;
 	} else {
-		mcux_xfer->direction = USB_EP_DIR_IS_IN(xfer->ep) ? USB_IN : USB_OUT;
+		mcux_xfer->direction = USB_EP_DIR_IS_IN(xfer->ep->addr) ? USB_IN : USB_OUT;
 	}
 
 	return 0;

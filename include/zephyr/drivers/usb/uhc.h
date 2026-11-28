@@ -19,6 +19,7 @@
 #include <zephyr/usb/usb_ch9.h>
 #include <zephyr/sys/dlist.h>
 #include <zephyr/sys/ref.h>
+#include <zephyr/sys/byteorder.h>
 
 /**
  * @brief USB host controller (UHC) driver API
@@ -60,23 +61,49 @@ struct usb_host_interface {
 	struct usb_desc_header *dhp;
 	/** Pointer to the association interface descriptor, if any */
 	struct usb_association_descriptor *iad;
-	/** Alternate setting selected for this interface */
-	uint8_t alternate;
+	/** Alternate setting selected for this interface, negative if none */
+	int16_t alternate;
 };
 
+/**
+ * USB host endpoint
+ *
+ * Host side representation of an endpoint of a connected USB device. The
+ * attributes are taken from the endpoint descriptor of the device, or from the
+ * device descriptor for endpoint 0.
+ */
 struct usb_host_ep {
-	/** Pointer to the endpoint descriptor */
-	struct usb_ep_descriptor *desc;
+	/** Pointer to the USB device the endpoint belongs to */
+	struct usb_device *udev;
+	/** Driver private endpoint data */
+	void *priv;
+	/** Endpoint address (same as bEndpointAddress) */
+	uint8_t addr;
+	/** Endpoint attributes (same as bmAttributes) */
+	uint8_t attributes;
+	/** Maximum packet size (same as wMaxPacketSize) */
+	uint16_t mps;
+	/** Polling interval (same as bInterval) */
+	uint8_t interval;
+	/** Endpoint is enabled at the controller level */
+	bool enabled;
 };
 
 /**
  * Host representation of a USB device
+ *
+ * A device is reference counted. It stays valid while a reference to it is
+ * held, also after it was disconnected, which its state tells.
  */
 struct usb_device {
 	/** dlist node */
 	sys_dnode_t node;
 	/** An opaque pointer to the host context to which this device belongs */
 	void *ctx;
+	/** Reference count, see usb_device_ref() and usb_device_unref() */
+	struct sys_ref ref;
+	/** Releases the device once the last reference is dropped */
+	sys_ref_release_t release;
 	/** Device mutex */
 	struct k_mutex mutex;
 	/** USB device descriptor */
@@ -97,7 +124,10 @@ struct usb_device {
 	struct usb_host_ep ep_out[16];
 	/** Pointers to device IN endpoints */
 	struct usb_host_ep ep_in[16];
-	/** Pointer to the hub to which this device is connected */
+	/**
+	 * Pointer to the hub to which this device is connected. The device
+	 * holds a reference to it, so it is valid as long as the device is.
+	 */
 	struct usb_device *hub;
 	/** Device's hub Think Time */
 	uint16_t tt;
@@ -106,6 +136,72 @@ struct usb_device {
 	/** Device's level (root device = 1) */
 	uint8_t level;
 };
+
+/**
+ * @brief Take a reference to a USB device
+ *
+ * The caller must already hold a reference, for example the one of the
+ * connection or of a transfer. The device stays valid until the reference
+ * is dropped with usb_device_unref(), but it can be disconnected meanwhile.
+ *
+ * @param[in] udev Pointer to USB device
+ *
+ * @return @p udev
+ */
+static inline struct usb_device *usb_device_ref(struct usb_device *const udev)
+{
+	sys_ref_get(&udev->ref);
+
+	return udev;
+}
+
+/**
+ * @brief Drop a reference to a USB device
+ *
+ * The device is released when the last reference is dropped. It does not
+ * block and can be called from any context.
+ *
+ * @param[in] udev Pointer to USB device
+ */
+static inline void usb_device_unref(struct usb_device *const udev)
+{
+	(void)sys_ref_put(&udev->ref, udev->release);
+}
+
+/**
+ * @brief Check whether a USB device is connected
+ *
+ * @param[in] udev Pointer to USB device
+ *
+ * @return true if the device is connected, false once it was disconnected
+ */
+static inline bool usb_device_is_connected(const struct usb_device *const udev)
+{
+	return udev->state != USB_STATE_NOTCONNECTED;
+}
+
+/**
+ * @brief Get USB device endpoint by endpoint address.
+ *
+ * Endpoint 0 has an entry per direction, because the two directions of a
+ * control endpoint carry the stages of a transfer in opposite directions.
+ *
+ * @param[in] udev Pointer to USB device instance
+ * @param[in] ep   Endpoint address
+ *
+ * @return Pointer to the IN or OUT endpoint.
+ */
+static inline struct usb_host_ep *uhc_get_udev_ep(struct usb_device *const udev,
+						  const uint8_t ep)
+{
+	uint8_t idx = USB_EP_GET_IDX(ep) & 0xFU;
+
+	if (USB_EP_DIR_IS_IN(ep)) {
+		return &udev->ep_in[idx];
+	} else {
+		return &udev->ep_out[idx];
+	}
+}
 
 /**
  * @brief USB control transfer stage
@@ -136,12 +232,12 @@ struct uhc_transfer {
 	/** Transfer data buffer */
 	struct net_buf *buf;
 	/** Endpoint to which request is associated */
-	uint8_t ep;
-	/** Endpoint type */
-	uint8_t type;
-	/** Maximum packet size */
-	uint16_t mps;
-	/** Interval, used for periodic transfers only */
+	struct usb_host_ep *ep;
+	/**
+	 * Polling interval requested for this transfer, used for periodic
+	 * transfers only. Taken from the endpoint when the transfer is
+	 * allocated, a caller may request a different one.
+	 */
 	uint16_t interval;
 	/** Start frame, used for periodic transfers only */
 	uint16_t start_frame;
@@ -160,6 +256,10 @@ struct uhc_transfer {
 	void *cb;
 	/** Pointer to completion callback private data */
 	void *priv;
+	/** Higher layer anchor node */
+	sys_dnode_t anchor_node;
+	/** Higher-layer anchor owner */
+	void *anchor;
 	/** Transfer result, 0 on success, other values on error */
 	int err;
 };
@@ -168,22 +268,8 @@ struct uhc_transfer {
  * @brief USB host controller event types
  */
 enum uhc_event_type {
-	/** Low speed device connected */
-	UHC_EVT_DEV_CONNECTED_LS,
-	/** Full speed device connected */
-	UHC_EVT_DEV_CONNECTED_FS,
-	/** High speed device connected */
-	UHC_EVT_DEV_CONNECTED_HS,
-	/** Device (peripheral) removed */
-	UHC_EVT_DEV_REMOVED,
-	/** Bus reset operation finished */
-	UHC_EVT_RESETED,
-	/** Bus suspend operation finished */
-	UHC_EVT_SUSPENDED,
 	/** Bus resume operation finished */
 	UHC_EVT_RESUMED,
-	/** Remote wakeup signal */
-	UHC_EVT_RWUP,
 	/** Endpoint request result event */
 	UHC_EVT_EP_REQUEST,
 	/**
@@ -313,64 +399,25 @@ __subsystem struct uhc_driver_api {
 	int (*disable)(const struct device *dev);
 	int (*shutdown)(const struct device *dev);
 
-	int (*bus_reset)(const struct device *dev);
-	int (*sof_enable)(const struct device *dev);
 	int (*bus_suspend)(const struct device *dev);
 	int (*bus_resume)(const struct device *dev);
 
+	/* Optional, drivers without per-endpoint controller resources omit these */
+	int (*ep_enable)(const struct device *dev, struct usb_host_ep *const ep);
+	int (*ep_disable)(const struct device *dev, struct usb_host_ep *const ep);
 	int (*ep_enqueue)(const struct device *dev,
 			  struct uhc_transfer *const xfer);
 	int (*ep_dequeue)(const struct device *dev,
 			  struct uhc_transfer *const xfer);
+	int (*root_hub_control)(const struct device *dev,
+				const struct usb_setup_packet *const setup,
+				struct net_buf *const buf);
+	int (*root_hub_status)(const struct device *dev,
+			       struct net_buf_simple *const buf);
 };
 /**
  * @endcond
  */
-
-/**
- * @brief Reset USB bus
- *
- * Perform USB bus reset, controller may emit UHC_EVT_RESETED
- * at the end of reset signaling.
- *
- * @param[in] dev      Pointer to device struct of the driver instance
- *
- * @return 0 on success, all other values should be treated as error.
- * @retval -EBUSY if the controller is already performing a bus operation
- */
-static inline int uhc_bus_reset(const struct device *dev)
-{
-	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
-	int ret;
-
-	api->lock(dev);
-	ret = api->bus_reset(dev);
-	api->unlock(dev);
-
-	return ret;
-}
-
-/**
- * @brief Enable Start of Frame generator
- *
- * Enable SOF generator.
- *
- * @param[in] dev      Pointer to device struct of the driver instance
- *
- * @return 0 on success, all other values should be treated as error.
- * @retval -EALREADY if already enabled
- */
-static inline int uhc_sof_enable(const struct device *dev)
-{
-	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
-	int ret;
-
-	api->lock(dev);
-	ret = api->sof_enable(dev);
-	api->unlock(dev);
-
-	return ret;
-}
 
 /**
  * @brief Suspend USB bus
@@ -424,6 +471,10 @@ static inline int uhc_bus_resume(const struct device *dev)
  * Allocate a new transfer from common transfer pool.
  * Transfer has no buffer after allocation, but can be allocated
  * and added from different pools.
+ *
+ * The transfer holds a reference to @p udev until it is released, so
+ * the device is valid in the completion callback, also when it was
+ * disconnected meanwhile.
  *
  * @param[in] dev     Pointer to device struct of the driver instance
  * @param[in] ep      Endpoint address
@@ -531,6 +582,45 @@ struct net_buf *uhc_xfer_buf_alloc(const struct device *dev,
 void uhc_xfer_buf_free(const struct device *dev, struct net_buf *const buf);
 
 /**
+ * @brief Enable a device endpoint at the controller level
+ *
+ * Prepare the controller resources required to communicate with an endpoint of
+ * a USB device. The endpoint attributes must be assigned before this call.
+ * Drivers without per-endpoint controller resources treat this as a no-op.
+ *
+ * Each direction of an endpoint is enabled on its own. A driver whose
+ * controller shares one resource between both directions of the control
+ * endpoint claims it for the OUT direction, which is enabled first.
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ * @param[in] udev   Pointer to USB device
+ * @param[in] ep     Endpoint address
+ *
+ * @return 0 on success, all other values should be treated as error.
+ * @retval -EPERM controller is not initialized
+ * @retval -EALREADY endpoint is already enabled
+ */
+int uhc_ep_enable(const struct device *dev, struct usb_device *const udev, const uint8_t ep);
+
+/**
+ * @brief Disable a device endpoint at the controller level
+ *
+ * Release the controller resources claimed by uhc_ep_enable(). Each direction
+ * of an endpoint is disabled on its own, and the control endpoint is disabled
+ * in the reverse order of the enable, so that no direction accepts a transfer
+ * after a resource both share is released.
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ * @param[in] udev   Pointer to USB device
+ * @param[in] ep     Endpoint address
+ *
+ * @return 0 on success, all other values should be treated as error.
+ * @retval -EPERM controller is not initialized
+ * @retval -EALREADY endpoint is not enabled
+ */
+int uhc_ep_disable(const struct device *dev, struct usb_device *const udev, const uint8_t ep);
+
+/**
  * @brief Queue USB host controller transfer
  *
  * Add transfer to the queue. If the queue is empty, the transfer
@@ -556,6 +646,97 @@ int uhc_ep_enqueue(const struct device *dev, struct uhc_transfer *const xfer);
  * @retval -EPERM controller is not initialized
  */
 int uhc_ep_dequeue(const struct device *dev, struct uhc_transfer *const xfer);
+
+/**
+ * @brief USB host root hub control request
+ *
+ * Reference root_hub_control() implementation:
+ *
+ * @code{.c}
+ * switch (USB_HUB_CLASS_REQUEST(setup->bmRequestType, setup->bRequest)) {
+ * case USB_HUB_GET_HUB_DESCRIPTOR:
+ *         ...return the hub class descriptor (USB_HUB_DESCRIPTOR_TYPE only)...
+ *         break;
+ * case USB_HUB_GET_HUB_STATUS:
+ *         ...return hub status/change...
+ *         break;
+ * case USB_HUB_GET_PORT_STATUS:
+ *         ...return port status/change for wIndex...
+ *         break;
+ * case USB_HUB_SET_HUB_FEATURE:
+ *         ...set C_HUB_LOCAL_POWER/C_HUB_OVER_CURRENT change bit...
+ *         break;
+ * case USB_HUB_SET_PORT_FEATURE:
+ *         ...apply port feature (PORT_POWER/RESET/SUSPEND) for wIndex...
+ *         break;
+ * case USB_HUB_CLEAR_HUB_FEATURE:
+ *         ...clear C_HUB_LOCAL_POWER/C_HUB_OVER_CURRENT change bit...
+ *         break;
+ * case USB_HUB_CLEAR_PORT_FEATURE:
+ *         ...clear port feature or port change bit for wIndex...
+ *         break;
+ * case USB_HUB_CLEAR_TT_BUFFER:
+ * case USB_HUB_RESET_TT:
+ * case USB_HUB_GET_TT_STATE:
+ * case USB_HUB_STOP_TT:
+ *         ...handle or reject the TT requests, if the root hub has a TT...
+ *         break;
+ * default:
+ *         ...unsupported request...
+ *         ret = -EPIPE;
+ *         break;
+ * }
+ * @endcode
+ *
+ * @note The caller guarantees that setup is one of the hub class requests
+ *       listed above and that buf's tailroom is at least setup->wLength.
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ * @param[in] setup  Root hub control transfer setup packet
+ * @param[in] buf    Root hub control transfer data
+ *
+ * @return 0 on success, all other values should be treated as error.
+ * @retval -EPERM controller is not initialized
+ * @retval -ENOTSUP not supported by the controller driver
+ * @retval -EPIPE protocol stall
+ */
+int uhc_root_hub_control(const struct device *dev,
+			 const struct usb_setup_packet *const setup,
+			 struct net_buf *const buf);
+
+/**
+ * @brief USB host root hub status request
+ *
+ * Reference root_hub_status() implementation. Bit 0 is the hub's own
+ * change, bits 1..N are ports 1..N (USB 2.0 11.12.4).
+ *
+ * @code{.c}
+ * uint8_t bitmap[...] = {0};
+ * bool changed = false;
+ *
+ * for (each port) {
+ *         if (...port's change bits are set...) {
+ *                 ...set bit (port_index + 1) in bitmap...
+ *                 changed = true;
+ *         }
+ * }
+ *
+ * if (changed) {
+ *         net_buf_simple_add_mem(buf, bitmap, sizeof(bitmap));
+ * }
+ *
+ * return 0;
+ * @endcode
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ * @param[in] buf    Root hub status transfer data
+ *
+ * @return 0 on success, all other values should be treated as error.
+ * @retval -EPERM controller is not initialized
+ * @retval -ENOTSUP not supported by the controller driver
+ */
+int uhc_root_hub_status(const struct device *dev,
+			struct net_buf_simple *const buf);
 
 /**
  * @brief Initialize USB host controller

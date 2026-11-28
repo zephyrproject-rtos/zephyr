@@ -7,15 +7,17 @@
 #ifndef ZEPHYR_INCLUDE_UHC_MCUX_COMMON_H
 #define ZEPHYR_INCLUDE_UHC_MCUX_COMMON_H
 
+#include <zephyr/usb/class/usb_hub.h>
+
 struct uhc_mcux_data {
 	const struct device *dev;
 	const usb_host_controller_interface_t *mcux_if;
-	/* TODO: Maybe make it to link with udev->ep_in and udev->ep_out */
-	usb_host_pipe_t *mcux_eps[USB_HOST_CONFIG_MAX_PIPES];
-	uint16_t mcux_eps_interval[USB_HOST_CONFIG_MAX_PIPES];
 	usb_host_instance_t mcux_host;
 	struct k_thread drv_stack_data;
 	uint8_t controller_id; /* MCUX hal controller id, 0xFF is invalid value */
+	/* Root hub status and change bits, the HAL has no port status registers */
+	struct usb_hub_status hub_status;
+	struct usb_hub_port_status port_status;
 };
 
 struct uhc_mcux_config {
@@ -44,12 +46,6 @@ int uhc_mcux_disable(const struct device *dev);
 
 int uhc_mcux_shutdown(const struct device *dev);
 
-/* Signal bus reset, 50ms SE0 signal */
-int uhc_mcux_bus_reset(const struct device *dev);
-
-/* Enable SOF generator */
-int uhc_mcux_sof_enable(const struct device *dev);
-
 /* Disable SOF generator and suspend bus */
 int uhc_mcux_bus_suspend(const struct device *dev);
 
@@ -58,9 +54,17 @@ int uhc_mcux_bus_resume(const struct device *dev);
 
 int uhc_mcux_dequeue(const struct device *dev, struct uhc_transfer *const xfer);
 
-/* Initialize endpoint for MCUX HAL driver */
-usb_host_pipe_t *uhc_mcux_init_hal_ep(const struct device *dev,
-					  struct uhc_transfer *const xfer);
+int uhc_mcux_root_hub_control(const struct device *dev,
+			      const struct usb_setup_packet *const setup,
+			      struct net_buf *const buf);
+
+int uhc_mcux_root_hub_status(const struct device *dev, struct net_buf_simple *const buf);
+
+/* Open the MCUX HAL pipe of an endpoint */
+int uhc_mcux_ep_enable(const struct device *dev, struct usb_host_ep *const host_ep);
+
+/* Close the MCUX HAL pipe of an endpoint */
+int uhc_mcux_ep_disable(const struct device *dev, struct usb_host_ep *const host_ep);
 
 /* Initialize transfer for MCUX HAL driver */
 int uhc_mcux_hal_init_transfer_common(const struct device *dev, usb_host_transfer_t *mcux_xfer,
