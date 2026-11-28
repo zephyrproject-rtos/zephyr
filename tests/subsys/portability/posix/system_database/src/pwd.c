@@ -11,8 +11,18 @@
 
 ZTEST(pwd, test_pwd_stubs)
 {
+	struct passwd pwd;
+	struct passwd *result = &pwd;
+
 	zassert_equal(getpwnam_r(NULL, NULL, NULL, 42, NULL), ENOSYS);
 	zassert_equal(getpwuid_r(42, NULL, NULL, 42, NULL), ENOSYS);
+
+	zassert_equal(getpwnam_r(NULL, NULL, NULL, 42, &result), ENOSYS);
+	zassert_is_null(result);
+
+	result = &pwd;
+	zassert_equal(getpwuid_r(42, NULL, NULL, 42, &result), ENOSYS);
+	zassert_is_null(result);
 }
 
 ZTEST_SUITE(pwd, NULL, NULL, NULL, NULL, NULL);
