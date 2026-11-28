@@ -1,0 +1,34 @@
+# Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - interrupt
+  arch_allow:
+    - arm
+    - arm64
+  filter: CONFIG_GIC_V1 or CONFIG_GIC_V2
+tests:
+  drivers.interrupt_controller.gic_sgi:
+    extra_configs:
+      - CONFIG_SMP=n
+    platform_allow:
+      - qemu_cortex_a53/qemu_cortex_a53
+      - qemu_cortex_a9/xc7z007s
+      - qemu_cortex_r5/zynqmp_rpu
+    integration_platforms:
+      - qemu_cortex_a53/qemu_cortex_a53
+      - qemu_cortex_a9/xc7z007s
+      - qemu_cortex_r5/zynqmp_rpu
+  drivers.interrupt_controller.gic_sgi.smp:
+    extra_args: EXTRA_DTC_OVERLAY_FILE=boards/qemu_cortex_a53.overlay
+    extra_configs:
+      - CONFIG_SMP=y
+      - CONFIG_MP_MAX_NUM_CPUS=2
+      - CONFIG_SCHED_CPU_MASK=y
+      - CONFIG_QEMU_EXTRA_FLAGS="-machine gic-version=2"
+    platform_allow:
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+    integration_platforms:
+      - qemu_cortex_a53/qemu_cortex_a53/smp
