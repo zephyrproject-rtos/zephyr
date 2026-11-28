@@ -2854,7 +2854,9 @@ static struct tcp *tcp_conn_search(struct net_pkt *pkt, struct tcphdr *th)
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&tcp_conns, conn, tmp, next) {
 		found = tcp_endpoint_cmp(&conn->src, &dst_ep) &&
-			tcp_endpoint_cmp(&conn->dst, &src_ep);
+			tcp_endpoint_cmp(&conn->dst, &src_ep) &&
+			(!net_context_is_bound_to_iface(conn->context) ||
+			 net_context_get_iface(conn->context) == net_pkt_iface(pkt));
 		if (found) {
 			break;
 		}
@@ -2865,7 +2867,8 @@ static struct tcp *tcp_conn_search(struct net_pkt *pkt, struct tcphdr *th)
 	return found ? conn : NULL;
 }
 
-static struct tcp *tcp_conn_new(struct net_pkt *pkt, struct tcphdr *th);
+static struct tcp *tcp_conn_new(struct net_pkt *pkt, struct tcphdr *th,
+				struct net_context *listener);
 
 static enum net_verdict tcp_recv(struct net_conn *net_conn,
 				 struct net_pkt *pkt,
@@ -2902,7 +2905,7 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 			goto out;
 		}
 
-		conn = tcp_conn_new(pkt, th);
+		conn = tcp_conn_new(pkt, th, conn_old->context);
 		if (!conn) {
 			NET_ERR("Cannot allocate a new TCP connection");
 			goto in;
@@ -3074,7 +3077,8 @@ static uint32_t tcp_init_isn(struct net_sockaddr *saddr, struct net_sockaddr *da
 /* Create a new tcp connection, as a part of it, create and register
  * net_context
  */
-static struct tcp *tcp_conn_new(struct net_pkt *pkt, struct tcphdr *th)
+static struct tcp *tcp_conn_new(struct net_pkt *pkt, struct tcphdr *th,
+				struct net_context *listener)
 {
 	struct tcp *conn = NULL;
 	struct net_context *context = NULL;
@@ -3091,6 +3095,10 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt, struct tcphdr *th)
 
 	conn = context->tcp;
 	conn->iface = pkt->iface;
+	/* Apply the listener's device binding before registering the child connection. */
+	if (net_context_is_bound_to_iface(listener)) {
+		net_context_bind_iface(context, net_context_get_iface(listener));
+	}
 	tcp_derive_rto(conn);
 
 	net_context_set_family(conn->context, net_pkt_family(pkt));
