@@ -47,6 +47,13 @@
 			status = "okay";
 		};
 
+		rstctl: reset-controller@f0021000 {
+			compatible = "aesc,reset-controller";
+			reg = <0xf0021000 0x1000>;
+			#reset-cells = <1>;
+			status = "okay";
+		};
+
 		clkctrl: clock-controller@f0022000 {
 			compatible = "aesc,clock-controller";
 			reg = <0xf0022000 0x1000>;
