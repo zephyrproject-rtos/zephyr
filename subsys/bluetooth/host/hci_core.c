@@ -1260,6 +1260,21 @@ static void hci_disconn_complete(struct net_buf *buf)
 		return;
 	}
 
+#if defined(CONFIG_BT_CLASSIC)
+	if (bt_conn_is_br(conn) && conn->br.link_key != NULL) {
+		struct bt_keys_link_key *link_key = conn->br.link_key;
+
+		link_key->enc_key_size = 0;
+
+		/* Clearing settings can block and another path can drop the reference. */
+		if (atomic_test_and_clear_bit(conn->flags, BT_CONN_BR_NOBOND)) {
+			bt_keys_link_key_clear(link_key);
+		}
+
+		conn->br.link_key = NULL;
+	}
+#endif
+
 	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 
 	if (!bt_conn_is_le(conn)) {
@@ -1267,21 +1282,6 @@ static void hci_disconn_complete(struct net_buf *buf)
 		if (bt_conn_is_sco(conn)) {
 			bt_sco_cleanup(bt_conn_take(&conn));
 			return;
-		}
-		/*
-		 * If only for one connection session bond was set, clear keys
-		 * database row for this connection.
-		 */
-		if (bt_conn_is_br(conn) && conn->br.link_key != NULL) {
-			/*
-			 * If the connection link is paired but not bond, remove
-			 * the link key upon disconnection.
-			 */
-			if (atomic_test_and_clear_bit(conn->flags, BT_CONN_BR_NOBOND)) {
-				bt_keys_link_key_clear(conn->br.link_key);
-			}
-
-			conn->br.link_key->enc_key_size = 0;
 		}
 #endif
 		bt_conn_unref(conn);
