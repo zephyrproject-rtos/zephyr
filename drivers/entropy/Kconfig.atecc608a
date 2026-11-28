@@ -1,0 +1,25 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_ATECC608A
+	bool "Microchip ATECC608A TRNG entropy driver"
+	default y
+	depends on DT_HAS_MICROCHIP_ATECC608A_TRNG_ENABLED
+	select MFD
+	select ENTROPY_HAS_DRIVER
+	help
+	  Enable the ATECC608A on-chip Random command as a Zephyr entropy
+	  source. The parent microchip,atecc608a node must be present. The
+	  configuration zone must be locked; until then Random returns a
+	  fixed test pattern (0xFF 0xFF 0x00 0x00 repeating).
+
+if ENTROPY_ATECC608A
+
+config ENTROPY_ATECC608A_INIT_PRIORITY
+	int "ATECC608A entropy driver init priority"
+	default 90
+	help
+	  Initialization priority. Must be after CONFIG_MFD_INIT_PRIORITY so
+	  the parent I2C MFD device is ready.
+
+endif # ENTROPY_ATECC608A
