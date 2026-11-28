@@ -1511,13 +1511,27 @@ static void udc_nrf_thread(void *p1, void *p2, void *p3)
 	}
 }
 
+/* Report VBUS from the regulator's level. DETECTED and REMOVED latched together are
+ * dispatched in a fixed order, so taking them at face value can end on "removed".
+ */
+static void udc_nrf_vbus_sync(void)
+{
+	bool now = nrfx_power_usbstatus_get() != NRFX_POWER_USB_STATE_DISCONNECTED;
+
+	if (now == vbus_present) {
+		return;
+	}
+
+	vbus_present = now;
+	udc_submit_event(udc_nrf_dev, now ? UDC_EVT_VBUS_READY : UDC_EVT_VBUS_REMOVED, 0);
+}
+
 static void udc_nrf_power_handler(nrfx_power_usb_evt_t pwr_evt)
 {
 	switch (pwr_evt) {
 	case NRFX_POWER_USB_EVT_DETECTED:
 		LOG_DBG("POWER event detected");
-		udc_submit_event(udc_nrf_dev, UDC_EVT_VBUS_READY, 0);
-		vbus_present = true;
+		udc_nrf_vbus_sync();
 		break;
 	case NRFX_POWER_USB_EVT_READY:
 		LOG_DBG("POWER event ready");
@@ -1525,8 +1539,7 @@ static void udc_nrf_power_handler(nrfx_power_usb_evt_t pwr_evt)
 		break;
 	case NRFX_POWER_USB_EVT_REMOVED:
 		LOG_DBG("POWER event removed");
-		udc_submit_event(udc_nrf_dev, UDC_EVT_VBUS_REMOVED, 0);
-		vbus_present = false;
+		udc_nrf_vbus_sync();
 		break;
 	default:
 		LOG_ERR("Unknown power event %d", pwr_evt);
@@ -1748,14 +1761,12 @@ static int udc_nrf_disable(const struct device *dev)
 static int udc_nrf_init(const struct device *dev)
 {
 	const struct udc_nrf_config *cfg = dev->config;
+	unsigned int key;
 
 #if defined(CONFIG_CLOCK_CONTROL_NRF)
 	hfxo_mgr = z_nrf_clock_control_get_onoff(cfg->clock);
 #endif
-
-	if (vbus_present) {
-		udc_submit_event(udc_nrf_dev, UDC_EVT_VBUS_READY, 0);
-	}
+	vbus_present = false;
 
 #ifdef CONFIG_HAS_HW_NRF_USBREG
 	/* Use CLOCK/POWER priority for compatibility with other series where
@@ -1779,6 +1790,12 @@ static int udc_nrf_init(const struct device *dev)
 	nrfx_power_usbevt_init(&cfg->evt);
 
 	nrfx_power_usbevt_enable();
+
+	/* A re-init, or VBUS already present with no edge latched, raises no event. */
+	key = irq_lock();
+	udc_nrf_vbus_sync();
+	irq_unlock(key);
+
 	LOG_INF("Initialized");
 
 	return 0;
