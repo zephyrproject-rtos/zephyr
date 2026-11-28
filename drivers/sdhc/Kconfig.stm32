@@ -12,7 +12,6 @@ config SDHC_STM32_SDMMC
 	depends on !SOC_SERIES_STM32L4X || SOC_LINE_STM32L4PLUS
 	# Legacy SDMMC and SDHC STM32 drivers share the same DT binding.
 	# Keep them mutually exclusive so only one is built.
-	depends on !SDMMC_STM32
 	select USE_STM32_LL_SDMMC
 	select SDHC_SUPPORTS_NATIVE_MODE
 	select PINCTRL
