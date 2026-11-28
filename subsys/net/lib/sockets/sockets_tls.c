@@ -143,6 +143,9 @@ struct tls_session_cache {
 	/** Peer address. */
 	struct net_sockaddr_storage peer_addr;
 
+	/** Peer hostname (SNI). */
+	char *hostname;
+
 	/** Session buffer. */
 	uint8_t *session;
 
@@ -430,6 +433,26 @@ static int tls_session_cache_settings_set(const char *key, size_t len, settings_
 		client_cache[idx].session = buf;
 		client_cache[idx].session_len = len;
 		NET_DBG("TLS session %ld restored from settings", idx);
+	} else if (strcmp(next, "host") == 0) {
+		char *buf;
+
+		if (len == 0 || len > MBEDTLS_SSL_MAX_HOST_NAME_LEN + 1) {
+			rc = -EINVAL;
+			goto out;
+		}
+		buf = mbedtls_calloc(1, len);
+		if (buf == NULL) {
+			rc = -ENOMEM;
+			goto out;
+		}
+		rc = read_cb(cb_arg, buf, len);
+		if (rc < 0) {
+			mbedtls_free(buf);
+			goto out;
+		}
+		buf[len - 1] = '\0';
+		mbedtls_free(client_cache[idx].hostname);
+		client_cache[idx].hostname = buf;
 	} else {
 		rc = -ENOENT;
 		goto out;
@@ -455,11 +478,18 @@ static void tls_session_cache_settings_save(int idx)
 		return;
 	}
 
+	snprintk(key, sizeof(key), TLS_SETTINGS_PREFIX "/%d/host", idx);
+	settings_delete(key);
+
 	snprintk(key, sizeof(key), TLS_SETTINGS_PREFIX "/%d/addr", idx);
 	settings_save_one(key, &client_cache[idx].peer_addr, sizeof(client_cache[idx].peer_addr));
 
 	snprintk(key, sizeof(key), TLS_SETTINGS_PREFIX "/%d/data", idx);
 	settings_save_one(key, client_cache[idx].session, client_cache[idx].session_len);
+
+	snprintk(key, sizeof(key), TLS_SETTINGS_PREFIX "/%d/host", idx);
+	settings_save_one(key, client_cache[idx].hostname,
+			  strlen(client_cache[idx].hostname) + 1);
 
 	NET_DBG("TLS session %d saved to settings", idx);
 }
@@ -489,6 +519,8 @@ static void tls_session_cache_settings_clear(void)
 		settings_delete(key);
 		snprintk(key, sizeof(key), TLS_SETTINGS_PREFIX "/%d/data", i);
 		settings_delete(key);
+		snprintk(key, sizeof(key), TLS_SETTINGS_PREFIX "/%d/host", i);
+		settings_delete(key);
 	}
 }
 
@@ -512,6 +544,7 @@ static void tls_session_cache_reset(void)
 		if (client_cache[i].session != NULL) {
 			mbedtls_free(client_cache[i].session);
 		}
+		mbedtls_free(client_cache[i].hostname);
 	}
 
 	(void)memset(client_cache, 0, sizeof(client_cache));
@@ -1010,8 +1043,13 @@ static bool peer_addr_cmp(const struct net_sockaddr *addr,
 	return false;
 }
 
+static bool hostname_eq(const char *cached, const char *hostname)
+{
+	return cached != NULL && strcmp(cached, hostname) == 0;
+}
+
 static int tls_session_save(const struct net_sockaddr *peer_addr,
-			    mbedtls_ssl_session *session)
+			    const char *hostname, mbedtls_ssl_session *session)
 {
 	struct tls_session_cache *entry = NULL;
 	size_t session_len;
@@ -1026,7 +1064,8 @@ static int tls_session_save(const struct net_sockaddr *peer_addr,
 				entry = &client_cache[i];
 			}
 		} else {
-			if (peer_addr_cmp(net_sad(&client_cache[i].peer_addr), peer_addr)) {
+			if (peer_addr_cmp(net_sad(&client_cache[i].peer_addr), peer_addr) &&
+			    hostname_eq(client_cache[i].hostname, hostname)) {
 				/* Reuse old entry for given address. */
 				entry = &client_cache[i];
 				break;
@@ -1047,6 +1086,8 @@ static int tls_session_save(const struct net_sockaddr *peer_addr,
 		mbedtls_free(entry->session);
 		entry->session = NULL;
 	}
+	mbedtls_free(entry->hostname);
+	entry->hostname = NULL;
 
 	(void)mbedtls_ssl_session_save(session, NULL, 0, &session_len);
 
@@ -1071,6 +1112,15 @@ static int tls_session_save(const struct net_sockaddr *peer_addr,
 	entry->timestamp = k_uptime_get();
 	memcpy(&entry->peer_addr, peer_addr, sizeof(*peer_addr));
 
+	entry->hostname = mbedtls_calloc(1, strlen(hostname) + 1);
+	if (entry->hostname == NULL) {
+		mbedtls_free(entry->session);
+		entry->session = NULL;
+		ret = -ENOMEM;
+		goto out;
+	}
+	memcpy(entry->hostname, hostname, strlen(hostname) + 1);
+
 #if defined(CONFIG_NET_SOCKETS_TLS_SESSION_CACHE_PERSISTENT)
 	tls_session_cache_settings_save(entry - client_cache);
 #endif
@@ -1084,7 +1134,7 @@ out:
 }
 
 static int tls_session_get(const struct net_sockaddr *peer_addr,
-			   mbedtls_ssl_session *session)
+			   const char *hostname, mbedtls_ssl_session *session)
 {
 	struct tls_session_cache *entry = NULL;
 	int ret = 0;
@@ -1093,7 +1143,8 @@ static int tls_session_get(const struct net_sockaddr *peer_addr,
 
 	for (int i = 0; i < ARRAY_SIZE(client_cache); i++) {
 		if (client_cache[i].session != NULL &&
-		    peer_addr_cmp(net_sad(&client_cache[i].peer_addr), peer_addr)) {
+		    peer_addr_cmp(net_sad(&client_cache[i].peer_addr), peer_addr) &&
+		    hostname_eq(client_cache[i].hostname, hostname)) {
 			entry = &client_cache[i];
 			break;
 		}
@@ -1110,6 +1161,8 @@ static int tls_session_get(const struct net_sockaddr *peer_addr,
 		/* Discard corrupted session data. */
 		mbedtls_free(entry->session);
 		entry->session = NULL;
+		mbedtls_free(entry->hostname);
+		entry->hostname = NULL;
 		NET_ERR("Failed to load TLS session %d", ret);
 		ret = -EIO;
 		goto out;
@@ -1121,6 +1174,19 @@ out:
 	k_mutex_unlock(&session_cache_lock);
 
 	return ret;
+}
+
+static const char *tls_session_hostname(struct tls_context *context)
+{
+#if defined(CONFIG_MBEDTLS_X509_CRT_PARSE_C)
+	const char *hostname = mbedtls_ssl_get_hostname(&context->active_session->ssl);
+
+	return (hostname != NULL) ? hostname : "";
+#else
+	ARG_UNUSED(context);
+
+	return "";
+#endif
 }
 
 static void tls_session_store(struct tls_context *context,
@@ -1152,7 +1218,8 @@ static void tls_session_store(struct tls_context *context,
 		goto exit;
 	}
 
-	ret = tls_session_save(net_sad(&peer_addr), &session);
+	ret = tls_session_save(net_sad(&peer_addr), tls_session_hostname(context),
+			       &session);
 	if (ret < 0) {
 		NET_ERR("Failed to save session for %p", context);
 	}
@@ -1196,7 +1263,8 @@ static void tls_session_restore(struct tls_context *context,
 	memcpy(&peer_addr, addr, addrlen);
 	mbedtls_ssl_session_init(&session);
 
-	ret = tls_session_get(net_sad(&peer_addr), &session);
+	ret = tls_session_get(net_sad(&peer_addr), tls_session_hostname(context),
+			      &session);
 	if (ret < 0) {
 		NET_DBG("Session not found for %p", context);
 		goto exit;
@@ -5895,7 +5963,7 @@ int ztls_get_cached_session(int fd, mbedtls_ssl_session *session)
 		return -errno;
 	}
 
-	return tls_session_get(net_sad(&peer_addr), session);
+	return tls_session_get(net_sad(&peer_addr), tls_session_hostname(ctx), session);
 }
 #endif /* CONFIG_NET_SOCKETS_TEST_SESSION_CACHE */
 
