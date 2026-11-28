@@ -11,7 +11,6 @@ DT_TURBO_MODE ?= 0
 HW_FEATURES_TURBO_MODE ?= 0
 HW_FEATURES_VENDOR_FILTER ?=
 NO_EXTERNAL_DEPS ?= 0
-DOXYGEN_FORCE_SINGLE_THREAD ?= 0
 SKIP_DOXYGEN ?= 0
 SKIP_KCONFIG ?= 0
 SKIP_EXTERNAL_CONTENT ?= 0
@@ -49,11 +48,7 @@ html-live-minimal:
 	${MAKE} html-live-fast \
 		SKIP_DOXYGEN=1 SKIP_KCONFIG=1 SKIP_EXTERNAL_CONTENT=1
 
-doxygen-coverage doxygen-coverage-json:
-	${MAKE} configure DOXYGEN_FORCE_SINGLE_THREAD=1
-	cmake --build ${BUILDDIR} --target $@
-
-html html-live latex pdf linkcheck doxygen doxygen-xml: configure
+html html-live latex pdf linkcheck doxygen doxygen-xml doxygen-coverage doxygen-coverage-json: configure
 	cmake --build ${BUILDDIR} --target $@
 
 configure:
@@ -68,8 +63,7 @@ configure:
 		-DDT_TURBO_MODE=${DT_TURBO_MODE} \
 		-DHW_FEATURES_TURBO_MODE=${HW_FEATURES_TURBO_MODE} \
 		-DHW_FEATURES_VENDOR_FILTER=${HW_FEATURES_VENDOR_FILTER} \
-		-DNO_EXTERNAL_DEPS=${NO_EXTERNAL_DEPS} \
-		-DDOXYGEN_FORCE_SINGLE_THREAD=${DOXYGEN_FORCE_SINGLE_THREAD}
+		-DNO_EXTERNAL_DEPS=${NO_EXTERNAL_DEPS}
 
 clean:
 	cmake --build ${BUILDDIR} --target clean

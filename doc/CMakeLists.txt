@@ -21,7 +21,6 @@ set(HW_FEATURES_VENDOR_FILTER "" CACHE STRING "Vendor filter for HW features")
 set(NO_EXTERNAL_DEPS OFF CACHE BOOL "Enable serving external CSS/JS libraries locally instead of fetching from the Internet.")
 set(DOC_TAG "development" CACHE STRING "Documentation tag")
 set(DTS_ROOTS "${ZEPHYR_BASE}" CACHE STRING "DT bindings root folders")
-set(DOXYGEN_FORCE_SINGLE_THREAD OFF CACHE BOOL "Enable Doxygen single thread mode")
 
 separate_arguments(SPHINXOPTS)
 separate_arguments(SPHINXOPTS_EXTRA)
@@ -62,10 +61,6 @@ if(DEFINED ENV{ZEPHYR_DOXYGEN_OVERLAY})
   else()
     message(FATAL_ERROR "Zephyr Doxygen overlay $ENV{ZEPHYR_DOXYGEN_OVERLAY} does not exist!")
   endif()
-endif()
-
-if(DOXYGEN_FORCE_SINGLE_THREAD)
-  list(APPEND DOXYGEN_CUSTOM_LINES "NUM_PROC_THREADS = 1")
 endif()
 
 list(JOIN DOXYGEN_CUSTOM_LINES "\n" INCLUDE_CUSTOM_FILE)
