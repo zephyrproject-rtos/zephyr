@@ -26,6 +26,7 @@
 
 #define FLASH_SIMULATOR_ERASE_VALUE \
 		DT_PROP(DT_PARENT(SOC_NV_FLASH_NODE), erase_value)
+#define FLASH_SIMULATOR_NO_EXPLICIT_ERASE DT_PROP(DT_PARENT(SOC_NV_FLASH_NODE), no_explicit_erase)
 
 /* Offset between pages */
 #define TEST_SIM_FLASH_SIZE FLASH_SIMULATOR_FLASH_SIZE
@@ -471,7 +472,7 @@ ZTEST(flash_sim_api, test_erase_capability)
 
 	erase_cap = flash_params_get_erase_cap(fp);
 
-#if defined(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE)
+#if defined(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE) && !FLASH_SIMULATOR_NO_EXPLICIT_ERASE
 	/* Erase-type (classic Flash) device: must report explicit erase required */
 	zassert_false(fp->caps.no_explicit_erase,
 		      "Device is configured as explicit-erase but caps.no_explicit_erase=true");
@@ -482,8 +483,9 @@ ZTEST(flash_sim_api, test_erase_capability)
 	/* RAM-like device: must report no explicit erase required */
 	zassert_true(fp->caps.no_explicit_erase,
 		     "Device is configured as RAM-like but caps.no_explicit_erase=false");
-	zassert_equal(0, erase_cap,
-		      "Expected erase capability 0 for RAM-like device, got 0x%x", erase_cap);
+	zassert_equal(IS_ENABLED(CONFIG_FLASH_HAS_NO_EXPLICIT_ERASE) ? 0 : FLASH_ERASE_C_EXPLICIT,
+		      erase_cap, "Expected erase capability 0 for RAM-like device, got 0x%x",
+		      erase_cap);
 #endif
 }
 
@@ -623,6 +625,32 @@ ZTEST(flash_sim_api, test_flash_flatten)
 }
 
 #include <zephyr/drivers/flash/flash_simulator.h>
+
+ZTEST(flash_sim_api, test_instance_no_explicit_erase)
+{
+#if defined(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE) && FLASH_SIMULATOR_NO_EXPLICIT_ERASE
+	const uint32_t first = 0x55555555U;
+	const uint32_t second = 0xaaaaaaaaU;
+	const struct flash_simulator_params *params;
+	uint32_t actual;
+
+	zassert_ok(flash_erase(flash_dev, FLASH_SIMULATOR_BASE_OFFSET, FLASH_SIMULATOR_ERASE_UNIT));
+	zassert_ok(flash_write(flash_dev, FLASH_SIMULATOR_BASE_OFFSET, &first, sizeof(first)));
+	zassert_ok(flash_read(flash_dev, FLASH_SIMULATOR_BASE_OFFSET, &actual, sizeof(actual)));
+	zassert_equal(actual, first, "Initial write must match");
+
+	/* Overwrite in both bit directions without an intervening erase */
+	zassert_ok(flash_write(flash_dev, FLASH_SIMULATOR_BASE_OFFSET, &second, sizeof(second)));
+	zassert_ok(flash_read(flash_dev, FLASH_SIMULATOR_BASE_OFFSET, &actual, sizeof(actual)));
+	zassert_equal(actual, second, "Overwrite must match");
+
+	params = flash_simulator_get_params(flash_dev);
+	zassert_not_null(params);
+	zassert_false(params->explicit_erase, "Simulator must report no explicit erase");
+#else
+	ztest_test_skip();
+#endif
+}
 
 ZTEST(flash_sim_api, test_get_mock)
 {
