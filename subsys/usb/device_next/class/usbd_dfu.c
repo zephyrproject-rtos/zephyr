@@ -208,6 +208,21 @@ static inline bool usbd_dfu_image_next(struct usbd_class_data *const c_data,
 	return true;
 }
 
+static enum usb_dfu_status
+usbd_dfu_image_status(struct usbd_class_data *const c_data)
+{
+	struct usbd_dfu_data *data = usbd_class_get_private(c_data);
+	struct usbd_dfu_image *const image = data->image;
+	enum usb_dfu_status status;
+
+	if (image->status_cb == NULL) {
+		return ERR_OK;
+	}
+
+	status = image->status_cb(image->priv);
+	return (unsigned int)status <= ERR_STALLEDPKT ? status : ERR_UNKNOWN;
+}
+
 static ALWAYS_INLINE void dfu_error(struct usbd_class_data *const c_data,
 				    const enum usb_dfu_state next,
 				    const enum usb_dfu_status status)
@@ -313,11 +328,17 @@ static int dfu_dnload_sync_next(struct usbd_class_data *const c_data,
 				const struct usb_setup_packet *const setup)
 {
 	struct usbd_dfu_data *data = usbd_class_get_private(c_data);
+	enum usb_dfu_status status;
+	bool ready;
 
 	switch (setup->bRequest) {
 	case USB_DFU_REQ_GETSTATUS:
-		/* Check if image backend can change DFU_DNLOAD_SYNC -> DFU_DNLOAD_IDLE */
-		if (usbd_dfu_image_next(c_data, DFU_DNLOAD_IDLE)) {
+		/* Check readiness for DFU_DNLOAD_SYNC -> DFU_DNLOAD_IDLE. */
+		ready = usbd_dfu_image_next(c_data, DFU_DNLOAD_IDLE);
+		status = usbd_dfu_image_status(c_data);
+		if (status != ERR_OK) {
+			dfu_error(c_data, DFU_ERROR, status);
+		} else if (ready) {
 			data->next = DFU_DNLOAD_IDLE;
 		} else {
 			data->next = DFU_DNBUSY;
@@ -375,10 +396,16 @@ static int dfu_manifest_sync_next(struct usbd_class_data *const c_data,
 				  const struct usb_setup_packet *const setup)
 {
 	struct usbd_dfu_data *data = usbd_class_get_private(c_data);
+	enum usb_dfu_status status;
+	bool ready;
 
 	switch (setup->bRequest) {
 	case USB_DFU_REQ_GETSTATUS:
-		if (usbd_dfu_image_next(c_data, DFU_IDLE)) {
+		ready = usbd_dfu_image_next(c_data, DFU_IDLE);
+		status = usbd_dfu_image_status(c_data);
+		if (status != ERR_OK) {
+			dfu_error(c_data, DFU_ERROR, status);
+		} else if (ready) {
 			data->next = DFU_IDLE;
 			usbd_msg_pub_simple(data->ctx, USBD_MSG_DFU_DOWNLOAD_COMPLETED, 0);
 		} else {
@@ -398,6 +425,17 @@ static int dfu_manifest_next(struct usbd_class_data *const c_data,
 			     const struct usb_setup_packet *const setup)
 {
 	struct usbd_dfu_data *data = usbd_class_get_private(c_data);
+	enum usb_dfu_status status;
+
+	/* Only GETSTATUS advances manifestation; GETSTATE is observational. */
+	switch (setup->bRequest) {
+	case USB_DFU_REQ_GETSTATUS:
+		break;
+	case USB_DFU_REQ_GETSTATE:
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
 
 	/* Ignore poll timeout, proceed directly to next state. */
 
@@ -406,8 +444,14 @@ static int dfu_manifest_next(struct usbd_class_data *const c_data,
 		return dfu_manifest_sync_next(c_data, setup);
 	}
 
-	data->next = DFU_MANIFEST_WAIT_RST;
 	usbd_dfu_image_next(c_data, DFU_MANIFEST_WAIT_RST);
+	status = usbd_dfu_image_status(c_data);
+
+	if (status != ERR_OK) {
+		dfu_error(c_data, DFU_ERROR, status);
+	} else {
+		data->next = DFU_MANIFEST_WAIT_RST;
+	}
 
 	return 0;
 }

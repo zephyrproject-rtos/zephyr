@@ -236,6 +236,11 @@ Libraries / Subsystems
   * :ref:`MQTT 5.0 <mqtt_socket_interface>` support in the MQTT client
     (:kconfig:option:`CONFIG_MQTT_VERSION_5_0`) is no longer experimental.
 
+* USB DFU
+
+  * Image backends can report asynchronous download or manifestation failure
+    to the host. Existing image registrations are unchanged.
+
 * USB Type-C
 
   * Dual-role ports can prefer the Sink role through the Try.SNK and TryWait.SRC states
