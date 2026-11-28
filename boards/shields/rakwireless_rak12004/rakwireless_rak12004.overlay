@@ -1,0 +1,45 @@
+/*
+ * SPDX-FileCopyrightText: Copyright RAKwireless Technology Limited
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/wisblock-io-slot.h>
+
+/ {
+	heater_5v_rak12004: heater-5v-rak12004 {
+		compatible = "power-domain-gpio";
+		enable-gpios = <&wisblock_io WISBLOCK_IO_IO6 GPIO_ACTIVE_HIGH>;
+		#power-domain-cells = <0>;
+	};
+
+	mq2_rak12004: mq2 {
+		compatible = "winsen,mq";
+		io-channels = <&adc121c021_rak12004 0>;
+		load-resistance-ohms = <10000>;
+		curve-scale-milli = <35750>;
+		curve-exponent-milli = <(-1455)>;
+	};
+};
+
+&wisblock_i2c1 {
+	status = "okay";
+
+	adc121c021_rak12004: adc@51 {
+		compatible = "ti,adc121c021";
+		reg = <0x51>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		#io-channel-cells = <1>;
+		power-domains = <&heater_5v_rak12004>;
+
+		channel@0 {
+			reg = <0>;
+			zephyr,gain = "ADC_GAIN_1";
+			zephyr,reference = "ADC_REF_VDD_1";
+			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+			zephyr,resolution = <12>;
+		};
+	};
+};
