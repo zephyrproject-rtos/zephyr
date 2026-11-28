@@ -1,0 +1,6 @@
+board:
+  name: cpk_ra8t2
+  full_name: CPK-RA8T2 Development Kit
+  vendor: renesas
+  socs:
+  - name: r7ka8t2lflcac

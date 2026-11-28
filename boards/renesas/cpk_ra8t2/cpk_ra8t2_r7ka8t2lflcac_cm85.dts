@@ -1,0 +1,127 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/ra/ra8/r7ka8t2lflcac_cm85.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "cpk_ra8t2.dtsi"
+
+/ {
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &code_mram_cm85;
+		zephyr,console = &uart9;
+		zephyr,shell-uart = &uart9;
+		zephyr,canbus = &canfd1;
+	};
+
+	aliases {
+		led0 = &user_led;
+		sw0 = &user_button;
+		sw1 = &carrier_button;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		user_led: led-0 {
+			gpios = <&ioport1 10 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		user_button: button-0 {
+			gpios = <&ioport3 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		carrier_button: button-1 {
+			gpios = <&ioport9 3 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	can_phy: can-phy {
+		compatible = "can-transceiver-gpio";
+		/* TCAN1057AV-Q1 silent mode is active high. */
+		standby-gpios = <&ioport9 10 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <5000000>;
+		#phy-cells = <0>;
+	};
+};
+
+&ioport1 {
+	status = "okay";
+};
+
+&ioport3 {
+	status = "okay";
+};
+
+&ioport5 {
+	status = "okay";
+};
+
+&ioport9 {
+	status = "okay";
+};
+
+&port_irq1 {
+	interrupts = <5 1>;
+	status = "okay";
+};
+
+&port_irq29 {
+	interrupts = <4 1>;
+	status = "okay";
+};
+
+&sci4 {
+	pinctrl-0 = <&sci4_spi_default>;
+	pinctrl-names = "default";
+	interrupts = <13 1>, <14 1>, <15 1>, <16 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+
+	spi4: spi {
+		cs-gpios = <&ioport5 15 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&sci9 {
+	pinctrl-0 = <&sci9_default>;
+	pinctrl-names = "default";
+	interrupts = <0 1>, <1 1>, <2 1>, <3 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+
+	uart9: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&canfdclk {
+	status = "okay";
+};
+
+&canfd_global {
+	interrupts = <6 1>, <7 1>;
+	interrupt-names = "rxf", "glerr";
+	status = "okay";
+};
+
+&canfd1 {
+	pinctrl-0 = <&canfd1_default>;
+	pinctrl-names = "default";
+	interrupts = <8 1>, <9 1>, <10 11>;
+	interrupt-names = "err", "tx", "rx";
+	phys = <&can_phy>;
+	rx-max-filters = <16>;
+	status = "okay";
+};

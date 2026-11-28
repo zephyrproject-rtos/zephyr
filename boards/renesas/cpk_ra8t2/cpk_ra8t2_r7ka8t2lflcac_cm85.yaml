@@ -1,0 +1,16 @@
+identifier: cpk_ra8t2/r7ka8t2lflcac/cm85
+name: Renesas CPK-RA8T2 (Cortex-M85)
+type: mcu
+arch: arm
+ram: 1024
+flash: 768
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - can
+  - flash
+  - gpio
+  - spi
+  - uart
+vendor: renesas
