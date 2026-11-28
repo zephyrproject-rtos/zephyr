@@ -247,15 +247,26 @@ static uint8_t get_scan_filter_policy(uint8_t options)
 {
 	bool filter_accept_list = IS_ENABLED(CONFIG_BT_FILTER_ACCEPT_LIST) &&
 				  ((options & BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST) != 0U);
+	uint8_t policy;
 
 	if (IS_ENABLED(CONFIG_BT_SCAN_EXT_FILTER_POLICY) &&
 	    ((options & BT_LE_SCAN_OPT_EXT_FILTER_POLICY) != 0U)) {
-		return filter_accept_list ? BT_HCI_LE_SCAN_FP_EXT_FILTER
-					  : BT_HCI_LE_SCAN_FP_EXT_NO_FILTER;
+		policy = filter_accept_list ? BT_HCI_LE_SCAN_FP_EXT_FILTER
+					    : BT_HCI_LE_SCAN_FP_EXT_NO_FILTER;
+	} else {
+		policy = filter_accept_list ? BT_HCI_LE_SCAN_FP_BASIC_FILTER
+					    : BT_HCI_LE_SCAN_FP_BASIC_NO_FILTER;
 	}
 
-	return filter_accept_list ? BT_HCI_LE_SCAN_FP_BASIC_FILTER
-				  : BT_HCI_LE_SCAN_FP_BASIC_NO_FILTER;
+	if (IS_ENABLED(CONFIG_BT_DECISION_BASED_ADV_FILTERING)) {
+		if ((options & BT_LE_SCAN_OPT_DECISIONS_ONLY) != 0U) {
+			policy |= BT_HCI_LE_SCAN_FP_DECISION_ONLY;
+		} else if ((options & BT_LE_SCAN_OPT_DECISIONS) != 0U) {
+			policy |= BT_HCI_LE_SCAN_FP_DECISION_ALL_PDUS;
+		}
+	}
+
+	return policy;
 }
 
 static int start_le_scan_ext(struct bt_le_scan_param *scan_param)
@@ -1920,8 +1931,10 @@ static bool valid_le_scan_param(const struct bt_le_scan_param *param)
 	const uint8_t supported_options =
 		BT_LE_SCAN_OPT_FILTER_DUPLICATE | BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST |
 		BT_LE_SCAN_OPT_CODED | BT_LE_SCAN_OPT_NO_1M |
-		(IS_ENABLED(CONFIG_BT_SCAN_EXT_FILTER_POLICY) ? BT_LE_SCAN_OPT_EXT_FILTER_POLICY
-							      : 0);
+		(IS_ENABLED(CONFIG_BT_SCAN_EXT_FILTER_POLICY)
+			? BT_LE_SCAN_OPT_EXT_FILTER_POLICY : 0) |
+		(IS_ENABLED(CONFIG_BT_DECISION_BASED_ADV_FILTERING)
+			? (BT_LE_SCAN_OPT_DECISIONS | BT_LE_SCAN_OPT_DECISIONS_ONLY) : 0);
 
 	if (IS_ENABLED(CONFIG_BT_PRIVACY) && param->type == BT_LE_SCAN_TYPE_ACTIVE &&
 	    param->timeout != 0) {
@@ -1945,6 +1958,11 @@ static bool valid_le_scan_param(const struct bt_le_scan_param *param)
 	}
 
 	if ((param->options & ~supported_options) != 0U) {
+		return false;
+	}
+
+	if ((param->options & BT_LE_SCAN_OPT_DECISIONS_ONLY) != 0U &&
+	    (param->options & BT_LE_SCAN_OPT_DECISIONS) == 0U) {
 		return false;
 	}
 
@@ -1983,6 +2001,14 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 	    ((param->options & BT_LE_SCAN_OPT_EXT_FILTER_POLICY) != 0U) &&
 	    !BT_FEAT_LE_EXT_SCAN(bt_dev.le.features)) {
 		LOG_WRN("Extended scanner filter policies not supported by the Controller");
+		return -ENOTSUP;
+	}
+
+	/* Only the extended scanning commands can enable decision PDUs */
+	if (IS_ENABLED(CONFIG_BT_DECISION_BASED_ADV_FILTERING) &&
+	    ((param->options & BT_LE_SCAN_OPT_DECISIONS) != 0U) &&
+	    (!BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features) || !bt_le_decision_supported())) {
+		LOG_WRN("Decision-Based Advertising Filtering not supported by the Controller");
 		return -ENOTSUP;
 	}
 

@@ -136,6 +136,9 @@ config BT_CTLR_EXTENDED_FEAT_SET_SUPPORT
 config BT_CTLR_SHORTER_CONNECTION_INTERVALS_SUPPORT
 	bool
 
+config BT_CTLR_DECISION_BASED_ADV_FILTERING_SUPPORT
+	bool
+
 # Virtual option that all local LL implementations should select
 config HAS_BT_CTLR
 	bool

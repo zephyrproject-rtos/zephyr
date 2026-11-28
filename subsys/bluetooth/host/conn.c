@@ -4305,7 +4305,34 @@ static void create_param_setup(const struct bt_conn_le_create_param *param)
 		bt_dev.create_param.window;
 }
 
+#define CONN_LE_OPT_DECISION_ALL                                                                   \
+	(BT_CONN_LE_OPT_DECISIONS | BT_CONN_LE_OPT_DECISIONS_ONLY |                                \
+	 BT_CONN_LE_OPT_DECISIONS_FILTER_ACCEPT_LIST)
+
 #if defined(CONFIG_BT_FILTER_ACCEPT_LIST)
+static int create_auto_decision_check(const struct bt_conn_le_create_param *create_param)
+{
+	const uint32_t options = create_param->options;
+
+	if ((options & CONN_LE_OPT_DECISION_ALL) == 0U) {
+		return 0;
+	}
+
+	if (!IS_ENABLED(CONFIG_BT_DECISION_BASED_ADV_FILTERING) ||
+	    (options & BT_CONN_LE_OPT_DECISIONS) == 0U ||
+	    ((options & BT_CONN_LE_OPT_DECISIONS_ONLY) != 0U &&
+	     (options & BT_CONN_LE_OPT_DECISIONS_FILTER_ACCEPT_LIST) != 0U)) {
+		return -EINVAL;
+	}
+
+	/* Only the extended create connection command has the decision filter policies */
+	if (!BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features) || !bt_le_decision_supported()) {
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 int bt_conn_le_create_auto(const struct bt_conn_le_create_param *create_param,
 			   const struct bt_le_conn_param *param)
 {
@@ -4318,6 +4345,11 @@ int bt_conn_le_create_auto(const struct bt_conn_le_create_param *create_param,
 
 	if (!bt_le_conn_params_valid(param)) {
 		return -EINVAL;
+	}
+
+	err = create_auto_decision_check(create_param);
+	if (err) {
+		return err;
 	}
 
 	conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, BT_ADDR_LE_NONE,
@@ -4492,6 +4524,13 @@ int bt_conn_le_create(const bt_addr_le_t *peer, const struct bt_conn_le_create_p
 	err = conn_le_create_common_checks(peer, conn_param);
 	if (err) {
 		return err;
+	}
+
+	/* bt_conn_le_create uses a filter policy that ignores decision PDUs.
+	 * bt_conn_le_create_auto variant must be used.
+	 */
+	if ((create_param->options & CONN_LE_OPT_DECISION_ALL) != 0U) {
+		return -EINVAL;
 	}
 
 	conn = conn_le_create_helper(peer, conn_param);

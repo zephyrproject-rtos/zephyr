@@ -27,6 +27,7 @@
 #include <zephyr/bluetooth/classic/rfcomm.h>
 #include <zephyr/bluetooth/classic/sdp.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/decision.h>
 #include <zephyr/bluetooth/ead.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/hci.h>
@@ -1679,7 +1680,18 @@ static int cmd_scan_off(const struct shell *sh)
 static int cmd_scan(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct sys_getopt_state *state = sys_getopt_state_get();
-	enum { TIMEOUT, INTERVAL, WINDOW, FILTER_DUPS, FAL, CODED, NO_1M, EXT_FILTER_POLICY };
+	enum {
+		TIMEOUT,
+		INTERVAL,
+		WINDOW,
+		FILTER_DUPS,
+		FAL,
+		CODED,
+		NO_1M,
+		EXT_FILTER_POLICY,
+		DECISIONS,
+		DECISIONS_ONLY,
+	};
 	static const struct sys_getopt_option long_options[] = {
 		{ "timeout", sys_getopt_required_argument, NULL, TIMEOUT },
 		{ "interval", sys_getopt_required_argument, NULL, INTERVAL },
@@ -1689,6 +1701,8 @@ static int cmd_scan(const struct shell *sh, size_t argc, char *argv[])
 		{ "coded", sys_getopt_no_argument, NULL, CODED },
 		{ "no-1m", sys_getopt_no_argument, NULL, NO_1M },
 		{ "ext-filter-policy", sys_getopt_no_argument, NULL, EXT_FILTER_POLICY },
+		{ "decisions", sys_getopt_no_argument, NULL, DECISIONS },
+		{ "decisions-only", sys_getopt_no_argument, NULL, DECISIONS_ONLY },
 		{ "help", sys_getopt_no_argument, NULL, 'h' },
 		{},
 	};
@@ -1742,6 +1756,12 @@ static int cmd_scan(const struct shell *sh, size_t argc, char *argv[])
 			break;
 		case EXT_FILTER_POLICY:
 			options |= BT_LE_SCAN_OPT_EXT_FILTER_POLICY;
+			break;
+		case DECISIONS:
+			options |= BT_LE_SCAN_OPT_DECISIONS;
+			break;
+		case DECISIONS_ONLY:
+			options |= BT_LE_SCAN_OPT_DECISIONS | BT_LE_SCAN_OPT_DECISIONS_ONLY;
 			break;
 		case 'h':
 			shell_help(sh);
@@ -1951,6 +1971,414 @@ static int cmd_scan_filter_clear_addr(const struct shell *sh, size_t argc,
 
 	return 0;
 }
+
+#if defined(CONFIG_BT_DECISION_BASED_ADV_FILTERING)
+/* Decision instructions built with decision-add. Each group is a run of consecutive tests. */
+static struct bt_le_decision_test decision_tests[BT_LE_DECISION_TESTS_MAX];
+static uint8_t decision_keys[BT_LE_DECISION_TESTS_MAX][BT_LE_DECISION_KEY_SIZE];
+static bt_addr_le_t decision_addrs[BT_LE_DECISION_TESTS_MAX][2];
+static size_t decision_group_start[BT_LE_DECISION_TESTS_MAX];
+static size_t decision_num_tests;
+static size_t decision_num_groups;
+
+static size_t decision_groups_get(struct bt_le_decision_group groups[BT_LE_DECISION_TESTS_MAX])
+{
+	for (size_t i = 0; i < decision_num_groups; i++) {
+		size_t end = (i + 1U < decision_num_groups) ? decision_group_start[i + 1U]
+							    : decision_num_tests;
+
+		groups[i].tests = &decision_tests[decision_group_start[i]];
+		groups[i].num_tests = end - decision_group_start[i];
+	}
+
+	return decision_num_groups;
+}
+
+/* Optional values end at the pass keyword or at the end of the arguments */
+static bool decision_optional_arg(size_t argc, char *argv[], size_t argn)
+{
+	return argn < argc && strcmp(argv[argn], "pass") != 0;
+}
+
+static bool decision_data_field_get(uint8_t field, const char **mode, size_t *len)
+{
+	for (size_t i = 1U; i <= BT_LE_DECISION_TEST_DATA_LEN; i++) {
+		*len = i;
+
+		if (field == BT_LE_DECISION_FIELD_DATA_EXACT(i)) {
+			*mode = "exact";
+			return true;
+		} else if (field == BT_LE_DECISION_FIELD_DATA_AT_LEAST(i)) {
+			*mode = "at-least";
+			return true;
+		} else if (field == BT_LE_DECISION_FIELD_DATA_AT_MOST(i)) {
+			*mode = "at-most";
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/* Fields with their own keyword cannot be added as raw, because the parameters of some of them
+ * are pointers, which raw octets cannot hold.
+ */
+static bool decision_field_has_keyword(uint8_t field)
+{
+	const char *mode;
+	size_t len;
+
+	return field == BT_LE_DECISION_FIELD_TAG || field == BT_LE_DECISION_FIELD_ADV_MODE ||
+	       field == BT_LE_DECISION_FIELD_RSSI || field == BT_LE_DECISION_FIELD_PATH_LOSS ||
+	       field == BT_LE_DECISION_FIELD_ADVA || decision_data_field_get(field, &mode, &len);
+}
+
+static int cmd_decision_add(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct bt_le_decision_test test = {0};
+	const size_t idx = decision_num_tests;
+	bool new_group = decision_num_groups == 0U;
+	const char *field;
+	size_t argn = 1;
+	int err = 0;
+
+	if (idx == ARRAY_SIZE(decision_tests)) {
+		shell_error(sh, "At most %zu tests are supported", ARRAY_SIZE(decision_tests));
+		return -ENOMEM;
+	}
+
+	if (argn < argc && !strcmp(argv[argn], "or")) {
+		new_group = true;
+		argn++;
+	}
+
+	if (argn == argc) {
+		goto help;
+	}
+
+	field = argv[argn++];
+
+	if (!strcmp(field, "tag")) {
+		if (argn == argc || hex2bin(argv[argn], strlen(argv[argn]), decision_keys[idx],
+					    BT_LE_DECISION_KEY_SIZE) != BT_LE_DECISION_KEY_SIZE) {
+			shell_error(sh, "The key must be %d octets", BT_LE_DECISION_KEY_SIZE);
+			return -EINVAL;
+		}
+
+		argn++;
+		test.field = BT_LE_DECISION_FIELD_TAG;
+		test.key = decision_keys[idx];
+	} else if (!strcmp(field, "adv-mode")) {
+		unsigned long modes;
+
+		if (argn == argc) {
+			goto help;
+		}
+
+		modes = shell_strtoul(argv[argn++], 0, &err);
+		if (modes > UINT8_MAX) {
+			shell_error(sh, "Invalid advertising modes");
+			return -EINVAL;
+		}
+
+		test.field = BT_LE_DECISION_FIELD_ADV_MODE;
+		test.adv_modes = modes;
+	} else if (!strcmp(field, "rssi")) {
+		long min, max;
+
+		if (argc - argn < 2U) {
+			goto help;
+		}
+
+		min = shell_strtol(argv[argn++], 0, &err);
+		max = shell_strtol(argv[argn++], 0, &err);
+		if (!IN_RANGE(min, INT8_MIN, INT8_MAX) || !IN_RANGE(max, INT8_MIN, INT8_MAX)) {
+			shell_error(sh, "Invalid RSSI range");
+			return -EINVAL;
+		}
+
+		test.field = BT_LE_DECISION_FIELD_RSSI;
+		test.rssi.min = min;
+		test.rssi.max = max;
+	} else if (!strcmp(field, "path-loss")) {
+		unsigned long min, max;
+
+		if (argc - argn < 2U) {
+			goto help;
+		}
+
+		min = shell_strtoul(argv[argn++], 0, &err);
+		max = shell_strtoul(argv[argn++], 0, &err);
+		if (min > UINT8_MAX || max > UINT8_MAX) {
+			shell_error(sh, "Invalid path loss range");
+			return -EINVAL;
+		}
+
+		test.field = BT_LE_DECISION_FIELD_PATH_LOSS;
+		test.path_loss.min = min;
+		test.path_loss.max = max;
+	} else if (!strcmp(field, "adva")) {
+		if (argn == argc) {
+			goto help;
+		}
+
+		test.field = BT_LE_DECISION_FIELD_ADVA;
+
+		if (!strcmp(argv[argn], "fal")) {
+			argn++;
+			test.adva.check = BT_LE_DECISION_ADVA_CHECK_FAL;
+		} else {
+			for (size_t i = 0; i < 2U && decision_optional_arg(argc, argv, argn); i++) {
+				bt_addr_le_t *addr = &decision_addrs[idx][i];
+
+				if (bt_addr_le_from_str(argv[argn++], addr) != 0) {
+					shell_error(sh, "Invalid address");
+					return -EINVAL;
+				}
+
+				test.adva.addr[i] = addr;
+			}
+
+			test.adva.check = test.adva.addr[1] != NULL
+						  ? BT_LE_DECISION_ADVA_CHECK_ADDR_ANY
+						  : BT_LE_DECISION_ADVA_CHECK_ADDR;
+		}
+	} else if (!strcmp(field, "data")) {
+		const char *mode;
+		size_t len;
+
+		if (argc - argn < 2U) {
+			goto help;
+		}
+
+		mode = argv[argn++];
+		len = hex2bin(argv[argn], strlen(argv[argn]), test.data.target,
+			      sizeof(test.data.target));
+		argn++;
+		if (len == 0U) {
+			shell_error(sh, "The target must be 1 to %zu octets",
+				    sizeof(test.data.target));
+			return -EINVAL;
+		}
+
+		(void)memset(test.data.mask, 0xff, len);
+		if (decision_optional_arg(argc, argv, argn)) {
+			if (hex2bin(argv[argn], strlen(argv[argn]), test.data.mask,
+				    sizeof(test.data.mask)) != len) {
+				shell_error(sh, "The mask must be as long as the target");
+				return -EINVAL;
+			}
+
+			argn++;
+		}
+
+		if (!strcmp(mode, "exact")) {
+			test.field = BT_LE_DECISION_FIELD_DATA_EXACT(len);
+		} else if (!strcmp(mode, "at-least")) {
+			test.field = BT_LE_DECISION_FIELD_DATA_AT_LEAST(len);
+		} else if (!strcmp(mode, "at-most")) {
+			test.field = BT_LE_DECISION_FIELD_DATA_AT_MOST(len);
+		} else {
+			goto help;
+		}
+	} else if (!strcmp(field, "raw")) {
+		unsigned long value;
+
+		if (argn == argc) {
+			goto help;
+		}
+
+		value = shell_strtoul(argv[argn++], 0, &err);
+		if (err != 0 || value > UINT8_MAX) {
+			shell_error(sh, "Invalid field");
+			return -EINVAL;
+		}
+
+		if (decision_field_has_keyword(value)) {
+			shell_error(sh, "Field %lu must be added with its own keyword", value);
+			return -EINVAL;
+		}
+
+		test.field = value;
+
+		if (decision_optional_arg(argc, argv, argn)) {
+			if (hex2bin(argv[argn], strlen(argv[argn]), test.raw, sizeof(test.raw)) ==
+			    0U) {
+				shell_error(sh, "The parameters must be 1 to %zu octets",
+					    sizeof(test.raw));
+				return -EINVAL;
+			}
+
+			argn++;
+		}
+	} else {
+		goto help;
+	}
+
+	if (argn < argc) {
+		if (strcmp(argv[argn], "pass") != 0) {
+			goto help;
+		}
+
+		argn++;
+		if (argn == argc) {
+			goto help;
+		}
+
+		for (; argn < argc; argn++) {
+			if (!strcmp(argv[argn], "match")) {
+				test.flags |= BT_LE_DECISION_PASS_IF_MATCH;
+			} else if (!strcmp(argv[argn], "no-match")) {
+				test.flags |= BT_LE_DECISION_PASS_IF_NO_MATCH;
+			} else if (!strcmp(argv[argn], "absent")) {
+				test.flags |= BT_LE_DECISION_PASS_IF_ABSENT;
+			} else {
+				goto help;
+			}
+		}
+	}
+
+	if (err != 0) {
+		shell_error(sh, "Unable to convert integer");
+		return -EINVAL;
+	}
+
+	decision_tests[idx] = test;
+	if (new_group) {
+		decision_group_start[decision_num_groups++] = idx;
+	}
+
+	decision_num_tests++;
+	shell_print(sh, "Added test %zu to group %zu", idx, decision_num_groups - 1U);
+
+	return 0;
+
+help:
+	shell_help(sh);
+	return SHELL_CMD_HELP_PRINTED;
+}
+
+static int cmd_decision_clear(const struct shell *sh, size_t argc, char *argv[])
+{
+	ARG_UNUSED(sh);
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	decision_num_tests = 0U;
+	decision_num_groups = 0U;
+
+	return 0;
+}
+
+static int cmd_decision_apply(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct bt_le_decision_group groups[BT_LE_DECISION_TESTS_MAX];
+	size_t num_groups = decision_groups_get(groups);
+	int err;
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	err = bt_le_scan_set_decision_instructions(num_groups > 0U ? groups : NULL, num_groups);
+	if (err) {
+		shell_error(sh, "Failed to set decision instructions (%d)", err);
+		return -ENOEXEC;
+	}
+
+	shell_print(sh, "Decision instructions set");
+
+	return 0;
+}
+
+/* Prints a test in the decision-add syntax, so the output can be entered again */
+static void decision_test_print(const struct shell *sh, const struct bt_le_decision_test *test)
+{
+	char hex[BT_HCI_LE_DECISION_TEST_PARAMS_LEN * 2U + 1U];
+	char addr[BT_ADDR_LE_STR_LEN];
+	const char *mode;
+	size_t len;
+
+	switch (test->field) {
+	case BT_LE_DECISION_FIELD_TAG:
+		bin2hex(test->key, BT_LE_DECISION_KEY_SIZE, hex, sizeof(hex));
+		shell_fprintf_normal(sh, "tag %s", hex);
+		break;
+	case BT_LE_DECISION_FIELD_ADV_MODE:
+		shell_fprintf_normal(sh, "adv-mode 0x%02x", test->adv_modes);
+		break;
+	case BT_LE_DECISION_FIELD_RSSI:
+		shell_fprintf_normal(sh, "rssi %d %d", test->rssi.min, test->rssi.max);
+		break;
+	case BT_LE_DECISION_FIELD_PATH_LOSS:
+		shell_fprintf_normal(sh, "path-loss %u %u", test->path_loss.min,
+				     test->path_loss.max);
+		break;
+	case BT_LE_DECISION_FIELD_ADVA:
+		if (test->adva.check == BT_LE_DECISION_ADVA_CHECK_FAL) {
+			shell_fprintf_normal(sh, "adva fal");
+			break;
+		}
+
+		shell_fprintf_normal(sh, "adva");
+		for (size_t i = 0; i < ARRAY_SIZE(test->adva.addr) && test->adva.addr[i]; i++) {
+			bt_addr_le_to_str(test->adva.addr[i], addr, sizeof(addr));
+			shell_fprintf_normal(sh, " %s", addr);
+		}
+		break;
+	default:
+		if (decision_data_field_get(test->field, &mode, &len)) {
+			bin2hex(test->data.target, len, hex, sizeof(hex));
+			shell_fprintf_normal(sh, "data %s %s", mode, hex);
+			bin2hex(test->data.mask, len, hex, sizeof(hex));
+			shell_fprintf_normal(sh, " %s", hex);
+		} else {
+			bin2hex(test->raw, sizeof(test->raw), hex, sizeof(hex));
+			shell_fprintf_normal(sh, "raw %u %s", test->field, hex);
+		}
+		break;
+	}
+
+	shell_fprintf_normal(sh, " pass");
+	if (test->flags == 0U || (test->flags & BT_LE_DECISION_PASS_IF_MATCH) != 0U) {
+		shell_fprintf_normal(sh, " match");
+	}
+
+	if ((test->flags & BT_LE_DECISION_PASS_IF_NO_MATCH) != 0U) {
+		shell_fprintf_normal(sh, " no-match");
+	}
+
+	if ((test->flags & BT_LE_DECISION_PASS_IF_ABSENT) != 0U) {
+		shell_fprintf_normal(sh, " absent");
+	}
+
+	shell_fprintf_normal(sh, "\n");
+}
+
+static int cmd_decision_show(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct bt_le_decision_group groups[BT_LE_DECISION_TESTS_MAX];
+	size_t num_groups = decision_groups_get(groups);
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	if (num_groups == 0U) {
+		shell_print(sh, "No tests added, so every decision PDU fails");
+		return 0;
+	}
+
+	for (size_t i = 0; i < num_groups; i++) {
+		shell_print(sh, "Group %zu", i);
+
+		for (size_t j = 0; j < groups[i].num_tests; j++) {
+			shell_fprintf_normal(sh, "  ");
+			decision_test_print(sh, &groups[i].tests[j]);
+		}
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_DECISION_BASED_ADV_FILTERING */
 
 #endif /* CONFIG_BT_OBSERVER */
 
@@ -2302,6 +2730,12 @@ static bool parse_and_set_adv_param(size_t argc, char *argv[], struct bt_le_adv_
 			param->options |= BT_LE_ADV_OPT_NO_2M;
 		} else if (!strcmp(arg, "anon")) {
 			param->options |= BT_LE_ADV_OPT_ANONYMOUS;
+		} else if (!strcmp(arg, "decision")) {
+			param->options |= BT_LE_ADV_OPT_DECISION_PDUS;
+		} else if (!strcmp(arg, "decision-adva")) {
+			param->options |= BT_LE_ADV_OPT_DECISION_ADVA;
+		} else if (!strcmp(arg, "decision-adi")) {
+			param->options |= BT_LE_ADV_OPT_DECISION_ADI;
 		} else if (!strcmp(arg, "tx-power")) {
 			param->options |= BT_LE_ADV_OPT_USE_TX_POWER;
 		} else if (!strcmp(arg, "scan-reports")) {
@@ -2604,6 +3038,62 @@ fail_show_help:
 	shell_help(sh);
 	return SHELL_CMD_HELP_PRINTED;
 }
+
+#if defined(CONFIG_BT_DECISION_BASED_ADV_FILTERING)
+static int cmd_adv_decision_data(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct bt_le_ext_adv *adv = adv_sets[selected_adv];
+	struct bt_le_decision_data param = {0};
+	uint8_t key[BT_LE_DECISION_KEY_SIZE];
+	uint8_t data[BT_LE_DECISION_DATA_MAX_LEN];
+	int err;
+
+	if (!adv) {
+		shell_print(sh, "Advertiser[%d] not created", selected_adv);
+		return -EINVAL;
+	}
+
+	/* Each keyword takes one value */
+	if ((argc % 2U) == 0U) {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	for (size_t argn = 1; argn < argc; argn += 2) {
+		const char *value = argv[argn + 1];
+
+		if (!strcmp(argv[argn], "key")) {
+			if (hex2bin(value, strlen(value), key, sizeof(key)) != sizeof(key)) {
+				shell_error(sh, "The key must be %zu octets", sizeof(key));
+				return -EINVAL;
+			}
+
+			param.key = key;
+		} else if (!strcmp(argv[argn], "data")) {
+			size_t len = hex2bin(value, strlen(value), data, sizeof(data));
+
+			if (len == 0U) {
+				shell_error(sh, "The data must be 1 to %zu octets", sizeof(data));
+				return -EINVAL;
+			}
+
+			param.data = data;
+			param.data_len = len;
+		} else {
+			shell_help(sh);
+			return SHELL_CMD_HELP_PRINTED;
+		}
+	}
+
+	err = bt_le_ext_adv_set_decision_data(adv, &param);
+	if (err) {
+		shell_error(sh, "Failed to set decision data (%d)", err);
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_DECISION_BASED_ADV_FILTERING */
 
 static int cmd_adv_stop(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -4971,6 +5461,13 @@ static int cmd_fal_connect(const struct shell *sh, size_t argc, char *argv[])
 			options |= BT_CONN_LE_OPT_CODED;
 		} else if (!strcmp(arg, "no-1m")) {
 			options |= BT_CONN_LE_OPT_NO_1M;
+		} else if (!strcmp(arg, "decisions")) {
+			options |= BT_CONN_LE_OPT_DECISIONS;
+		} else if (!strcmp(arg, "decisions-only")) {
+			options |= BT_CONN_LE_OPT_DECISIONS | BT_CONN_LE_OPT_DECISIONS_ONLY;
+		} else if (!strcmp(arg, "decisions-fal")) {
+			options |= BT_CONN_LE_OPT_DECISIONS |
+				   BT_CONN_LE_OPT_DECISIONS_FILTER_ACCEPT_LIST;
 		} else {
 			shell_help(sh);
 			return SHELL_CMD_HELP_PRINTED;
@@ -5394,11 +5891,26 @@ static int cmd_default_handler(const struct shell *sh, size_t argc, char **argv)
 #define HELP_ADDR_LE "<address: P:XX:XX:XX:XX:XX:XX or R:XX:XX:XX:XX:XX:XX>"
 #define HELP_ADDR_LE_STATIC "[<static random address: R:XX:XX:XX:XX:XX:XX>]"
 
+#if defined(CONFIG_BT_DECISION_BASED_ADV_FILTERING)
+#define DECISION_ADV_PARAM "[decision] [decision-adva] [decision-adi] "
+#define DECISION_SCAN_OPT  "[--decisions] [--decisions-only] "
+#define DECISION_CONN_OPT  " [decisions] [decisions-only] [decisions-fal]"
+#define HELP_DECISION_ADD                                                                          \
+	"[or] <field> [pass <match, no-match, absent>...]\n"                                       \
+	"field: tag <key>, adv-mode <modes>, rssi <min> <max>, path-loss <min> <max>, "            \
+	"adva <fal, " HELP_ADDR_LE " [address]>, "                                                 \
+	"data <exact, at-least, at-most> <target> [mask], raw <field> [parameters]"
+#else
+#define DECISION_ADV_PARAM ""
+#define DECISION_SCAN_OPT  ""
+#define DECISION_CONN_OPT  ""
+#endif /* CONFIG_BT_DECISION_BASED_ADV_FILTERING */
+
 #if defined(CONFIG_BT_EXT_ADV)
 #define EXT_ADV_SCAN_OPT " [coded] [no-1m]"
 #define EXT_ADV_PARAM                                                                              \
 	"<type: conn-scan conn-nscan, nconn-scan nconn-nscan> "                                    \
-	"[ext-adv] [no-2m] [coded] [anon] [tx-power] [scan-reports] "                              \
+	"[ext-adv] [no-2m] [coded] [anon] [tx-power] [scan-reports] " DECISION_ADV_PARAM           \
 	"[filter-accept-list: fal, fal-scan, fal-conn] [identity] "                                \
 	"[directed " HELP_ADDR_LE "] [mode: low] [dir-rpa] "                                       \
 	"[disable-37] [disable-38] [disable-39]"
@@ -5461,10 +5973,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 #if defined(CONFIG_BT_OBSERVER)
 	SHELL_CMD_ARG(scan, NULL,
 		      "[--timeout <timeout>] [--filter-dups] [--fal] [--coded] [--no-1m] "
-		      "[--ext-filter-policy] "
+		      "[--ext-filter-policy] " DECISION_SCAN_OPT
 		      "[--interval <n * 0.625 ms>] [--window <n * 0.625 ms>] "
 		      "<value: on, passive, off>",
-		      cmd_scan, 2, 12),
+		      cmd_scan, 2, 14),
 	SHELL_CMD(scan-filter-set, &bt_scan_filter_set_cmds,
 		      "Scan filter set commands",
 		      cmd_default_handler),
@@ -5472,6 +5984,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		      "Scan filter clear commands",
 		      cmd_default_handler),
 	SHELL_CMD_ARG(scan-verbose-output, NULL, "<value: on, off>", cmd_scan_verbose_output, 2, 0),
+#if defined(CONFIG_BT_DECISION_BASED_ADV_FILTERING)
+	SHELL_CMD_ARG(decision-add, NULL, HELP_DECISION_ADD, cmd_decision_add, 2, 9),
+	SHELL_CMD_ARG(decision-clear, NULL, HELP_NONE, cmd_decision_clear, 1, 0),
+	SHELL_CMD_ARG(decision-apply, NULL, HELP_NONE, cmd_decision_apply, 1, 0),
+	SHELL_CMD_ARG(decision-show, NULL, HELP_NONE, cmd_decision_show, 1, 0),
+#endif /* CONFIG_BT_DECISION_BASED_ADV_FILTERING */
 #endif /* CONFIG_BT_OBSERVER */
 #if defined(CONFIG_BT_TRANSMIT_POWER_CONTROL)
 	SHELL_CMD_ARG(read-remote-tx-power, NULL, HELP_NONE, cmd_read_remote_tx_power, 2, 0),
@@ -5537,8 +6055,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		      cmd_directed_adv, 2, 6),
 #endif /* CONFIG_BT_PERIPHERAL */
 #if defined(CONFIG_BT_EXT_ADV)
-	SHELL_CMD_ARG(adv-create, NULL, EXT_ADV_PARAM, cmd_adv_create, 2, 11),
-	SHELL_CMD_ARG(adv-param, NULL, EXT_ADV_PARAM, cmd_adv_param, 2, 11),
+	SHELL_CMD_ARG(adv-create, NULL, EXT_ADV_PARAM, cmd_adv_create, 2, 14),
+	SHELL_CMD_ARG(adv-param, NULL, EXT_ADV_PARAM, cmd_adv_param, 2, 14),
 	SHELL_CMD_ARG(adv-data, NULL, "<data> [scan-response <data>] "
 				      "<type: discov, hex> [appearance] "
 				      "[name <str>] [dev-name]",
@@ -5546,6 +6064,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(adv-start, NULL,
 		"[timeout <timeout>] [num-events <num events>]",
 		cmd_adv_start, 1, 4),
+#if defined(CONFIG_BT_DECISION_BASED_ADV_FILTERING)
+	SHELL_CMD_ARG(adv-decision-data, NULL, "[key <key>] [data <data>]",
+		      cmd_adv_decision_data, 1, 4),
+#endif /* CONFIG_BT_DECISION_BASED_ADV_FILTERING */
 	SHELL_CMD_ARG(adv-stop, NULL, HELP_NONE, cmd_adv_stop, 1, 0),
 	SHELL_CMD_ARG(adv-delete, NULL, HELP_NONE, cmd_adv_delete, 1, 0),
 	SHELL_CMD_ARG(adv-select, NULL, "[adv]", cmd_adv_select, 1, 1),
@@ -5661,7 +6183,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(fal-clear, NULL, HELP_NONE, cmd_fal_clear, 1, 0),
 
 #if defined(CONFIG_BT_CENTRAL)
-	SHELL_CMD_ARG(fal-connect, NULL, HELP_ONOFF EXT_ADV_SCAN_OPT,
+	SHELL_CMD_ARG(fal-connect, NULL, HELP_ONOFF EXT_ADV_SCAN_OPT DECISION_CONN_OPT,
 		      cmd_fal_connect, 2, 3),
 #endif /* CONFIG_BT_CENTRAL */
 #endif /* defined(CONFIG_BT_FILTER_ACCEPT_LIST) */

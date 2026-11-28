@@ -283,6 +283,69 @@ Here is a simple example demonstrating the usage of EAD:
                                 [SCAN DATA END]
                         ...
 
+Decision-Based Advertising Filtering
+************************************
+
+Decision-Based Advertising Filtering lets a scanner decide, from a short decision PDU at the start
+of each advertising event, whether to receive the rest of the advertisement. With
+:kconfig:option:`CONFIG_BT_DECISION_BASED_ADV_FILTERING` enabled, the shell can act as the
+advertiser and as the scanner. The API is described in :c:group:`bt_le_decision`.
+
+An advertiser created with the :code:`decision` parameter, together with :code:`ext-adv`, starts
+each advertising event with a decision PDU. The :code:`decision-adva` and :code:`decision-adi`
+parameters also include the advertiser address and the Advertising Data Info in the decision PDUs.
+The :code:`bt adv-decision-data [key <key>] [data <data>]` command sets the decision data of the
+selected advertiser. The 16-octet key generates a Resolvable Tag of 6 octets, and the tag and the
+arbitrary data together hold at most 8 octets.
+
+A scanner builds its decision instructions with :code:`bt decision-add`, which adds one test. The
+tests form groups, and a decision PDU is accepted if all the tests in at least one group pass.
+Tests are added to the same group until :code:`or` is given as the first parameter, which starts a
+new group. For example :code:`bt decision-add or rssi -60 0`. A test passes on a match unless
+:code:`pass` is followed by one or more of :code:`match`, :code:`no-match` and :code:`absent`.
+:code:`bt decision-show` lists the tests, :code:`bt decision-clear` removes them and
+:code:`bt decision-apply` sends them to the Controller. Instructions must be applied after
+:code:`bt init`. Scanning with :code:`bt scan --decisions` also reports the advertisements that
+the instructions accept, and :code:`bt scan --decisions-only` reports only those. The
+:code:`decisions`, :code:`decisions-only` and :code:`decisions-fal` parameters of
+:code:`bt fal-connect` connect to devices that the instructions accept.
+
+Here is an example where the scanner only reports the advertiser:
+
+.. tabs::
+
+        .. group-tab:: Advertiser
+
+                .. code-block:: console
+
+                        uart:~$ bt init
+                        ...
+                        uart:~$ bt adv-create nconn-nscan ext-adv decision
+                        Created adv id: 0, adv: 0x81769a0
+                        uart:~$ bt adv-decision-data key 000102030405060708090a0b0c0d0e0f data 5a50
+                        uart:~$ bt adv-start
+                        Advertiser[0] 0x81769a0 set started
+
+        .. group-tab:: Scanner
+
+                .. code-block:: console
+
+                        uart:~$ bt init
+                        ...
+                        uart:~$ bt decision-add tag 000102030405060708090a0b0c0d0e0f
+                        Added test 0 to group 0
+                        uart:~$ bt decision-add data at-least 5a50
+                        Added test 1 to group 0
+                        uart:~$ bt decision-show
+                        Group 0
+                          tag 000102030405060708090a0b0c0d0e0f pass match
+                          data at-least 5a50 ffff pass match
+                        uart:~$ bt decision-apply
+                        Decision instructions set
+                        uart:~$ bt scan --decisions-only on
+                        Bluetooth active scan enabled
+                        ...
+
 Filter Accept List
 ******************
 

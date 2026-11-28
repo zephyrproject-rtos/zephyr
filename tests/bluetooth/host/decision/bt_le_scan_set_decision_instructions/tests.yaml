@@ -1,0 +1,7 @@
+common:
+  tags:
+    - bluetooth
+    - host
+tests:
+  bluetooth.host.decision.bt_le_scan_set_decision_instructions:
+    type: unit

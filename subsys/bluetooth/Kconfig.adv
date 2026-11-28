@@ -83,6 +83,20 @@ config BT_EXT_ADV_CODING_SELECTION
 	  This allows the Host to indicate their strict requirement
 	  concerning coding scheme when using Extended Advertising.
 
+config BT_DECISION_BASED_ADV_FILTERING
+	bool "Decision-Based Advertising Filtering [EXPERIMENTAL]"
+	depends on BT_BROADCASTER || BT_OBSERVER
+	depends on !HAS_BT_CTLR || BT_CTLR_DECISION_BASED_ADV_FILTERING_SUPPORT
+	select EXPERIMENTAL
+	select BT_RPA if BT_BROADCASTER
+	select BT_FILTER_ACCEPT_LIST if BT_CENTRAL
+	help
+	  Enable support for Decision-Based Advertising Filtering. Advertisers
+	  can start each advertising event with a decision PDU that carries
+	  decision data. Scanners and initiators apply their decision
+	  instructions to that data, and receive the rest of the advertisement
+	  only if the instructions accept it.
+
 config BT_EXT_ADV_REASSEMBLY_TIMEOUT
 	int "Extended advertising reassembly timeout"
 	depends on BT_OBSERVER
