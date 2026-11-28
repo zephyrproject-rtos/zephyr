@@ -1,0 +1,44 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon AURIX TC4x clock control unit (CLOCK module).
+
+  When the system PLL is used, fsource0 is ramped up with the ramp oscillator
+  before it is switched to fPLL0; ramp-upper-mhz sets the ramp end frequency.
+  The per-pll node needs k3-div and k4-div.
+
+compatible: "infineon,aurix-tc4x-ccu"
+
+include: infineon,aurix-ccu.yaml
+
+properties:
+  ramp-upper-mhz:
+    type: int
+    description: |
+      Ramp oscillator upper frequency limit in MHz: a multiple of 100 MHz and
+      at most fPLL0 - 100 MHz. Required when the system PLL is used.
+
+  tpb-div:
+    type: int
+    description: fTPB = fsource0 / tpb-div.
+
+  cpb-div:
+    type: int
+    description: fCPB = fsource0 / cpb-div.
+
+child-binding:
+  properties:
+    k3-prediv:
+      type: int
+      enum: [10, 11, 12, 14, 16, 17, 20]
+      description: |
+        Peripheral PLL K3 pre-divider in tenths (10 = 1.0 ... 20 = 2.0),
+        fPLL2 = fDCO / (K3PRE * K3). Defaults to 1.0.
+
+    k4-div:
+      type: int
+      description: Peripheral PLL K4 divider (fPLL3).
