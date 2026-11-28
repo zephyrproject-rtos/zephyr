@@ -1,0 +1,69 @@
+# Copyright (c) Arduino s.r.l. and/or its affiliated companies
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  RP2040 PIO-based PDM microphone
+
+  A child of a raspberrypi,pico-pio node. One state machine generates the PDM
+  clock and samples the data line; a DMA channel moves the raw bitstream to
+  memory, where it is decimated to 16-bit PCM.
+
+  The pinctrl state must provide two groups, each with a single PIO pin:
+  "clk_gpio" (PDM clock output) and "din_gpio" (PDM data input).
+
+  Example:
+
+    &pinctrl {
+      pdm_default: pdm_default {
+        clk_gpio {
+          pinmux = <PIO0_P23>;
+        };
+        din_gpio {
+          pinmux = <PIO0_P22>;
+          input-enable;
+        };
+      };
+    };
+
+    &pio0 {
+      status = "okay";
+
+      pdm {
+        compatible = "raspberrypi,rp2040-pdm";
+        pinctrl-0 = <&pdm_default>;
+        pinctrl-names = "default";
+        clocks = <&clocks RPI_PICO_CLKID_CLK_SYS>;
+        dmas = <&dma 0 0 0>;
+        dma-names = "rx";
+      };
+    };
+
+compatible: "raspberrypi,rp2040-pdm"
+
+include: [base.yaml, "raspberrypi,pico-pio-device.yaml"]
+
+properties:
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  clocks:
+    required: true
+    description: Clock feeding the PIO block, used to derive the PDM clock divider
+
+  dmas:
+    required: true
+    description: |
+      DMA channel used to read the PIO RX FIFO. The slot cell is ignored: the
+      request line is taken from the state machine allocated at runtime.
+
+  dma-names:
+    required: true
+    description: Must be "rx"
+
+  gain:
+    type: int
+    default: 16
+    description: OpenPDM filter gain (1..65535)
