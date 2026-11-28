@@ -17,6 +17,7 @@
  */
 
 #include <soc.h>
+#include <soc_cmcc.h>
 #include <soc_pmc.h>
 #include <soc_supc.h>
 
@@ -101,4 +102,9 @@ void soc_reset_hook(void)
 	}
 	/* Setup system clocks. */
 	clock_init();
+}
+
+void soc_early_init_hook(void)
+{
+	soc_cmcc_init();
 }
