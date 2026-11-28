@@ -161,6 +161,11 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	iframe = (struct __basic_sf *)
 		((uintptr_t)iframe - sizeof(struct __fpu_sf));
 	memset(iframe, 0, sizeof(struct __fpu_sf));
+#if defined(CONFIG_USE_SWITCH)
+	((struct __fpu_sf *)iframe)->undefined = FPEXC_EN;
+	memset(&thread->arch.preempt_float, 0, sizeof(thread->arch.preempt_float));
+	thread->arch.preempt_float.fpexc = FPEXC_EN;
+#endif
 #endif
 
 	thread->callee_saved.psp = (uint32_t)iframe;

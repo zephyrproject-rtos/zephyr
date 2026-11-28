@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+
+common:
+  tags:
+    - arm
+    - fpu
+  arch_allow: arm
+  platform_allow:
+    - qemu_cortex_a9
+    - qemu_cortex_r5
+  integration_platforms:
+    - qemu_cortex_a9
+    - qemu_cortex_r5
+  filter: >-
+    (CONFIG_CPU_AARCH32_CORTEX_A or CONFIG_CPU_AARCH32_CORTEX_R) and
+    not CONFIG_SMP
+  timeout: 120
+tests:
+  arch.arm.cortex_a_r_fpu:
+    extra_configs:
+      - CONFIG_GEN_SW_ISR_TABLE_ARRAY=y
