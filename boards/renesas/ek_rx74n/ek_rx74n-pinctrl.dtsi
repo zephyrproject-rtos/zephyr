@@ -4,6 +4,13 @@
  */
 
 &pinctrl {
+	sci1_default: sci1_default {
+		group1 {
+			psels = <RX_PSEL(RX_PSEL_SCI_1, 9, 1)>, /* SDA */
+				<RX_PSEL(RX_PSEL_SCI_1, 9, 0)>; /* SCL */
+		};
+	};
+
 	sci12_default: sci12_default {
 		group1 {
 			psels = <RX_PSEL(RX_PSEL_SCI_12, 1, 14)>, /* TX */

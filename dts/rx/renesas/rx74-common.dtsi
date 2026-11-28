@@ -320,6 +320,13 @@
 			clocks = <&sciclk MSTPB 31>;
 			status = "disabled";
 
+			i2c {
+				compatible = "renesas,rx-i2c-sci-b";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
 			uart {
 				compatible = "renesas,rx-uart-sci-b";
 				status = "disabled";
@@ -332,6 +339,13 @@
 			channel = <1>;
 			clocks = <&sciclk MSTPB 30>;
 			status = "disabled";
+
+			i2c {
+				compatible = "renesas,rx-i2c-sci-b";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
 
 			uart {
 				compatible = "renesas,rx-uart-sci-b";
@@ -346,6 +360,13 @@
 			clocks = <&sciclk MSTPB 29>;
 			status = "disabled";
 
+			i2c {
+				compatible = "renesas,rx-i2c-sci-b";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
 			uart {
 				compatible = "renesas,rx-uart-sci-b";
 				status = "disabled";
@@ -358,6 +379,13 @@
 			channel = <3>;
 			clocks = <&sciclk MSTPB 28>;
 			status = "disabled";
+
+			i2c {
+				compatible = "renesas,rx-i2c-sci-b";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
 
 			uart {
 				compatible = "renesas,rx-uart-sci-b";
@@ -372,6 +400,13 @@
 			clocks = <&sciclk MSTPB 27>;
 			status = "disabled";
 
+			i2c {
+				compatible = "renesas,rx-i2c-sci-b";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
 			uart {
 				compatible = "renesas,rx-uart-sci-b";
 				status = "disabled";
@@ -384,6 +419,13 @@
 			channel = <5>;
 			clocks = <&sciclk MSTPB 26>;
 			status = "disabled";
+
+			i2c {
+				compatible = "renesas,rx-i2c-sci-b";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
 
 			uart {
 				compatible = "renesas,rx-uart-sci-b";
@@ -398,6 +440,13 @@
 			clocks = <&sciclk MSTPB 25>;
 			status = "disabled";
 
+			i2c {
+				compatible = "renesas,rx-i2c-sci-b";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
 			uart {
 				compatible = "renesas,rx-uart-sci-b";
 				status = "disabled";
@@ -410,6 +459,13 @@
 			channel = <7>;
 			clocks = <&sciclk MSTPB 24>;
 			status = "disabled";
+
+			i2c {
+				compatible = "renesas,rx-i2c-sci-b";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
 
 			uart {
 				compatible = "renesas,rx-uart-sci-b";
@@ -424,6 +480,13 @@
 			clocks = <&sciclk MSTPB 23>;
 			status = "disabled";
 
+			i2c {
+				compatible = "renesas,rx-i2c-sci-b";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
 			uart {
 				compatible = "renesas,rx-uart-sci-b";
 				status = "disabled";
@@ -436,6 +499,13 @@
 			channel = <9>;
 			clocks = <&sciclk MSTPB 22>;
 			status = "disabled";
+
+			i2c {
+				compatible = "renesas,rx-i2c-sci-b";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
 
 			uart {
 				compatible = "renesas,rx-uart-sci-b";
@@ -450,6 +520,13 @@
 			clocks = <&sciclk MSTPB 21>;
 			status = "disabled";
 
+			i2c {
+				compatible = "renesas,rx-i2c-sci-b";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
 			uart {
 				compatible = "renesas,rx-uart-sci-b";
 				status = "disabled";
@@ -463,18 +540,32 @@
 			clocks = <&sciclk MSTPB 20>;
 			status = "disabled";
 
+			i2c {
+				compatible = "renesas,rx-i2c-sci-b";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
 			uart {
 				compatible = "renesas,rx-uart-sci-b";
 				status = "disabled";
 			};
 		};
 
-		sci12: uart12@87458c00 {
+		sci12: sci12@87458c00 {
 			compatible = "renesas,rx-sci-b";
 			reg = <0x87458c00 0x100>;
 			channel = <12>;
 			clocks = <&sciclk MSTPB 0>;
 			status = "disabled";
+
+			i2c {
+				compatible = "renesas,rx-i2c-sci-b";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
 
 			uart {
 				compatible = "renesas,rx-uart-sci-b";

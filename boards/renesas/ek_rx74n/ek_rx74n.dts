@@ -99,3 +99,37 @@
 &ioportf {
 	status = "okay";
 };
+
+&group_irq_al1 {
+	status = "okay";
+};
+
+&spiclk {
+	status = "okay";
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&group_irq_al0 {
+	status = "okay";
+};
+
+&sci1 {
+	pinctrl-0 = <&sci1_default>;
+	pinctrl-names = "default";
+	interrupts-extended = <&icu 145 1>,
+			      <&group_irq_al0 3 1>;
+	interrupt-names = "txi", "tei";
+	status = "okay";
+
+	i2c1: i2c {
+		sda-output-delay = <300>;
+		noise-filter-clock-select = <1>;
+		bit-rate-modulation;
+		status = "okay";
+	};
+};
