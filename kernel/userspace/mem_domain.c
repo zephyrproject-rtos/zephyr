@@ -113,10 +113,7 @@ int k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
 
 	domain->num_partitions = 0U;
 	(void)memset(domain->partitions, 0, sizeof(domain->partitions));
-
-#ifdef CONFIG_MEM_DOMAIN_HAS_THREAD_LIST
 	sys_dlist_init(&domain->thread_mem_domain_list);
-#endif /* CONFIG_MEM_DOMAIN_HAS_THREAD_LIST */
 
 	/* Check the partitions before arch_mem_domain_init(), which may
 	 * allocate page tables and link the domain into an architecture
@@ -165,7 +162,6 @@ out:
 
 int k_mem_domain_deinit(struct k_mem_domain *domain)
 {
-#if defined(CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT)
 	k_spinlock_key_t key;
 	int ret = 0;
 
@@ -180,6 +176,15 @@ int k_mem_domain_deinit(struct k_mem_domain *domain)
 		goto out;
 	}
 
+	if (IS_ENABLED(CONFIG_ARCH_MEM_DOMAIN_DATA) &&
+	    !IS_ENABLED(CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT)) {
+		/* The architecture keeps per-domain data (such as page
+		 * tables) that it has no way to release.
+		 */
+		ret = -ENOTSUP;
+		goto out;
+	}
+
 	key = k_spin_lock(&z_mem_domain_lock);
 
 	/* Must make sure there are no threads associated with this memory
@@ -191,6 +196,7 @@ int k_mem_domain_deinit(struct k_mem_domain *domain)
 		goto unlock_out;
 	}
 
+#ifdef CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT
 	ret = arch_mem_domain_deinit(domain);
 	if (ret != 0) {
 		LOG_ERR("architecture-specific de-initialization failed for domain %p with %d",
@@ -198,16 +204,19 @@ int k_mem_domain_deinit(struct k_mem_domain *domain)
 		ret = -ENOMEM;
 		goto unlock_out;
 	}
+#endif /* CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT */
+
+	/* The domain has no member threads and the architecture no longer
+	 * references it, so its partition table can be dropped.
+	 */
+	domain->num_partitions = 0U;
+	(void)memset(domain->partitions, 0, sizeof(domain->partitions));
 
 unlock_out:
 	k_spin_unlock(&z_mem_domain_lock, key);
 
 out:
 	return ret;
-#else  /* CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT */
-	ARG_UNUSED(domain);
-	return -ENOTSUP;
-#endif /* CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT */
 }
 
 int k_mem_domain_add_partition(struct k_mem_domain *domain,
@@ -320,11 +329,8 @@ static int add_thread_locked(struct k_mem_domain *domain,
 
 	LOG_DBG("add thread %p to domain %p", thread, domain);
 
-#ifdef CONFIG_MEM_DOMAIN_HAS_THREAD_LIST
 	sys_dlist_append(&domain->thread_mem_domain_list,
 			 &thread->mem_domain_info.thread_mem_domain_node);
-#endif /* CONFIG_MEM_DOMAIN_HAS_THREAD_LIST */
-
 	thread->mem_domain_info.mem_domain = domain;
 
 #ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
@@ -342,9 +348,7 @@ static int remove_thread_locked(struct k_thread *thread)
 	LOG_DBG("remove thread %p from memory domain %p",
 		thread, thread->mem_domain_info.mem_domain);
 
-#ifdef CONFIG_MEM_DOMAIN_HAS_THREAD_LIST
 	sys_dlist_remove(&thread->mem_domain_info.thread_mem_domain_node);
-#endif /* CONFIG_MEM_DOMAIN_HAS_THREAD_LIST */
 
 #ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
 	ret = arch_mem_domain_thread_remove(thread);
@@ -385,37 +389,91 @@ void z_mem_domain_exit_thread(struct k_thread *thread)
 	k_spin_unlock(&z_mem_domain_lock, key);
 }
 
+/* Move a thread that is linked into a domain to another one */
+static int move_thread_locked(struct k_mem_domain *domain, struct k_thread *thread)
+{
+	struct k_mem_domain *old_domain = thread->mem_domain_info.mem_domain;
+	int ret;
+
+	ret = remove_thread_locked(thread);
+
+	if (ret == 0) {
+		ret = add_thread_locked(domain, thread);
+	}
+
+	if (ret != 0) {
+		/*
+		 * The architecture leaves a thread it could not move
+		 * configured for its old domain: keep it a member there.
+		 */
+		sys_dnode_t *node = &thread->mem_domain_info.thread_mem_domain_node;
+
+		if (sys_dnode_is_linked(node)) {
+			sys_dlist_remove(node);
+		}
+		sys_dlist_append(&old_domain->thread_mem_domain_list, node);
+		thread->mem_domain_info.mem_domain = old_domain;
+	}
+
+	return ret;
+}
+
 int k_mem_domain_add_thread(struct k_mem_domain *domain, k_tid_t thread)
 {
 	int ret = 0;
 	k_spinlock_key_t key;
 
 	key = k_spin_lock(&z_mem_domain_lock);
-	if (thread->mem_domain_info.mem_domain != domain) {
-		struct k_mem_domain *old_domain = thread->mem_domain_info.mem_domain;
+	if (!sys_dnode_is_linked(&thread->mem_domain_info.thread_mem_domain_node)) {
+		/* The thread has exited and left its domain */
+		ret = -EINVAL;
+	} else if (thread->mem_domain_info.mem_domain != domain) {
+		ret = move_thread_locked(domain, thread);
+	}
+	k_spin_unlock(&z_mem_domain_lock, key);
 
-		ret = remove_thread_locked(thread);
+	return ret;
+}
 
-		if (ret == 0) {
-			ret = add_thread_locked(domain, thread);
-		}
+int k_mem_domain_remove_thread(k_tid_t thread)
+{
+	CHECKIF(thread == NULL) {
+		return -EINVAL;
+	}
 
+	return k_mem_domain_add_thread(&k_mem_domain_default, thread);
+}
+
+int k_mem_domain_remove_all_threads(struct k_mem_domain *domain)
+{
+	struct k_thread *thread;
+	struct k_thread *next;
+	k_spinlock_key_t key;
+	int ret = 0;
+
+	CHECKIF(domain == NULL) {
+		return -EINVAL;
+	}
+
+	if (domain == &k_mem_domain_default) {
+		/* There is no other domain to move its members to. */
+		return -EINVAL;
+	}
+
+	/* A thread being created takes this lock to join its parent's
+	 * domain, so the domain is empty for good once the walk is done:
+	 * a former member can only hand the default domain to a child.
+	 */
+	key = k_spin_lock(&z_mem_domain_lock);
+
+	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&domain->thread_mem_domain_list, thread, next,
+					  mem_domain_info.thread_mem_domain_node) {
+		ret = move_thread_locked(&k_mem_domain_default, thread);
 		if (ret != 0) {
-			/*
-			 * The architecture leaves a thread it could not move
-			 * configured for its old domain: keep it a member there.
-			 */
-#ifdef CONFIG_MEM_DOMAIN_HAS_THREAD_LIST
-			sys_dnode_t *node = &thread->mem_domain_info.thread_mem_domain_node;
-
-			if (sys_dnode_is_linked(node)) {
-				sys_dlist_remove(node);
-			}
-			sys_dlist_append(&old_domain->thread_mem_domain_list, node);
-#endif /* CONFIG_MEM_DOMAIN_HAS_THREAD_LIST */
-			thread->mem_domain_info.mem_domain = old_domain;
+			break;
 		}
 	}
+
 	k_spin_unlock(&z_mem_domain_lock, key);
 
 	return ret;

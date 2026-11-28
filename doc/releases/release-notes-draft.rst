@@ -324,6 +324,10 @@ Other notable changes
     :kconfig:option:`CONFIG_SCHED_CPU_MASK_DEFAULT_SINGLE_CPU`. A thread's mask can be widened with
     :c:func:`k_thread_cpu_mask_enable` while it is not runnable (before it is started, or while
     it is blocked or suspended).
+  * :c:func:`k_mem_domain_deinit` now works on every architecture that keeps no per-domain data,
+    including all MPU based ones, instead of returning ``-ENOTSUP`` unless the architecture
+    selected ``CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT``. Architectures with
+    per-domain data and no release hook still return ``-ENOTSUP``.
 
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
