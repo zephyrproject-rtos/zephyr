@@ -20,6 +20,7 @@ Protocols
    mqtt
    mqtt_sn
    ocpp
+   rfc2217
    rtp
    stun
    tftp

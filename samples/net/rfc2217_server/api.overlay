@@ -1,0 +1,15 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* No server node: the application starts the server on uart1 */
+&uart1 {
+	status = "okay";
+};
+
+/ {
+	aliases {
+		rfc2217-uart = &uart1;
+	};
+};

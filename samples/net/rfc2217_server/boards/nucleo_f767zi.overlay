@@ -1,0 +1,12 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	rfc2217-server {
+		compatible = "zephyr,rfc2217-server";
+		uart = <&arduino_serial>;
+		port = <2217>;
+	};
+};

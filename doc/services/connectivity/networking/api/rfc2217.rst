@@ -1,0 +1,89 @@
+.. _rfc2217_interface:
+
+RFC 2217 server
+###############
+
+.. contents::
+    :local:
+    :depth: 2
+
+Overview
+********
+
+`RFC 2217 <https://www.rfc-editor.org/rfc/rfc2217>`_ adds a COM port control option to Telnet:
+a client sets the baud rate, data size, parity, stop size, flow control, BREAK and the DTR and
+RTS lines of a serial port, and exchanges data with it over a Telnet connection. Clients include
+pyserial's ``rfc2217://`` URLs, and the tools built on it such as esptool.
+
+Zephyr provides the server side in two layers:
+
+- a protocol engine (:kconfig:option:`CONFIG_NET_RFC2217`), with no transport: the application
+  feeds it the bytes received from a client, and gets the serial data, the replies and the port
+  settings through :c:struct:`rfc2217_session_ops`;
+- a server (:kconfig:option:`CONFIG_NET_RFC2217_SERVER`) that serves a UART over TCP with it,
+  one client at a time.
+
+Server
+******
+
+The server applies the line settings with :c:func:`uart_configure` and sets DTR and RTS with
+:c:func:`uart_line_ctrl_set`. A UART driver that does not implement them keeps the current
+settings, which is what the client gets back. The server moves the data with the UART's
+interrupt-driven API, and handles its sockets with the
+:ref:`socket service <socket_service_interface>`.
+
+A new client replaces the current one, so that a client whose connection died does not hold the
+port. Inbound flow control follows the outbound setting, and the server does not send
+NOTIFY-LINESTATE.
+
+Devicetree
+==========
+
+A ``zephyr,rfc2217-server`` node defines a server, started at boot:
+
+.. code-block:: devicetree
+
+   / {
+           rfc2217-server {
+                   compatible = "zephyr,rfc2217-server";
+                   uart = <&uart1>;
+                   port = <2217>;
+           };
+   };
+
+:c:macro:`RFC2217_SERVER_DT_GET` gets its :c:struct:`rfc2217_server`, for example to give it
+callbacks.
+
+Application
+===========
+
+:c:macro:`RFC2217_SERVER_DEFINE` defines a server that the application starts and stops:
+
+.. code-block:: c
+
+   RFC2217_SERVER_DEFINE(my_server);
+
+   const struct rfc2217_server_config config = {
+           .uart = DEVICE_DT_GET(DT_NODELABEL(uart1)),
+           .port = 2217,
+   };
+
+   ret = rfc2217_server_start(&my_server, &config);
+
+Callbacks
+=========
+
+BREAK, and DTR and RTS on boards that wire them to something else than the UART, are up to the
+application through :c:struct:`rfc2217_server_callbacks`. Without a ``set_break`` callback the
+server refuses BREAK requests, and without a ``set_line`` callback it uses
+:c:func:`uart_line_ctrl_set`.
+
+Each server uses three entries of the socket service's poll array; see
+:kconfig:option:`CONFIG_ZVFS_POLL_MAX`.
+
+The :zephyr:code-sample:`rfc2217-server` sample serves a UART both ways.
+
+API Reference
+*************
+
+.. doxygengroup:: rfc2217
