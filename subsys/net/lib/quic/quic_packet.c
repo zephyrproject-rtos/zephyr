@@ -209,6 +209,25 @@ static void quic_stream_limit_give_back(struct quic_endpoint *ep, bool is_bidi)
 	}
 }
 
+/* A frame that only the sending part of a stream sends, for a stream that is
+ * send-only for us, is a connection error of type STREAM_STATE_ERROR
+ * (RFC 9000 ch. 19.4, 19.8 and 19.13).
+ */
+static int quic_check_not_send_only(struct quic_endpoint *ep, uint64_t stream_id,
+				    const char *frame_name)
+{
+	if (!quic_stream_id_is_send_only(ep, stream_id)) {
+		return 0;
+	}
+
+	NET_DBG("[EP:%p/%d] %s for send-only stream %" PRIu64,
+		ep, quic_get_by_ep(ep), frame_name, stream_id);
+	quic_endpoint_send_connection_close(ep, QUIC_ERROR_STREAM_STATE_ERROR,
+					    "frame for a send-only stream");
+
+	return -EPROTO;
+}
+
 /*
  * Handle STREAM frame (frame types 0x08 - 0x0f)
  *
@@ -335,6 +354,11 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 	NET_DBG("[EP:%p/%d] STREAM frame: id=%" PRIu64 ", offset=%" PRIu64
 		", len=%" PRIu64 ", fin=%d",
 		ep, quic_get_by_ep(ep), stream_id, offset, data_len, is_fin);
+
+	ret = quic_check_not_send_only(ep, stream_id, "STREAM");
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Find the connection context for the accepting endpoint */
 	conn = quic_find_context(ep);
@@ -549,6 +573,11 @@ static int handle_reset_stream_frame(struct quic_endpoint *ep,
 	NET_DBG("[EP:%p/%d] RESET_STREAM: stream=%" PRIu64 ", error=0x%" PRIx64
 		", final_size=%" PRIu64,
 		ep, quic_get_by_ep(ep), stream_id, error_code, final_size);
+
+	ret = quic_check_not_send_only(ep, stream_id, "RESET_STREAM");
+	if (ret < 0) {
+		return ret;
+	}
 
 	/*
 	 * Wake any thread blocked in quic_stream_recv() so it gets
@@ -901,8 +930,40 @@ static int handle_max_stream_data_frame(struct quic_endpoint *ep,
 
 	pos += ret;
 
+	/* RFC 9000 ch. 19.10: a unidirectional stream opened by the peer is
+	 * receive-only for us, there is nothing we could send on it. The
+	 * frame is a connection error of type STREAM_STATE_ERROR.
+	 */
+	if (quic_stream_id_is_receive_only(ep, stream_id)) {
+		NET_DBG("[EP:%p/%d] MAX_STREAM_DATA for receive-only stream %" PRIu64,
+			ep, quic_get_by_ep(ep), stream_id);
+		quic_endpoint_send_connection_close(ep, QUIC_ERROR_STREAM_STATE_ERROR,
+						    "MAX_STREAM_DATA for a receive-only stream");
+		return -EPROTO;
+	}
+
 	/* Find the stream and update its TX flow control */
 	stream = quic_find_stream_by_id(ep, stream_id);
+	if (stream == NULL && ((stream_id & 1U) != 0U) == ep->is_server) {
+		struct quic_context *conn = quic_find_context(ep);
+
+		/* RFC 9000 ch. 19.10: a MAX_STREAM_DATA for a stream of ours
+		 * that was never created is a connection error of type
+		 * STREAM_STATE_ERROR. A stream that is not found can also be
+		 * one that is closed already, which is fine, so only an ID
+		 * past everything opened so far is taken as never created.
+		 */
+		if (conn != NULL && (stream_id >> 2) >= *quic_stream_id_counter(conn, stream_id)) {
+			NET_DBG("[EP:%p/%d] MAX_STREAM_DATA for stream %" PRIu64
+				" that was never opened",
+				ep, quic_get_by_ep(ep), stream_id);
+			quic_endpoint_send_connection_close(
+				ep, QUIC_ERROR_STREAM_STATE_ERROR,
+				"MAX_STREAM_DATA for a stream that was never opened");
+			return -EPROTO;
+		}
+	}
+
 	if (stream != NULL) {
 		if (max_stream_data > stream->remote_max_data) {
 			NET_DBG("[EP:%p/%d] MAX_STREAM_DATA: stream=%" PRIu64
@@ -1152,6 +1213,11 @@ static int handle_stream_data_blocked_frame(struct quic_endpoint *ep,
 
 	NET_DBG("[EP:%p/%d] STREAM_DATA_BLOCKED: stream=%" PRIu64 ", limit=%" PRIu64,
 		ep, quic_get_by_ep(ep), stream_id, max_stream_data);
+
+	ret = quic_check_not_send_only(ep, stream_id, "STREAM_DATA_BLOCKED");
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Find the stream and send MAX_STREAM_DATA */
 	stream = quic_find_stream_by_id(ep, stream_id);
