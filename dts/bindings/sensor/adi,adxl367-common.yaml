@@ -11,6 +11,12 @@ description: |
 include: sensor-device.yaml
 
 properties:
+  wakeup-mode:
+    type: boolean
+    description: |
+      Enable the ADXL367 wake-up mode.
+      Note that when this mode is enabled, ODR is ignored and samples at 12.5 Hz.
+
   odr:
     type: int
     default: 0
