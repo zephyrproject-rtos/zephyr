@@ -77,9 +77,9 @@
 	};
 
 	uart2: serial@fe660000 {
-		compatible = "rockchip,rk3568-uart", "ns16550";
+		compatible = "rockchip,rk3568-uart", "snps,dw-apb-uart", "ns16550";
 		reg = <0xfe660000 0x10000>;
-		interrupts = <GIC_SPI 118 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+		interrupts = <GIC_SPI 118 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		clock-frequency = <12000000>;
 		reg-shift = <2>;
 		status = "disabled";

@@ -1,0 +1,6 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Seunghoon Park
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "radxa_zero_3e.dts"

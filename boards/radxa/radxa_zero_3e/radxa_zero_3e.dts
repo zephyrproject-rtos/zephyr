@@ -1,0 +1,38 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Seunghoon Park
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <arm64/rockchip/rk3566.dtsi>
+#include <common/mem.h>
+
+/ {
+	compatible = "radxa,zero-3e", "rockchip,rk3566";
+	model = "Radxa ZERO 3E";
+
+	chosen {
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+		zephyr,sram = &sram0;
+	};
+
+	sram0: memory@40000000 {
+		compatible = "mmio-sram";
+		reg = <0x40000000 DT_SIZE_M(1)>;
+		device_type = "memory";
+	};
+};
+
+&uart2 {
+	/*
+	 * The UART input clock is 24 MHz. With the 12 MHz value from
+	 * rk3568.dtsi the divisor for 1500000 baud would be 0.5, which cannot
+	 * be programmed; with 24 MHz it is exactly 1 (the baud rate was
+	 * confirmed on hardware).
+	 */
+	clock-frequency = <24000000>;
+	current-speed = <1500000>;
+	status = "okay";
+};

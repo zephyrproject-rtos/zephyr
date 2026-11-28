@@ -1,0 +1,15 @@
+identifier: radxa_zero_3e/rk3566/smp
+name: Radxa ZERO 3E (SMP)
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 1024
+supported:
+  - serial
+  - smp
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2026 Seunghoon Park
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_RK3566
+
+config FLASH_SIZE
+	default 0
+
+config FLASH_BASE_ADDRESS
+	default 0
+
+# Disable data cache until MMU is enabled when booting from EL2
+config ARM64_DCACHE_ALL_OPS
+	default y
+
+config ARM64_BOOT_DISABLE_DCACHE
+	default y
+
+config NUM_IRQS
+	default 240
+
+endif # SOC_RK3566

@@ -1,0 +1,8 @@
+board:
+  name: radxa_zero_3e
+  full_name: Radxa ZERO 3E
+  vendor: radxa
+  socs:
+  - name: rk3566
+    variants:
+    - name: smp
