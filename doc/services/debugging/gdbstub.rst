@@ -35,6 +35,32 @@ The following features are supported:
 * Read or write general registers
 * Read or write the memory
 
+Architecture notes
+******************
+
+ARM64
+=====
+
+On ARM64, the features above apply with the following constraints:
+
+* **Breakpoints:** Z0 and Z1 both use hardware DBGBVR/DBGBCR (W^X). The
+  number of simultaneous breakpoints depends on the CPU (``ID_AA64DFR0_EL1``
+  BrPs); additional inserts fail with ``E01``.
+* **Watchpoints:** Z types 2–4 not supported (empty response); watchpoint
+  exceptions still reach the stub but cannot be set via ``Z`` packets.
+* **Interrupt context:** Breakpoints and single-step do not work in ISRs.
+  On IRQ entry the processor sets ``PSTATE.D``, which masks debug exceptions;
+  ``_isr_wrapper`` clears the IRQ mask around the handler only, not debug.
+  Debug interrupt-driven code from thread context instead (for example via a
+  work queue).
+* **Stack pointer:** EL0t reads report ``SP_EL0`` (from the ESF if
+  :kconfig:option:`CONFIG_ARM64_SAFE_EXCEPTION_STACK` is enabled, else the live
+  register). Writes succeed only for EL0t with that option; otherwise ``E01``.
+  EL1 reads reconstruct ``SP_EL1`` for display and are not restored on return.
+* **Frame pointer (``x29``):** Reading and writing ``x29`` requires
+  :kconfig:option:`CONFIG_FRAME_POINTER`. When disabled, ``x29`` is reported
+  as unavailable (``x``) and writes fail with ``E01``.
+
 Enabling GDB Stub
 *****************
 

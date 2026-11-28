@@ -59,9 +59,10 @@
  * Being callee-saved registers, their values are untouched by the exception
  * entry and are still live in the registers at any point of the exception
  * handling path, so this is used only on the paths that may dump or unwind
- * the frame (synchronous faults, SError, kernel oops, syscall entry) instead
- * of on every exception entry. x18 and lr are caller-saved and are always
- * stored by the exception entry macro.
+ * the frame (synchronous faults, SError, kernel oops, syscall entry) or let
+ * the GDB stub access them (debug exceptions) instead of on every exception
+ * entry. x18 and lr are caller-saved and are always stored by the exception
+ * entry macro.
  *
  * This is a macro and not a function on purpose: a function call would
  * clobber lr, which tail-called paths such as the branch to
@@ -74,6 +75,20 @@
 	stp	x23, x24, [\xreg, ___esf_t_x23_x24_OFFSET]
 	stp	x25, x26, [\xreg, ___esf_t_x25_x26_OFFSET]
 	stp	x27, x28, [\xreg, ___esf_t_x27_x28_OFFSET]
+.endm
+
+/*
+ * Restore callee-saved registers (x19-x28) from the exception stack frame
+ * pointed by xreg. Used by the GDB stub debug exception exit path so that
+ * GDB register writes to x19-x28 take effect on ERET without affecting
+ * regular exception/IRQ exits where x19-x28 are not saved in the ESF.
+ */
+.macro z_arm64_restore_exception_info xreg
+	ldp	x19, x20, [\xreg, ___esf_t_x19_x20_OFFSET]
+	ldp	x21, x22, [\xreg, ___esf_t_x21_x22_OFFSET]
+	ldp	x23, x24, [\xreg, ___esf_t_x23_x24_OFFSET]
+	ldp	x25, x26, [\xreg, ___esf_t_x25_x26_OFFSET]
+	ldp	x27, x28, [\xreg, ___esf_t_x27_x28_OFFSET]
 .endm
 #endif
 

@@ -87,6 +87,8 @@ MAKE_REG_HELPER(tpidrro_el0);
 MAKE_REG_HELPER(tpidr_el1);
 MAKE_REG_HELPER(vmpidr_el2);
 MAKE_REG_HELPER(sp_el0);
+MAKE_REG_HELPER(mdscr_el1);
+MAKE_REG_HELPER(id_aa64dfr0_el1);
 
 MAKE_REG_HELPER_EL123(actlr)
 MAKE_REG_HELPER_EL123(cpacr)
@@ -223,7 +225,6 @@ static inline bool is_sve_implemented(void)
 }
 
 #if defined(CONFIG_ARM64_PMUV3)
-MAKE_REG_HELPER(id_aa64dfr0_el1);
 MAKE_REG_HELPER(pmcr_el0);
 MAKE_REG_HELPER(pmccntr_el0);
 MAKE_REG_HELPER(pmcntenset_el0);

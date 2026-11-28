@@ -54,12 +54,13 @@ struct arch_esf {
 	 * being callee-saved, their values are still live in the
 	 * registers at any point of the exception handling path. They
 	 * are copied into the ESF by the z_arm64_save_exception_info macro
-	 * only
-	 * on the paths that may dump or unwind the frame (synchronous
-	 * faults, SError, kernel oops, syscall entry) and are never
-	 * restored from the ESF on exception exit: the C handlers
-	 * preserve them and the context switcher restores them from the
-	 * thread's callee-saved area.
+	 * only on the paths that may dump or unwind the frame (synchronous
+	 * faults, SError, kernel oops, syscall entry) or that enter the
+	 * GDB stub (debug exceptions). Only the GDB stub exit path
+	 * restores them from the ESF, so that GDB register writes take
+	 * effect; on all other exits the C handlers preserve them and the
+	 * context switcher restores them from the thread's callee-saved
+	 * area.
 	 */
 	uint64_t x19;
 	uint64_t x20;
