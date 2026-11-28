@@ -711,6 +711,58 @@ static void test_route_ipv6_select_src_iface_uses_explicit_route(void)
 	zassert_true(net_if_ipv6_router_rm(router), "Default router del failed");
 }
 
+static void test_neighbor_resolution_respects_bound_iface(void)
+{
+	struct net_in6_addr destination;
+	struct net_in6_addr gateway;
+	struct net_route_entry *route;
+	struct net_context *bound;
+	struct net_nbr *nbr;
+
+	net_ipv6_addr_create(&destination, 0x2001, 0x0db8, 1, 0, 0, 0, 0, 1);
+	net_ipv6_addr_create(&gateway, 0xfe80, 0, 0, 0, 0, 0, 0, 3);
+	zassert_not_null(net_if_ipv6_prefix_add(peer_iface, &destination, 64U,
+					       NET_IPV6_ND_INFINITE_LIFETIME));
+	nbr = net_ipv6_nbr_add(peer_iface, &destination, &net_route_data_peer.ll_addr, false,
+			      NET_IPV6_NBR_STATE_REACHABLE);
+	zassert_not_null(nbr);
+	nbr = net_ipv6_nbr_add(my_iface, &gateway, &net_route_data_peer.ll_addr, false,
+			      NET_IPV6_NBR_STATE_REACHABLE);
+	zassert_not_null(nbr);
+	route = net_route_ipv6_add(my_iface, &destination, 128U, &gateway,
+				   NET_IPV6_ND_INFINITE_LIFETIME, NET_ROUTE_PREFERENCE_HIGH);
+	zassert_not_null(route);
+	zassert_ok(net_context_get(NET_AF_INET6, NET_SOCK_DGRAM, NET_IPPROTO_UDP, &bound));
+	net_context_bind_iface(bound, my_iface);
+
+	for (size_t i = 0; i < 3; ++i) {
+		struct net_pkt *pkt = net_pkt_alloc_with_buffer(my_iface, 0, NET_AF_INET6, 0,
+							       K_NO_WAIT);
+		struct net_if *expected_iface = i == 0U ? peer_iface : my_iface;
+		enum net_verdict verdict;
+
+		zassert_not_null(pkt);
+		zassert_ok(net_ipv6_create(pkt, &my_addr, &destination));
+		net_pkt_cursor_init(pkt);
+		zassert_ok(net_ipv6_finalize(pkt, NET_IPV6_NEXTHDR_NONE));
+		net_pkt_cursor_init(pkt);
+		net_pkt_set_ipv6_iface_bound(pkt, i == 1U);
+		net_pkt_set_context(pkt, i == 2U ? bound : NULL);
+		verdict = net_ipv6_prepare_for_send(pkt);
+		zexpect_equal(verdict, NET_OK);
+		if (verdict != NET_CONTINUE) {
+			zexpect_equal_ptr(net_pkt_iface(pkt), expected_iface);
+			net_pkt_unref(pkt);
+		}
+	}
+
+	zexpect_ok(net_context_put(bound));
+	zexpect_ok(net_route_ipv6_del(route));
+	zexpect_true(net_ipv6_nbr_rm(my_iface, &gateway));
+	zexpect_true(net_ipv6_nbr_rm(peer_iface, &destination));
+	zexpect_true(net_if_ipv6_prefix_rm(peer_iface, &destination, 64U));
+}
+
 static void test_route_ipv6_select_src_vpn_iface(void)
 {
 	const struct net_in6_addr *src_addr;
@@ -1143,6 +1195,7 @@ ZTEST(route_test_suite, test_route)
 	test_route_ipv6_lifetime();
 	test_route_ipv6_preference();
 	test_route_ipv6_select_src_iface_uses_explicit_route();
+	test_neighbor_resolution_respects_bound_iface();
 	test_route_ipv6_select_src_vpn_iface();
 	test_route_ipv6_packet_without_neighbor_ll();
 	test_route_ipv6_packet_without_iface();
