@@ -41,6 +41,8 @@
 
 #include <zephyr/dsp/basicmath.h>
 
+#include <zephyr/dsp/transform.h>
+
 #include <zephyr/dsp/print_format.h>
 
 #include "zdsp_backend.h"
