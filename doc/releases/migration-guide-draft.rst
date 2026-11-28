@@ -706,6 +706,11 @@ Bluetooth Classic
 Bluetooth HCI
 =============
 
+* ``CONFIG_CYW55513_MURATA_2FY`` was renamed to
+  :kconfig:option:`CONFIG_CYW55513_MURATA_2FY_SM`, to match the symbol name the Wi-Fi driver
+  uses for the same physical Murata 2FY module. Applications setting the old symbol must
+  switch to the new name.
+
 * The STM32WB HCI driver now constructs its generated public Bluetooth address using the low
   16 bits of the device UDN, the device ID, and the full 24-bit ST company ID. This corrects the
   previous address layout and changes the generated address on affected devices. Previously bonded
