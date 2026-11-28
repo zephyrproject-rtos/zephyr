@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Signal-only mailbox between operating systems that run on different
+  cores and share one GIC distributor, such as Zephyr and Linux.
+
+  Each channel uses two SPIs that no device drives. Sending on channel n
+  sets tx-spis[n] pending, an SPI the other side owns. The interrupt at
+  index n of "interrupts" is the SPI the other side sets pending to
+  signal this core; it must be edge-triggered.
+
+compatible: "zephyr,mbox-gic-sw"
+
+include: [base.yaml, mailbox-controller.yaml]
+
+properties:
+  interrupts:
+    required: true
+
+  tx-spis:
+    type: array
+    required: true
+    description: |
+      SPI numbers (INTID minus 32) set pending to signal the other side,
+      one per channel.
+
+mbox-cells:
+  - channel
+
+examples:
+  - |
+    /* Receive on SPI 220, signal the other side on SPI 221 */
+    mbox {
+        compatible = "zephyr,mbox-gic-sw";
+        interrupts = <GIC_SPI 220 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+        tx-spis = <221>;
+        #mbox-cells = <1>;
+    };
