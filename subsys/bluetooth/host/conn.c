@@ -2045,9 +2045,12 @@ static int do_phy_update(struct bt_conn *conn)
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV)) {
 		/* If the current PHYs are already the preferred PHYs, no need to issue
-		 * a PHY update procedure.
+		 * a PHY update procedure. The current PHYs are BT_GAP_LE_PHY_* values,
+		 * so the preferred PHY is converted to the same before comparing.
 		 */
-		if (conn->le.phy.tx_phy == phy && conn->le.phy.rx_phy == phy) {
+		const uint8_t gap_phy = bt_get_phy(phy);
+
+		if (conn->le.phy.tx_phy == gap_phy && conn->le.phy.rx_phy == gap_phy) {
 			return 0;
 		}
 	}
