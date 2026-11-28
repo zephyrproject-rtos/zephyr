@@ -9,4 +9,7 @@ if SOC_SERIES_MSPM0G
 config NUM_IRQS
 	default 32
 
+config CORTEX_M_SYSTICK
+	default n if (TI_MSPM0_SYSTEM_TIMER)
+
 endif # SOC_SERIES_MSPM0G
