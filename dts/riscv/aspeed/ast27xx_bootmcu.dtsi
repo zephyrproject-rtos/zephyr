@@ -55,6 +55,11 @@
 			};
 		};
 
+		rng: hwrng@14c020f0 {
+			compatible = "aspeed,hwrng";
+			reg = <0x14c020f0 0x8>;
+		};
+
 		uart12: serial@14c33b00 {
 			compatible = "ns16550";
 			reg = <0x14c33b00 0x100>;

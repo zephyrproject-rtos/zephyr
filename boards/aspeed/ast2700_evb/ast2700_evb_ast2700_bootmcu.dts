@@ -15,6 +15,7 @@
 	chosen {
 		zephyr,sram = &sram;
 		zephyr,console = &uart12;
+		zephyr,entropy = &rng;
 		zephyr,shell-uart = &uart12;
 	};
 };

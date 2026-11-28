@@ -1,0 +1,14 @@
+# Copyright (c) 2026 ASPEED Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ASPEED hardware random number generator, a control register followed by a
+  data register in the SCU register space.
+
+compatible: "aspeed,hwrng"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

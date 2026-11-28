@@ -9,5 +9,6 @@ toolchain:
   - zephyr
 ram: 244
 supported:
+  - entropy
   - serial
 vendor: aspeed
