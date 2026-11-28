@@ -13,13 +13,12 @@ import list_hardware
 import list_shields
 import yaml
 import zephyr_module
-from dts_binding_types import get_binding_type_from_path
+from board_features import collect_target_features
 from gen_devicetree_rest import VndLookup
 from get_maintainer import Maintainers
 from runners.core import ZephyrBinaryRunner
 
 ZEPHYR_BASE = Path(__file__).parents[2]
-ZEPHYR_BINDINGS = ZEPHYR_BASE / "dts/bindings"
 
 # Import the CI catalog generator so this script shares the same
 # twister/EDT gathering logic rather than duplicating it.
@@ -266,8 +265,6 @@ def get_catalog(
         # Use pre-gathered build info and DTS files
         if board.name in board_devicetrees:
             for board_target, edt in board_devicetrees[board.name].items():
-                features = {}
-                target_compatibles = set()
                 ram_size = get_board_memory_size(edt, "zephyr,sram")
                 flash_size = get_board_memory_size(edt, "zephyr,flash")
                 if ram_size is not None or flash_size is not None:
@@ -278,63 +275,9 @@ def get_catalog(
                             "flash": flash_size,
                         }
                     )
-                for node in edt.nodes:
-                    if node.binding_path is None:
-                        continue
-
-                    binding_path = Path(node.binding_path)
-                    is_custom_binding = False
-                    binding_type = get_binding_type_from_path(binding_path)
-                    if binding_type == "misc" and not binding_path.is_relative_to(ZEPHYR_BINDINGS):
-                        is_custom_binding = True
-
-                    if node.matching_compat is None:
-                        continue
-
-                    # skip "zephyr,xxx" compatibles (unless board is native_sim, since in this
-                    # case the "zephyr,"-prefixed peripherals are legitimate)
-                    if node.matching_compat.startswith("zephyr,") and board.name != "native_sim":
-                        continue
-
-                    description = DeviceTreeUtils.get_cached_description(node)
-                    title = node.title
-                    filename = node.filename
-                    lineno = node.lineno
-                    locations = set()
-                    if Path(filename).is_relative_to(ZEPHYR_BASE):
-                        filename = Path(filename).relative_to(ZEPHYR_BASE)
-                        if filename.parts[0] == "boards":
-                            locations.add("board")
-                        else:
-                            locations.add("soc")
-
-                    existing_feature = features.get(binding_type, {}).get(node.matching_compat)
-                    target_compatibles.add(node.matching_compat)
-
-                    node_info = {
-                        "filename": str(filename),
-                        "lineno": lineno,
-                        "dts_path": Path(node.filename),
-                        "binding_path": Path(node.binding_path),
-                    }
-                    node_list_key = "okay_nodes" if node.status == "okay" else "disabled_nodes"
-
-                    if existing_feature:
-                        locations.update(existing_feature["locations"])
-                        existing_feature.setdefault(node_list_key, []).append(node_info)
-                        continue
-
-                    feature_data = {
-                        "description": description,
-                        "title": title,
-                        "custom_binding": is_custom_binding,
-                        "locations": locations,
-                        "okay_nodes": [],
-                        "disabled_nodes": [],
-                    }
-                    feature_data[node_list_key].append(node_info)
-
-                    features.setdefault(binding_type, {})[node.matching_compat] = feature_data
+                features, target_compatibles = collect_target_features(
+                    edt.nodes, board.name, DeviceTreeUtils.get_cached_description
+                )
 
                 # Per-target EDT metadata and feature bindings
                 supported_features[board_target] = {
@@ -342,7 +285,7 @@ def get_catalog(
                     "flash_size": flash_size,
                     "features": features,
                 }
-                compatibles[board_target] = list(target_compatibles)
+                compatibles[board_target] = target_compatibles
 
         board_runner_info = {}
         if board.name in board_runners:

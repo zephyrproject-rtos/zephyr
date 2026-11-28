@@ -9,8 +9,11 @@ on:
     - main
     - v*-branch
     paths:
+    - 'doc/_scripts/board_features.py'
+    - 'doc/_scripts/dts_binding_types.py'
     - 'scripts/pylib/build_helpers/**'
     - 'scripts/pylib/zspdx/**'
+    - 'scripts/tests/doc_scripts/**'
     - 'scripts/tests/zspdx/**'
     - '.github/workflows/pylib_tests.yml'
   pull_request:
@@ -18,8 +21,11 @@ on:
     - main
     - v*-branch
     paths:
+    - 'doc/_scripts/board_features.py'
+    - 'doc/_scripts/dts_binding_types.py'
     - 'scripts/pylib/build_helpers/**'
     - 'scripts/pylib/zspdx/**'
+    - 'scripts/tests/doc_scripts/**'
     - 'scripts/tests/zspdx/**'
     - '.github/workflows/pylib_tests.yml'
 
@@ -69,3 +75,10 @@ jobs:
       run: |
         echo "Run zspdx tests"
         PYTHONPATH=./scripts/tests pytest ./scripts/tests/zspdx
+
+    - name: Run pytest for doc_scripts
+      env:
+        ZEPHYR_BASE: ./
+      run: |
+        echo "Run doc_scripts tests"
+        PYTHONPATH=./scripts/tests:./doc/_scripts pytest ./scripts/tests/doc_scripts
