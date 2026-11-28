@@ -14,3 +14,5 @@ properties:
     description: |
       Remote MAC address of the virtual Ethernet connection.
       Should not be the same as local-mac-address property.
+      Twelve hexadecimal digits, for example "00005E005301".
+      Can be replaced at runtime with usbd_cdc_ecm_set_remote_mac().

@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2026 Tolt Technologies
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &zephyr_udc0;
+
+#include "../app.overlay"
