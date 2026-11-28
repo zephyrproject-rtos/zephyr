@@ -196,6 +196,9 @@ static void command_status(struct net_buf *buf, struct net_buf **evt, uint8_t le
 static bool adv_enabled;
 static bool scan_enabled;
 
+/* Given each time the Host enables scanning */
+static K_SEM_DEFINE(scan_enabled_sem, 0, 1);
+
 /* The address the Host set last with LE Set Random Address */
 static bt_addr_t random_addr;
 
@@ -214,6 +217,9 @@ static void le_set_scan_enable(struct net_buf *buf, struct net_buf **evt, uint8_
 	const struct bt_hci_cp_le_set_scan_enable *cp = net_buf_pull_mem(buf, sizeof(*cp));
 
 	scan_enabled = cp->enable != 0U;
+	if (scan_enabled) {
+		k_sem_give(&scan_enabled_sem);
+	}
 	generic_success(buf, evt, len, opcode);
 }
 
@@ -662,6 +668,218 @@ static ZTEST(bt_id_public_api, test_rpa_age_survives_timeout_change)
 		   "Failed to restore the RPA timeout");
 }
 #endif /* defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC) */
+
+#if defined(CONFIG_BT_SMP) && defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_PERIPHERAL)
+#define ENC_FAIL_CONN_HANDLE 0x0001U
+
+/* Given when the connection of the encryption failure tests is established
+ * and when it is gone.
+ */
+static K_SEM_DEFINE(enc_fail_conn_sem, 0, 1);
+
+static void enc_fail_connected(struct bt_conn *conn, uint8_t err)
+{
+	ARGS_UNUSED(conn, err);
+
+	k_sem_give(&enc_fail_conn_sem);
+}
+
+static void enc_fail_disconnected(struct bt_conn *conn, uint8_t reason)
+{
+	ARGS_UNUSED(conn, reason);
+
+	k_sem_give(&enc_fail_conn_sem);
+}
+
+BT_CONN_CB_DEFINE(enc_fail_conn_cb) = {
+	.connected = enc_fail_connected,
+	.disconnected = enc_fail_disconnected,
+};
+
+/* Add an event header and len bytes of zeroed parameters to a new event */
+static void *evt_alloc(struct net_buf **buf, uint8_t evt, uint8_t len)
+{
+	*buf = bt_buf_get_evt(evt, false, K_FOREVER);
+	evt_create(*buf, evt, len);
+
+	return memset(net_buf_add(*buf, len), 0, len);
+}
+
+static void evt_recv(struct net_buf *buf)
+{
+	bt_hci_recv(DEVICE_DT_GET(DT_DRV_INST(0)), buf);
+}
+
+static void inject_conn_complete(uint8_t role, const bt_addr_le_t *peer)
+{
+	struct bt_hci_evt_le_meta_event *mev;
+	struct bt_hci_evt_le_conn_complete *evt;
+	struct net_buf *buf;
+
+	mev = evt_alloc(&buf, BT_HCI_EVT_LE_META_EVENT, sizeof(*mev) + sizeof(*evt));
+	mev->subevent = BT_HCI_EVT_LE_CONN_COMPLETE;
+	evt = (void *)(mev + 1);
+	evt->status = BT_HCI_ERR_SUCCESS;
+	evt->handle = sys_cpu_to_le16(ENC_FAIL_CONN_HANDLE);
+	evt->role = role;
+	bt_addr_le_copy(&evt->peer_addr, peer);
+	evt->interval = sys_cpu_to_le16(24U);
+	evt->supv_timeout = sys_cpu_to_le16(400U);
+
+	if (role == BT_HCI_ROLE_PERIPHERAL) {
+		/* The connection ends the advertising */
+		adv_enabled = false;
+	}
+
+	evt_recv(buf);
+}
+
+static void inject_disconn_complete(uint8_t reason)
+{
+	struct bt_hci_evt_disconn_complete *evt;
+	struct net_buf *buf;
+
+	evt = evt_alloc(&buf, BT_HCI_EVT_DISCONN_COMPLETE, sizeof(*evt));
+	evt->status = BT_HCI_ERR_SUCCESS;
+	evt->handle = sys_cpu_to_le16(ENC_FAIL_CONN_HANDLE);
+	evt->reason = reason;
+
+	evt_recv(buf);
+}
+
+/* The ways for the encryption to fail. Each returns whether the connection
+ * is still there.
+ */
+static bool inject_encrypt_change_failure(void)
+{
+	struct bt_hci_evt_encrypt_change *evt;
+	struct net_buf *buf;
+
+	evt = evt_alloc(&buf, BT_HCI_EVT_ENCRYPT_CHANGE, sizeof(*evt));
+	evt->status = BT_HCI_ERR_PIN_OR_KEY_MISSING;
+	evt->handle = sys_cpu_to_le16(ENC_FAIL_CONN_HANDLE);
+
+	evt_recv(buf);
+
+	return true;
+}
+
+static bool inject_key_refresh_failure(void)
+{
+	struct bt_hci_evt_encrypt_key_refresh_complete *evt;
+	struct net_buf *buf;
+
+	evt = evt_alloc(&buf, BT_HCI_EVT_ENCRYPT_KEY_REFRESH_COMPLETE, sizeof(*evt));
+	evt->status = BT_HCI_ERR_PIN_OR_KEY_MISSING;
+	evt->handle = sys_cpu_to_le16(ENC_FAIL_CONN_HANDLE);
+
+	evt_recv(buf);
+
+	return true;
+}
+
+/* The Host has no key for the peer, so it rejects the request */
+static bool inject_ltk_request(void)
+{
+	struct bt_hci_evt_le_meta_event *mev;
+	struct bt_hci_evt_le_ltk_request *evt;
+	struct net_buf *buf;
+
+	mev = evt_alloc(&buf, BT_HCI_EVT_LE_META_EVENT, sizeof(*mev) + sizeof(*evt));
+	mev->subevent = BT_HCI_EVT_LE_LTK_REQUEST;
+	evt = (void *)(mev + 1);
+	evt->handle = sys_cpu_to_le16(ENC_FAIL_CONN_HANDLE);
+
+	evt_recv(buf);
+
+	return true;
+}
+
+/* A failed encryption start ends the connection without an Encryption Change */
+static bool inject_mic_failure(void)
+{
+	inject_disconn_complete(BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL);
+
+	return false;
+}
+
+/* Connect in the given role with an RPA as the own address, scan with that
+ * RPA, and let enc_fail() fail the encryption of the connection. The RPA
+ * update that has to follow pauses the scanner.
+ */
+static void check_enc_failure_discards_rpa(uint8_t role, bool (*enc_fail)(void))
+{
+	bt_addr_le_t peer = test_addr(0x60U);
+	bt_addr_t new_rpa;
+	bt_addr_t rpa;
+	uint32_t remaining_ms;
+	bool connected;
+	int scan_err;
+	int update_err;
+	int stop_err;
+	int disconn_err;
+
+	if (role == BT_HCI_ROLE_CENTRAL) {
+		struct bt_conn *conn = NULL;
+
+		zassert_ok(bt_conn_le_create(&peer, BT_CONN_LE_CREATE_CONN,
+					     BT_LE_CONN_PARAM_DEFAULT, &conn),
+			   "Failed to create the connection");
+		bt_conn_unref(conn);
+	} else {
+		zassert_ok(bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, NULL, 0U, NULL, 0U),
+			   "Failed to start advertising");
+	}
+
+	inject_conn_complete(role, &peer);
+	zassert_ok(k_sem_take(&enc_fail_conn_sem, K_SECONDS(1)), "No connection");
+
+	scan_err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, NULL);
+	bt_addr_copy(&rpa, &random_addr);
+	remaining_ms = k_ticks_to_ms_floor32(k_work_delayable_remaining_get(&bt_dev.rpa_update));
+	k_sem_reset(&scan_enabled_sem);
+
+	connected = enc_fail();
+	update_err = k_sem_take(&scan_enabled_sem, K_SECONDS(1));
+	bt_addr_copy(&new_rpa, &random_addr);
+
+	stop_err = (scan_err == 0) ? bt_le_scan_stop() : 0;
+	if (connected) {
+		inject_disconn_complete(BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	}
+	disconn_err = k_sem_take(&enc_fail_conn_sem, K_SECONDS(1));
+
+	zassert_ok(scan_err, "Failed to start scanning: %d", scan_err);
+	zassert_ok(stop_err, "Failed to stop scanning: %d", stop_err);
+	zassert_ok(disconn_err, "The connection stayed");
+	zassert_true(BT_ADDR_IS_RPA(&rpa), "The connection was not made with an RPA");
+	zassert_true(remaining_ms > 2U * MSEC_PER_SEC,
+		     "The RPA timeout was about to expire without a failed encryption");
+	zassert_ok(update_err, "The failed encryption started no RPA update");
+	zassert_true(BT_ADDR_IS_RPA(&new_rpa), "The new address is not an RPA");
+	zassert_false(bt_addr_eq(&new_rpa, &rpa), "The failed encryption kept the RPA");
+}
+
+static ZTEST(bt_id_public_api, test_encrypt_change_failure_discards_rpa)
+{
+	check_enc_failure_discards_rpa(BT_HCI_ROLE_CENTRAL, inject_encrypt_change_failure);
+}
+
+static ZTEST(bt_id_public_api, test_key_refresh_failure_discards_rpa)
+{
+	check_enc_failure_discards_rpa(BT_HCI_ROLE_CENTRAL, inject_key_refresh_failure);
+}
+
+static ZTEST(bt_id_public_api, test_ltk_reject_discards_rpa)
+{
+	check_enc_failure_discards_rpa(BT_HCI_ROLE_PERIPHERAL, inject_ltk_request);
+}
+
+static ZTEST(bt_id_public_api, test_mic_failure_discards_rpa)
+{
+	check_enc_failure_discards_rpa(BT_HCI_ROLE_PERIPHERAL, inject_mic_failure);
+}
+#endif /* CONFIG_BT_SMP && CONFIG_BT_CENTRAL && CONFIG_BT_PERIPHERAL */
 
 static bool is_zero_irk(const uint8_t *irk)
 {

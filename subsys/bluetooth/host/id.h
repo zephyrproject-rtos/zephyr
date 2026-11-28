@@ -67,6 +67,13 @@ int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv, uint32_t options);
 
 int bt_id_set_private_addr(uint8_t id);
 
+/* The encryption procedure failed on conn. If either device established the
+ * connection with an RPA, the current RPAs are discarded: the roles that are
+ * running get new ones, the others when they start. Only with
+ * CONFIG_BT_PRIVACY.
+ */
+void bt_id_enc_failed(const struct bt_conn *conn);
+
 void bt_id_pending_keys_update(void);
 
 void bt_id_pending_keys_update_set(struct bt_keys *keys, uint8_t flag);
