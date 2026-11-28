@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 3.20.0)
+cmake_minimum_required(VERSION 3.28.0)
 
 # The sample stores its wake counter in the iRTC's unused alarm registers, which
 # survive deep power down. Pull in the MCUX iRTC driver for its write-protection
