@@ -9,6 +9,7 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
 
@@ -378,9 +379,11 @@ static void receive_work_handler(struct k_work *item)
 
 static void process_ff_sf(struct isotp_recv_ctx *rctx, struct can_frame *frame)
 {
-	int index = 0;
+	uint32_t index = 0U;
 	uint8_t sf_len;
 	uint8_t payload_len;
+	uint32_t ff_dl;
+	uint32_t ff_dl_min;
 	uint32_t rx_sa;		/* ISO-TP fixed source address (if used) */
 	uint8_t can_dl = can_dlc_to_bytes(frame->dlc);
 
@@ -410,6 +413,33 @@ static void process_ff_sf(struct isotp_recv_ctx *rctx, struct can_frame *frame)
 		LOG_DBG("Got FF IRQ");
 		if (can_dl < ISOTP_FF_DL_MIN) {
 			LOG_INF("FF DLC invalid. Ignore");
+			return;
+		}
+
+		/* An FF must declare more data than a single frame can carry,
+		 * otherwise the transfer should have started with an SF
+		 * (ISO 15765-2, 9.6.3.2).
+		 */
+		ff_dl = ((frame->data[index] & ISOTP_PCI_FF_DL_UPPER_MASK) << 8) |
+			frame->data[index + 1];
+		if (ff_dl == 0U) {
+			/* The 32-bit format is only valid above the 12-bit range */
+			ff_dl = sys_get_be32(&frame->data[index + 2]);
+			if (ff_dl <= 0xFFFU) {
+				LOG_INF("FF DL %u invalid. Ignore", ff_dl);
+				return;
+			}
+		}
+
+		ff_dl_min = can_dl - index;
+		if (IS_ENABLED(CONFIG_CAN_FD_MODE) && (rctx->rx_addr.flags & ISOTP_MSG_FDF) != 0 &&
+		    can_dl > ISOTP_4BIT_SF_MAX_CAN_DL) {
+			/* CAN FD single frames use an extra length byte */
+			ff_dl_min--;
+		}
+
+		if (ff_dl < ff_dl_min) {
+			LOG_INF("FF DL %u too small. Ignore", ff_dl);
 			return;
 		}
 
