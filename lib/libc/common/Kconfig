@@ -116,7 +116,6 @@ config COMMON_LIBC_THRD
 
 config COMMON_LIBC_REMOVE
 	bool "Common C library remove"
-	depends on !SEMIHOST
 	default y if FILE_SYSTEM
 	help
 	  Common implementation of remove().

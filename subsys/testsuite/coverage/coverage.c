@@ -402,11 +402,6 @@ coverage_dump_end:
 	return;
 }
 
-void gcov_coverage_dump(void)
-{
-	gcov_coverage_dump_tagged(NULL);
-}
-
 #elif CONFIG_COVERAGE_SEMIHOST
 /**
  * Retrieves gcov coverage data and writes it to the host filesystem via
@@ -547,6 +542,11 @@ void gcov_coverage_semihost(void)
 	gcov_coverage_dump_tagged(NULL);
 }
 #endif
+
+void gcov_coverage_dump(void)
+{
+	gcov_coverage_dump_tagged(NULL);
+}
 
 struct gcov_info *gcov_get_list_head(void)
 {
