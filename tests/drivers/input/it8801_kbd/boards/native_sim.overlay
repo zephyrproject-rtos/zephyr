@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) 2026 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/mfd/mfd_it8801_altctrl.h>
+
+/ {
+	it8801-mfd {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		it8801_gpio0: gpiocr@0a {
+			compatible = "ite,it8801-altctrl";
+			reg = <0x0a 8>;
+			#altctrl-cells = <2>;
+		};
+	};
+
+	it8801-mfd-map {
+		compatible = "ite,it8801-mfd-map";
+
+		kso18_gp01_default: kso18_gp01_default {
+			altctrls = <&it8801_gpio0 1 IT8801_ALT_FUNC_2>;
+		};
+	};
+};
+
+&i2c0 {
+	it8801_mfd: it8801@38 {
+		compatible = "ite,it8801-mfd";
+		reg = <0x38>;
+		irq-gpios = <&gpio0 0 0>;
+		zephyr,deferred-init;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		it8801_kbd: it8801_kbd@40 {
+			compatible = "ite,it8801-kbd";
+			reg = <0x40 1
+			       0x41 1
+			       0x42 1
+			       0x43 1>;
+			row-size = <8>;
+			col-size = <3>;
+			kso-mapping = <0x02 0x00 0x01>;
+			mfdctrl = <&kso18_gp01_default>;
+			zephyr,deferred-init;
+		};
+	};
+};
