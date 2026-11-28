@@ -242,9 +242,12 @@ static int sam_flash_write_latch_buffer_to_previous_page(const struct device *de
 	return sam_flash_write_latch_buffer_to_page(dev, offset - SAM_FLASH_WRITE_PAGE_SIZE);
 }
 
-static void sam_flash_write_dword_to_latch_buffer(off_t offset, uint32_t dword)
+static void sam_flash_write_dword_to_latch_buffer(const struct device *dev, off_t offset,
+						 uint32_t dword)
 {
-	*((uint32_t *)(uintptr_t)offset) = dword;
+	const struct sam_flash_config *sam_config = dev->config;
+
+	*((uint32_t *)(uintptr_t)(sam_config->area_address + offset)) = dword;
 	barrier_dsync_fence_full();
 }
 
@@ -252,7 +255,7 @@ static int sam_flash_write_dwords_to_flash(const struct device *dev, off_t offse
 					   const uint32_t *dwords, size_t size)
 {
 	for (size_t i = 0; i < size; i++) {
-		sam_flash_write_dword_to_latch_buffer(offset, dwords[i]);
+		sam_flash_write_dword_to_latch_buffer(dev, offset, dwords[i]);
 		offset += sizeof(uint32_t);
 		if (sam_flash_offset_is_on_write_page_boundary(offset)) {
 			sam_flash_write_latch_buffer_to_previous_page(dev, offset);
