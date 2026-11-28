@@ -2,13 +2,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig LPS22HB
-	bool "LPS22HB pressure and temperature"
+	bool "LPS22HB and LPS33HW pressure and temperature"
 	default y
-	depends on DT_HAS_ST_LPS22HB_PRESS_ENABLED
+	depends on DT_HAS_ST_LPS22HB_PRESS_ENABLED || DT_HAS_ST_LPS33HW_ENABLED
 	select I2C
 	help
-	  Enable driver for LPS22HB I2C-based pressure and temperature
-	  sensor.
+	  Enable the driver for the LPS22HB and LPS33HW I2C pressure and
+	  temperature sensors. Both parts share the register map and
+	  WHO_AM_I value.
 
 config LPS22HB_SAMPLING_RATE
 	int "Output data rate"

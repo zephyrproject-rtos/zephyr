@@ -155,6 +155,7 @@
 
 struct lps22hb_config {
 	struct i2c_dt_spec i2c;
+	uint8_t odr;
 };
 
 struct lps22hb_data {
