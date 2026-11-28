@@ -954,11 +954,15 @@ static void spi_stm32_msg_start(const struct device *dev, bool is_rx_empty)
 			if (ll_get_transfer_size(spi) != 0U) {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 				/* H7 with FIFO full-duplex:
-				 * Fill the TX FIFO with as many frames as possible,
-				 * up to the FIFO threshold. The DXP ISR will keep the
+				 * Fill the TX FIFO completely, with as many frames as possible,
+				 * up to the FIFO size. The DXP ISR will keep the
 				 * FIFO full until all data is sent.
 				 */
-				spi_stm32_send_fifo(spi, data);
+				const uint8_t fifos_to_load = DIV_ROUND_UP(
+					MIN(cfg->fifo_size, data->tx_len), data->fifo_threshold);
+				for (uint8_t i = 0; i < fifos_to_load; ++i) {
+					spi_stm32_send_fifo(spi, data);
+				}
 				ll_enable_int_dxp(spi);
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 			} else {
@@ -993,12 +997,16 @@ static void spi_stm32_msg_start(const struct device *dev, bool is_rx_empty)
 		if (transfer_dir == STM32_SPI_FULL_DUPLEX &&
 		    LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER &&
 		    ll_get_transfer_size(spi) != 0U) {
-			/* Polling mode: send the first frame so that only DXP and EOT are
-			 * checked next.
+			/* Polling mode: fill the TX FIFO completely so that only DXP and EOT are
+			 * checked next and there is no idle time in-between the FIFO transfers.
 			 */
 			struct spi_stm32_data *data = dev->data;
 
-			spi_stm32_send_fifo(spi, data);
+			const uint8_t fifos_to_load = DIV_ROUND_UP(
+				MIN(cfg->fifo_size, data->tx_len), data->fifo_threshold);
+			for (uint8_t i = 0; i < fifos_to_load; ++i) {
+				spi_stm32_send_fifo(spi, data);
+			}
 		}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 	}
