@@ -1,0 +1,76 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config DSA_RENESAS_RA_ESWM
+	bool "Renesas RA ESWM DSA driver"
+	default y
+	depends on DT_HAS_RENESAS_RA_ESWM_DSA_ENABLED
+	depends on DT_HAS_RENESAS_RA_ESWM_SWITCH_ENABLED
+	depends on NET_DSA
+	select ETH_PHY_DRIVER
+	select USE_RA_FSP_RMAC
+	select USE_RA_FSP_LAYER3_SWITCH
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	help
+	  DSA driver for the Renesas RA Ethernet Switch Module (ESWM). Each
+	  Ethernet port is a DSA user port, and the ESWM node is the conduit.
+
+if DSA_RENESAS_RA_ESWM
+
+config DSA_RENESAS_RA_ESWM_RX_THREAD_STACK_SIZE
+	int "RX thread stack size"
+	default 1500
+	help
+	  Stack size of the RX thread of each user port.
+
+config DSA_RENESAS_RA_ESWM_RX_THREAD_PRIORITY
+	int "RX thread priority"
+	default 2
+	help
+	  Cooperative priority of the RX thread of each user port.
+
+config DSA_RENESAS_RA_ESWM_USE_HW_WRITEBACK
+	bool "Wait for the TX descriptor write back"
+	default y
+	help
+	  Wait until the hardware writes back the TX descriptor, so a send
+	  returns only when the frame was transmitted. Sending takes slightly
+	  longer.
+
+config DSA_RENESAS_RA_ESWM_TX_QUEUE_NUM
+	int "TX queues per port"
+	default 2
+	range 1 8
+
+config DSA_RENESAS_RA_ESWM_RX_QUEUE_NUM
+	int "RX queues per port"
+	default 2
+	range 1 8
+
+config DSA_RENESAS_RA_ESWM_TX_QUEUE_LEN
+	int "Descriptors per TX queue"
+	default 4
+	range 2 64
+	help
+	  Number of descriptors in each TX queue, including the LINKFIX
+	  descriptor.
+
+config DSA_RENESAS_RA_ESWM_RX_QUEUE_LEN
+	int "Descriptors per RX queue"
+	default 4
+	range 2 64
+	help
+	  Number of descriptors in each RX queue, including the LINKFIX
+	  descriptor.
+
+config DSA_RENESAS_RA_ESWM_TX_BUF_NUM
+	int "TX buffers per port"
+	default 12
+	range 1 64
+
+config DSA_RENESAS_RA_ESWM_RX_BUF_NUM
+	int "RX buffers per port"
+	default 12
+	range 1 64
+
+endif # DSA_RENESAS_RA_ESWM

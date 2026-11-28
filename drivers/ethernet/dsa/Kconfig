@@ -13,6 +13,8 @@ menuconfig DSA_DRIVERS
 
 if DSA_DRIVERS
 
+rsource "Kconfig.renesas_ra"
+
 config DSA_NXP_IMX_NETC
 	bool "Support for NXP i.MX NETC"
 	default y

@@ -211,6 +211,11 @@ config USE_RA_FSP_LAYER3_SWITCH
 	help
 	  Enable RA FSP Ethernet Layer3 Switch driver
 
+config USE_RA_FSP_GPTP
+	bool
+	help
+	  Enable RA FSP Ethernet gPTP timer driver
+
 config USE_RA_FSP_USB_DEVICE
 	bool
 	help

@@ -51,6 +51,20 @@ int dsa_xmit(const struct device *dev, struct net_pkt *pkt)
 	}
 #endif
 	/*
+	 * If the switch does not need tagging, we don't need to clone
+	 * packet and can send it directly.
+	 */
+	if (dsa_switch_ctx->dapi->xmit == NULL) {
+		struct net_if *orig_iface = net_pkt_iface(pkt);
+
+		net_pkt_set_iface(pkt, iface);
+		ret = eth_api_conduit->send(dev_conduit, pkt);
+		net_pkt_set_iface(pkt, orig_iface);
+
+		return ret;
+	}
+
+	/*
 	 * In case of using TX pkt in other places, pkt should not be changed.
 	 * Here just clone pkt to use for tagging and sending.
 	 * It could be optimized here for performance in the future if some mechanism

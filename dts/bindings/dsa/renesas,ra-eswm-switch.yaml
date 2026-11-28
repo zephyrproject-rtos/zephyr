@@ -1,0 +1,12 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Renesas RA Ethernet Switch Module (ESWM) switch ports.
+
+  Child of a renesas,ra-eswm-dsa node. The port reg is the ESWM port
+  number: 0 and 1 are the Ethernet ports, 2 is the CPU port.
+
+compatible: "renesas,ra-eswm-switch"
+
+include: [dsa.yaml, base.yaml]

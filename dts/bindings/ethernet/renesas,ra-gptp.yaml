@@ -1,0 +1,40 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Renesas RA Ethernet Generic PTP Timer (GPTP) block.
+
+  gPTP timer block of the Layer 3 Ethernet Switch Module (ESWM). The node must
+  be a child of the "renesas,ra-eswm" node.
+
+  Each timer of the block is described by a "renesas,ra-gptp-timer" child node.
+
+  Example:
+
+    gptp: gptp@403e0000 {
+        compatible = "renesas,ra-gptp";
+        reg = <0x403e0000 0x10c4>;
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        gptp_timer0: timer@0 {
+            compatible = "renesas,ra-gptp-timer";
+            reg = <0>;
+        };
+    };
+
+compatible: "renesas,ra-gptp"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#address-cells":
+    required: true
+    const: 1
+
+  "#size-cells":
+    required: true
+    const: 0
