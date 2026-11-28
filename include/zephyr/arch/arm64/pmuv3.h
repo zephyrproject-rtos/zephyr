@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2026 Advanced Micro Devices, Inc.
+ * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -121,8 +122,12 @@ typedef enum {
 
 /** @cond INTERNAL_HIDDEN */
 
+struct perf_counter_event_info;
+
 int arch_perf_counter_init(void);
 uint32_t arch_perf_counter_num_counters(void);
+uint32_t arch_perf_counter_num_events(void);
+int arch_perf_counter_event_get(uint32_t index, struct perf_counter_event_info *info);
 void arch_perf_counter_get_info(perf_counter_info_t *info);
 int arch_perf_counter_config(uint32_t counter, perf_counter_evt_t event);
 void arch_perf_counter_enable(uint32_t counter);
@@ -141,6 +146,8 @@ void arch_perf_counter_clear_overflow(uint32_t counter);
 
 #define perf_counter_init           arch_perf_counter_init
 #define perf_counter_num_counters   arch_perf_counter_num_counters
+#define perf_counter_num_events     arch_perf_counter_num_events
+#define perf_counter_event_get      arch_perf_counter_event_get
 #define perf_counter_get_info       arch_perf_counter_get_info
 #define perf_counter_config         arch_perf_counter_config
 #define perf_counter_enable         arch_perf_counter_enable
@@ -164,7 +171,23 @@ void arch_perf_counter_clear_overflow(uint32_t counter);
  * @{
  */
 
-/** @brief Calibrated CPU MHz from @ref perf_counter_init (PMU cycle counter vs system timer). */
+/**
+ * @brief Return the calibrated CPU frequency in MHz for the current CPU.
+ *
+ * Call after successful @ref perf_counter_init on this CPU. The first query
+ * compares the PMU cycle counter against the system timer, busy-waiting for
+ * approximately 1 ms. Each CPU caches its first result, including a failed
+ * calibration. Later queries do not repeat calibration or track clock changes.
+ * This function does not prevent CPU migration or mask interrupts.
+ *
+ * @warning The caller must remain on the intended CPU and provide exclusive
+ * PMU access. Do not call during a perf or other PMU measurement window or
+ * concurrently with other PMU operations. Calibration resets the cycle counter
+ * and temporarily enables the PMU, affecting enabled counters.
+ *
+ * @return Cached CPU frequency in MHz, or zero if this CPU has not initialized
+ * successfully or calibration failed.
+ */
 uint32_t arch_perf_counter_cpu_freq_mhz(void);
 
 /** @brief Human-readable name for @a event, or @c "UNKNOWN". */

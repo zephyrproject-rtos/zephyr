@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2026 Advanced Micro Devices, Inc.
+ * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,6 +42,10 @@ extern "C" {
 /**
  * @defgroup perf_counter Performance counters
  * @ingroup io_interfaces
+ * @version 0.1.0
+ *
+ * @note This API is experimental and may change in future releases.
+ *
  * @{
  */
 
@@ -50,6 +55,14 @@ struct perf_counter_config {
 	perf_counter_evt_t event;
 	/** Enable this counter when configured */
 	bool enabled;
+};
+
+/** Information about a named event supported by the current CPU PMU. */
+struct perf_counter_event_info {
+	/** Architecture-specific selector accepted by perf_counter_config(). */
+	perf_counter_evt_t event;
+	/** Architecture-defined event name, with static lifetime. */
+	const char *name;
 };
 
 /**
@@ -65,10 +78,10 @@ struct perf_counter_config {
  * is enabled).
  *
  * PMU is not initialized during kernel startup. Call @ref perf_counter_init() before
- * other @c perf_counter_*() functions on this CPU.
+ * other @c perf_counter_*() functions on this CPU, except the event discovery functions.
  *
  * Call once per logical CPU that will use counters, before any other
- * @c perf_counter_*() API on that CPU. Idempotent on success: later calls return
+ * counter API on that CPU. Idempotent on success: later calls return
  * @c 0 if this CPU already initialized successfully, or @c -ENOTSUP if this
  * CPU recorded that no PMU is available.
  *
@@ -77,6 +90,11 @@ struct perf_counter_config {
  * (requires @c CONFIG_SCHED_CPU_MASK), or constrain its CPU affinity with
  * @c k_thread_cpu_mask_enable() / @c k_thread_cpu_mask_disable(), so it does
  * not migrate during a measurement.
+ *
+ * @warning Callers must serialize PMU operations and provide exclusive PMU
+ * ownership for measurements. Do not modify the PMU while a perf session or
+ * another PMU user is measuring on the same CPU. Read-only event discovery may
+ * be used during a measurement.
  *
  * There is no @c SYS_INIT hook; callers choose when to probe
  * (for example at the start of a benchmark).
@@ -88,6 +106,38 @@ int perf_counter_init(void);
 
 /** @return Number of event counters on this CPU, or 0 if PMU unavailable */
 uint32_t perf_counter_num_counters(void);
+
+/**
+ * @brief Return the number of named events supported by the current CPU PMU.
+ *
+ * Available when a PMU backend is enabled. Event discovery may be used
+ * before perf_counter_init() and does not change PMU state.
+ * Callers must have access to the PMU registers and remain on the same CPU
+ * throughout enumeration. Catalogs may differ between CPUs.
+ *
+ * @return Number of event records, or zero if the PMU is unavailable or has
+ *         no supported named events.
+ */
+uint32_t perf_counter_num_events(void);
+
+/**
+ * @brief Get information about a named event supported by the current CPU PMU.
+ *
+ * Available when a PMU backend is enabled. Indexes range from 0 to
+ * perf_counter_num_events() - 1 and identify positions in the supported event list.
+ * The hardware event ID is returned in @c info->event.
+ *
+ * Names have static lifetime. This function has the same CPU affinity and
+ * register-access requirements as perf_counter_num_events(), may be used before
+ * perf_counter_init(), and does not change PMU state.
+ *
+ * @param index Position in the supported event list, in the range [0, perf_counter_num_events()).
+ * @param info Caller-owned output storage. Must not be NULL.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL Index outside the current CPU's supported event list or NULL output storage
+ */
+int perf_counter_event_get(uint32_t index, struct perf_counter_event_info *info);
 
 /**
  * @brief Fill @a info with PMU identification for the current logical CPU.

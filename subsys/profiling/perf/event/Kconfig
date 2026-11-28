@@ -1,0 +1,55 @@
+# Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig PROFILING_PERF_EVENTS
+	bool "Performance event subsystem"
+	depends on MULTITHREADING
+	help
+	  Enable provider-based performance event discovery and counter
+	  session management. Applications can resolve named events and
+	  capture counter snapshots through the C API.
+
+	  Providers and shell commands are enabled separately. This
+	  subsystem does not require stack-sampling support.
+
+if PROFILING_PERF_EVENTS
+
+config PROFILING_PERF_EVENTS_MAX_EVENTS
+	int "Maximum events in a stat session"
+	default 8
+	range 1 32
+	help
+	  Maximum number of events that can be measured in one stat session.
+
+config PROFILING_PERF_EVENTS_NAME_MAX
+	int "Maximum shell event name length"
+	default 64
+	range 8 128
+	help
+	  Maximum canonical event name length, including the NUL terminator,
+	  retained by the perf stat shell frontend.
+
+config PROFILING_PERF_EVENTS_SHELL
+	bool "Performance event shell commands"
+	depends on SHELL
+	depends on CBPRINTF_FULL_INTEGRAL
+	help
+	  Enable perf list and perf stat for event discovery and counter
+	  sessions. Printing 64-bit event counts requires full integer formatting.
+	  SHELL_ARGC_MAX must be at least 3 + 2 * PROFILING_PERF_EVENTS_MAX_EVENTS
+	  to accept all event selections in perf stat start.
+
+config PROFILING_PERF_EVENT_PROVIDER_CPU
+	bool "CPU performance counter providers"
+	depends on ARM64_PMUV3
+	depends on !SMP || SCHED_IPI_SUPPORTED
+	help
+	  Register cpuN providers for events described by the PMU backend.
+	  Operations run synchronously on each owning CPU, directly with
+	  interrupts locked for the current CPU or through IPI work for a
+	  remote CPU. SMP requires scheduler IPI support.
+	  Each selected CPU's PMU must be reserved exclusively for perf, and
+	  CPUs must remain online throughout a session.
+
+endif

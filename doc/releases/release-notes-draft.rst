@@ -227,6 +227,16 @@ Libraries / Subsystems
       the cache, and new events report added and removed entries. The hostap backend
       implements import, export, and selective flush. (:github:`115470`)
 
+* Profiling
+
+  * Added a :ref:`performance event subsystem <profiling-perf>` with provider-based event
+    discovery, standalone event counting sessions, supervisor-only C APIs, and optional
+    ``perf list`` and ``perf stat`` shell commands.
+
+  * Added :ref:`CPU performance event providers <profiling-perf-provider-cpu>` backed by
+    portable PMU discovery, with Arm64 PMUv3 support. Applications can enumerate each CPU's
+    supported events without disturbing measurements and collect grouped counters across CPUs.
+
 * PTP Clock
 
   * :c:func:`ptp_clock_adjust_rate` adjusts the clock rate by an offset in scaled parts per
