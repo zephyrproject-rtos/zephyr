@@ -341,7 +341,7 @@ ZTEST(rram, test_skip_if_filled)
  * uses two consecutive radio time slots, exercising:
  *
  *   - write_op() reentry across slots (FLASH_OP_ONGOING -> next slot);
- *   - the defensive nrf_rramc_config_set(write=true) at the start of
+ *   - the defensive nrfx_rramc_write_enable_set(true) at the start of
  *     every slot, which makes write_op() self-contained instead of
  *     relying on the RRAMC config persisting across the radio gap;
  *   - end-to-end commit_changes() with sizes that are multiples of

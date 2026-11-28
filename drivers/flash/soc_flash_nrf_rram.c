@@ -13,29 +13,20 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/barrier.h>
-#include <hal/nrf_rramc.h>
+
+#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+#include <nrfx_rramc.h>
+#endif
 
 #include <zephyr/../../drivers/flash/soc_flash_nrf.h>
 #include <soc_secure.h>
 
 /* Note that it is supported to compile this driver for both secure
  * and non-secure images, but non-secure images cannot call
- * nrf_rramc_config_set because NRF_RRAMC_NS does not exist.
+ * nrfx_rramc_write_enable_set() because NRF_RRAMC_NS does not exist.
  *
- * Instead, when TF-M boots, it will configure RRAMC with this static
- * configuration:
- *
- * nrf_rramc_config_t config = {
- *   .mode_write = true,
- *   .write_buff_size = WRITE_BUFFER_SIZE
- * };
- *
- * nrf_rramc_ready_next_timeout_t params = {
- *   .value = CONFIG_NRF_RRAM_READYNEXT_TIMEOUT_VALUE,
- *   .enable = true,
- * };
- *
- * For more details see NCSDK-26982.
+ * Instead, when TF-M boots, it will configure RRAMC with static configuration
+ * (write mode, buffer size, preload timeout). For more details see NCSDK-26982.
  */
 
 LOG_MODULE_REGISTER(flash_nrf_rram, CONFIG_FLASH_LOG_LEVEL);
@@ -114,7 +105,7 @@ static inline bool is_within_bounds(off_t addr, size_t len, off_t boundary_start
 static void commit_changes(off_t addr, size_t len)
 {
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
-	if (nrf_rramc_empty_buffer_check(NRF_RRAMC)) {
+	if (nrfx_rramc_write_buffer_empty_check()) {
 		/* The internal write-buffer has been committed to RRAM and is now empty. */
 		return;
 	}
@@ -128,7 +119,7 @@ static void commit_changes(off_t addr, size_t len)
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 	ARG_UNUSED(addr);
 
-	nrf_rramc_task_trigger(NRF_RRAMC, NRF_RRAMC_TASK_COMMIT_WRITEBUF);
+	nrfx_rramc_write_buffer_commit();
 #else
 	/*
 	 * When the commit task is unavailable we need to get creative to
@@ -199,9 +190,7 @@ static int write_op(void *context)
 	/* Defensive re-program of RRAMC write mode at the start of every radio time slot.
 	 * Setting it again here makes write_op() self-contained.
 	 */
-	nrf_rramc_config_t config = {.mode_write = true, .write_buff_size = WRITE_BUFFER_SIZE};
-
-	nrf_rramc_config_set(NRF_RRAMC, &config);
+	nrfx_rramc_write_enable_set(true, WRITE_BUFFER_SIZE);
 #endif
 
 	if (w_ctx->enable_time_limit) {
@@ -267,10 +256,11 @@ __weak void nrf_flash_sync_set_delay(uint32_t delay_us)
 
 #endif /* !CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE */
 
-/* Internal write workhorse. Callers (nrf_rram_write / nrf_rram_fill_impl)
- * are responsible for validating @p addr and @p len against RRAM_SIZE
- * and for upholding the WRITE_LINE_SIZE alignment contract before
- * reaching this helper - mirroring the layering used by nrf_rram_read.
+/* Internal write workhorse. Callers (flash_nrf_rram_write /
+ * flash_nrf_rram_fill_impl) are responsible for validating @p addr and
+ * @p len against RRAM_SIZE and for upholding the WRITE_LINE_SIZE
+ * alignment contract before reaching this helper - mirroring the layering
+ * used by flash_nrf_rram_read.
  */
 static int nrf_write(off_t addr, const void *data, uint8_t fill_val, size_t len)
 {
@@ -294,9 +284,7 @@ static int nrf_write(off_t addr, const void *data, uint8_t fill_val, size_t len)
 	 * re-programs write mode at the start of every radio slot for
 	 * defence in depth.
 	 */
-	nrf_rramc_config_t config = {.mode_write = true, .write_buff_size = WRITE_BUFFER_SIZE};
-
-	nrf_rramc_config_set(NRF_RRAMC, &config);
+	nrfx_rramc_write_enable_set(true, WRITE_BUFFER_SIZE);
 #endif
 
 #ifndef CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE
@@ -338,8 +326,7 @@ static int nrf_write(off_t addr, const void *data, uint8_t fill_val, size_t len)
 	}
 
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
-	config.mode_write = false;
-	nrf_rramc_config_set(NRF_RRAMC, &config);
+	nrfx_rramc_write_enable_set(false, WRITE_BUFFER_SIZE);
 #endif
 
 	SYNC_UNLOCK();
@@ -372,7 +359,7 @@ static inline bool rram_line_holds(const uint8_t *line, uint32_t pat)
  * underlying nrf_write() call. The optimisation works for any @p val,
  * not only the device ERASE_VALUE.
  */
-static int nrf_rram_fill_impl(off_t addr, uint8_t val, size_t len)
+static int flash_nrf_rram_fill_impl(off_t addr, uint8_t val, size_t len)
 {
 #ifdef CONFIG_NRF_RRAM_FILL_SKIP_IF_FILLED
 	const uint32_t pat = (uint32_t)val * 0x01010101U;
@@ -408,7 +395,7 @@ static int nrf_rram_fill_impl(off_t addr, uint8_t val, size_t len)
 #endif /* CONFIG_NRF_RRAM_FILL_SKIP_IF_FILLED */
 }
 
-static int nrf_rram_read(const struct device *dev, off_t addr, void *data, size_t len)
+static int flash_nrf_rram_read(const struct device *dev, off_t addr, void *data, size_t len)
 {
 	ARG_UNUSED(dev);
 
@@ -425,7 +412,7 @@ static int nrf_rram_read(const struct device *dev, off_t addr, void *data, size_
 	return 0;
 }
 
-static int nrf_rram_write(const struct device *dev, off_t addr, const void *data, size_t len)
+static int flash_nrf_rram_write(const struct device *dev, off_t addr, const void *data, size_t len)
 {
 	ARG_UNUSED(dev);
 
@@ -444,7 +431,7 @@ static int nrf_rram_write(const struct device *dev, off_t addr, const void *data
 	return nrf_write(addr, data, 0 /* fill_val unused for data writes */, len);
 }
 
-static int nrf_rram_erase(const struct device *dev, off_t addr, size_t len)
+static int flash_nrf_rram_erase(const struct device *dev, off_t addr, size_t len)
 {
 	ARG_UNUSED(dev);
 
@@ -460,11 +447,11 @@ static int nrf_rram_erase(const struct device *dev, off_t addr, size_t len)
 		return -EINVAL;
 	}
 
-	return nrf_rram_fill_impl(addr, ERASE_VALUE, len);
+	return flash_nrf_rram_fill_impl(addr, ERASE_VALUE, len);
 }
 
 #if defined(CONFIG_FLASH_HAS_DRIVER_FILL)
-static int nrf_rram_fill(const struct device *dev, uint8_t val, off_t addr, size_t len)
+static int flash_nrf_rram_fill(const struct device *dev, uint8_t val, off_t addr, size_t len)
 {
 	ARG_UNUSED(dev);
 
@@ -480,11 +467,11 @@ static int nrf_rram_fill(const struct device *dev, uint8_t val, off_t addr, size
 		return -EINVAL;
 	}
 
-	return nrf_rram_fill_impl(addr, val, len);
+	return flash_nrf_rram_fill_impl(addr, val, len);
 }
 #endif /* CONFIG_FLASH_HAS_DRIVER_FILL */
 
-int nrf_rram_get_size(const struct device *dev, uint64_t *size)
+int flash_nrf_rram_get_size(const struct device *dev, uint64_t *size)
 {
 	ARG_UNUSED(dev);
 
@@ -493,7 +480,7 @@ int nrf_rram_get_size(const struct device *dev, uint64_t *size)
 	return 0;
 }
 
-static const struct flash_parameters *nrf_rram_get_parameters(const struct device *dev)
+static const struct flash_parameters *flash_nrf_rram_get_parameters(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -509,8 +496,9 @@ static const struct flash_parameters *nrf_rram_get_parameters(const struct devic
 }
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
-static void nrf_rram_page_layout(const struct device *dev, const struct flash_pages_layout **layout,
-				 size_t *layout_size)
+static void flash_nrf_rram_page_layout(const struct device *dev,
+				       const struct flash_pages_layout **layout,
+				       size_t *layout_size)
 {
 	ARG_UNUSED(dev);
 
@@ -524,21 +512,21 @@ static void nrf_rram_page_layout(const struct device *dev, const struct flash_pa
 }
 #endif
 
-static DEVICE_API(flash, nrf_rram_api) = {
-	.read = nrf_rram_read,
-	.write = nrf_rram_write,
-	.erase = nrf_rram_erase,
+static DEVICE_API(flash, flash_nrf_rram_api) = {
+	.read = flash_nrf_rram_read,
+	.write = flash_nrf_rram_write,
+	.erase = flash_nrf_rram_erase,
 #if defined(CONFIG_FLASH_HAS_DRIVER_FILL)
-	.fill = nrf_rram_fill,
+	.fill = flash_nrf_rram_fill,
 #endif
-	.get_size = nrf_rram_get_size,
-	.get_parameters = nrf_rram_get_parameters,
+	.get_size = flash_nrf_rram_get_size,
+	.get_parameters = flash_nrf_rram_get_parameters,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
-	.page_layout = nrf_rram_page_layout,
+	.page_layout = flash_nrf_rram_page_layout,
 #endif
 };
 
-static int nrf_rram_init(const struct device *dev)
+static int flash_nrf_rram_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -548,17 +536,26 @@ static int nrf_rram_init(const struct device *dev)
 	nrf_flash_sync_init();
 #endif /* !CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE */
 
-#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) && CONFIG_NRF_RRAM_READYNEXT_TIMEOUT_VALUE > 0
-	nrf_rramc_ready_next_timeout_t params = {
-		.value = CONFIG_NRF_RRAM_READYNEXT_TIMEOUT_VALUE,
-		.enable = true,
-	};
+#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+	nrfx_rramc_config_t config = NRFX_RRAMC_DEFAULT_CONFIG(WRITE_BUFFER_SIZE);
 
-	nrf_rramc_ready_next_timeout_set(NRF_RRAMC, &params);
+#if CONFIG_NRF_RRAM_READYNEXT_TIMEOUT_VALUE > 0
+	config.preload_timeout_enable = true;
+	config.preload_timeout = CONFIG_NRF_RRAM_READYNEXT_TIMEOUT_VALUE;
+#else
+	config.preload_timeout_enable = false;
+	config.preload_timeout = 0;
+#endif
+
+	int err = nrfx_rramc_init(&config, NULL);
+
+	if (err != 0 && err != -EALREADY) {
+		return err;
+	}
 #endif
 
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, nrf_rram_init, NULL, NULL, NULL, POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,
-		      &nrf_rram_api);
+DEVICE_DT_INST_DEFINE(0, flash_nrf_rram_init, NULL, NULL, NULL, POST_KERNEL,
+		      CONFIG_FLASH_INIT_PRIORITY, &flash_nrf_rram_api);
