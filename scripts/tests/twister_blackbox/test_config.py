@@ -86,6 +86,43 @@ class TestAltConfigRoot:
         # Standard suites that were NOT overridden should still be present
         assert 'dummy.agnostic.group1.subgroup1' in names
 
+    @pytest.mark.fast
+    @pytest.mark.parametrize('reverse_alt_roots', [False, True], ids=['in_order', 'reversed'])
+    def test_alt_config_root_matched_per_suite_root(self, out_path, reverse_alt_roots):
+        """Each --alt-config-root applies only to the -T suite root with the same basename."""
+        test_root_1 = os.path.join(TEST_DATA, 'tests', 'alt_config_root', 'group1')
+        test_root_2 = os.path.join(TEST_DATA, 'tests', 'alt_config_root', 'group2')
+        alt_root_1 = os.path.join(TEST_DATA, 'alt-test-configs', 'alt_config_root', 'group1')
+        alt_root_2 = os.path.join(TEST_DATA, 'alt-test-configs', 'alt_config_root', 'group2')
+        alt_roots = [alt_root_2, alt_root_1] if reverse_alt_roots else [alt_root_1, alt_root_2]
+        args = [
+            '-i',
+            '--outdir',
+            out_path,
+            '-T',
+            test_root_1,
+            '-T',
+            test_root_2,
+            '-y',
+        ]
+        args += [v for root in alt_roots for v in ('--alt-config-root', root)]
+        args += [v for p in PLATFORMS for v in ('-p', p)]
+        assert twister_main(args) == 0
+
+        plan = read_testplan(out_path)
+        paths = {}
+        for ts in plan['testsuites']:
+            paths.setdefault(ts['name'], set()).add(os.path.normpath(ts['path']))
+
+        # Each alt config is loaded for the suite root with the same basename only
+        for group in ('group1', 'group2'):
+            name = f'alt_config_root.{group}.alt'
+            assert name in paths
+            assert len(paths[name]) == 1
+            assert next(iter(paths[name])).endswith(os.path.join('alt_config_root', group))
+            # The standard config of that root was replaced, not loaded in addition
+            assert f'alt_config_root.{group}' not in paths
+
 
 @mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
 class TestLevel:
