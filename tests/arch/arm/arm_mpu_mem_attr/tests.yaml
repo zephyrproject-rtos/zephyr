@@ -1,0 +1,14 @@
+tests:
+  arch.arm.mpu_mem_attr:
+    platform_allow:
+      - qemu_cortex_r5/zynqmp_rpu
+      - mps3/an536/cpu0
+      - zynqmp_rpu
+      - versal2_rpu
+    integration_platforms:
+      - qemu_cortex_r5/zynqmp_rpu
+      - mps3/an536/cpu0
+      - versal2_rpu
+    tags:
+      - arm
+      - mpu
