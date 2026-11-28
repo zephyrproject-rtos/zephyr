@@ -699,16 +699,16 @@ static void usbd_msc_handle_request(struct usbd_class_data *c_data,
 		goto ep_request_error;
 	}
 
-	if (bi->ep == msc_get_bulk_out(c_data)) {
+	if (USB_EP_DIR_IS_OUT(bi->ep)) {
 		msc_handle_bulk_out(ctx, buf->data, buf->len);
-	} else if (bi->ep == msc_get_bulk_in(c_data)) {
+	} else {
 		msc_handle_bulk_in(ctx, buf->data, buf->len);
 	}
 
 ep_request_error:
-	if (bi->ep == msc_get_bulk_out(c_data)) {
+	if (USB_EP_DIR_IS_OUT(bi->ep)) {
 		ctx->num_out_queued--;
-	} else if (bi->ep == msc_get_bulk_in(c_data)) {
+	} else {
 		ctx->num_in_queued--;
 	}
 	msc_free_scsi_buf(ctx, buf->__buf);
