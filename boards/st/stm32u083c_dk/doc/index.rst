@@ -244,17 +244,13 @@ You should see the following message on the console:
 Debugging
 =========
 
-Default flasher for this board is openocd. It could be used in the usual way.
+Default flasher for this board is STM32CubeProgrammer. It could be used in the usual way.
 Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: nucleo_u083rc
+   :board: stm32u083c_dk
    :goals: debug
-
-Note: Check the ``build/tfm`` directory to ensure that the commands required by these scripts
-(``readlink``, etc.) are available on your system. Please also check ``STM32_Programmer_CLI``
-(which is used for initialization) is available in the PATH.
 
 .. _STM32U083_DK website:
    https://www.st.com/en/evaluation-tools/stm32u083c-dk.html
