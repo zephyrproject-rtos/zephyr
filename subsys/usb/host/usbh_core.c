@@ -21,66 +21,25 @@ LOG_MODULE_REGISTER(uhs, CONFIG_USBH_LOG_LEVEL);
 static K_KERNEL_STACK_DEFINE(usbh_stack, CONFIG_USBH_STACK_SIZE);
 static struct k_thread usbh_thread_data;
 
-static K_KERNEL_STACK_DEFINE(usbh_bus_stack, CONFIG_USBH_STACK_SIZE);
-static struct k_thread usbh_bus_thread_data;
-
 K_MSGQ_DEFINE_STATIC_TYPE(usbh_msgq, struct uhc_event, CONFIG_USBH_MAX_UHC_MSG);
-K_MSGQ_DEFINE_STATIC_TYPE(usbh_bus_msgq, struct uhc_event, CONFIG_USBH_MAX_UHC_MSG);
 
 static int usbh_event_carrier(const struct device *dev,
 			      const struct uhc_event *const event)
 {
-	int err;
+	struct usbh_context *const uhs_ctx = (void *)uhc_get_event_ctx(dev);
+	k_spinlock_key_t key;
 
 	if (event->type == UHC_EVT_EP_REQUEST) {
-		err = k_msgq_put(&usbh_msgq, event, K_NO_WAIT);
-	} else {
-		err = k_msgq_put(&usbh_bus_msgq, event, K_NO_WAIT);
+		/*
+		 * Always add completed transfer requests to the list, so they
+		 * do not get lost.
+		 */
+		key = k_spin_lock(&uhs_ctx->xfer_event_lock);
+		sys_dlist_append(&uhs_ctx->xfer_events, &event->xfer->node);
+		k_spin_unlock(&uhs_ctx->xfer_event_lock, key);
 	}
 
-	return err;
-}
-
-static void dev_connected_handler(struct usbh_context *const ctx,
-				  const struct uhc_event *const event)
-{
-	struct usb_device *udev;
-
-	udev = usbh_device_alloc(ctx);
-
-	if (udev == NULL) {
-		LOG_ERR("Failed allocate new device");
-		return;
-	}
-
-	switch (event->type) {
-	case UHC_EVT_DEV_CONNECTED_HS:
-		udev->speed = USB_SPEED_SPEED_HS;
-		break;
-	case UHC_EVT_DEV_CONNECTED_FS:
-		udev->speed = USB_SPEED_SPEED_FS;
-		break;
-	case UHC_EVT_DEV_CONNECTED_LS:
-		udev->speed = USB_SPEED_SPEED_LS;
-		break;
-	default:
-		LOG_ERR("USB device speed not supported");
-		return;
-	}
-
-	usbh_device_connect(ctx, udev);
-}
-
-static void dev_removed_handler(struct usbh_context *const ctx)
-{
-	struct usb_device *udev = NULL;
-
-	udev = usbh_device_get_root(ctx);
-	if (udev != NULL) {
-		usbh_device_disconnect(ctx, udev);
-	} else {
-		LOG_DBG("Spurious device removed event");
-	}
+	return k_msgq_put(&usbh_msgq, event, K_NO_WAIT);
 }
 
 static int discard_ep_request(struct usbh_context *const ctx,
@@ -98,56 +57,35 @@ static int discard_ep_request(struct usbh_context *const ctx,
 	return 0;
 }
 
-static ALWAYS_INLINE int usbh_event_handler(struct usbh_context *const ctx,
-					    struct uhc_event *const event)
+static void event_handler_xfer_request(struct usbh_context *const uhs_ctx)
 {
-	int ret = 0;
-
-	switch (event->type) {
-	case UHC_EVT_DEV_CONNECTED_LS:
-	case UHC_EVT_DEV_CONNECTED_FS:
-	case UHC_EVT_DEV_CONNECTED_HS:
-		dev_connected_handler(ctx, event);
-		break;
-	case UHC_EVT_DEV_REMOVED:
-		dev_removed_handler(ctx);
-		break;
-	case UHC_EVT_RESETED:
-		LOG_DBG("Bus reset");
-		break;
-	case UHC_EVT_SUSPENDED:
-		LOG_DBG("Bus suspended");
-		break;
-	case UHC_EVT_RESUMED:
-		LOG_DBG("Bus resumed");
-		break;
-	case UHC_EVT_RWUP:
-		LOG_DBG("RWUP event");
-		break;
-	case UHC_EVT_ERROR:
-		LOG_DBG("Error event %d", event->status);
-		break;
-	default:
-		break;
-	};
-
-	return ret;
-}
-
-static void usbh_bus_thread(void *p1, void *p2, void *p3)
-{
-	ARG_UNUSED(p1);
-	ARG_UNUSED(p2);
-	ARG_UNUSED(p3);
-
-	struct usbh_context *uhs_ctx;
-	struct uhc_event event;
+	struct uhc_transfer *xfer;
+	k_spinlock_key_t key;
+	usbh_udev_cb_t cb;
+	sys_dnode_t *node;
+	int ret;
 
 	while (true) {
-		k_msgq_get(&usbh_bus_msgq, &event, K_FOREVER);
+		key = k_spin_lock(&uhs_ctx->xfer_event_lock);
+		node = sys_dlist_get(&uhs_ctx->xfer_events);
+		k_spin_unlock(&uhs_ctx->xfer_event_lock, key);
 
-		uhs_ctx = (void *)uhc_get_event_ctx(event.dev);
-		usbh_event_handler(uhs_ctx, &event);
+		if (node == NULL) {
+			break;
+		}
+
+		xfer = SYS_DLIST_CONTAINER(node, xfer, node);
+
+		if (xfer->cb != NULL) {
+			cb = xfer->cb;
+			ret = cb(xfer->udev, xfer);
+		} else {
+			ret = discard_ep_request(uhs_ctx, xfer);
+		}
+
+		if (ret) {
+			LOG_ERR("Failed to handle request completion callback");
+		}
 	}
 }
 
@@ -159,25 +97,16 @@ static void usbh_thread(void *p1, void *p2, void *p3)
 
 	struct usbh_context *uhs_ctx;
 	struct uhc_event event;
-	usbh_udev_cb_t cb;
-	int ret;
 
 	while (true) {
 		k_msgq_get(&usbh_msgq, &event, K_FOREVER);
 
-		__ASSERT(event.type == UHC_EVT_EP_REQUEST, "Wrong event type");
+		if (event.type == UHC_EVT_ERROR) {
+			LOG_DBG("UHC error event %d", event.status);
+		}
+
 		uhs_ctx = (void *)uhc_get_event_ctx(event.dev);
-		cb = event.xfer->cb;
-
-		if (event.xfer->cb) {
-			ret = cb(event.xfer->udev, event.xfer);
-		} else {
-			ret = discard_ep_request(uhs_ctx, event.xfer);
-		}
-
-		if (ret) {
-			LOG_ERR("Failed to handle request completion callback");
-		}
+		event_handler_xfer_request(uhs_ctx);
 	}
 }
 
@@ -205,14 +134,6 @@ static int uhs_pre_init(void)
 			K_PRIO_COOP(9), 0, K_NO_WAIT);
 
 	k_thread_name_set(&usbh_thread_data, "usbh");
-
-	k_thread_create(&usbh_bus_thread_data, usbh_bus_stack,
-			K_KERNEL_STACK_SIZEOF(usbh_bus_stack),
-			usbh_bus_thread,
-			NULL, NULL, NULL,
-			K_PRIO_COOP(9), 0, K_NO_WAIT);
-
-	k_thread_name_set(&usbh_bus_thread_data, "usbh_bus");
 
 	usbh_class_init_all();
 

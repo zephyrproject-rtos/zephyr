@@ -64,15 +64,20 @@ struct usbh_context {
 	struct usb_device *root;
 	/** Allocated device addresses bit array */
 	struct sys_bitarray *addr_ba;
+	/** dlist to keep transfer events */
+	sys_dlist_t xfer_events;
+	/** Transfer event list spinlock */
+	struct k_spinlock xfer_event_lock;
 };
 
-#define USBH_CONTROLLER_DEFINE(device_name, uhc_dev)			\
-	SYS_BITARRAY_DEFINE_STATIC(ba_##device_name, 128);		\
-	static STRUCT_SECTION_ITERABLE(usbh_context, device_name) = {	\
-		.name = STRINGIFY(device_name),				\
-		.mutex = Z_MUTEX_INITIALIZER(device_name.mutex),	\
-		.dev = uhc_dev,						\
-		.addr_ba = &ba_##device_name,				\
+#define USBH_CONTROLLER_DEFINE(device_name, uhc_dev)				\
+	SYS_BITARRAY_DEFINE_STATIC(ba_##device_name, 128);			\
+	static STRUCT_SECTION_ITERABLE(usbh_context, device_name) = {		\
+		.name = STRINGIFY(device_name),					\
+		.mutex = Z_MUTEX_INITIALIZER(device_name.mutex),		\
+		.dev = uhc_dev,							\
+		.addr_ba = &ba_##device_name,					\
+		.xfer_events = SYS_DLIST_STATIC_INIT(&device_name.xfer_events),	\
 	}
 
 struct usbh_class_data;
