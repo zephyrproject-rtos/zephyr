@@ -146,7 +146,16 @@ file, setting the module name and a human-readable description first:
 This produces a user-facing ``Off`` / ``Terse`` / ``Normal`` / ``Verbose`` choice and the derived,
 non-assignable integer symbol ``CONFIG_ASSERT_MODULE_MYMODULE_LEVEL`` consumed by
 ``ZASSERT_MODULE(MYMODULE)``.
-The choice defaults to ``Verbose`` and stays overridable from :file:`prj.conf`.
+The choice defaults to the system-wide level selected by the
+``CONFIG_ASSERT_DEFAULT_LEVEL_OFF`` / ``CONFIG_ASSERT_DEFAULT_LEVEL_TERSE`` /
+``CONFIG_ASSERT_DEFAULT_LEVEL_NORMAL`` / ``CONFIG_ASSERT_DEFAULT_LEVEL_VERBOSE`` choice
+(``Verbose`` unless configured otherwise) and stays overridable per module from :file:`prj.conf`.
+For example, to make all assertions terse except those of ``MYMODULE``:
+
+.. code-block:: cfg
+
+   CONFIG_ASSERT_DEFAULT_LEVEL_TERSE=y
+   CONFIG_ASSERT_MODULE_MYMODULE_LEVEL_VERBOSE=y
 
 Example
 -------
@@ -259,18 +268,20 @@ the ``Off`` / ``Terse`` / ``Normal`` / ``Verbose`` choice
 (:kconfig:option:`CONFIG_ASSERT_MODULE_DEFAULT_LEVEL_OFF` /
 ``CONFIG_ASSERT_MODULE_DEFAULT_LEVEL_TERSE`` /
 ``CONFIG_ASSERT_MODULE_DEFAULT_LEVEL_NORMAL`` /
-:kconfig:option:`CONFIG_ASSERT_MODULE_DEFAULT_LEVEL_VERBOSE`). Assertions are enabled
+:kconfig:option:`CONFIG_ASSERT_MODULE_DEFAULT_LEVEL_VERBOSE`), which defaults to the
+system-wide ``CONFIG_ASSERT_DEFAULT_LEVEL_*`` level like any other module. Assertions are enabled
 by default when running Zephyr test cases, as configured by the
 :kconfig:option:`CONFIG_TEST` option.
 
-The deprecated legacy symbols are still honored and derive the ``DEFAULT`` module
-level: :kconfig:option:`CONFIG_ASSERT_VERBOSE` maps to ``Verbose``,
+The deprecated legacy symbols are still honored and derive the system-wide default
+level, and through it the level of the ``DEFAULT`` module and of every module that does not
+override its own level: :kconfig:option:`CONFIG_ASSERT_VERBOSE` maps to ``Verbose``,
 :kconfig:option:`CONFIG_ASSERT_NO_COND_INFO`,
 :kconfig:option:`CONFIG_ASSERT_NO_MSG_INFO` and
 :kconfig:option:`CONFIG_ASSERT_NO_FILE_INFO` map to ``Terse``,
-and a :kconfig:option:`CONFIG_ASSERT_LEVEL` ``== 0`` leaves it ``Off``.
-When none of these are set, the ``DEFAULT`` module choice falls through to its own
-:kconfig:option:`CONFIG_ASSERT_MODULE_DEFAULT_LEVEL_VERBOSE` default, preserving
+and a :kconfig:option:`CONFIG_ASSERT_LEVEL` ``== 0`` maps to ``Off``.
+When none of these are set, the system-wide default falls through to
+``CONFIG_ASSERT_DEFAULT_LEVEL_VERBOSE``, preserving
 the legacy behavior of verbose assertions as the default.
 To disable all assertions regardless of how the level was configured, set ``CONFIG_ASSERT=n``.
 
