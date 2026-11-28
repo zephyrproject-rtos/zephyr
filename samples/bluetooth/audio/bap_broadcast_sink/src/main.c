@@ -39,6 +39,7 @@
 #include "stream_rx.h"
 #include "usb.h"
 #include "hw_codec.h"
+#include "i2s_codec.h"
 
 BUILD_ASSERT(IS_ENABLED(CONFIG_SCAN_SELF) || IS_ENABLED(CONFIG_SCAN_OFFLOAD),
 	     "Either SCAN_SELF or SCAN_OFFLOAD must be enabled");
@@ -925,6 +926,13 @@ static int init(void)
 
 	if (IS_ENABLED(CONFIG_USE_USB_AUDIO_OUTPUT)) {
 		usb_init();
+	}
+
+	if (IS_ENABLED(CONFIG_USE_I2S_CODEC_AUDIO_OUTPUT)) {
+		err = i2s_codec_init();
+		if (err != 0) {
+			printk("Failed to start I2S codec output: %d\n", err);
+		}
 	}
 
 	return 0;

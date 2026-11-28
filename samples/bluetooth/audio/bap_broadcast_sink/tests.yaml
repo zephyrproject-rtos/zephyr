@@ -15,6 +15,15 @@ tests:
       - nrf5340dk/nrf5340/cpuapp
     tags: bluetooth
     sysbuild: true
+  sample.bluetooth.audio.bap_broadcast_sink.i2s_codec:
+    harness: bluetooth
+    platform_allow:
+      - nrf5340_audio_dk/nrf5340/cpuapp
+    integration_platforms:
+      - nrf5340_audio_dk/nrf5340/cpuapp
+    extra_args: FILE_SUFFIX=i2s_codec
+    tags: bluetooth
+    sysbuild: true
   sample.bluetooth.audio.bap_broadcast_sink.bt_ll_sw_split:
     harness: bluetooth
     platform_allow:
