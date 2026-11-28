@@ -934,6 +934,14 @@ WiFi
 Other subsystems
 ****************
 
+POSIX
+=====
+
+* The non-portable pthread extensions ``pthread_setname_np()``, ``pthread_getname_np()``,
+  ``pthread_timedjoin_np()`` and ``pthread_tryjoin_np()`` are now only available when
+  :kconfig:option:`CONFIG_POSIX_NON_PORTABLE` is enabled. It is disabled by default.
+  Applications that call these functions must enable it.
+
 Shell
 =====
 
