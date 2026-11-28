@@ -883,6 +883,12 @@ Networking
   if it fails for all stored networks, instead of ``0`` (or ``-ENOEXEC`` for static credentials).
   Update applications that call this request to handle this error.
 
+* :c:func:`net_buf_alloc_len` now sets :c:member:`net_buf.size` to the requested size on
+  fixed-size pools, as it already did on variable-size and heap pools. It previously reported the
+  pool's fixed buffer size. Code that relied on the extra tailroom must request the size it needs
+  or use :c:func:`net_buf_alloc_fixed` to get the full buffer. Requests larger than the buffer
+  size of a fixed-size pool now fail instead of returning a smaller buffer.
+
 Ethernet
 ========
 

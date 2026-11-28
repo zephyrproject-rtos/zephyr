@@ -359,18 +359,16 @@ success:
 	NET_BUF_DBG("allocated buf %p", buf);
 
 	if (size) {
-		__maybe_unused size_t req_size = size;
+		size_t alloc_size = size;
 
 		timeout = sys_timepoint_timeout(end);
-		buf->__buf = data_alloc(buf, &size, timeout);
-		if (!buf->__buf) {
+		buf->__buf = data_alloc(buf, &alloc_size, timeout);
+		if (!buf->__buf || alloc_size < size) {
 			NET_BUF_ERR("%s():%d: Failed to allocate data",
 				    func, line);
 			net_buf_destroy(buf);
 			return NULL;
 		}
-
-		__ASSERT_NO_MSG(req_size <= size);
 	} else {
 		buf->__buf = NULL;
 	}
@@ -682,7 +680,7 @@ struct net_buf *net_buf_clone(struct net_buf *buf, k_timeout_t timeout)
 			return NULL;
 		}
 
-		clone->size = size;
+		clone->size = buf->size;
 		clone->data = clone->__buf + net_buf_headroom(buf);
 		net_buf_add_mem(clone, buf->data, buf->len);
 	}
@@ -852,8 +850,13 @@ size_t net_buf_append_bytes(struct net_buf *buf, size_t len,
 			 */
 			pool = net_buf_pool_get(buf->pool_id);
 			max_size = pool->alloc->max_alloc_size;
+			/* Allocate the full fixed size from a fixed pool,
+			 * otherwise the size of the new fragment would be
+			 * limited to len and later appends could not use
+			 * its tailroom.
+			 */
 			frag = net_buf_alloc_len(pool,
-						 max_size ? min(len, max_size) : len,
+						 max_size ? max_size : len,
 						 timeout);
 		}
 
