@@ -591,6 +591,7 @@ _west_twister() {
   '--retry-interval[retry interval]:interval:'
   '--seed[seed]:seed:'
   '--shuffle-tests-seed[shuffle tests seed]:seed:'
+  '--platform-filter[platform filter expression]:expr:'
   '--sub-test[sub test]:test:'
   '(-B --subset)'{-B,--subset}'[subset]:subset:'
   '--vendor[vendor]:vendor:'
