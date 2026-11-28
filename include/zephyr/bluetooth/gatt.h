@@ -17,7 +17,7 @@
  *          information, see @ref bt_gatt_client and @ref bt_gatt_server.
  * @defgroup bt_gatt Generic Attribute Profile (GATT)
  * @since 1.0
- * @version 1.1.0
+ * @version 1.2.0
  * @ingroup bluetooth
  * @{
  */
@@ -1828,6 +1828,9 @@ struct bt_gatt_exchange_params {
  *  by @kconfig{CONFIG_BT_ATT_TX_COUNT}.
  *
  *  @retval -EALREADY The MTU exchange procedure has been already performed.
+ *
+ *  @retval -ENOTSUP @p conn is not an LE connection. On BR/EDR the ATT_MTU is
+ *  negotiated by L2CAP configuration.
  */
 int bt_gatt_exchange_mtu(struct bt_conn *conn,
 			 struct bt_gatt_exchange_params *params);

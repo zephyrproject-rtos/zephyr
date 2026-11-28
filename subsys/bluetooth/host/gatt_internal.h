@@ -45,6 +45,11 @@ bool bt_gatt_change_aware(struct bt_conn *conn, bool req);
 
 int bt_gatt_clear(uint8_t id, const bt_addr_le_t *addr);
 
+/* Clear the GATT state of a peer whose LE bond was removed, unless the
+ * BR/EDR bond of the same peer still uses it.
+ */
+void bt_gatt_le_bond_deleted(uint8_t id, const bt_addr_le_t *addr);
+
 #if defined(CONFIG_BT_GATT_CLIENT)
 void bt_gatt_notification(struct bt_conn *conn, uint16_t handle,
 			  const void *data, uint16_t length);
