@@ -1,0 +1,74 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Rockchip RK3588 USB 2.0 PHY
+
+description: |
+  Innosilicon USB 2.0 PHY of the RK3588, controlled through the GRF syscon
+  whose child the node is. The properties follow the Linux
+  rockchip,inno-usb2phy binding; the USB controller refers to a port of the
+  PHY in its phys property.
+
+  Example:
+
+    usb2phy0_grf: syscon@fd5d0000 {
+      compatible = "rockchip,rk3588-usb2phy-grf", "syscon", "simple-mfd";
+      reg = <0xfd5d0000 0x4000>;
+      #address-cells = <1>;
+      #size-cells = <1>;
+
+      u2phy0: usb2phy@0 {
+        compatible = "rockchip,rk3588-usb2phy";
+        reg = <0x0 0x10>;
+        #clock-cells = <0>;
+        clocks = <&cru_clk CLK_USB2PHY_HDPTXRXPHY_REF>;
+        clock-names = "phyclk";
+        clock-output-names = "usb480m_phy0";
+        resets = <&cru_rst SRST_OTGPHY_U3_0>, <&cru_rst SRST_P_USB2PHY_U3_0_GRF0>;
+        reset-names = "phy", "apb";
+
+        u2phy0_otg: otg-port {
+          #phy-cells = <0>;
+        };
+      };
+    };
+
+compatible: "rockchip,rk3588-usb2phy"
+
+include: [base.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Address of the PHY registers in the GRF, which identifies the PHY:
+      0x0 and 0x4000 for the PHYs of the USB 3.0 OTG controllers.
+
+  clock-output-names:
+    type: string-array
+    description: Name of the 480 MHz clock the PHY provides.
+
+  rockchip,usbgrf:
+    type: phandle
+    description: USB GRF syscon, on SoCs that need it.
+
+  extcon:
+    type: phandle
+    description: External connector reference.
+
+  wakeup-source:
+    type: boolean
+    description: The PHY can wake the system up.
+
+child-binding:
+  description: Host or OTG port of the PHY, without a compatible as in Linux.
+
+  properties:
+    "#phy-cells":
+      type: int
+      required: true
+      const: 0
+
+    phy-supply:
+      type: phandle
+      description: Regulator of the port VBUS.

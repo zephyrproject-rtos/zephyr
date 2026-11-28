@@ -1,0 +1,52 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config UDC_DWC3
+	bool "DWC3 USB device controller driver"
+	default y
+	depends on DT_HAS_SNPS_DWC3_ENABLED
+	select UDC_DRIVER_HAS_HIGH_SPEED_SUPPORT
+	select EVENTS
+	select CACHE_MANAGEMENT if DCACHE
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	select CLOCK_CONTROL if $(dt_compat_any_has_prop,$(DT_COMPAT_SNPS_DWC3),clocks)
+	select RESET if $(dt_compat_any_has_prop,$(DT_COMPAT_SNPS_DWC3),resets)
+	select SYSCON if DT_HAS_ROCKCHIP_RK3588_DWC3_ENABLED
+	select RESET if DT_HAS_ROCKCHIP_RK3588_DWC3_ENABLED
+	help
+	  Synopsys DesignWare Cores SuperSpeed USB 3.x (DWC3) device controller
+	  driver.
+
+if UDC_DWC3
+
+config UDC_DWC3_STACK_SIZE
+	int "UDC DWC3 driver internal thread stack size"
+	default 2048
+	help
+	  DWC3 driver internal thread stack size.
+
+config UDC_DWC3_THREAD_PRIORITY
+	int "UDC DWC3 driver thread priority"
+	default 8
+	help
+	  DWC3 driver thread priority.
+
+config UDC_DWC3_EVENT_BUFFER_SIZE
+	int "Size of the event buffer in bytes"
+	default 4096
+	range 256 65532
+	help
+	  Size of the buffer the controller writes its 4-byte events to. The
+	  driver processes the events from a thread, the buffer has to hold
+	  those that arrive in the meantime.
+
+config UDC_DWC3_TRB_NUM
+	int "Number of TRBs per non-control endpoint"
+	default 32
+	range 4 256
+	help
+	  Size of the TRB ring of each non-control endpoint, including the link
+	  TRB. A buffer takes one TRB, or two when it is padded to the packet
+	  size or ends with a zero-length packet.
+
+endif # UDC_DWC3
