@@ -31,8 +31,20 @@
  * bases on PSE84 and are absent on other SoCs (slots are unreferenced
  * there).
  */
+
+/* Number of slots in gpio_ports[] */
+#define IFX_PINCTRL_NUM_PORTS 31
+
 #if defined(CONFIG_SOC_SERIES_PSE84)
 #include <zephyr/dt-bindings/pinctrl/ifx_cat1-pinctrl.h>
+
+/* The IOSS GPIO ports use the slots below the SMIF ports. This has to be a
+ * plain number as it is used with LISTIFY().
+ */
+#define IFX_PINCTRL_NUM_IOSS_PORTS 22
+
+BUILD_ASSERT(IFX_SMIF0_PORT0 == IFX_PINCTRL_NUM_IOSS_PORTS,
+	     "SMIF ports must directly follow the IOSS GPIO ports");
 
 #define IFX_PINCTRL_SMIF_PORT_ENTRIES                                                          \
 	[IFX_SMIF0_PORT0] = (GPIO_PRT_Type *)SMIF_INST0_PRT0,                                  \
@@ -42,6 +54,7 @@
 	[IFX_SMIF1_PORT1] = (GPIO_PRT_Type *)SMIF_INST1_PRT1,                                  \
 	[IFX_SMIF1_PORT2] = (GPIO_PRT_Type *)SMIF_INST1_PRT2,
 #else
+#define IFX_PINCTRL_NUM_IOSS_PORTS IFX_PINCTRL_NUM_PORTS
 #define IFX_PINCTRL_SMIF_PORT_ENTRIES
 #endif
 
@@ -49,8 +62,8 @@
  *
  * Entries will be NULL if the GPIO port is not enabled.
  */
-static GPIO_PRT_Type *const gpio_ports[] = {
-	LISTIFY(31, GPIO_PORT_ENTRY, (,)),
+static GPIO_PRT_Type *const gpio_ports[IFX_PINCTRL_NUM_PORTS] = {
+	LISTIFY(IFX_PINCTRL_NUM_IOSS_PORTS, GPIO_PORT_ENTRY, (,)),
 	IFX_PINCTRL_SMIF_PORT_ENTRIES
 };
 
