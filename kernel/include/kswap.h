@@ -32,19 +32,12 @@ extern void z_check_stack_sentinel(void);
  *
  * do_swap() is inlined in each caller to resolve the lock handling at
  * compile time, as is_spinlock and often lock are constants. The rest
- * is done by z_swap_switch(), called with the scheduler spinlock held.
- * release_global_lock tells z_swap_switch() to release the SMP global
- * irq_lock() of the outgoing thread.
+ * is done by z_swap_switch(), or by z_swap_switch_irqlock() which also
+ * releases the SMP global irq_lock() of the outgoing thread, called with
+ * the scheduler spinlock held.
  */
-#ifdef CONFIG_SMP
-int z_swap_switch(unsigned int key, bool release_global_lock);
-#else
-/* Uniprocessor builds have no global lock to release. Dropping the
- * argument saves each caller from setting it up.
- */
-int z_swap_switch_up(unsigned int key);
-#define z_swap_switch(key, release_global_lock) z_swap_switch_up(key)
-#endif
+int z_swap_switch(unsigned int key);
+int z_swap_switch_irqlock(unsigned int key);
 
 static ALWAYS_INLINE int do_swap(unsigned int key,
 				 struct k_spinlock *lock,
@@ -73,7 +66,7 @@ static ALWAYS_INLINE int do_swap(unsigned int key,
 		}
 	}
 
-	return z_swap_switch(key, !is_spinlock);
+	return is_spinlock ? z_swap_switch(key) : z_swap_switch_irqlock(key);
 }
 
 static inline int z_swap_irqlock(unsigned int key)

@@ -8,7 +8,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/platform/hooks.h>
 
-#include <kernel_internal.h>
+#include <ksmp.h>
 
 /* Time given to the hook to run on the parked CPUs, in milliseconds */
 #define HOOK_TIMEOUT_MS 1000

@@ -24,6 +24,18 @@
 #include <usage.h>
 #include <kernel_arch_func.h>
 
+bool z_sched_slice_keeps_current(struct k_thread *curr)
+{
+	struct k_thread *next = runq_best();
+
+	/* _current is not in the run queue; the slice restarts when there
+	 * is no other thread to run.
+	 */
+	ARG_UNUSED(curr);
+
+	return (next == NULL) || z_is_idle_thread_object(next);
+}
+
 static ALWAYS_INLINE struct k_thread *next_up(void)
 {
 	bool ipi_idle_target_rebound = false;

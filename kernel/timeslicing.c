@@ -8,6 +8,7 @@
 #include <kspinlock.h>
 #include <kswap.h>
 #include <ksched.h>
+#include <ksmp.h>
 #include <ipi.h>
 #include <timeslicing.h>
 
@@ -203,17 +204,9 @@ void z_time_slice(void)
 			 * the new thread with slice_expired still set,
 			 * picking up the tick-aligned delay.
 			 */
-#ifdef CONFIG_SMP
-			struct k_thread *next = runq_best();
-
-			if (next == NULL || z_is_idle_thread_object(next)) {
+			if (z_sched_slice_keeps_current(curr)) {
 				slice_reset(slice_size);
 			}
-#else
-			if (_kernel.ready_q.cache == curr) {
-				slice_reset(slice_size);
-			}
-#endif
 		}
 	}
 	z_sched_spinlock_unlock(key);

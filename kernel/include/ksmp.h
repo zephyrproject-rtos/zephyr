@@ -6,7 +6,8 @@
 /*
  * Hooks through which the common kernel code reaches the SMP support in
  * kernel/smp/. Each hook has a uniprocessor variant at the end of this file
- * that compiles to nothing, so the callers carry no SMP conditionals.
+ * that compiles to nothing or to the uniprocessor equivalent, so the callers
+ * carry no SMP conditionals.
  */
 
 #ifndef ZEPHYR_KERNEL_INCLUDE_KSMP_H_
@@ -17,6 +18,7 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/barrier.h>
 #include <wait_q.h>
+#include <timeslicing.h>
 
 #ifdef CONFIG_SMP
 
@@ -180,6 +182,41 @@ static inline void z_smp_switch_handle_clear(struct k_thread *thread)
  */
 void z_smp_switch_requeue(struct k_thread *old_thread);
 
+/* Whether @p curr, just moved to the end of its priority queue, is still
+ * the thread that runs next. Scheduler spinlock held.
+ */
+bool z_sched_slice_keeps_current(struct k_thread *curr);
+
+/* Start the time slice of @p new_thread at the context switch to it. */
+static inline void z_smp_slice_start(struct k_thread *new_thread)
+{
+#ifdef CONFIG_TIMESLICING
+	z_time_slice_reset(new_thread);
+#else
+	ARG_UNUSED(new_thread);
+#endif /* CONFIG_TIMESLICING */
+}
+
+/* Set up the timer of a secondary CPU, implemented by the timer driver. */
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+void smp_timer_init(void);
+#endif /* CONFIG_SYS_CLOCK_EXISTS */
+
+/* Park the other CPUs before halting on a fatal error.
+ *
+ * Only one CPU halts the system: a CPU that calls this while another CPU is
+ * halting parks for good. The other CPUs are parked through the scheduler IPI;
+ * a CPU that keeps interrupts locked is given up on after a timeout.
+ *
+ * Interrupts are locked on return.
+ */
+void z_fatal_pause_cpus(void);
+
+/* Park this CPU while another CPU halts the system. Called from the
+ * scheduler IPI handler.
+ */
+void z_fatal_ipi(void);
+
 #else /* !CONFIG_SMP */
 
 static inline void z_smp_arch_init(void)
@@ -260,6 +297,21 @@ static inline void z_smp_switch_handle_clear(struct k_thread *thread)
 static inline void z_smp_switch_requeue(struct k_thread *old_thread)
 {
 	ARG_UNUSED(old_thread);
+}
+
+static inline bool z_sched_slice_keeps_current(struct k_thread *curr)
+{
+	return _kernel.ready_q.cache == curr;
+}
+
+/* Uniprocessor builds start the time slice in update_cache(). */
+static inline void z_smp_slice_start(struct k_thread *new_thread)
+{
+	ARG_UNUSED(new_thread);
+}
+
+static inline void z_fatal_pause_cpus(void)
+{
 }
 
 #endif /* CONFIG_SMP */

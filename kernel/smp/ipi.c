@@ -7,6 +7,7 @@
 #include <zephyr/sys/math_extras.h>
 #include <kswap.h>
 #include <ksched.h>
+#include <ksmp.h>
 #include <ipi.h>
 
 #if defined(CONFIG_IPI_OPTIMIZE_IDLE) && defined(CONFIG_PM)
