@@ -1438,6 +1438,16 @@ ZTESTABLE_STATIC int wg_process_data_message(struct wg_iface_context *ctx,
 		goto out;
 	}
 
+	/* Data, not a keepalive: if we have nothing to send back within
+	 * KEEPALIVE_TIMEOUT, send a keepalive, or the peer starts a new
+	 * handshake when it hears nothing for KEEPALIVE_TIMEOUT + REKEY_TIMEOUT.
+	 */
+	if (!peer->passive_keepalive) {
+		peer->passive_keepalive = true;
+		peer->passive_keepalive_at =
+			sys_timepoint_calc(K_SECONDS(KEEPALIVE_TIMEOUT));
+	}
+
 	/* We then need to copy the decrypted data into a net_pkt so that it can
 	 * be processed by the network stack.
 	 */

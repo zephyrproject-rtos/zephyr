@@ -270,6 +270,12 @@ static bool should_destroy_keypair(struct wg_keypair *keypair)
 
 static bool should_send_keepalive(struct wg_peer *peer)
 {
+	if (peer->passive_keepalive &&
+	    sys_timepoint_expired(peer->passive_keepalive_at) &&
+	    peer->session.keypair.current.is_valid) {
+		return true;
+	}
+
 	if (peer->keepalive_interval > 0) {
 		if (peer->session.keypair.current.is_valid ||
 		    peer->session.keypair.prev.is_valid) {
@@ -295,15 +301,18 @@ static bool should_send_init(struct wg_peer *peer)
 			return true;
 		}
 
+		/* A session the peer initiated: rekey it ourselves only when it
+		 * nears REJECT_AFTER_TIME, in case the initiator doesn't.
+		 */
 		if (peer->session.keypair.current.is_valid &&
 		    !peer->session.keypair.current.is_initiator) {
-			k_timepoint_t expires;
+			k_timepoint_t rekey_at;
 
-			expires = sys_timepoint_calc(
-				K_SECONDS(REJECT_AFTER_TIME - peer->keepalive_interval));
+			rekey_at = sys_timepoint_calc(
+				K_SECONDS(KEEPALIVE_TIMEOUT + REKEY_TIMEOUT));
 
 			if (sys_timepoint_cmp(peer->session.keypair.current.expires,
-					      expires) > 0) {
+					      rekey_at) < 0) {
 				return true;
 			}
 		}
@@ -1443,6 +1452,7 @@ static int interface_send(struct net_if *iface, struct net_pkt *pkt)
 	vpn_stats_update_valid_tx(ctx);
 
 	peer->last_tx = keypair->last_tx = sys_clock_tick_get_32();
+	peer->passive_keepalive = false;
 
 	if (peer->keepalive_interval > 0) {
 		peer->keepalive_expires =
