@@ -116,6 +116,18 @@ properties:
     description: |
       In the relative mode enable the primary tap.
 
+  secondary-tap-enable:
+    type: boolean
+    description: |
+      In the relative mode enable the secondary tap, performed in the corner of
+      the sensor, and report it as INPUT_BTN_1. Requires primary-tap-enable.
+
+  scroll-enable:
+    type: boolean
+    description: |
+      In the relative mode enable the Intellimouse scroll, performed by sliding
+      along the edge of the sensor, and report it as INPUT_REL_WHEEL.
+
   swap-xy:
     type: boolean
     description: |
