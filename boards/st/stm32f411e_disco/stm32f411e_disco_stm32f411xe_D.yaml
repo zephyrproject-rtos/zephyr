@@ -9,4 +9,5 @@ ram: 128
 flash: 512
 supported:
   - counter
+  - crc
 vendor: st

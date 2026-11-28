@@ -23,8 +23,8 @@ static const uint32_t crc32c_table[16] = {
  */
 #define CRC32C_INIT 0xFFFFFFFFUL
 
-uint32_t __weak crc32_c(uint32_t crc, const uint8_t *data, size_t len, bool first_pkt,
-			bool last_pkt)
+uint32_t __weak crc32_c_sw(uint32_t crc, const uint8_t *data, size_t len, bool first_pkt,
+			   bool last_pkt)
 {
 	if (first_pkt) {
 		crc = CRC32C_INIT;
@@ -37,3 +37,5 @@ uint32_t __weak crc32_c(uint32_t crc, const uint8_t *data, size_t len, bool firs
 
 	return last_pkt ? (crc ^ CRC32C_XOR_OUT) : crc;
 }
+
+FUNC_ALIAS(crc32_c_sw, __weak crc32_c, uint32_t);

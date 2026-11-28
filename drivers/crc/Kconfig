@@ -111,4 +111,34 @@ config CRC_DRIVER_HAS_CRC32_MPEG2
 	help
 	  CRC driver has CRC32 MPEG-2 computation
 
+config CRC_DRIVER_INCOMPLETE
+	bool
+	help
+	  CRC driver has limitations against the API set it is supposed to be backing
+
+config CRC_DRIVER_NEEDS_WORDS
+	bool
+	select CRC_DRIVER_INCOMPLETE
+	help
+	  CRC driver to be fed with hash-sized words rather than an arbitrary number of bytes
+
+config CRC_DRIVER_FIXED_POLYNOM
+	bool
+	select CRC_DRIVER_INCOMPLETE
+	help
+	  CRC driver has a preconfigured polynom, or set thereof, hence polynom can't be selected
+	  arbitrarily
+
+config CRC_DRIVER_FIXED_INIT_VAL
+	bool
+	select CRC_DRIVER_INCOMPLETE
+	help
+	  CRC driver has a preconfigured salt and must be passed that initialization value exactly
+
+config CRC_DRIVER_FIXED_REVERSIONS
+	bool
+	select CRC_DRIVER_INCOMPLETE
+	help
+	  CRC driver has a preconfigured direction for input and/or output
+
 endif # CRC_DEVICE

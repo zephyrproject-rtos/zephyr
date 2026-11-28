@@ -15,7 +15,7 @@ uint32_t __weak crc24_pgp(const uint8_t *data, size_t len)
 }
 
 /* CRC-24 implementation from the section 6.1 of the RFC 4880 */
-uint32_t __weak crc24_pgp_update(uint32_t crc, const uint8_t *data, size_t len)
+uint32_t crc24_pgp_sw_update(uint32_t crc, const uint8_t *data, size_t len)
 {
 	int i;
 
@@ -31,6 +31,8 @@ uint32_t __weak crc24_pgp_update(uint32_t crc, const uint8_t *data, size_t len)
 
 	return crc;
 }
+
+FUNC_ALIAS(crc24_pgp_sw_update, __weak crc24_pgp_update, uint32_t);
 
 /** This code is originally extracted from github.com/go-gnss/rtcm,
  * licensed as Apache-2.0.
