@@ -36,6 +36,15 @@ extern "C" {
  */
 #define LED_BRIGHTNESS_MAX 100u
 
+/** @cond INTERNAL_HIDDEN */
+/** Initialise the LED to the "on" state */
+#define LED_DEFAULT_STATE_ON   0
+/** Initialise the LED to the "off" state */
+#define LED_DEFAULT_STATE_OFF  1
+/** Keep the LED state during initialisation */
+#define LED_DEFAULT_STATE_KEEP 2
+/** @endcond */
+
 /**
  * @brief LED information structure
  *
