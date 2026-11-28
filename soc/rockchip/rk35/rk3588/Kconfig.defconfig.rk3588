@@ -22,4 +22,7 @@ config ARM_SCMI
 configdefault MAX_XLAT_TABLES
 	default 16 if !USERSPACE
 
+configdefault CLOCK_CONTROL
+	default y if DT_HAS_ROCKCHIP_RK3588_CRU_CLK_ENABLED
+
 endif
