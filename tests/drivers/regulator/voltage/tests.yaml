@@ -24,6 +24,7 @@ tests:
       - frdm_mcxn236
       - frdm_mcxw71
       - frdm_mcxa577
+      - frdm_mcxc444
     harness_config:
       fixture: regulator_output_to_adc
   drivers.regulator.voltage.rpi_pico_vreg:

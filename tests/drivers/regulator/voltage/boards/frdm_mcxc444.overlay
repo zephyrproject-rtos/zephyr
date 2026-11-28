@@ -1,0 +1,45 @@
+/*
+ * Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/regulator/nxp_vref.h>
+#include <zephyr/dt-bindings/adc/mcux-adc16.h>
+
+/*
+ * Connect VREF_OUT (JP6-2) to ADC0_SE0 (PTE20, J4-1) to test this case.
+ */
+
+/ {
+	resources: resources {
+		compatible = "test-regulator-voltage";
+		regulators = <&vref>;
+		tolerance-microvolt = <5000>;
+		set-read-delay-ms = <10>;
+		adc-avg-count = <30>;
+		io-channels = <&adc0 0>;
+		min-microvolt = <1175500>;
+		max-microvolt = <1207000>;
+	};
+};
+
+&vref {
+	regulator-initial-mode = <NXP_VREF_MODE_HIGH_POWER>;
+};
+
+&adc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		/* Set to the measured VDD_ANA voltage on the board. */
+		zephyr,vref-mv = <3276>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS,
+							MCUX_ADC16_ACQUISITION_TIME_24CYCLE)>;
+		zephyr,resolution = <16>;
+		zephyr,oversampling = <5>;
+	};
+};
