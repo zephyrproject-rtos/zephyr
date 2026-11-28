@@ -32,6 +32,9 @@ properties:
     default: 0xDA
     description: |
       ITIME value in TIMING register determines integration time.
-      Higher values result in longer integration time and
-      increased accuracy.
+      Lower values result in longer integration time and
+      higher sensitivity. Higher values result in shorter integration time.
+      Examples: 0xFF(max ITIME reg) -> 2.7 ms(min itime_ms),
+      0xDA -> 102.6 ms, 0x01(min ITIME reg) -> 688.3 ms (max itime_ms).
+      Used as start value; can be changed at runtime.
       The default corresponds to the reset value of the TIMING register.
