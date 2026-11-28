@@ -1125,7 +1125,7 @@ static ssize_t write_control_point(struct bt_conn *conn, const struct bt_gatt_at
 	}
 
 	if (len == sizeof(command.opcode) + sizeof(command.param)) {
-		command.param = sys_get_le32((char *)buf + sizeof(command.opcode));
+		command.param = sys_get_le32((const uint8_t *)buf + sizeof(command.opcode));
 		command.use_param = true;
 		LOG_DBG("Parameter: %d", command.param);
 	}
