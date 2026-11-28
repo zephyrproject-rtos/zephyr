@@ -56,6 +56,8 @@ struct eth_ivshmem_cfg_data {
 static struct net_stats_eth *eth_ivshmem_get_stats(const struct device *dev,
 						   struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_ivshmem_dev_data *dev_data = dev->data;
 
 	return &dev_data->stats;
@@ -64,6 +66,8 @@ static struct net_stats_eth *eth_ivshmem_get_stats(const struct device *dev,
 
 static int eth_ivshmem_start(const struct device *dev, struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_ivshmem_dev_data *dev_data = dev->data;
 
 	dev_data->enabled = true;
@@ -76,6 +80,8 @@ static int eth_ivshmem_start(const struct device *dev, struct net_if *iface __un
 
 static int eth_ivshmem_stop(const struct device *dev, struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_ivshmem_dev_data *dev_data = dev->data;
 
 	dev_data->enabled = false;
@@ -94,6 +100,8 @@ static enum ethernet_hw_caps eth_ivshmem_caps(const struct device *dev __unused,
 
 static int eth_ivshmem_send(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_ivshmem_dev_data *dev_data = dev->data;
 	const struct eth_ivshmem_cfg_data *cfg_data = dev->config;
 	size_t len = net_pkt_get_len(pkt);
@@ -224,6 +232,9 @@ static void eth_ivshmem_state_update(const struct device *dev)
 FUNC_NORETURN static void eth_ivshmem_thread(void *arg1, void *arg2, void *arg3)
 {
 	const struct device *dev = arg1;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_ivshmem_dev_data *dev_data = dev->data;
 	struct k_poll_event poll_event;
 
@@ -264,6 +275,8 @@ FUNC_NORETURN static void eth_ivshmem_thread(void *arg1, void *arg2, void *arg3)
 
 int eth_ivshmem_initialize(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_ivshmem_dev_data *dev_data = dev->data;
 	const struct eth_ivshmem_cfg_data *cfg_data = dev->config;
 	int res;
@@ -355,6 +368,9 @@ int eth_ivshmem_initialize(const struct device *dev)
 static void eth_ivshmem_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_ivshmem_dev_data *dev_data = dev->data;
 
 	dev_data->iface = iface;
