@@ -76,3 +76,7 @@
 .kconfig ul {
     margin-bottom: 0 !important;
 }
+
+.kconfig .location-filter {
+    margin-left: 0.75em;
+}
