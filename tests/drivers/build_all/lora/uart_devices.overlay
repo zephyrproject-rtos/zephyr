@@ -20,6 +20,12 @@
 				reset-gpios = <&test_gpio 0 0>;
 				status = "okay";
 			};
+
+			test_rakwireless_rui3: rakwireless_rui3 {
+				compatible = "rakwireless,rui3";
+				reset-gpios = <&test_gpio 1 0>;
+				status = "okay";
+			};
 		};
 
 		test_gpio: gpio@deadbeef {
