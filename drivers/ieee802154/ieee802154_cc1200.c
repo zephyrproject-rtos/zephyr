@@ -415,6 +415,10 @@ static inline bool verify_rxfifo_validity(const struct device *dev,
 static inline bool read_rxfifo_content(const struct device *dev,
 				       struct net_buf *buf, uint8_t len)
 {
+	if (net_buf_tailroom(buf) < len) {
+		LOG_ERR("RX frame too long for buffer: %u", len);
+		return false;
+	}
 
 	if (!read_rxfifo(dev, buf->data, len) ||
 	    (get_status(dev) == CC1200_STATUS_RX_FIFO_ERROR)) {
