@@ -30,6 +30,15 @@
 #define TOOLCHAIN_HAS_C_AUTO_TYPE 1
 #endif
 
+/*
+ * counted_by is ignored in C++. Before Clang 19.1.3, __builtin_dynamic_object_size()
+ * miscomputes the size of a counted_by array (llvm-project PRs 110497 and 112636).
+ */
+#if !defined(__counted_by) && !defined(__cplusplus) && (TOOLCHAIN_CLANG_VERSION >= 190103)
+#define __counted_by(member)     __attribute__((__counted_by__(member)))
+#define TOOLCHAIN_HAS_COUNTED_BY 1
+#endif
+
 #include <zephyr/toolchain/gcc.h>
 
 /* Replace the GCC CODE_ASSUME() idiom from gcc.h with the clang builtin */

@@ -1191,7 +1191,7 @@ struct device_dt_nodelabels {
 	/* @brief array of node labels as strings, exactly as they
 	 *        appear in the final devicetree
 	 */
-	const char *nodelabels[];
+	const char *nodelabels[] __counted_by(num_nodelabels);
 };
 
 /**
