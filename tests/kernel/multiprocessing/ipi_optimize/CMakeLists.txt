@@ -5,6 +5,7 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(smp)
 
 target_sources(app PRIVATE src/main.c)
+target_sources_ifdef(CONFIG_TEST_IPI_PM_HOOKS app PRIVATE src/pm.c)
 
 target_include_directories(app PRIVATE
   ${ZEPHYR_BASE}/kernel/include
