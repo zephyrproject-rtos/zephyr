@@ -90,6 +90,14 @@ tests:
       - frdm_mcxa156
     integration_platforms:
       - frdm_mcxa156
+  drivers.adc.nxp_aon_lpadc:
+    extra_args:
+      - FILE_SUFFIX="aon_lpadc"
+    platform_allow:
+      - frdm_mcxl255/mcxl255/cpu0
+      - frdm_mcxl255/mcxl255/cpu1
+    integration_platforms:
+      - frdm_mcxl255/mcxl255/cpu0
   drivers.adc.dma_espressif:
     extra_args:
       - EXTRA_CONF_FILE="dma-esp32.conf"

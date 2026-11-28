@@ -80,15 +80,9 @@
 	};
 };
 
-&aon_peripheral {
-	aon_lpadc0: adc@92000 {
-		compatible = "nxp,aon-lpadc";
-		reg = <0x92000 0x1000>;
-		interrupts = <149 0>;
-		clocks = <&syscon MCUX_AON_LPADC_CLK>;
-		#io-channel-cells = <1>;
-		status = "disabled";
-	};
+&aon_lpadc0 {
+	interrupts = <149 0>;
+	clocks = <&syscon MCUX_AON_LPADC_CLK>;
 };
 
 &fmu {

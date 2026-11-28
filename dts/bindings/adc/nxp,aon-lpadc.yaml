@@ -16,7 +16,9 @@ properties:
     required: true
 
   clocks:
-    required: true
+    description: |
+      Peripheral clock gate. Optional: on cores without a clock controller
+      driver the gate is opened by board or SoC code before the driver runs.
 
   voltage-ref:
     type: int

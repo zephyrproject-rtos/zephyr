@@ -301,15 +301,20 @@ static int adc_aon_lpadc_init(const struct device *dev)
 		return ret;
 	}
 
-	/* Register access faults while the AON CGU clock gate is closed. */
-	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("Clock device not ready");
-		return -ENODEV;
-	}
+	/*
+	 * Register access faults while the AON CGU clock gate is closed. Without
+	 * a clocks property the gate must already be open.
+	 */
+	if (config->clock_dev != NULL) {
+		if (!device_is_ready(config->clock_dev)) {
+			LOG_ERR("Clock device not ready");
+			return -ENODEV;
+		}
 
-	ret = clock_control_on(config->clock_dev, config->clock_subsys);
-	if (ret < 0) {
-		return ret;
+		ret = clock_control_on(config->clock_dev, config->clock_subsys);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	/* Reset the converter and its result FIFO. */
@@ -373,8 +378,10 @@ static DEVICE_API(adc, adc_aon_lpadc_driver_api) = {
                                                                                                    \
 	static const struct adc_aon_lpadc_config adc_aon_lpadc_config_##n = {                      \
 		.base = (LPADC_Type *)DT_INST_REG_ADDR(n),                                         \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
+		.clock_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),                         \
+					 (DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n))), (NULL)),         \
+		.clock_subsys = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),                      \
+			((clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name)), (NULL)),           \
 		.voltage_ref = DT_INST_PROP(n, voltage_ref),                                       \
 		.power_level = DT_INST_PROP(n, power_level),                                       \
 		.irq_config_func = adc_aon_lpadc_config_func_##n,                                  \

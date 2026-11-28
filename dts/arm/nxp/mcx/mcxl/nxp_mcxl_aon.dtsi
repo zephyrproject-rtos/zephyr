@@ -159,6 +159,13 @@
 		};
 	};
 
+	aon_lpadc0: adc@92000 {
+		compatible = "nxp,aon-lpadc";
+		reg = <0x92000 0x1000>;
+		#io-channel-cells = <1>;
+		status = "disabled";
+	};
+
 	rtc: rtc@9a000 {
 		compatible = "nxp,rtc-analog";
 		reg = <0x9a000 0x1000>;

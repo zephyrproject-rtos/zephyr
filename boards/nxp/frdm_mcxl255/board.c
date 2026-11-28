@@ -92,6 +92,10 @@ void board_early_init_hook(void)
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_lpadc0))
 	RESET_ReleasePeripheralReset(kAonLPADC_RST_SHIFT_RSTn);
+#if !DT_NODE_HAS_PROP(DT_NODELABEL(aon_lpadc0), clocks)
+	/* No clock controller for this core, open the gate here. */
+	CLOCK_EnableClock(kCLOCK_GateAonLPADC);
+#endif
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(portb))
