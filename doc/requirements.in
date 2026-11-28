@@ -36,7 +36,7 @@ coverxygen!=1.8.2 # See https://github.com/psycofdj/coverxygen/issues/37
 python-dotenv
 
 # Used to export requirements from the reqmgmt module (StrictDoc)
-strictdoc>=0.28.1
+strictdoc>=0.31.0
 
 # Used by the licensing extension
 reuse>=6.3.0
