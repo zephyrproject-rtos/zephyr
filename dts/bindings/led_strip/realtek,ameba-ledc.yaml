@@ -1,0 +1,55 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Realtek Ameba LED controller (LEDC)
+
+  The LEDC generates the one-wire bit waveform for addressable RGB LEDs in
+  hardware. Each of the four bit timings below has its own register, so the
+  bit period of a 0 code and of a 1 code can differ. The hardware resolution
+  is 25 ns (40 MHz).
+
+compatible: "realtek,ameba-ledc"
+
+include: [base.yaml, pinctrl-device.yaml, led-strip.yaml]
+
+properties:
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  time-t0h:
+    type: int
+    required: true
+    description: |
+      High time of a 0 code in nanoseconds, 25 to 6375 in steps of 25.
+
+  time-t0l:
+    type: int
+    required: true
+    description: |
+      Low time of a 0 code in nanoseconds, 25 to 6375 in steps of 25.
+
+  time-t1h:
+    type: int
+    required: true
+    description: |
+      High time of a 1 code in nanoseconds, 25 to 6375 in steps of 25.
+
+  time-t1l:
+    type: int
+    required: true
+    description: |
+      Low time of a 1 code in nanoseconds, 25 to 6375 in steps of 25.
+
+  reset-delay:
+    type: int
+    required: true
+    description: |
+      Low time sent after a frame so that the strip latches the data, in
+      microseconds, 1 to 409. It also limits how long the LEDC waits for the
+      next pixel while a frame is being sent: if the driver does not refill
+      the FIFO within this time, the transfer is aborted. Do not set it much
+      lower than the latch time the strip needs.
