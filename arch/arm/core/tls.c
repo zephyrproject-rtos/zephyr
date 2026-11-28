@@ -11,6 +11,12 @@
 #include <zephyr/sys/util.h>
 
 #ifdef CONFIG_CPU_CORTEX_M
+#ifdef CONFIG_SMP
+uintptr_t z_arm_tls_get(void)
+{
+	return _current->tls;
+}
+#else
 /*
  * Since Cortex-M does not have the thread ID or process ID
  * register needed to store TLS pointer at runtime for
@@ -18,6 +24,7 @@
  * instead.
  */
 K_APP_DMEM(z_libc_partition) uintptr_t z_arm_tls_ptr;
+#endif
 #endif
 
 size_t arch_tls_stack_setup(struct k_thread *new_thread, char *stack_ptr)

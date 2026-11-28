@@ -9,6 +9,14 @@ zephyr_library_sources_ifdef(CONFIG_MPU mpu_regions.c)
 
 zephyr_library_sources_ifdef(CONFIG_PM power.c)
 
+# soc_cpu_index() is needed whenever CONFIG_SMP is set, also when a test
+# limits CONFIG_MP_MAX_NUM_CPUS to 1 on the SMP target.
+if(CONFIG_SMP OR CONFIG_MP_MAX_NUM_CPUS GREATER 1)
+  zephyr_library_sources(smp.c)
+  # For <ipi.h>, which declares z_sched_ipi().
+  zephyr_library_include_directories(${ZEPHYR_BASE}/kernel/include)
+endif()
+
 if(CONFIG_PM_S2RAM)
   zephyr_library_sources(pm_s2ram_skip.c)
   zephyr_library_sources(rp2350_powman.c)

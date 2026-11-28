@@ -31,6 +31,22 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
 	default y if ARM_MPU
 
+config PM_CPU_OPS
+	default y if MP_MAX_NUM_CPUS > 1
+
+# The default hwinfo device ID is the flash unique ID, read by leaving XIP
+# for a moment under irq_lock(). That does not stop the other core, which
+# may be executing from flash at that time (the USB stack reads the ID for
+# its serial number). Use the chip ID from the bootrom instead.
+config HWINFO_RPI_PICO_CHIP_ID
+	default y if MP_MAX_NUM_CPUS > 1
+
+# A thread resumed by arch_switch() has its stack pointer at the bottom of
+# its switch frame while interrupts are enabled, so the idle thread needs
+# room for an exception frame below that point.
+config IDLE_STACK_SIZE
+	default 512 if SMP
+
 # SUSPEND_TO_RAM powers down SysTick; hand off timekeeping via hooks (rp2350_powman.c).
 choice SYSTEM_TIMER_LPM_COMPANION
 	default SYSTEM_TIMER_LPM_COMPANION_HOOKS if PM_S2RAM

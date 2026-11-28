@@ -13,6 +13,7 @@ family:
       - name: hazard3_0
       - name: m33_0
       - name: m33_1
+      - name: m33_smp
     - name: rp2350b
       cpuclusters:
       - name: hazard3
@@ -20,6 +21,7 @@ family:
       - name: hazard3_0
       - name: m33_0
       - name: m33_1
+      - name: m33_smp
 runners:
   run_once:
     '--reset':
