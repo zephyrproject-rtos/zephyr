@@ -49,15 +49,9 @@ void sys_arch_reboot(int type)
  */
 void z_sys_poweroff(void)
 {
-	register unsigned long a0 __asm__("a0") = SBI_SRST_RESET_TYPE_SHUTDOWN;
-	register unsigned long a1 __asm__("a1") = SBI_SRST_RESET_REASON_NONE;
-	register unsigned long a6 __asm__("a6") = SBI_FUNC_SYSTEM_RESET;
-	register unsigned long a7 __asm__("a7") = SBI_EXT_SRST;
+	(void)sbi_ecall(SBI_SRST_RESET_TYPE_SHUTDOWN, SBI_SRST_RESET_REASON_NONE,
+			0, 0, 0, 0, SBI_FUNC_SYSTEM_RESET, SBI_EXT_SRST);
 
-	__asm__ volatile("ecall"
-			 : "+r"(a0), "+r"(a1)
-			 : "r"(a6), "r"(a7)
-			 : "memory");
 	CODE_UNREACHABLE;
 }
 #else
