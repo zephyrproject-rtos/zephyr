@@ -38,6 +38,18 @@
 			#power-domain-cells = <0>;
 		};
 
+		wkup_timer0_pd: power-domain@13 {
+			compatible = "arm,scmi-power-domain";
+			reg = <19>;
+			#power-domain-cells = <0>;
+		};
+
+		wkup_timer1_pd: power-domain@14 {
+			compatible = "arm,scmi-power-domain";
+			reg = <20>;
+			#power-domain-cells = <0>;
+		};
+
 		main_ecap0_pd: power-domain@16 {
 			compatible = "arm,scmi-power-domain";
 			reg = <22>;
@@ -80,6 +92,18 @@
 			#power-domain-cells = <0>;
 		};
 
+		main_gpio0_pd: power-domain@22 {
+			compatible = "arm,scmi-power-domain";
+			reg = <34>;
+			#power-domain-cells = <0>;
+		};
+
+		wkup_gpio0_pd: power-domain@24 {
+			compatible = "arm,scmi-power-domain";
+			reg = <36>;
+			#power-domain-cells = <0>;
+		};
+
 		main_epwm0_pd: power-domain@28 {
 			compatible = "arm,scmi-power-domain";
 			reg = <40>;
@@ -119,6 +143,12 @@
 		main_i2c3_pd: power-domain@38 {
 			compatible = "arm,scmi-power-domain";
 			reg = <56>;
+			#power-domain-cells = <0>;
+		};
+
+		wkup_i2c0_pd: power-domain@39 {
+			compatible = "arm,scmi-power-domain";
+			reg = <57>;
 			#power-domain-cells = <0>;
 		};
 
