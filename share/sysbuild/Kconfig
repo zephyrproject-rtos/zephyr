@@ -31,6 +31,9 @@ config BOARD_DEPRECATED_RELEASE
 source "boards/Kconfig.v2"
 source "soc/Kconfig.v2"
 
+# Needed for BOARD_REVISION_<REV>
+osource "$(KCONFIG_BINARY_DIR)/boards/Kconfig"
+
 comment "Sysbuild image configuration"
 
 osource "$(KCONFIG_BOARD_DIR)/Kconfig.sysbuild"
