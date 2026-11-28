@@ -6,4 +6,14 @@ if SOC_AN521
 config NUM_IRQS
 	default 96
 
+config PM_CPU_OPS
+	default y if MP_MAX_NUM_CPUS > 1
+
+# A thread resumed by arch_switch() has its stack pointer at the bottom of
+# its switch frame while interrupts are enabled, so the idle thread needs
+# room for an exception frame below that point. 256 bytes overflow into the
+# other core's interrupt stack.
+config IDLE_STACK_SIZE
+	default 512 if SMP
+
 endif

@@ -4,3 +4,5 @@ tests:
       - kernel
       - smp
     filter: (CONFIG_MP_MAX_NUM_CPUS == 2)
+    platform_exclude:
+      - mps2/an521/smp # 1 ms for the second CPU to act is not enough on QEMU without icount

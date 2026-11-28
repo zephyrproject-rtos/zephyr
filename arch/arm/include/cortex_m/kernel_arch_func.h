@@ -32,6 +32,10 @@ extern "C" {
 
 extern void z_arm_fault_init(void);
 extern void z_arm_cpu_idle_init(void);
+extern void relocate_vector_table(void);
+#if defined(CONFIG_CPU_HAS_FPU)
+extern void z_arm_floating_point_init(void);
+#endif
 #ifdef CONFIG_ARM_MPU
 extern void z_arm_configure_static_mpu_regions(void);
 extern void z_arm_configure_dynamic_mpu_regions(struct k_thread *thread);

@@ -155,6 +155,13 @@ static void cmsdk_apb_timer_isr(const void *arg)
 	timer_core_announce_from(key);
 }
 
+#ifdef CONFIG_SMP
+void smp_timer_init(void)
+{
+	/* The timer is shared and its interrupt is enabled on CPU 0 only */
+}
+#endif /* CONFIG_SMP */
+
 static int sys_clock_driver_init(void)
 {
 	struct tmr_cmsdk_apb_dev_data *data = &data_inst0;

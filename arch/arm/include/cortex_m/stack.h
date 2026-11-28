@@ -38,13 +38,18 @@ K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS, CONFIG_
  */
 static ALWAYS_INLINE void z_arm_interrupt_stack_setup(void)
 {
-	uint32_t msp = (uint32_t)(K_KERNEL_STACK_BUFFER(z_interrupt_stacks[0])) +
-		       K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[0]);
+#if CONFIG_MP_MAX_NUM_CPUS > 1
+	unsigned int cpu = soc_cpu_index();
+#else
+	unsigned int cpu = 0;
+#endif
+	uint32_t msp = (uint32_t)(K_KERNEL_STACK_BUFFER(z_interrupt_stacks[cpu])) +
+		       K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[cpu]);
 
 	__set_MSP(msp);
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
 #if defined(CONFIG_CPU_CORTEX_M_HAS_SPLIM)
-	__set_MSPLIM((uint32_t)z_interrupt_stacks[0]);
+	__set_MSPLIM((uint32_t)z_interrupt_stacks[cpu]);
 #else
 #error "Built-in MSP limit checks not supported by HW"
 #endif

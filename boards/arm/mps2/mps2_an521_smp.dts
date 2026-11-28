@@ -1,0 +1,26 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "mps2_an521_cpu0.dts"
+
+/ {
+	model = "ARM V2M MPS2-AN521 SMP";
+
+	chosen {
+		zephyr,system-timer = &timer0;
+	};
+
+	cpus {
+		cpu@1 {
+			compatible = "arm,cortex-m33";
+			reg = <1>;
+			device_type = "cpu";
+		};
+	};
+};
+
+&systick {
+	status = "disabled";
+};
