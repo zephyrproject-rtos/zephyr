@@ -104,6 +104,37 @@ ZTEST(shell_1cpu, test_cmd_help)
 	test_shell_execute_cmd("help dummy dummy", -EINVAL);
 }
 
+SHELL_CMD_REGISTER(foo, NULL, "abcdefghij", NULL);
+
+ZTEST(sh, test_help_narrow_terminal)
+{
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+	const struct {
+		uint16_t width;
+		const char *expected;
+	} cases[] = {
+		{6U, "abcdef\r\nghij"},
+		{5U, "abcde\r\nfghij"},
+		{1U, "a\r\nb\r\nc\r\nd\r\ne\r\nf\r\ng\r\nh\r\ni\r\nj"},
+	};
+	uint16_t saved_width = sh->ctx->vt100_ctx.cons.terminal_wid;
+
+	for (size_t i = 0U; i < ARRAY_SIZE(cases); i++) {
+		size_t len;
+		int ret;
+		const char *output;
+
+		shell_backend_dummy_clear_output(sh);
+		sh->ctx->vt100_ctx.cons.terminal_wid = cases[i].width;
+		ret = shell_execute_cmd(sh, "foo --help");
+		sh->ctx->vt100_ctx.cons.terminal_wid = saved_width;
+		zassert_equal(ret, 1);
+		output = shell_backend_dummy_get_output(sh, &len);
+		zassert_not_null(strstr(output, cases[i].expected),
+				 "Unexpected help at width %u: %s", cases[i].width, output);
+	}
+}
+
 ZTEST(sh, test_cmd_clear)
 {
 	test_shell_execute_cmd("clear", 0);

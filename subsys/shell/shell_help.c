@@ -29,6 +29,12 @@ static void formatted_text_print(const struct shell *sh, const char *str,
 		return;
 	}
 
+	/* Drop the margin when it leaves no room for text. */
+	if (terminal_offset >= sh->ctx->vt100_ctx.cons.terminal_wid) {
+		terminal_offset = 0U;
+		z_cursor_next_line_move(sh);
+	}
+
 	if (offset_first_line) {
 		z_shell_op_cursor_horiz_move(sh, terminal_offset);
 	}
