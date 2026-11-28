@@ -26,7 +26,6 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/ztest_assert.h>
 #include <zephyr/ztest_test.h>
-#include <sys/errno.h>
 
 #include "audio/bap_endpoint.h"
 #include "test_common.h"
