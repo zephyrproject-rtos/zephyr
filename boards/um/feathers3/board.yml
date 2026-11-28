@@ -1,0 +1,14 @@
+board:
+  name: um_feathers3
+  full_name: Unexpected Maker FeatherS3
+  vendor: um
+  revision:
+    format: custom
+    default: p8
+    exact: true
+    revisions:
+    - name: p4
+    - name: p7
+    - name: p8
+  socs:
+  - name: esp32s3
