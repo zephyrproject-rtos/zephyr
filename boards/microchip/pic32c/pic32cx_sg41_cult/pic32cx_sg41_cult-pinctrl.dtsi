@@ -89,4 +89,13 @@
 				 <PA15L_GMAC_GRXER>;
 		};
 	};
+
+	qspi_default: qspi_default {
+		group1 {
+			pinmux = <PA8H_QSPI_DATA0>,
+				 <PA9H_QSPI_DATA1>,
+				 <PB10H_QSPI_SCK>,
+				 <PB11H_QSPI_CS>;
+		};
+	};
 };
