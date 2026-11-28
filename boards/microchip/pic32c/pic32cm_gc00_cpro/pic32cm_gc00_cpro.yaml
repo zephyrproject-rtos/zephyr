@@ -13,6 +13,7 @@ supported:
   - adc
   - can
   - clock_control
+  - comparator
   - dma
   - flash
   - gpio
