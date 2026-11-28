@@ -114,6 +114,10 @@ static inline void smp_init_top(void *arg)
 {
 	struct cpu_start_cb csc = arg ? *(struct cpu_start_cb *)arg : (struct cpu_start_cb){0};
 
+#ifdef CONFIG_HYPERVISOR_SECONDARY_CPU_INIT
+	z_hypervisor_secondary_cpu_init();
+#endif
+
 	/* Let start_cpu() know that this CPU has powered up. */
 	(void)atomic_set(&ready_flag, 1);
 
