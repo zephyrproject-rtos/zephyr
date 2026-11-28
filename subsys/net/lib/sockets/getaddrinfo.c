@@ -26,6 +26,15 @@ LOG_MODULE_REGISTER(net_sock_addr, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include "../../ip/route_ipv4.h"
 #include "../../ip/route_ipv6.h"
 
+#ifdef CONFIG_TAILSCALE_DNS_RESOLVER
+#include "../tailscale/net_stack.h"
+#endif
+
+#if defined(CONFIG_TAILSCALE_DNS_RESOLVER) && defined(CONFIG_NET_SOCKETS_OFFLOAD)
+#include "sockets_internal.h"
+#define MANAGED_DNS_OFFLOAD
+#endif
+
 #if defined(CONFIG_DNS_RESOLVER) || defined(CONFIG_NET_IP)
 #define ANY_RESOLVER
 
@@ -149,6 +158,13 @@ static int exec_query(const char *host, int family,
 					 CONFIG_NET_SOCKETS_DNS_BACKOFF_INTERVAL));
 	int timeout_ms;
 	int st, ret;
+
+#ifdef CONFIG_TAILSCALE_DNS_RESOLVER
+	ret = tailscale_net_query(host, family, dns_resolve_cb, ai_state);
+	if (ret != -ENOTSUP) {
+		return ret;
+	}
+#endif
 
 	if (family == NET_AF_INET6) {
 		qtype = DNS_QUERY_TYPE_AAAA;
@@ -484,6 +500,12 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 	struct net_sockaddr *ai_addr;
 	struct getaddrinfo_state ai_state;
 
+#ifdef MANAGED_DNS_OFFLOAD
+	/* Authorize offload in supervisor context before submitting any query. */
+	if (socket_offload_dns_is_enabled() && tailscale_net_dns_offload_allowed(host)) {
+		return -ENOTSUP;
+	}
+#endif
 	if (hints) {
 		family = hints->ai_family;
 		ai_flags = hints->ai_flags;
@@ -588,7 +610,8 @@ static inline int z_vrfy_z_zsock_getaddrinfo_internal(const char *host,
 	}
 
 	if (host) {
-		host_copy = k_usermode_string_alloc_copy((char *)host, 64);
+		host_copy = k_usermode_string_alloc_copy((char *)host,
+			IS_ENABLED(CONFIG_TAILSCALE_DNS_RESOLVER) ? 255U : 64U);
 		if (!host_copy) {
 			ret = DNS_EAI_MEMORY;
 			goto out;
@@ -689,9 +712,11 @@ int zsock_getaddrinfo(const char *host, const char *service,
 		      const struct zsock_addrinfo *hints,
 		      struct zsock_addrinfo **res)
 {
+#ifndef MANAGED_DNS_OFFLOAD
 	if (socket_offload_dns_is_enabled()) {
 		return socket_offload_getaddrinfo(host, service, hints, res);
 	}
+#endif
 
 	int ret = DNS_EAI_FAIL;
 
@@ -721,16 +746,22 @@ int zsock_getaddrinfo(const char *host, const char *service,
 		*res = NULL;
 	}
 #endif
-
+#ifdef MANAGED_DNS_OFFLOAD
+	if (ret == -ENOTSUP) {
+		return zsock_offload_getaddrinfo_copy(host, service, hints, res);
+	}
+#endif
 	return ret;
 }
 
 void zsock_freeaddrinfo(struct zsock_addrinfo *ai)
 {
+#ifndef MANAGED_DNS_OFFLOAD
 	if (socket_offload_dns_is_enabled()) {
 		socket_offload_freeaddrinfo(ai);
 		return;
 	}
+#endif
 
 	k_free(ai);
 }

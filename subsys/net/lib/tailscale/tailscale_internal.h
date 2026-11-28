@@ -13,9 +13,160 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/net/net_ip.h>
+#include <zephyr/net/tls_credentials.h>
+
+#include <zephyr/net/tailscale.h>
 
 #define TAILSCALE_PEER_STABLE_ID_SIZE 32
-#define TAILSCALE_DNS_NAME_SIZE 254U
+#define TAILSCALE_DATAGRAM_MAX 1440U
+/** @name Client lifecycle
+ * @{
+ */
+
+struct net_if;
+
+#define TAILSCALE_NODE_KEY_SIZE 32
+
+enum tailscale_watch_state {
+	TAILSCALE_WATCH_STOPPED,
+	TAILSCALE_WATCH_CONNECTING,
+	TAILSCALE_WATCH_RECEIVING,
+	TAILSCALE_WATCH_RECONNECTING,
+	TAILSCALE_WATCH_STOPPING,
+	TAILSCALE_WATCH_FAILED,
+};
+
+struct tailscale_watch_status {
+	enum tailscale_watch_state state;
+	uint32_t generation;
+	uint32_t installed_generation;
+	uint64_t revision;
+	uint32_t full_maps;
+	uint32_t updates;
+	uint32_t keepalives;
+	uint32_t peers;
+	int last_error;
+	const char *stage;
+	bool valid;
+};
+
+/*
+ * One client per image. Initialize from thread context before starting or
+ * enrolling. The client copies hostname and borrows the underlay for the
+ * lifetime of the image. Bring up that interface and set trusted realtime
+ * before network operations. Register the intended CA under ca_tag and keep
+ * it available until the last network operation returns.
+ *
+ * Persistent mode uses one Zephyr Settings value. Use a power-loss-safe
+ * Settings backend and protect the partition as private key material. The
+ * record checksum detects corruption. The Settings backend determines flash
+ * confidentiality and when superseded bytes are reclaimed. Ephemeral mode
+ * keeps keys in RAM and requests an ephemeral node from the controller.
+ * The two modes never substitute for each other's identity.
+ */
+int tailscale_client_init(const struct tailscale_client_config *config);
+
+/*
+ * Enroll (or finish enrolling) while stopped. An empty or NULL key selects
+ * keyless login. The client borrows the key only for this call. The application
+ * supplies it through its private provisioning channel and owns any copies.
+ * On -EINPROGRESS, the optional callback receives an HTTPS login URL during
+ * the call. The callback borrows the URL and may query status. Treat the URL
+ * as confidential and call enroll again after completing approval.
+ * Concurrent or reentrant lifecycle operations return -EBUSY.
+ */
+int tailscale_client_enroll(const char *auth_key, tailscale_login_cb_t login, void *context);
+
+/* Begin receiving maps asynchronously. -ENOENT requires completing enrollment. */
+int tailscale_client_start(void);
+int tailscale_client_status(struct tailscale_watch_status *status);
+
+/* Withdraw local policy and stop receiving maps. Keep identity for reuse. */
+int tailscale_client_stop(void);
+
+/*
+ * Withdraw local policy and retire the identity, durably in persistent mode.
+ * On success *remote_error reports the separate best-effort authenticated
+ * expiry result (zero for success or when there was no identity). Local
+ * retirement holds after reboot even when expiry failed. A local error
+ * requires retrying logout; start and enroll remain blocked until retirement
+ * succeeds. Re-enrolling after successful logout creates new keys.
+ */
+int tailscale_client_logout(int *remote_error);
+
+/* Obtain the public node key. -ENOENT means no usable local identity. */
+int tailscale_client_node_public_key(uint8_t public_key[TAILSCALE_NODE_KEY_SIZE]);
+
+/** @} */
+
+/* Close a private DNS transport socket. */
+int tailscale_socket_close(int fd);
+
+/** @name Service ingress
+ * @{
+ */
+
+/** Replace the complete local service allowlist. An empty list closes ingress. */
+int tailscale_ingress_replace(const struct tailscale_service_rule *rules, size_t count);
+
+/** Copy the current list into a buffer with room for TAILSCALE_SERVICE_MAX_RULES entries. */
+size_t tailscale_ingress_rules(struct tailscale_service_rule rules[TAILSCALE_SERVICE_MAX_RULES]);
+
+/** @} */
+
+/** @name Application DNS
+ * @{
+ */
+
+#define TAILSCALE_DNS_MAX_ADDRESSES 4U
+
+struct tailscale_dns_result {
+	uint64_t revision;
+	uint32_t generation;
+	size_t address_count;
+	struct net_sockaddr_storage addresses[TAILSCALE_DNS_MAX_ADDRESSES];
+};
+
+/**
+ * @brief Resolve A or AAAA addresses through the installed tailnet DNS policy.
+ *
+ * Single-label names use the configured search domains. A trailing dot makes
+ * the name absolute. Scoped DNS queries use the managed tunnel and leave the
+ * system resolver unchanged. A lookup runs in thread context and has a single
+ * timeout budget, including search, resolver failover and TCP fallback.
+ * Forwarded lookups reserve a 2048-byte response buffer on the caller's stack,
+ * in addition to the DNS codec and socket call frames.
+ *
+ * @param name ASCII DNS name with an optional trailing dot.
+ * @param family NET_AF_INET for A or NET_AF_INET6 for AAAA.
+ * @param timeout_ms Positive timeout for the lookup, in milliseconds.
+ * @param result Output. Addresses carry port zero and are capped at
+ *               TAILSCALE_DNS_MAX_ADDRESSES. Unchanged on failure.
+ * @retval 0 At least one address was returned.
+ * @retval -EINVAL Invalid argument or name.
+ * @retval -ENOENT No eligible address or resolver.
+ * @retval -ENETDOWN No live tailnet policy or required route.
+ * @retval -ESTALE The DNS or route policy changed during the lookup.
+ * @retval -ETIMEDOUT The DNS timeout expired.
+ * @return Otherwise, a negative DNS, policy or socket error.
+ */
+int tailscale_dns_resolve(const char *name, net_sa_family_t family, int32_t timeout_ms,
+			struct tailscale_dns_result *result);
+
+/** @} */
+
+/** @name Routing preferences
+ * @{
+ */
+
+/** Apply preferences atomically. With no current map, retain the request until one arrives. */
+int tailscale_routes_set(const struct tailscale_routes *routes);
+
+/** Copy the desired settings and effective exit's stable ID (empty when pending or disabled). */
+int tailscale_routes_get(struct tailscale_routes *routes,
+		       char stable_id[TAILSCALE_PEER_STABLE_ID_SIZE]);
+
+/** @} */
 
 /** @name Control stream
  * @{

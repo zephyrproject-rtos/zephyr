@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: FoBE Studio
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  net.tailscale.client.derp_worker:
+    platform_allow:
+      - qemu_x86
+    tags:
+      - net
+      - tailscale
+  net.tailscale.client.derp_worker.direct_only:
+    platform_allow:
+      - qemu_x86
+    extra_configs:
+      - CONFIG_TAILSCALE_DERP_MAP=n
+    tags:
+      - net
+      - tailscale
+  net.tailscale.client.derp_worker.relay_only:
+    platform_allow:
+      - qemu_x86
+    extra_args:
+      - TAILSCALE_TEST_DISCO=OFF
+    tags:
+      - net
+      - tailscale

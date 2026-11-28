@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: FoBE Studio
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  net.tailscale.client.derp_framing:
+    platform_allow:
+      - qemu_x86
+    tags:
+      - net
+      - tailscale

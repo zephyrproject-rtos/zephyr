@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: FoBE Studio
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config TEST_TAILSCALE_CLIENT_INGRESS
+	def_bool y
+	select TAILSCALE_CLIENT_INGRESS

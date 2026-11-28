@@ -31,6 +31,9 @@ LOG_MODULE_REGISTER(wireguard, CONFIG_WIREGUARD_LOG_LEVEL);
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_log.h>
 
+#ifdef CONFIG_TAILSCALE
+#include "../tailscale/net_stack.h"
+#endif
 
 #include "net_private.h"
 #include "udp_internal.h"
@@ -1804,6 +1807,9 @@ void wireguard_prepare_tx(struct net_if *iface, struct net_pkt *pkt)
 
 	/* Each submission selects its owner afresh, including clones and forwards. */
 	net_pkt_set_vpn_peer_id(pkt, id);
+#ifdef CONFIG_TAILSCALE
+	tailscale_net_queue(iface, pkt);
+#endif
 }
 #endif
 
@@ -1962,6 +1968,13 @@ static int send_inner_packet(struct net_if *iface, struct net_pkt *pkt, struct w
 		vpn_stats_update_alloc_failed(ctx);
 		return -EMSGSIZE;
 	}
+#ifdef CONFIG_TAILSCALE
+	if (pkt_len != 0U && !tailscale_net_transmit(iface, pkt, peer->policy_identity,
+						    payload, pkt_len, ctx->policy_context)) {
+		crypto_zero(tx_msg, msg_len);
+		return -EACCES;
+	}
+#endif
 	memset(payload + pkt_len, 0, padded_len - pkt_len);
 
 	ret = wg_encrypt_packet(payload, payload, padded_len, keypair);
