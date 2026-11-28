@@ -72,7 +72,7 @@ void riscv_aplic_msi_inject_software_interrupt(const struct device *dev, uint32_
 		hart_id, context, eiid, genmsi_val, rd32(cfg->base, APLIC_GENMSI));
 }
 
-int aplic_msi_init(const struct device *dev)
+static void aplic_msi_addr_config(const struct device *dev)
 {
 	const struct aplic_cfg *cfg = dev->config;
 	uint32_t imsic_addr = cfg->imsic_addr;
@@ -128,6 +128,18 @@ int aplic_msi_init(const struct device *dev)
 		wr32(cfg->base, APLIC_MSIADDRCFGH, msi_geom);
 		wr32(cfg->base, APLIC_SMSIADDRCFG, imsic_ppn);
 		wr32(cfg->base, APLIC_SMSIADDRCFGH, msi_geom);
+	}
+}
+
+int aplic_msi_init(const struct device *dev)
+{
+	/*
+	 * The MSI address configuration registers only exist in machine-level
+	 * domains. A supervisor-level domain relies on the machine-level
+	 * software to have set the target of its MSIs.
+	 */
+	if (IS_ENABLED(CONFIG_RISCV_M_MODE)) {
+		aplic_msi_addr_config(dev);
 	}
 
 	/* Enable MSI mode + IE in DOMAINCFG */

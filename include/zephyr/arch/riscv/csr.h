@@ -221,10 +221,15 @@
 	((val) & ~(which)) | ((fieldval) * ((which) & ~((which)-1)))	\
 )									\
 
-#ifdef CONFIG_RISCV_ISA_EXT_SMCSRIND
+#if defined(CONFIG_RISCV_ISA_EXT_SMCSRIND) || defined(CONFIG_RISCV_ISA_EXT_SMAIA)
 
 #define MISELECT 0x350
 #define MIREG    0x351
+
+#endif /* CONFIG_RISCV_ISA_EXT_SMCSRIND || CONFIG_RISCV_ISA_EXT_SMAIA */
+
+#ifdef CONFIG_RISCV_ISA_EXT_SMCSRIND
+
 #define MIREG2   0x352
 #define MIREG3   0x353
 #define MIREG4   0x355
@@ -232,6 +237,13 @@
 #define MIREG6   0x357
 
 #endif /* CONFIG_RISCV_ISA_EXT_SMCSRIND */
+
+#if defined(CONFIG_RISCV_ISA_EXT_SSCSRIND) || defined(CONFIG_RISCV_ISA_EXT_SSAIA)
+
+#define SISELECT 0x150
+#define SIREG    0x151
+
+#endif /* CONFIG_RISCV_ISA_EXT_SSCSRIND || CONFIG_RISCV_ISA_EXT_SSAIA */
 
 /* Privilege-level abstraction for status and cause CSRs */
 #ifdef CONFIG_RISCV_S_MODE
