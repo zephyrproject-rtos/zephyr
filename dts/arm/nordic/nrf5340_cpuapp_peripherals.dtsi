@@ -522,6 +522,8 @@ nfct: nfct@2d000 {
 mutex: mutex@30000 {
 	compatible = "nordic,nrf-mutex";
 	reg = <0x30000 0x1000>;
+	#mutex-cells = <1>;
+	nordic,mutex-count = <16>;
 	status = "okay";
 };
 

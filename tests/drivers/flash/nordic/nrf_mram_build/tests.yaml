@@ -1,0 +1,38 @@
+common:
+  tags:
+    - drivers
+    - flash
+    - mram
+  build_only: true
+
+tests:
+  drivers.flash.nrf_mram_build.nrf54:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
+  drivers.flash.nrf_mram_build.nrf54.nomutex:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
+    extra_configs:
+      - CONFIG_NRF_MRAM_USE_MUTEX_HW=n
+  drivers.flash.nrf_mram_build.nrf54.mutex:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
+    extra_configs:
+      - CONFIG_NRF_MRAM_USE_MUTEX_HW=y
+  # The MRAM driver is not built for the VPR cores. main.c asserts that it is absent.
+  drivers.flash.nrf_mram_build.nrf54.ppr.no_driver:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuppr
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuppr
+  drivers.flash.nrf_mram_build.nrf54.flpr.no_driver:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuflpr
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuflpr
