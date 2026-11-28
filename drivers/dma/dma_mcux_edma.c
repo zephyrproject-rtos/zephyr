@@ -175,6 +175,17 @@ struct dma_mcux_edma_data {
 				   EDMA_TCD_TYPE((void *)DEV_BASE(dev)))
 #endif
 
+/* Hardware request enable (ERQ) of a channel */
+#if defined(CONFIG_DMA_MCUX_EDMA)
+#define EDMA_HW_REQUEST_ENABLED(dev, ch) ((DEV_BASE(dev)->ERQ & BIT(ch)) != 0U)
+#elif defined(CONFIG_DMA_MCUX_EDMA_V3)
+#define EDMA_HW_REQUEST_ENABLED(dev, ch)                                                           \
+	((DEV_BASE(dev)->CH[ch].CH_CSR & DMA_CH_CSR_ERQ_MASK) != 0U)
+#elif defined(CONFIG_DMA_MCUX_EDMA_V4)
+#define EDMA_HW_REQUEST_ENABLED(dev, ch)                                                           \
+	((EDMA_CHANNEL_BASE((void *)DEV_BASE(dev), ch)->CH_CSR & DMA_CH_CSR_ERQ_MASK) != 0U)
+#endif
+
 #if defined(FSL_FEATURE_MEMORY_HAS_ADDRESS_OFFSET) && FSL_FEATURE_MEMORY_HAS_ADDRESS_OFFSET
 #define EDMA_MMAP_ADDR(addr) MEMORY_ConvertMemoryMapAddress(addr, kMEMORY_Local2DMA)
 #else
@@ -240,7 +251,11 @@ static uint8_t dma_mcux_edma_completed_tcds(edma_handle_t *handle, struct call_b
 				  data->transfer_settings.active_tcd) %
 				 CONFIG_DMA_TCD_QUEUE_SIZE;
 		if (completed_tcds == 0U) {
-			completed_tcds = queued_tcds;
+			/* Stale interrupt, unless a full ring ran out: DREQ then cleared ERQ */
+			if (queued_tcds == CONFIG_DMA_TCD_QUEUE_SIZE &&
+			    !EDMA_HW_REQUEST_ENABLED(data->dev, handle->channel)) {
+				completed_tcds = queued_tcds;
+			}
 		} else {
 			completed_tcds = MIN(completed_tcds, queued_tcds);
 		}
@@ -261,7 +276,7 @@ static void nxp_edma_callback(edma_handle_t *handle, void *param, bool transferD
 		const uint8_t completed_tcds = dma_mcux_edma_completed_tcds(handle, data, channel);
 
 		if (completed_tcds == 0U) {
-			LOG_WRN("cyclic callback without a queued TCD");
+			LOG_DBG("cyclic interrupt without a completed TCD");
 			return;
 		}
 
