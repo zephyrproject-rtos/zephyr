@@ -2357,6 +2357,52 @@ ZTEST(lib_json_test, test_json_mixed_arr_parse)
 	zassert_str_equal(arr.status_buf, "ok", NULL);
 }
 
+struct test_encoded_end {
+	int32_t num;
+	char *obj;
+	size_t count;
+};
+
+static const struct json_mixed_arr_descr test_encoded_end_descr[] = {
+	JSON_MIXED_ARR_DESCR_PRIM(struct test_encoded_end, num, JSON_TOK_NUMBER, count),
+	JSON_MIXED_ARR_DESCR_PRIM(struct test_encoded_end, obj, JSON_TOK_ENCODED_OBJ, count),
+};
+
+ZTEST(lib_json_test, test_json_mixed_arr_parse_encoded_obj_ends_input)
+{
+	/* The input has no closing bracket and no terminating NUL */
+	struct {
+		char json[10];
+		char canary;
+	} buf;
+	struct test_encoded_end val = {0};
+	int ret;
+
+	memcpy(buf.json, "[1,{\"a\":1}", sizeof(buf.json));
+	buf.canary = 'X';
+
+	ret = json_mixed_arr_parse(buf.json, sizeof(buf.json), test_encoded_end_descr,
+				   ARRAY_SIZE(test_encoded_end_descr), &val);
+	zexpect_true(ret < 0, "Unclosed array accepted (%d)", ret);
+	zexpect_equal(buf.canary, 'X', "Byte after the input was overwritten");
+}
+
+ZTEST(lib_json_test, test_json_mixed_arr_parse_encoded_obj_before_end)
+{
+	/* The input has no terminating NUL */
+	char json[11];
+	struct test_encoded_end val = {0};
+	int ret;
+
+	memcpy(json, "[1,{\"a\":1}]", sizeof(json));
+
+	ret = json_mixed_arr_parse(json, sizeof(json), test_encoded_end_descr,
+				   ARRAY_SIZE(test_encoded_end_descr), &val);
+	zassert_equal(ret, 2, "Closed array not parsed (%d)", ret);
+	zexpect_equal(val.num, 1);
+	zexpect_str_equal(val.obj, "{\"a\":1}");
+}
+
 ZTEST(lib_json_test, test_json_mixed_arr_encode)
 {
 	char buf[256];
