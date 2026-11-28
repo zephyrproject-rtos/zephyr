@@ -330,6 +330,9 @@ static void monitor_work_handler(struct k_work *work)
 	struct phy_mii_dev_data *const data =
 		CONTAINER_OF(dwork, struct phy_mii_dev_data, monitor_work);
 	const struct device *dev = data->dev;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int rc;
 
 	if (k_mutex_lock(&data->mutex, K_NO_WAIT) == 0) {
@@ -358,18 +361,24 @@ static void monitor_work_handler(struct k_work *work)
 static int phy_mii_read(const struct device *dev, uint16_t reg_addr,
 			uint32_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	return phy_mii_reg_read(dev, reg_addr, (uint16_t *)data);
 }
 
 static int phy_mii_write(const struct device *dev, uint16_t reg_addr,
 			 uint32_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	return phy_mii_reg_write(dev, reg_addr, (uint16_t)data);
 }
 
 static int phy_mii_cfg_link(const struct device *dev, enum phy_link_speed adv_speeds,
 			    enum phy_cfg_link_flag flags)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct phy_mii_dev_data *const data = dev->data;
 	const struct phy_mii_dev_config *const cfg = dev->config;
 	int ret = 0;
@@ -417,6 +426,8 @@ cfg_link_end:
 static int phy_mii_get_link_state(const struct device *dev,
 				  struct phy_link_state *state)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct phy_mii_dev_data *const data = dev->data;
 
 	k_mutex_lock(&data->mutex, K_FOREVER);
@@ -452,6 +463,8 @@ static void invoke_link_cb(const struct device *dev)
 static int phy_mii_link_cb_set(const struct device *dev, phy_callback_t cb,
 			       void *user_data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct phy_mii_dev_data *const data = dev->data;
 
 	data->cb = cb;
@@ -468,6 +481,8 @@ static int phy_mii_link_cb_set(const struct device *dev, phy_callback_t cb,
 
 static int phy_mii_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct phy_mii_dev_config *const cfg = dev->config;
 	struct phy_mii_dev_data *const data = dev->data;
 	uint32_t phy_id;
