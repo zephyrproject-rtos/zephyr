@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MPS2_DEFAULT
+	select SOC_AN521_CPU0 if BOARD_MPS2_DEFAULT_AN521_CPU0 || BOARD_MPS2_DEFAULT_AN521_CPU0_TWO
+	select SOC_AN521_CPU1 if BOARD_MPS2_DEFAULT_AN521_CPU1
