@@ -28,9 +28,17 @@ FUNC_NORETURN void arch_system_halt(unsigned int reason)
 	 * It has been observed that if the emulator exits for a triple-fault
 	 * (often due to bad page tables or other CPU structures) it will
 	 * terminate with 0 error code.
+	 *
+	 * The port write only requests the shutdown: QEMU acts on it later
+	 * from its main loop, and this CPU keeps executing meanwhile. Stop it
+	 * here. Running past this function faults, and the fatal error path
+	 * then writes its own reason, which replaces the exit code.
 	 */
+	(void)arch_irq_lock();
 	sys_out32(reason, 0xf4);
-	CODE_UNREACHABLE;
+	for (;;) {
+		__asm__ volatile("hlt");
+	}
 }
 #endif
 
