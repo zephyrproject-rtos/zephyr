@@ -306,6 +306,25 @@
 					current-limit = <20>;
 				};
 			};
+
+			lp5815@22 {
+				compatible = "ti,lp5815";
+				reg = <0x22>;
+				max-current-51ma;
+				dot-current = <255 128 128>;
+
+				led_0 {
+					label = "lp5815 single";
+					index = <0>;
+					color-mapping = <0>;
+				};
+
+				led_1 {
+					label = "lp5815 dual";
+					index = <1>;
+					color-mapping = <1>, <2>;
+				};
+			};
 		};
 
 		test_pwm: pwm@12341234 {
