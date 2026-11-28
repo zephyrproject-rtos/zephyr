@@ -16,12 +16,16 @@
 #define LAN9250_PHY_TIMEOUT           2000
 #define LAN9250_MAC_TIMEOUT           2000
 #define LAN9250_RESET_TIMEOUT         5000
+#define LAN9250_TX_TIMEOUT            100
 
 #define LAN9250_ALIGN(v) (((v) + 3) & (~3))
 
+#define LAN9250_CRC_LEN 4U
+
 /* SPI instructions */
-#define LAN9250_SPI_INSTR_WRITE 0x02
-#define LAN9250_SPI_INSTR_READ  0x03
+#define LAN9250_SPI_INSTR_WRITE     0x02
+#define LAN9250_SPI_INSTR_READ      0x03
+#define LAN9250_SPI_INSTR_FAST_READ 0x0B
 
 /* TX command 'A' format */
 #define LAN9250_TX_CMD_A_INT_ON_COMP     0x80000000
@@ -35,6 +39,7 @@
 
 /* RX status format */
 #define LAN9250_RX_STS_PACKET_LEN 0x3FFF0000
+#define LAN9250_RX_STS_ES         0x00008000
 
 /* LAN9250 System registers */
 #define LAN9250_RX_DATA_FIFO   0x0000
@@ -50,6 +55,7 @@
 #define LAN9250_RX_CFG         0x006C
 #define LAN9250_TX_CFG         0x0070
 #define LAN9250_HW_CFG         0x0074
+#define LAN9250_RX_DP_CTRL     0x0078
 #define LAN9250_RX_FIFO_INF    0x007C
 #define LAN9250_TX_FIFO_INF    0x0080
 #define LAN9250_PMT_CTRL       0x0084
@@ -64,11 +70,13 @@
 #define LAN9250_HMAC_ADDRL    0x03
 #define LAN9250_HMAC_MII_ACC  0x06
 #define LAN9250_HMAC_MII_DATA 0x07
+#define LAN9250_HMAC_FLOW     0x08
 #define LAN9250_HMAC_VLAN1    0x09
 #define LAN9250_HMAC_VLAN2    0x0A
 
 /* LAN9250 PHY registers */
 #define LAN9250_PHY_BASIC_CONTROL            0x00
+#define LAN9250_PHY_BASIC_STATUS             0x01
 #define LAN9250_PHY_AN_ADV                   0x04
 #define LAN9250_PHY_SPECIAL_MODES            0x12
 #define LAN9250_PHY_SPECIAL_CONTROL_STAT_IND 0x1B
@@ -178,6 +186,9 @@
 #define LAN9250_HW_CFG_TX_FIF_SZ_13KB       0x000D0000
 #define LAN9250_HW_CFG_TX_FIF_SZ_14KB       0x000E0000
 
+/* RX Datapath Control register */
+#define LAN9250_RX_DP_CTRL_RX_FFWD 0x80000000
+
 /* RX FIFO Information register */
 #define LAN9250_RX_FIFO_INF_RXSUSED 0x00FF0000
 #define LAN9250_RX_FIFO_INF_RXDUSED 0x0000FFFF
@@ -240,6 +251,13 @@
 #define LAN9250_HMAC_CR_TXEN            0x00000008
 #define LAN9250_HMAC_CR_RXEN            0x00000004
 
+/* HOST MAC FLOW CONTROL REGISTER (HMAC_FLOW) */
+#define LAN9250_HMAC_FLOW_FCPT     0xFFFF0000
+#define LAN9250_HMAC_FLOW_FCPT_MAX 0xFFFF0000
+#define LAN9250_HMAC_FLOW_FCPASS   0x00000004
+#define LAN9250_HMAC_FLOW_FCEN     0x00000002
+#define LAN9250_HMAC_FLOW_FCBSY    0x00000001
+
 /* HOST MAC MII ACCESS REGISTER (HMAC_MII_ACC) */
 #define LAN9250_HMAC_MII_ACC_PHY_ADDR         0x0000F800
 #define LAN9250_HMAC_MII_ACC_PHY_ADDR_DEFAULT 0x00000800
@@ -257,6 +275,9 @@
 #define LAN9250_PHY_BASIC_CONTROL_PHY_DUPLEX        0x0100
 #define LAN9250_PHY_BASIC_CONTROL_PHY_COL_TEST      0x0080
 
+/* PHY Basic Status Register (PHY_BASIC_STATUS) */
+#define LAN9250_PHY_BASIC_STATUS_LINK_STATUS 0x0004
+
 /* PHY Auto-Negotiation Advertisement Register (PHY_AN_ADV) */
 #define LAN9250_PHY_AN_ADV_NEXT_PAGE          0x8000
 #define LAN9250_PHY_AN_ADV_REMOTE_FAULT       0x2000
@@ -269,6 +290,10 @@
 #define LAN9250_PHY_AN_ADV_10BT_HD            0x0020
 #define LAN9250_PHY_AN_ADV_SELECTOR           0x001F
 #define LAN9250_PHY_AN_ADV_SELECTOR_DEFAULT   0x0001
+
+/* PHY Special Control/Status Register (PHY_SPECIAL_CONTROL_STATUS) */
+#define LAN9250_PHY_SPECIAL_CONTROL_STATUS_SPEED      0x001C
+#define LAN9250_PHY_SPECIAL_CONTROL_STATUS_SPEED_FDPX 0x0010
 
 /* PHY Mode Control/Status Register (PHY_MODE_CONTROL_STATUS) */
 #define LAN9250_PHY_MODE_CONTROL_STATUS_EDPWRDOWN 0x2000
@@ -312,7 +337,6 @@ struct lan9250_config {
 	struct spi_dt_spec spi;
 	struct gpio_dt_spec interrupt;
 	struct gpio_dt_spec reset;
-	uint8_t full_duplex;
 	struct net_eth_mac_config mac_cfg;
 };
 
@@ -325,9 +349,10 @@ struct lan9250_runtime {
 
 	uint8_t mac_address[6];
 	struct gpio_callback gpio_cb;
-	struct k_sem tx_rx_sem;
+	struct k_mutex lock;
 	struct k_sem int_sem;
-	uint8_t buf[NET_ETH_MAX_FRAME_SIZE];
+	/* Largest TX frame or RX frame with CRC, DWORD-aligned */
+	uint8_t buf[LAN9250_ALIGN(NET_ETH_MAX_FRAME_SIZE + LAN9250_CRC_LEN)];
 };
 
 #endif /*_LAN9250_*/
