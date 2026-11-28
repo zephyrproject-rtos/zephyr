@@ -117,6 +117,19 @@ settings:
 - Parity: None
 - Stop bits: 1
 
+Using SWO
+---------
+
+SWO can be used as a logging backend by enabling
+:kconfig:option:`CONFIG_LOG_BACKEND_SWO`. Your SWO viewer should be configured
+with a CPU frequency of 220 MHz, and SWO frequency of 2 MHz. Read SWO with the
+LPC-Link2 running J-Link firmware (see `Using J-Link`_) or with an external
+J-Link on P1, for example:
+
+.. code-block:: shell
+
+   JLinkSWOViewerCLExe -device LPC54628J512 -cpufreq 220000000 -swofreq 2000000 -itmmask 0x1
+
 Flashing
 ========
 
