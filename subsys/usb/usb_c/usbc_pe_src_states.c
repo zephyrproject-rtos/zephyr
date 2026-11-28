@@ -377,9 +377,11 @@ void pe_src_ready_entry(void *obj)
 	 * Else on entry to the PE_SRC_Ready state the Source Shall notify the
 	 * Protocol Layer of the end of the Atomic Message Sequence (AMS).
 	 */
-	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_PROTOCOL_ERROR_NO_SOFT_RESET)) {
+	if (!atomic_test_and_clear_bit(pe->flags, PE_FLAGS_PROTOCOL_ERROR_NO_SOFT_RESET)) {
 		pe_dpm_end_ams(dev);
 	}
+
+	atomic_clear_bit(pe->flags, PE_FLAGS_INTERRUPTIBLE_AMS);
 }
 
 enum smf_state_result pe_src_ready_run(void *obj)

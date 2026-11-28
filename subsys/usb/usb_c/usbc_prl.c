@@ -734,8 +734,13 @@ static void prl_tx_wait_for_message_request_entry(void *obj)
 
 	LOG_INF("PRL_Tx_Wait_for_Message_Request");
 
-	/* Clear outstanding messages */
-	atomic_clear(&prl_tx->flags);
+	/*
+	 * Clear outstanding messages, but not the collision avoidance state of
+	 * an AMS in progress: the run function below is what ends it, putting
+	 * SinkTxOK back once the Policy Engine reports the AMS over, and it
+	 * also tells a message continuing the AMS from the start of a new one.
+	 */
+	atomic_and(&prl_tx->flags, BIT(PRL_FLAGS_SINK_NG) | BIT(PRL_FLAGS_WAIT_SINK_OK));
 }
 
 /**
@@ -1161,6 +1166,13 @@ static void prl_hr_reset_layer_entry(void *obj)
 
 	/* Reset all Protocol Layer message reception flags */
 	atomic_clear(&prl_rx->flags);
+
+	/* A Hard Reset ends any AMS, so a Source puts SinkTxOK back now. */
+	if (IS_ENABLED(CONFIG_USBC_CSM_SUPPORTS_SOURCE) &&
+	    atomic_test_bit(&prl_tx->flags, PRL_FLAGS_SINK_NG)) {
+		tc_select_src_collision_rp(dev, SINK_TX_OK);
+	}
+
 	/* Reset all Protocol Layer message transmission flags */
 	atomic_clear(&prl_tx->flags);
 
