@@ -44,6 +44,14 @@ fcb_elem_crc8(struct fcb *_fcb, struct fcb_entry *loc, uint8_t *c8p)
 	loc->fe_data_off = loc->fe_elem_off + fcb_len_in_flash(_fcb, cnt);
 	loc->fe_data_len = len;
 
+	/* A half written length can still look valid but run past the end of
+	 * the sector, treat it as end of data like an erased length.
+	 */
+	if (loc->fe_data_off + fcb_len_in_flash(_fcb, len) +
+	    fcb_len_in_flash(_fcb, FCB_CRC_SZ) > loc->fe_sector->fs_size) {
+		return -ENOTSUP;
+	}
+
 	crc8 = CRC8_CCITT_INITIAL_VALUE;
 	crc8 = crc8_ccitt(crc8, tmp_str, cnt);
 
@@ -93,6 +101,14 @@ fcb_elem_endmarker_fixed(struct fcb *_fcb, struct fcb_entry *loc, uint8_t *em)
 	}
 	loc->fe_data_off = loc->fe_elem_off + fcb_len_in_flash(_fcb, cnt);
 	loc->fe_data_len = len;
+
+	/* A half written length can still look valid but run past the end of
+	 * the sector, treat it as end of data like an erased length.
+	 */
+	if (loc->fe_data_off + fcb_len_in_flash(_fcb, len) +
+	    fcb_len_in_flash(_fcb, FCB_CRC_SZ) > loc->fe_sector->fs_size) {
+		return -ENOTSUP;
+	}
 
 	*em = FCB_FIXED_ENDMARKER;
 	return 0;

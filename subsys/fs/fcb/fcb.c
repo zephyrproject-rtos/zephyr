@@ -15,6 +15,9 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/fs/fcb.h>
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(fcb, CONFIG_FCB_LOG_LEVEL);
 
 uint8_t fcb_get_align(const struct fcb *fcbp)
 {
@@ -97,6 +100,7 @@ int fcb_init(int f_area_id, struct fcb *fcbp)
 	uint8_t align;
 	int oldest = -1, newest = -1;
 	struct flash_sector *oldest_sector = NULL, *newest_sector = NULL;
+	struct flash_sector *torn_sector = NULL;
 	struct fcb_disk_area fda;
 	const struct flash_parameters *fparam;
 
@@ -126,6 +130,11 @@ int fcb_init(int f_area_id, struct fcb *fcbp)
 	for (i = 0; i < fcbp->f_sector_cnt; i++) {
 		sector = &fcbp->f_sectors[i];
 		rc = fcb_sector_hdr_read(fcbp, sector, &fda);
+		if (rc == -ENOMSG && torn_sector == NULL) {
+			/* Maybe a header cut short by a power cut, checked below */
+			torn_sector = sector;
+			continue;
+		}
 		if (rc < 0) {
 			return rc;
 		}
@@ -144,6 +153,20 @@ int fcb_init(int f_area_id, struct fcb *fcbp)
 			oldest = fda.fd_id;
 			oldest_sector = sector;
 		}
+	}
+
+	/* A power cut can leave a bad header in two places: right after the
+	 * newest sector (new header being written) or right before the oldest
+	 * one (fcb_rotate() erase cut short). That sector is treated as unused
+	 * and erased before it is used again.
+	 */
+	if (torn_sector != NULL) {
+		if (oldest < 0 || (torn_sector != fcb_getnext_sector(fcbp, newest_sector) &&
+				   fcb_getnext_sector(fcbp, torn_sector) != oldest_sector)) {
+			return -ENOMSG;
+		}
+		LOG_WRN("Incomplete header in sector at 0x%lx, treating it as unused",
+			(long)torn_sector->fs_off);
 	}
 
 	/* fcb_sector_hdr_init needs the alignment to be able to write */
@@ -173,6 +196,23 @@ int fcb_init(int f_area_id, struct fcb *fcbp)
 		}
 		if (rc != 0) {
 			break;
+		}
+	}
+
+	if (rc == 0) {
+		uint8_t buf[2];
+
+		/* A power cut can leave a half written entry at the end of the log.
+		 * Flash can't be written over it, so mark the sector as full: the next
+		 * fcb_append() starts a new sector, and the rest of this one stays
+		 * unused until it is rotated.
+		 */
+		if (fcb_flash_read(fcbp, fcbp->f_active.fe_sector, fcbp->f_active.fe_elem_off, buf,
+				   sizeof(buf)) == 0 &&
+		    (buf[0] != fcbp->f_erase_value || buf[1] != fcbp->f_erase_value)) {
+			LOG_WRN("Incomplete entry in sector at 0x%lx, using a new sector",
+				(long)fcbp->f_active.fe_sector->fs_off);
+			fcbp->f_active.fe_elem_off = fcbp->f_active.fe_sector->fs_size;
 		}
 	}
 	k_mutex_init(&fcbp->f_mtx);
@@ -249,6 +289,10 @@ int fcb_get_len(const struct fcb *fcbp, uint8_t *buf, uint16_t *len)
 
 		buf1_xor = buf[1] ^ ~fcbp->f_erase_value;
 		*len = (uint16_t)((buf0_xor & 0x7f) | ((uint16_t)buf1_xor << 7));
+		if (*len > FCB_MAX_LEN) {
+			/* Second byte never written, e.g. power cut: treat as end of data */
+			return -ENOTSUP;
+		}
 		rc = 2;
 	} else {
 		*len = (uint16_t)(buf0_xor);
@@ -268,6 +312,14 @@ int fcb_sector_hdr_init(struct fcb *fcbp, struct flash_sector *sector, uint16_t 
 		uint8_t raw[WRITE_ALIGNMENT_BUFFER_SIZE];
 	} buf;
 	int rc;
+
+	/* Erase what is left of a header torn by a power cut */
+	if (fcb_sector_hdr_read(fcbp, sector, NULL) == -ENOMSG) {
+		rc = fcb_erase_sector(fcbp, sector);
+		if (rc != 0) {
+			return rc;
+		}
+	}
 
 	memset(&buf, fcbp->f_erase_value, sizeof(buf));
 
