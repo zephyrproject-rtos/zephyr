@@ -44,6 +44,7 @@ enum net_dhcpv4_state {
 	NET_DHCPV4_REBINDING,
 	NET_DHCPV4_BOUND,
 	NET_DHCPV4_DECLINE,
+	NET_DHCPV4_V6ONLY_WAIT,
 } __packed;
 
 /** @endcond */
@@ -256,6 +257,27 @@ void net_dhcpv4_restart(struct net_if *iface);
  */
 int net_dhcpv4_set_reboot_hint(struct net_if *iface,
 			       const struct net_in_addr *requested_ip);
+
+/**
+ * @brief Set whether an interface can run without IPv4.
+ *
+ * @details An IPv6-only capable interface asks for the IPv6-Only Preferred
+ * option (RFC 8925). When the server answers with it, the client requests no
+ * IPv4 address, raises @ref NET_EVENT_IPV4_DHCP_V6ONLY and starts again after
+ * the time the server gives, or after the interface comes up again or the
+ * client is restarted, whichever happens first. The change applies to the
+ * next DHCPDISCOVER or DHCPREQUEST the client sends. An interface with IPv6
+ * disabled is never IPv6-only capable. Requires
+ * @kconfig{CONFIG_NET_DHCPV4_OPTION_IPV6_ONLY_PREFERRED}, which makes every
+ * interface capable by default.
+ *
+ * @param iface DHCPv4 interface.
+ * @param capable True if the interface works with no IPv4 address.
+ *
+ * @retval 0 On success.
+ * @retval -ENOTSUP IPv6-Only Preferred option support is disabled.
+ */
+int net_dhcpv4_set_ipv6_only_capable(struct net_if *iface, bool capable);
 
 /** @cond INTERNAL_HIDDEN */
 

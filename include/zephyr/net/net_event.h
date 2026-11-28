@@ -172,6 +172,7 @@ enum {
 	NET_EVENT_IPV4_CMD_ACD_FAILED_VAL,
 	NET_EVENT_IPV4_CMD_ACD_CONFLICT_VAL,
 	NET_EVENT_IPV4_CMD_PMTU_CHANGED_VAL,
+	NET_EVENT_IPV4_CMD_DHCP_V6ONLY_VAL,
 
 	NET_EVENT_IPV4_CMD_MAX
 };
@@ -197,6 +198,7 @@ enum net_event_ipv4_cmd {
 	NET_MGMT_CMD(NET_EVENT_IPV4_CMD_ACD_FAILED),
 	NET_MGMT_CMD(NET_EVENT_IPV4_CMD_ACD_CONFLICT),
 	NET_MGMT_CMD(NET_EVENT_IPV4_CMD_PMTU_CHANGED),
+	NET_MGMT_CMD(NET_EVENT_IPV4_CMD_DHCP_V6ONLY),
 };
 
 /* L4 network events */
@@ -454,6 +456,13 @@ enum net_event_l4_cmd {
 /** IPv4 Path MTU is changed. */
 #define NET_EVENT_IPV4_PMTU_CHANGED				\
 	(NET_EVENT_IPV4_BASE | NET_EVENT_IPV4_CMD_PMTU_CHANGED)
+
+/** Event emitted when the IPv4 DHCP client stops for a while because the
+ * server prefers the interface to run IPv6-only (RFC 8925). The event info
+ * is a uint32_t, the number of seconds before the client starts again.
+ */
+#define NET_EVENT_IPV4_DHCP_V6ONLY				\
+	(NET_EVENT_IPV4_BASE | NET_EVENT_IPV4_CMD_DHCP_V6ONLY)
 
 /** Event emitted when the system is considered to be connected.
  * The connected in this context means that the network interface is up,

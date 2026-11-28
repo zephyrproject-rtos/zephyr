@@ -133,6 +133,11 @@ Libraries / Subsystems
 
 * Networking
 
+  * The DHCPv4 client supports the IPv6-Only Preferred option (:rfc:`8925`), enabled with
+    :kconfig:option:`CONFIG_NET_DHCPV4_OPTION_IPV6_ONLY_PREFERRED`. On an IPv6-mostly network
+    the client then requests no IPv4 address for the time the server gives and raises
+    :c:macro:`NET_EVENT_IPV4_DHCP_V6ONLY`. :c:func:`net_dhcpv4_set_ipv6_only_capable` selects
+    the interfaces that can run without IPv4.
   * :kconfig:option:`CONFIG_NET_DHCPV6_START_ON_RA` starts the DHCPv6 client
     automatically from the M and O flags of received Router Advertisements, in
     stateful mode with the M flag and in stateless mode (Information-request
