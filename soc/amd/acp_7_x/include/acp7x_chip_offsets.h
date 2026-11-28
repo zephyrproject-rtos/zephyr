@@ -6,6 +6,9 @@
 
 #ifndef ZEPHYR_SOC_AMD_ACP_7_X_ACP7X_CHIP_OFFSETS_H_
 #define ZEPHYR_SOC_AMD_ACP_7_X_ACP7X_CHIP_OFFSETS_H_
+
+#include <zephyr/sys/util_macro.h>
+
 #define PU_REGISTER_BASE                         (0x9FD00000 - 0x01240000)
 #define PU_SCRATCH_REG_BASE                      (0x9FF00000 - 0x01250000)
 /* Registers from ACP_DMA block */
@@ -74,6 +77,14 @@
 #define ACP_SRBM_CLIENT_CONFIG                   0x1241BFC
 /* Registers from ACP_P1_MISC block */
 #define ACP_EXTERNAL_INTR_ENB                    0x1241A00
+
+/* Registers from ACP_DSP_EXT_TIMER block */
+#define ACP_DSP0_EXT_TIMER1_CNTL                 0x124189C
+#define ACP_DSP0_EXT_TIMER1_CURR_VALUE           0x12418B8
+
+/* EXT_Timer1 bit in ACP_DSP0_INTR_CNTL / ACP_DSP0_INTR_STAT */
+#define ACP_EXT_TIMER1_INTR_BIT                  BIT(8)
+
 /* Registers from ACP_I2S_TDM0 block renamed from  ACP_AUDIO0_BUFFERS block */
 #define ACP_I2S_TDM_RX_RINGBUFADDR               0x1242000
 #define ACP_I2S_TDM_RX_RINGBUFSIZE               0x1242004
