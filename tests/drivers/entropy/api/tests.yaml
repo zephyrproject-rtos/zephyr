@@ -43,7 +43,7 @@ tests:
       - driver
       - entropy
   drivers.entropy.psa_crypto:
-    filter: CONFIG_BUILD_WITH_TFM
+    filter: CONFIG_ENTROPY_PSA_CRYPTO_RNG
     extra_args:
       - DTC_OVERLAY_FILE=./entropy_psa_crypto.overlay
       - EXTRA_CONF_FILE=./entropy_psa_crypto.conf
