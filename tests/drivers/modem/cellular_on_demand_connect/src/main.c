@@ -950,6 +950,84 @@ ZTEST(cellular_on_demand_connect, test_11_periodic_survives_busy_chat_while_awai
 		     modem_fsm_state());
 }
 
+MODEM_CHAT_MATCH_DEFINE(control_ok, "OK", "", NULL);
+MODEM_CHAT_MATCH_DEFINE(control_missing_response, "UNEXPECTED", "", NULL);
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(control_success_cmds, MODEM_CHAT_SCRIPT_CMD_RESP("AT", control_ok));
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(control_timeout_cmds,
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT", control_missing_response));
+MODEM_CHAT_SCRIPT_NO_ABORT_DEFINE(control_success_script, control_success_cmds,
+				  modem_cellular_chat_callback_handler, 1);
+MODEM_CHAT_SCRIPT_NO_ABORT_DEFINE(control_timeout_script, control_timeout_cmds,
+				  modem_cellular_chat_callback_handler, 1);
+
+static void check_control_results_during_dial(struct modem_cellular_data *data)
+{
+	uint8_t failures = data->script_failure_counter;
+
+	zassert_ok(modem_chat_run_script_async(&data->chat, &control_success_script));
+	k_msleep(100);
+	zassert_false(modem_chat_is_running(&data->chat));
+	zassert_equal(data->state, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT,
+		      "control success completed the dial");
+	zassert_true(modem_chat_is_running(&data->dial_chat));
+
+	zassert_ok(modem_chat_run_script_async(&data->chat, &control_timeout_script));
+	k_msleep(1100);
+	zassert_false(modem_chat_is_running(&data->chat));
+	zassert_equal(data->state, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
+	zassert_equal(data->script_failure_counter, failures,
+		      "control failure counted as dial failure");
+	zassert_true(modem_chat_is_running(&data->dial_chat));
+}
+
+static void check_registration_during_dial(bool loses_registration, bool restores_registration)
+{
+	struct modem_cellular_data *data = modem->data;
+	bool registered = !loses_registration || restores_registration;
+	int dials;
+
+	park_in_await_dial();
+	dials = atomic_get(&atd_count);
+	atomic_set(&emu_registered, 1);
+	atomic_set(&emu_hold_connect, 1);
+	admit_iface();
+	zassert_true(wait_for_atd(dials + 1, 5000), "modem did not dial");
+	check_control_results_during_dial(data);
+
+	dce_send(dce_dlci1_pipe, loses_registration ? "+CEREG: 4\r\n" : "+CEREG: 5\r\n");
+	zassert_true(WAIT_FOR(data->registration_status_lte == (loses_registration ? 4 : 5),
+			     USEC_PER_SEC, k_msleep(10)),
+		     "control URC was not consumed during dial");
+	if (restores_registration) {
+		dce_send(dce_dlci1_pipe, "+CEREG: 5\r\n");
+		zassert_true(WAIT_FOR(data->registration_status_lte == 5,
+				     USEC_PER_SEC, k_msleep(10)));
+	}
+
+	atomic_set(&emu_registered, registered);
+	atomic_clear(&emu_hold_connect);
+	dce_send(dce_dlci2_pipe, "CONNECT\r\n");
+	zassert_true(wait_for_state(registered ? MODEM_CELLULAR_STATE_REGISTERED :
+				   MODEM_CELLULAR_STATE_AWAIT_REGISTERED, 1000));
+	zassert_equal(net_if_is_dormant(ppp_iface), !registered);
+	zassert_equal(atomic_get(&atd_count), dials + 1, "unexpected redial");
+}
+
+ZTEST(cellular_on_demand_connect, test_12_registration_loss_during_dial)
+{
+	check_registration_during_dial(true, false);
+}
+
+ZTEST(cellular_on_demand_connect, test_13_registration_restored_during_dial)
+{
+	check_registration_during_dial(true, true);
+}
+
+ZTEST(cellular_on_demand_connect, test_14_registration_unchanged_during_dial)
+{
+	check_registration_during_dial(false, false);
+}
+
 static atomic_t comms_check_count; /* CELLULAR_EVENT_MODEM_COMMS_CHECK_RESULT events seen */
 
 static void comms_check_cb(const struct device *dev, enum cellular_event event, const void *payload,
@@ -980,7 +1058,7 @@ static void fail_signal_queries(void)
 }
 
 /* A signal query's result belongs to the caller, not to the periodic script. */
-ZTEST(cellular_on_demand_connect, test_12_signal_query_while_registered)
+ZTEST(cellular_on_demand_connect, test_15_signal_query_while_registered)
 {
 	int16_t value;
 
@@ -1007,7 +1085,7 @@ ZTEST(cellular_on_demand_connect, test_12_signal_query_while_registered)
 	zassert_ok(cellular_modem_resume_periodic_script(modem), "resume failed");
 }
 
-ZTEST(cellular_on_demand_connect, test_13_signal_query_while_awaiting_registration)
+ZTEST(cellular_on_demand_connect, test_16_signal_query_while_awaiting_registration)
 {
 	int csq;
 
@@ -1034,7 +1112,7 @@ ZTEST(cellular_on_demand_connect, test_13_signal_query_while_awaiting_registrati
 }
 
 /* A dial requested while the periodic script holds the chat must still dial. */
-ZTEST(cellular_on_demand_connect, test_14_dial_while_periodic_holds_chat)
+ZTEST(cellular_on_demand_connect, test_17_dial_while_periodic_holds_chat)
 {
 	int dials;
 	int csq;
@@ -1042,30 +1120,31 @@ ZTEST(cellular_on_demand_connect, test_14_dial_while_periodic_holds_chat)
 	park_in_await_dial();
 	atomic_set(&emu_registered, 1);
 
-	/* The withheld answer keeps the periodic script on the chat across the dial request. */
+	/* Keep the control chat busy when the dial request arrives. */
 	atomic_set(&emu_hold_csq, 1);
 	csq = atomic_get(&csq_count);
 	zassert_true(wait_for_csq(csq + 1, 4 * CONFIG_MODEM_CELLULAR_PERIODIC_SCRIPT_MS),
 		     "periodic script did not poll while parked");
 	dials = atomic_get(&atd_count);
+	atomic_set(&emu_hold_connect, 1);
 
 	admit_iface();
 	zassert_true(wait_for_state(MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT, 5000),
 		     "dial request did not reach RUN_DIAL_SCRIPT, state is %d", modem_fsm_state());
 
-	/* The answer arrives on the dial channel, so the periodic script completes in the
-	 * dial state.
-	 */
+	/* The late control response must not complete the independent dial script. */
 	atomic_set(&emu_hold_csq, 0);
-	dce_send(dce_dlci2_pipe, "+CSQ: 20,99\r\nOK\r\n");
+	dce_send(dce_dlci1_pipe, "+CSQ: 20,99\r\nOK\r\n");
 	k_msleep(PERIODIC_SCRIPT_SETTLE_MS);
 
 	zassert_equal(MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT, modem_fsm_state(),
 		      "the periodic script result completed the dial, state is %d",
 		      modem_fsm_state());
 	zassert_true(wait_for_atd(dials + 1, 4 * CONFIG_MODEM_CELLULAR_PERIODIC_SCRIPT_MS),
-		     "dial script was not retried after finding the chat busy, state is %d",
+		     "dial script did not start while the control chat was busy, state is %d",
 		     modem_fsm_state());
+	atomic_clear(&emu_hold_connect);
+	dce_send(dce_dlci2_pipe, "CONNECT\r\n");
 	zassert_true(wait_for_call_up(10000), "dial script did not complete, state is %d",
 		     modem_fsm_state());
 }

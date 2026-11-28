@@ -1152,6 +1152,72 @@ static void lcp_test_teardown(void)
 	ppp_l2_register_pkt_cb(ppp_l2_recv);
 }
 
+static void check_local_close_waits_for_ack(bool ipcp_up, bool enabled)
+{
+	struct ppp_context *ctx = lcp_test_setup(ipcp_up);
+	uint8_t term_ack[] = {0xc0, 0x21, PPP_TERMINATE_ACK, 0, 0x00, 0x04};
+
+	/* ppp_enable() clears this before an administrative close. */
+	ctx->is_enabled = enabled;
+	ppp_lcp_get()->close(ctx, "Test close");
+	/* A modem may take longer than the cellular driver's post-DEAD delay
+	 * to answer. It must retain its PPP pipe until this exchange finishes.
+	 */
+	k_sleep(K_MSEC(WAIT_TIME));
+	zexpect_equal(ctx->lcp.fsm.state, PPP_CLOSING);
+	zexpect_equal(ctx->phase, PPP_TERMINATE, "Local close reported DEAD before the ACK");
+	zexpect_equal(phase_dead_events, 0);
+	zexpect_equal(tx_frames_count(PPP_LCP, PPP_TERMINATE_REQ), 1);
+
+	term_ack[3] = ctx->lcp.fsm.req_id;
+	feed_ppp_frame(term_ack, sizeof(term_ack));
+	k_sleep(K_MSEC(WAIT_TIME));
+	zexpect_equal(ctx->lcp.fsm.state, PPP_CLOSED);
+	zexpect_equal(ctx->phase, PPP_DEAD);
+	zexpect_equal(phase_dead_events, 1);
+
+	zexpect_ok(net_if_down(net_iface));
+	k_sleep(K_MSEC(WAIT_TIME));
+	lcp_test_teardown();
+}
+
+ZTEST(net_ppp_test_suite, test_lcp_local_close_waits_for_ack)
+{
+	check_local_close_waits_for_ack(true, true);
+}
+
+ZTEST(net_ppp_test_suite, test_lcp_local_close_no_ncp_waits_for_ack)
+{
+	check_local_close_waits_for_ack(false, true);
+}
+
+ZTEST(net_ppp_test_suite, test_lcp_local_close_when_disabled_waits_for_ack)
+{
+	check_local_close_waits_for_ack(true, false);
+}
+
+ZTEST(net_ppp_test_suite, test_lcp_local_close_waits_for_timeout)
+{
+	struct ppp_context *ctx = lcp_test_setup(true);
+
+	ppp_lcp_get()->close(ctx, "Test close");
+	k_sleep(K_MSEC(WAIT_TIME));
+	zexpect_equal(ctx->phase, PPP_TERMINATE);
+	zexpect_equal(phase_dead_events, 0);
+
+	k_sleep(K_MSEC(CONFIG_NET_L2_PPP_TIMEOUT *
+		       CONFIG_NET_L2_PPP_MAX_TERMINATE_REQ_RETRANSMITS));
+	zexpect_equal(tx_frames_count(PPP_LCP, PPP_TERMINATE_REQ),
+		      CONFIG_NET_L2_PPP_MAX_TERMINATE_REQ_RETRANSMITS);
+	zexpect_equal(ctx->lcp.fsm.state, PPP_CLOSED);
+	zexpect_equal(ctx->phase, PPP_DEAD);
+	zexpect_equal(phase_dead_events, 1);
+
+	zexpect_ok(net_if_down(net_iface));
+	k_sleep(K_MSEC(WAIT_TIME));
+	lcp_test_teardown();
+}
+
 /* RFC 1661 chapter 4.2: a Terminate-Request in Opened brings the link down
  * for good, the PPP phase must go DEAD exactly once and LCP must be
  * restartable from STOPPED afterwards.
