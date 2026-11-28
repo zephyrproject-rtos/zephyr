@@ -35,6 +35,18 @@ LOG_MODULE_REGISTER(hci_wba);
 
 #define DT_DRV_COMPAT st_hci_stm32wba
 
+#undef CFG_BLE_OPTIONS
+#if defined(CONFIG_BT_EXT_ADV)
+#define CFG_BLE_OPTIONS             (BLE_OPTIONS_LL_ONLY |  BLE_OPTIONS_EXTENDED_ADV)
+#else
+#define CFG_BLE_OPTIONS             (BLE_OPTIONS_LL_ONLY)
+#endif
+
+#define BLE_LL_BUF_SIZE \
+		(BLE_LL_BUFFER_SIZE(CFG_BLE_NUM_STATE_MACHINES, \
+				    CFG_BLE_OPTIONS,            \
+				    SUPPORT_COEXISTENCE))
+
 /* Serializes the accesses to the controller. It is a mutex, and not a
  * semaphore, because the controller can indicate an event from within
  * BleStack_Request(), i.e. from the thread that is already holding it.
@@ -62,7 +74,10 @@ struct aci_reset {
 #define BT_HCI_STATE_CLOSED                   2
 
 static uint8_t bt_hci_state = BT_HCI_STATE_DEINIT;
+static bool ble_ctrl_initialized;
 extern uint8_t ll_state_busy;
+
+static uint32_t ll_buffer[DIVC(BLE_LL_BUF_SIZE, 4)];
 
 static bool is_hci_event_discardable(const uint8_t *evt_data)
 {
@@ -392,20 +407,40 @@ static void stm32wba_set_stack_options(BleStack_init_t *init_params_p)
 
 	/* - bit 9:   1: Enhanced ATT supported    0: Enhanced ATT not supported */
 	/* NA for LL only */
+
+	/* - bit 16:   1: CIS supported             0: CIS not supported*/
+	/* Set to 0: CIS not supported */
+
+	/* - bit 17:   1: BIS supported             0: BIS not supported */
+	/* Set to 0: BIS not supported */
+
+	/* - bit 18:   1: PAwR supported            0: PAwR not supported */
+	/* Set to 0:  PAwR not supported */
+
+	/* - bit 19:   1: Chan. sounding supported  0: Chan. sounding not supported */
+	/* Set to 0: Chan. sounding not supported */
+
 }
 
-static int bt_ble_ctlr_init(void)
+int bt_ble_ctlr_init(void)
 {
-	BleStack_init_t init_params_p = {0};
+	if (!ble_ctrl_initialized) {
+		BleStack_init_t init_params_p = {0};
 
-	/**
-	 * Set BLE Options, Options_extension, max_adv_set_nbr,
-	 * max_adv_data_len and MaxAddEattBearers according zephyr KConfig
-	 */
-	stm32wba_set_stack_options(&init_params_p);
+		/*
+		 * Set BLE Options, Options_extension, max_adv_set_nbr,
+		 * max_adv_data_len and MaxAddEattBearers according zephyr KConfig
+		 */
+		stm32wba_set_stack_options(&init_params_p);
 
-	if (BleStack_Init(&init_params_p) != BLE_STATUS_SUCCESS) {
-		return -EIO;
+		init_params_p.ll_sm_num               = CFG_BLE_NUM_STATE_MACHINES;
+		init_params_p.ll_buffer               = (uint8_t *)ll_buffer;
+		init_params_p.ll_buffer_size          = BLE_LL_BUF_SIZE;
+
+		if (BleStack_Init(&init_params_p) != BLE_STATUS_SUCCESS) {
+			return -EIO;
+		}
+		ble_ctrl_initialized = true;
 	}
 
 	return 0;

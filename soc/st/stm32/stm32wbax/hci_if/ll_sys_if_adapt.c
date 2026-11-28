@@ -26,6 +26,12 @@ static const struct device *dev_temp_sensor = DEVICE_DT_GET(DT_ALIAS(die_temp0))
 static struct k_work temp_calibration_work;
 #endif /* defined(CONFIG_SOC_SERIES_STM32WBAX_LL_USE_TEMP_BASED_RADIO_CALIB) */
 
+void ll_sys_bg_process_deinit(void);
+
+#if defined(CONFIG_SOC_SERIES_STM32WBAX_LL_USE_TEMP_BASED_RADIO_CALIB)
+static void ll_sys_bg_temperature_measurement_deinit(void);
+#endif /* defined(CONFIG_SOC_SERIES_STM32WBAX_LL_USE_TEMP_BASED_RADIO_CALIB) */
+
 static void ll_sys_bg_process_handler(struct k_work *work)
 {
 #if defined(CONFIG_BT_STM32WBA)
@@ -50,6 +56,19 @@ void ll_sys_schedule_bg_process_isr(void)
 void ll_sys_bg_process_init(void)
 {
 	k_work_init(&ll_sys_work, &ll_sys_bg_process_handler);
+}
+
+/**
+ * @brief  Link Layer background process de-initialization
+ * @param  None
+ * @retval None
+ */
+void ll_sys_bg_process_deinit(void)
+{
+	/* no background process de-initialization required */
+#if defined(CONFIG_SOC_SERIES_STM32WBAX_LL_USE_TEMP_BASED_RADIO_CALIB)
+	ll_sys_bg_temperature_measurement_deinit();
+#endif /* defined(CONFIG_SOC_SERIES_STM32WBAX_LL_USE_TEMP_BASED_RADIO_CALIB) */
 }
 
 #if defined(CONFIG_SOC_SERIES_STM32WBAX_LL_USE_TEMP_BASED_RADIO_CALIB)
@@ -105,6 +124,16 @@ void ll_sys_bg_temperature_measurement_init(void)
 		k_work_init(&temp_calibration_work,
 			ll_sys_temperature_calibration_measurement_work_handler);
 	}
+}
+
+/**
+ * @brief  Link Layer temperature request background process de-initialization
+ * @param  None
+ * @retval None
+ */
+void ll_sys_bg_temperature_measurement_deinit(void)
+{
+	/* no temperature measurement background process de-initialization required */
 }
 
 /**

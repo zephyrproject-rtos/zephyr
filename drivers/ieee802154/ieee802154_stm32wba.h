@@ -71,6 +71,16 @@ enum ieee802154_stm32wba_config_type {
 	 * Reset the radio
 	 */
 	IEEE802154_STM32WBA_CONFIG_RADIO_RESET,
+
+	/**
+	 * Configure (enable/disable) the CCA
+	 */
+	IEEE802154_STM32WBA_CONFIG_CCA_ENABLE,
+
+	/**
+	 * Configure (enable/disable) the CSMA
+	 */
+	IEEE802154_STM32WBA_CONFIG_CSMA_ENABLE,
 };
 
 /** STM32WBA specific configuration data of ieee802154 driver. */
@@ -114,6 +124,12 @@ struct ieee802154_stm32wba_config {
 
 		/** @brief Attribute value for @ref IEEE802154_STM32WBA_CONFIG_RADIO_RESET */
 		bool radio_reset;
+
+		/** @brief Attribute value for @ref IEEE802154_STM32WBA_CONFIG_CCA_ENABLE */
+		uint8_t cca_enable;
+
+		/** @brief Attribute value for @ref IEEE802154_STM32WBA_CONFIG_CSMA_ENABLE */
+		uint8_t csma_enable;
 	};
 };
 
@@ -141,6 +157,31 @@ enum ieee802154_stm32wba_attr {
 	 * Get a random number
 	 */
 	IEEE802154_STM32WBA_ATTR_RAND_NUM,
+
+	/**
+	 * Get the CCA enable/disable status
+	 */
+	IEEE802154_STM32WBA_ATTR_CCA_ENABLE,
+
+	/**
+	 * Get the CSMA enable/disable status
+	 */
+	IEEE802154_STM32WBA_ATTR_CSMA_ENABLE,
+
+	/**
+	 * Get the current radio state
+	 */
+	IEEE802154_STM32WBA_ATTR_RADIO_STATE,
+
+	/**
+	 * Get the promiscuous mode status
+	 */
+	IEEE802154_STM32WBA_ATTR_PROMISCUOUS,
+
+	/**
+	 * Get the RSSI value of the last received frame
+	 */
+	IEEE802154_STM32WBA_ATTR_RSSI,
 };
 
 /**
@@ -163,6 +204,21 @@ struct ieee802154_stm32wba_attr_value {
 
 		/** @brief Attribute value for @ref IEEE802154_STM32WBA_ATTR_RAND_NUM */
 		uint8_t *rand_num;
+
+		/** @brief Attribute value for @ref IEEE802154_STM32WBA_ATTR_CCA_ENABLE */
+		uint8_t cca_enable;
+
+		/** @brief Attribute value for @ref IEEE802154_STM32WBA_ATTR_CSMA_ENABLE */
+		uint8_t csma_enable;
+
+		/** @brief Attribute value for @ref IEEE802154_STM32WBA_ATTR_RADIO_STATE */
+		uint8_t radio_state;
+
+		/** @brief Attribute value for @ref IEEE802154_STM32WBA_ATTR_PROMISCUOUS */
+		bool promiscuous;
+
+		/** @brief Attribute value for @ref IEEE802154_STM32WBA_ATTR_RSSI */
+		int8_t rssi;
 	};
 };
 #endif /* CONFIG_NET_L2_CUSTOM_IEEE802154 */
@@ -203,6 +259,12 @@ struct stm32wba_802154_data_t {
 
 	/* Security Enabled bit value in ACK sent for the last received frame. */
 	bool last_frame_ack_seb;
+
+	/* Maximum number of CSMA backoff attempts before declaring channel access failure. */
+	uint8_t max_csma_backoffs;
+
+	/* Maximum number of retries allowed after a transmission failure. */
+	uint8_t max_frame_retries;
 
 	/* CCA complete semaphore. Unlocked when CCA is complete. */
 	struct k_sem cca_wait;
