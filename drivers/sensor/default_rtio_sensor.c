@@ -38,8 +38,21 @@ static void sensor_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
 	}
 }
 
+static void sensor_iodev_cancel(const struct rtio_iodev *iodev, struct rtio *r,
+				rtio_sqe_handle_t handle)
+{
+	const struct sensor_read_config *cfg = iodev->data;
+	const struct device *dev = cfg->sensor;
+	const struct sensor_driver_api *api = dev->api;
+
+	if (api->cancel != NULL) {
+		api->cancel(dev, r, handle);
+	}
+}
+
 const struct rtio_iodev_api __sensor_iodev_api = {
 	.submit = sensor_iodev_submit,
+	.cancel = sensor_iodev_cancel,
 };
 
 /**
