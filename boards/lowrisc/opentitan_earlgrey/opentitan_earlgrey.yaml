@@ -10,5 +10,6 @@ testing:
     - net
     - bluetooth
 supported:
+  - i2c
   - watchdog
 vendor: lowrisc
