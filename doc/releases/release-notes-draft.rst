@@ -120,6 +120,11 @@ Libraries / Subsystems
     (:kconfig:option:`CONFIG_MCUMGR_TRANSPORT_UDP_DTLS_CLIENT_AUTH`), so that only clients
     signed by the CA the application provides can send SMP commands.
 
+* Management
+
+  * MCUmgr: an application can connect a bridge between two SMP transports with
+    :c:func:`transport_mgmt_connect_bridge`, as the transport management connect command does.
+
 * Mbed TLS
 
   * :kconfig:option:`CONFIG_MBEDTLS_SSL_CLI_C`
