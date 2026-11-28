@@ -14,3 +14,34 @@ class: [i3c, i2c]
 properties:
   clocks:
     required: true
+
+  secondary:
+    type: boolean
+    description: |
+      Boot as an I3C target. Only honored on hardware synthesized
+      dual-role (HW_CAPABILITY DEVICE_ROLE_CONFIG == 3); requires
+      CONFIG_I3C_TARGET.
+
+  static-address:
+    type: int
+    description: |
+      Target static address.
+
+  tgt-pid:
+    type: array
+    description: |
+      Target 48-bit Provisioned ID.
+      array[0]: PID[47:33] MIPI manufacturer ID.
+                PID[32] ID type selector (1'b1 random value, 1'b0 vendor fixed).
+      array[1]: PID[31:0] Random value or vendor fixed value.
+
+  bcr:
+    type: int
+    description: |
+      Bus Characteristics Register, used for bus enumeration with ENTDAA and
+      determine device role and capabilities of the device on the bus.
+
+  dcr:
+    type: int
+    description: |
+      Device Characteristics Register, used for bus enumeration with ENTDAA.

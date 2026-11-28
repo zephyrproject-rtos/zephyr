@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Mark Tamas
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  build_only: true
+  tags:
+    - drivers
+    - i3c
+    - i3c_dw
+  platform_allow:
+    - qemu_cortex_m3
+    - mec_assy6941/mec1653b_nsz
+tests:
+  drivers.i3c.dw.secondary_boot.dual_role:
+    # CONFIG_I3C_CONTROLLER=y and CONFIG_I3C_TARGET=y
+    tags: i3c_dw
+  drivers.i3c.dw.secondary_boot.target_only:
+    # CONFIG_I3C_CONTROLLER=n
+    tags: i3c_dw
+    extra_configs:
+      - CONFIG_I3C_TARGET_ROLE_ONLY=y

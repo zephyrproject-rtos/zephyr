@@ -14,8 +14,7 @@ description: |
 compatible: "microchip,xec-i3c"
 
 include:
-  - name: i3c-controller.yaml
-  - name: pinctrl-device.yaml
+  - name: snps,designware-i3c.yaml
   - name: microchip,dmec-ecia-girq.yaml
 
 class: [i3c, i2c]
