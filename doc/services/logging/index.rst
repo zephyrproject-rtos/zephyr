@@ -73,6 +73,10 @@ Rate-limited logging macros are also available for all severity levels to preven
   e.g. :c:macro:`LOG_HEXDUMP_WRN_RATELIMIT`.
 - ``LOG_HEXDUMP_X_RATELIMIT_RATE`` for rate-limited data dumping with a custom rate,
   e.g. :c:macro:`LOG_HEXDUMP_WRN_RATELIMIT_RATE`.
+- ``LOG_X_RATELIMIT_STATE`` for rate-limited standard printf-like messages using an explicit
+  rate limit state, e.g. :c:macro:`LOG_ERR_RATELIMIT_STATE`.
+- ``LOG_HEXDUMP_X_RATELIMIT_STATE`` for rate-limited data dumping using an explicit rate limit
+  state, e.g. :c:macro:`LOG_HEXDUMP_WRN_RATELIMIT_STATE`.
 
 The convenience macros use the default rate specified by ``CONFIG_LOG_RATELIMIT_INTERVAL_MS``,
 while the explicit rate macros take a rate parameter (in milliseconds) that specifies the minimum interval between log messages.
@@ -400,10 +404,26 @@ The rate-limited logging system provides two types of macros:
 - :c:macro:`LOG_HEXDUMP_INF_RATELIMIT_RATE` - Rate-limited info hexdump with custom rate
 - :c:macro:`LOG_HEXDUMP_DBG_RATELIMIT_RATE` - Rate-limited debug hexdump with custom rate
 
+**Explicit state macros (using a caller-provided state):**
+- :c:macro:`LOG_ERR_RATELIMIT_STATE` - Rate-limited error messages using an explicit state
+- :c:macro:`LOG_WRN_RATELIMIT_STATE` - Rate-limited warning messages using an explicit state
+- :c:macro:`LOG_INF_RATELIMIT_STATE` - Rate-limited info messages using an explicit state
+- :c:macro:`LOG_DBG_RATELIMIT_STATE` - Rate-limited debug messages using an explicit state
+- :c:macro:`LOG_HEXDUMP_ERR_RATELIMIT_STATE` - Rate-limited error hexdump using an explicit state
+- :c:macro:`LOG_HEXDUMP_WRN_RATELIMIT_STATE` - Rate-limited warning hexdump using an explicit state
+- :c:macro:`LOG_HEXDUMP_INF_RATELIMIT_STATE` - Rate-limited info hexdump using an explicit state
+- :c:macro:`LOG_HEXDUMP_DBG_RATELIMIT_STATE` - Rate-limited debug hexdump using an explicit state
+
 The convenience macros use the default rate specified by :kconfig:option:`CONFIG_LOG_RATELIMIT_INTERVAL_MS`
 (5000ms by default). The explicit rate macros take a rate parameter (in milliseconds) that specifies
 the minimum interval between log messages. The rate limiting is per-macro-call-site, meaning
 that each unique call to a rate-limited macro has its own independent rate limit.
+
+The ``_STATE`` variants take a rate parameter and a pointer to a :c:struct:`log_ratelimit_state`
+that is owned by the caller instead of using a state private to the call site. The state must be
+zero-initialized. This is useful when several call sites should share a single rate limit, or when
+a driver with multiple instances shares one data-path function and each instance should be rate
+limited independently.
 
 Example usage:
 
@@ -427,6 +447,23 @@ Example usage:
         LOG_ERR_RATELIMIT_RATE(30000, "Slow rate error: %s", error_msg);
         LOG_INF_RATELIMIT_RATE(2000, "Custom rate status: %d items", item_count);
         LOG_HEXDUMP_ERR_RATELIMIT_RATE(5000, data_buffer, data_len, "Error data:");
+    }
+
+To rate limit each device instance independently, embed a state in the driver data and pass it
+to the ``_STATE`` variants:
+
+.. code-block:: c
+
+    struct my_dev_data {
+        struct log_ratelimit_state rl; /* zero-initialized */
+        /* ... */
+    };
+
+    void my_dev_isr(const struct device *dev, int status)
+    {
+        struct my_dev_data *data = dev->data;
+
+        LOG_ERR_RATELIMIT_STATE(&data->rl, 1000, "RX overrun: %d", status);
     }
 
 Rate-limited logging is particularly useful for:

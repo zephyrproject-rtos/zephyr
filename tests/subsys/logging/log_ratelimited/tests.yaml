@@ -8,7 +8,6 @@ common:
 
 tests:
   logging.log_ratelimited:
-    build_only: true
     extra_configs:
       - CONFIG_LOG_RATELIMIT_INTERVAL_MS=1000
   logging.log_ratelimited.fallback_drop:
