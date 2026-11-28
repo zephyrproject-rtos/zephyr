@@ -5,9 +5,39 @@ config UART_RPI_PICO_PIO
 	bool "Raspberry Pi PIO UART driver"
 	default y
 	depends on DT_HAS_RASPBERRYPI_PICO_UART_PIO_ENABLED
+	depends on PIO_RPI_PICO
 	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
 	select PICOSDK_USE_PIO
 	select PICOSDK_USE_CLAIM
 	select PINCTRL
 	select SERIAL_HAS_POST_KERNEL_INIT
+	select DMA if UART_INTERRUPT_DRIVEN
+	select DMA_RPI_PICO if UART_INTERRUPT_DRIVEN
 	depends on RESET
+
+if UART_RPI_PICO_PIO && UART_INTERRUPT_DRIVEN
+
+config UART_RPI_PICO_PIO_POLL_PERIOD_US
+	int "Poll period, in microseconds, of the PIO UART interrupt emulation"
+	default 500
+	help
+	  RX is captured by a self-reloading DMA ring buffer. While RX or TX
+	  interrupts are enabled, a periodic k_timer per instance invokes the
+	  registered uart_irq_callback in ISR context at this period.
+	  TX is refilled only from the callback, so throughput is limited to
+	  the 8-byte TX FIFO per period: 16 KB/s at the default, enough for
+	  115200 baud. Shorten the period for higher baudrates, at the cost of
+	  more timer interrupts while the UART is active.
+
+config UART_RPI_PICO_PIO_RX_RING_BUF_SIZE
+	int "Size, in bytes, of the RX DMA ring buffer"
+	default 256
+	range 2 32768
+	help
+	  Must be a power of two, as required by the DMA address wrapping.
+	  Bounds how far the callback can fall behind before RX bytes
+	  are lost. Size it for the longest expected stall at the configured
+	  baudrate.
+
+endif # UART_RPI_PICO_PIO && UART_INTERRUPT_DRIVEN
