@@ -297,6 +297,12 @@ Other notable changes
     interrupts use the interrupt stack, which fixes return address corruption by a nested IRQ
     (:github:`122601`).
 
+* Arduino
+
+  * ``west flash -r adb-openocd`` programs the :zephyr:board:`arduino_uno_q` through its QRB2210
+    with the new ``adb-openocd`` runner, which copies the image over ADB and runs the OpenOCD
+    shipped on the board, so only ``adb`` is needed on the host instead of an external ST-LINK.
+
 * Bluetooth
 
   * :kconfig:option:`CONFIG_BT_PRIVACY` can now be enabled in Broadcaster- and Observer-only builds,
