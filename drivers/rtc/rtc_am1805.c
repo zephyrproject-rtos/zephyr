@@ -11,6 +11,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/drivers/rtc/rtc_am1805.h>
 
 #define DT_DRV_COMPAT ambiq_am1805
 
@@ -39,10 +40,14 @@ LOG_MODULE_REGISTER(am1805, CONFIG_RTC_LOG_LEVEL);
 #define REG_CONTROL1_ADDR	0x10
 #define REG_CONTROL2_ADDR	0x11
 #define REG_XT_CALIB_ADDR	0x14
+#define REG_SLEEP_CTRL_ADDR     0x17
 #define REG_TIMER_CTRL_ADDR	0x18
 #define REG_IRQ_MASK_ADDR       0x12
 #define REG_WATCHDOG_ADDR	0x1B
+#define REG_OSC_CTRL_ADDR       0x1C
 #define REG_OSC_STATUS_ADDR	0x1D
+#define REG_CONF_KEY_ADDR       0x1F
+#define REG_EXT_RAM_ADDR        0x3F
 
 /* AM1805 control bits */
 #define SECONDS_BITS		GENMASK(6, 0)
@@ -53,13 +58,24 @@ LOG_MODULE_REGISTER(am1805, CONFIG_RTC_LOG_LEVEL);
 #define WEEKDAY_BITS		GENMASK(2, 0)
 #define YEAR_BITS		GENMASK(7, 0)
 #define REG_CONTROL2_OUT2S_BITS GENMASK(4, 2)
+#define REG_CONTROL2_OUT2S_SLEEP (BIT(3) | BIT(4))
+
 #define REG_TIMER_CTRL_RPT_BITS GENMASK(4, 2)
 #define REG_XT_CALIB_OFF_MASK	GENMASK(6, 0)
 
 #define REG_STATUS_ALM		BIT(2)
+#define REG_STATUS_EX1          BIT(0)
+#define REG_CONTROL1_PWR2       BIT(1)
+#define REG_CONTROL1_OUT        BIT(4)
 #define REG_CONTROL1_STOP	BIT(7)
 #define REG_IRQ_MASK_AIE        BIT(2)
+#define REG_IRQ_MASK_EX1        BIT(0)
 #define REG_XT_CALIB_CMDX       BIT(7)
+
+#define REG_SLEEP_CTRL_SLP       BIT(7)
+#define REG_SLEEP_CTRL_SLTO_1    BIT(0)
+#define REG_SLEEP_CTRL_SLTO_MASK GENMASK(0, 2)
+#define REG_SLEEP_CTRL_EX1P      BIT(4)
 
 #define TIMER_CTRL_ALM_OFF	0x00
 #define TIMER_CTRL_ALM_DAY	BIT(4)
@@ -73,12 +89,18 @@ LOG_MODULE_REGISTER(am1805, CONFIG_RTC_LOG_LEVEL);
 #define WRB_1_SECOND		BIT(1)
 #define WRB_4_SECONDS		GENMASK(1, 0)
 
+#define REG_OSC_CTRL_PWGT BIT(2)
+
 #define REG_OSC_STATUS_ACAL_0	0x00
 #define REG_OSC_STATUS_ACAL_1	BIT(6)
 #define REG_OSC_STATUS_ACAL_2	BIT(7)
 #define REG_OSC_STATUS_ACAL_3	GENMASK(7, 6)
 #define REG_OSC_STATUS_MASK	BIT(1)
 #define REG_STATUS_DEFAULT	0x00
+
+#define REG_EXT_RAM_EXIN BIT(4)
+
+#define REG_CONF_KEY_UNLOCK_OSC_REG 0xA1
 
 #define AM1805_RTC_ALARM_TIME_MASK                                                                 \
 	(RTC_ALARM_TIME_MASK_SECOND | RTC_ALARM_TIME_MASK_MINUTE | RTC_ALARM_TIME_MASK_HOUR |      \
@@ -93,6 +115,7 @@ LOG_MODULE_REGISTER(am1805, CONFIG_RTC_LOG_LEVEL);
 
 struct am1805_config {
 	const struct i2c_dt_spec int_i2c;
+	bool power_switch;
 #ifdef CONFIG_RTC_ALARM
 	struct gpio_dt_spec int_gpio;
 #endif
@@ -103,6 +126,8 @@ struct am1805_data {
 #ifdef CONFIG_RTC_ALARM
 	rtc_alarm_callback alarm_user_callback;
 	void *alarm_user_data;
+	am1805_ext_pin_callback_t ext_pin_user_callback;
+	void *ext_pin_user_data;
 	/* For gpio-interrupt */
 	struct gpio_callback am1805_callback;
 	struct k_thread am1805_thread;
@@ -485,15 +510,52 @@ static int am1805_alarm_set_callback(const struct device *dev, uint16_t id,
 static void am1805_interrupt_thread(const struct device *dev)
 {
 	struct am1805_data *data = dev->data;
+	const struct am1805_config *config = dev->config;
 
 	while (1) {
+		rtc_alarm_callback alarm_cb;
+		void *alarm_data;
+		am1805_ext_pin_callback_t ext_pin_cb;
+		void *ext_pin_data;
+		uint8_t status;
+		uint8_t pending;
+		int err;
+
 		k_sem_take(&data->int_sem, K_FOREVER);
 
-		if (data->alarm_user_callback == NULL) {
-			LOG_DBG("Interrupt received, But No Alarm-Callback Initialized!!\n");
+		k_mutex_lock(&data->lock, K_FOREVER);
+
+		err = i2c_reg_read_byte_dt(&config->int_i2c, REG_STATUS_ADDR, &status);
+		if (err != 0) {
+			k_mutex_unlock(&data->lock);
+			LOG_ERR("failed to read the status register (err %d)", err);
 			continue;
 		}
-		data->alarm_user_callback(dev, 0, data->alarm_user_data);
+
+		/* Acknowledge the sources handled here so that nIRQ is released */
+		pending = status & (REG_STATUS_ALM | REG_STATUS_EX1);
+		if (pending != 0U) {
+			err = i2c_reg_update_byte_dt(&config->int_i2c, REG_STATUS_ADDR, pending, 0);
+			if (err != 0) {
+				LOG_ERR("failed to clear the status flags (err %d)", err);
+			}
+		}
+
+		/* Take a snapshot of the callbacks, they are called without the lock */
+		alarm_cb = data->alarm_user_callback;
+		alarm_data = data->alarm_user_data;
+		ext_pin_cb = data->ext_pin_user_callback;
+		ext_pin_data = data->ext_pin_user_data;
+
+		k_mutex_unlock(&data->lock);
+
+		if ((pending & REG_STATUS_ALM) != 0U && alarm_cb != NULL) {
+			alarm_cb(dev, 0, alarm_data);
+		}
+
+		if ((pending & REG_STATUS_EX1) != 0U && ext_pin_cb != NULL) {
+			ext_pin_cb(dev, ext_pin_data);
+		}
 	}
 }
 
@@ -508,6 +570,67 @@ static void am1805_gpio_callback_handler(const struct device *port, struct gpio_
 	k_sem_give(&data->int_sem);
 }
 #endif
+
+int rtc_am1805_ext_pin_set_callback(const struct device *dev, rtc_am1805_ext_pin_callback_t callback,
+				void *user_data)
+{
+#ifdef CONFIG_RTC_ALARM
+	const struct am1805_config *config;
+	struct am1805_data *data;
+
+	if (dev == NULL) {
+		return -EINVAL;
+	}
+
+	config = dev->config;
+	data = dev->data;
+
+	if (config->int_gpio.port == NULL) {
+		return -ENOTSUP;
+	}
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+	data->ext_pin_user_callback = callback;
+	data->ext_pin_user_data = user_data;
+	k_mutex_unlock(&data->lock);
+
+	return 0;
+#else
+	ARG_UNUSED(dev);
+	ARG_UNUSED(callback);
+	ARG_UNUSED(user_data);
+
+	return -ENOTSUP;
+#endif
+}
+
+static int am1805_power_switch_init(const struct device *dev)
+{
+	const struct am1805_config *config = dev->config;
+	int err;
+
+	err = i2c_reg_update_byte_dt(&config->int_i2c, REG_CONTROL1_ADDR, REG_CONTROL1_PWR2,
+				     REG_CONTROL1_PWR2);
+	if (err != 0) {
+		return err;
+	}
+
+	/* OSC CTRL is write-protected: unlock it right before writing */
+	err = i2c_reg_write_byte_dt(&config->int_i2c, REG_CONF_KEY_ADDR,
+				    REG_CONF_KEY_UNLOCK_OSC_REG);
+	if (err != 0) {
+		return err;
+	}
+
+	err = i2c_reg_update_byte_dt(&config->int_i2c, REG_OSC_CTRL_ADDR, REG_OSC_CTRL_PWGT,
+				     REG_OSC_CTRL_PWGT);
+	if (err != 0) {
+		return err;
+	}
+
+	return i2c_reg_update_byte_dt(&config->int_i2c, REG_CONTROL2_ADDR, REG_CONTROL2_OUT2S_BITS,
+				      REG_CONTROL2_OUT2S_SLEEP);
+}
 
 static int am1805_init(const struct device *dev)
 {
@@ -528,6 +651,14 @@ static int am1805_init(const struct device *dev)
 	if (err != 0) {
 		LOG_ERR("failed to read the status register");
 		return -ENODEV;
+	}
+
+	if (config->power_switch) {
+		err = am1805_power_switch_init(dev);
+		if (err != 0) {
+			LOG_ERR("failed to initialize power switch");
+			return -ENODEV;
+		}
 	}
 
 #ifdef CONFIG_RTC_ALARM
@@ -571,6 +702,158 @@ static int am1805_init(const struct device *dev)
 	return 0;
 }
 
+/**
+ * @brief Put the AM1805 and the system into sleep mode using SLP bit.
+ *
+ * This function sets the SLP (sleep) bit in the AM1805 sleep control register,
+ * forcing the RTC into sleep mode which can cut off external power switch.
+ *
+ * @param dev Pointer to the AM1805 device structure.
+ *
+ * @return 0 on success, -ENODEV if the register cannot be accessed, or -1 on failure.
+ */
+int rtc_am1805_enter_sleep(const struct device *dev)
+{
+	if (dev == NULL) {
+		return -EINVAL;
+	}
+
+	const struct am1805_config *config = dev->config;
+	struct am1805_data *data = dev->data;
+	uint8_t reg;
+	int err;
+
+	LOG_DBG("Enter SLP Mode");
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+
+	err = i2c_reg_update_byte_dt(&config->int_i2c, REG_SLEEP_CTRL_ADDR,
+				     REG_SLEEP_CTRL_SLP | REG_SLEEP_CTRL_SLTO_MASK,
+				     REG_SLEEP_CTRL_SLP | REG_SLEEP_CTRL_SLTO_1);
+	if (err) {
+		LOG_ERR("Failed to write SLP bit");
+		goto unlock;
+	}
+
+	/* Read back to confirm */
+	err = i2c_reg_read_byte_dt(&config->int_i2c, REG_SLEEP_CTRL_ADDR, &reg);
+	if (err) {
+		LOG_ERR("Failed to read sleep control register");
+		goto unlock;
+	}
+
+	if (!(reg & REG_SLEEP_CTRL_SLP)) {
+		LOG_ERR("AM1805 failed to enter sleep mode");
+		err = i2c_reg_read_byte_dt(&config->int_i2c, REG_IRQ_MASK_ADDR, &reg);
+		if (err != 0) {
+			LOG_ERR("Failed to read the irq register");
+		} else {
+			LOG_DBG("IRQ Mask Register: 0x%02x", reg);
+		}
+		err = i2c_reg_read_byte_dt(&config->int_i2c, REG_STATUS_ADDR, &reg);
+		if (err != 0) {
+			LOG_ERR("Failed to read the status register");
+		} else {
+			LOG_DBG("Status Register: 0x%02x", reg);
+		}
+		err = -EIO;
+		goto unlock;
+	}
+	LOG_DBG("AM1805 will enter sleep");
+unlock:
+	k_mutex_unlock(&data->lock);
+
+	return err;
+}
+
+/**
+ * @brief Read the state of the external input EX1.
+ *
+ * This reads the EX1 input from the extended RAM register of the AM1805.
+ * The EXIN bit indicates whether the pin is high or low.
+ *
+ * @param dev Pointer to the AM1805 device structure.
+ * @param pin Output pointer where the pin level is stored (0 or 1).
+ *
+ * @return 0 on success, -ENODEV if I2C access fails, or -EINVAL on bad parameters.
+ */
+int rtc_am1805_get_ext_pin(const struct device *dev, uint8_t *pin)
+{
+	if (dev == NULL || pin == NULL) {
+		return -EINVAL;
+	}
+
+	const struct am1805_config *config = dev->config;
+	uint8_t reg;
+	int err;
+
+	err = i2c_reg_read_byte_dt(&config->int_i2c, REG_EXT_RAM_ADDR, &reg);
+	if (err != 0) {
+		LOG_ERR("Failed to read EX1 extended RAM register");
+		*pin = 0;
+		return -ENODEV;
+	}
+
+	*pin = (reg & REG_EXT_RAM_EXIN) ? 1 : 0;
+	return 0;
+}
+
+/**
+ * @brief Enable or disable the EX1 interrupt source.
+ *
+ * This function configures the interrupt mask for the EX1 pin
+ * and clears any pending EX1 interrupt status before enabling it.
+ *
+ * @param dev Pointer to the AM1805 device structure.
+ * @param enable True to enable the EX1 interrupt, false to disable.
+ * @param polarity 1 for rising edge, 0 for falling edge interrupt polarity.
+ *
+ * @return 0 on success or a negative I2C error code.
+ */
+int rtc_am1805_enable_ext_pin_int(const struct device *dev, bool enable, int polarity)
+{
+	if (dev == NULL) {
+		return -EINVAL;
+	}
+
+	struct am1805_data *data = dev->data;
+	const struct am1805_config *config = dev->config;
+	int err;
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+
+	err = i2c_reg_update_byte_dt(&config->int_i2c, REG_SLEEP_CTRL_ADDR, REG_SLEEP_CTRL_EX1P,
+				     polarity ? REG_SLEEP_CTRL_EX1P : 0);
+	if (err) {
+		goto unlock;
+	}
+
+	/* Clear interrupt mask for EX1 */
+	err = i2c_reg_update_byte_dt(&config->int_i2c, REG_IRQ_MASK_ADDR, REG_IRQ_MASK_EX1, 0);
+	if (err) {
+		goto unlock;
+	}
+
+	/* Clear pending status bit */
+	err = i2c_reg_update_byte_dt(&config->int_i2c, REG_STATUS_ADDR, REG_STATUS_EX1, 0);
+	if (err) {
+		goto unlock;
+	}
+
+	/* Enable interrupt if requested */
+	if (enable) {
+		err = i2c_reg_update_byte_dt(&config->int_i2c, REG_IRQ_MASK_ADDR, REG_IRQ_MASK_EX1,
+					     REG_IRQ_MASK_EX1);
+		if (err) {
+			goto unlock;
+		}
+	}
+
+unlock:
+	k_mutex_unlock(&data->lock);
+	return err;
+}
+
 static DEVICE_API(rtc, am1805_driver_api) = {
 	.set_time = am1805_set_time,
 	.get_time = am1805_get_time,
@@ -589,6 +872,7 @@ static DEVICE_API(rtc, am1805_driver_api) = {
 #define AM1805_INIT(inst)									\
 static const struct am1805_config am1805_config_##inst = {					\
 	.int_i2c = I2C_DT_SPEC_INST_GET(inst),							\
+	.power_switch = DT_INST_PROP(inst, power_switch),					\
 	IF_ENABLED(CONFIG_RTC_ALARM,								\
 		(.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, am1805_gpios, {0})))};		\
 												\
