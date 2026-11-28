@@ -288,12 +288,12 @@ enum bt_mcp_obj_flag {
 };
 
 /* The active object */
-/* Only a single object is selected or being added (active) at a time. */
+/* Only a single object is read or being added (active) at a time. */
 /* And, except for the icon object, all objects can be created dynamically. */
 /* So a single buffer to hold object content is sufficient.  */
 struct obj_t {
-	/* ID of the currently selected object*/
-	uint64_t selected_id;
+	/* ID of the object whose content is in the buffer */
+	uint64_t content_id;
 
 	/* Type of object being added, e.g. BT_MCP_OBJ_ICON */
 	uint8_t add_type;
@@ -313,7 +313,7 @@ struct obj_t {
 };
 
 static struct obj_t obj = {
-	.selected_id = 0U,
+	.content_id = 0U,
 	.add_type = BT_MCP_OBJ_NONE,
 	.add_track = NULL,
 	.content = NET_BUF_SIMPLE(CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_MAX_OBJ_SIZE),
@@ -698,53 +698,149 @@ static int on_obj_deleted(struct bt_ots *ots, struct bt_conn *conn,
 	return 0;
 }
 
-static void on_obj_selected(struct bt_ots *ots, struct bt_conn *conn,
-			    uint64_t id)
+/* Find a track by ID
+ *
+ * If found, return pointers to the group of the track and the track,
+ * otherwise, the pointers returned are NULL
+ *
+ * Returns true if found, false otherwise
+ */
+static bool find_track_by_id(const struct bt_mcp_media_control_server_player *pl, uint64_t id,
+			     struct bt_mcp_group **group, struct bt_mcp_track **track)
 {
-	ARG_UNUSED(ots);
-	ARG_UNUSED(conn);
+	struct bt_mcp_group *tmp_group = pl->group;
+	struct bt_mcp_track *tmp_track;
 
-	if (atomic_test_and_set_bit(obj.flags, BT_MCP_OBJ_FLAG_BUSY)) {
-		/* TODO: Can there be a collision between select and internal */
-		/* activities, like adding new objects? */
-		LOG_ERR("Object busy - select not performed");
-		return;
+	while (tmp_group->prev != NULL) {
+		tmp_group = tmp_group->prev;
 	}
 
-	LOG_DBG("Object Id selected: 0x%012llX", id);
+	while (tmp_group != NULL) {
+		tmp_track = tmp_group->track;
+
+		while (tmp_track->prev != NULL) {
+			tmp_track = tmp_track->prev;
+		}
+
+		while (tmp_track != NULL) {
+			if (tmp_track->id == id) {
+				/* Found the track */
+				*group = tmp_group;
+				*track = tmp_track;
+				return true;
+			}
+
+			tmp_track = tmp_track->next;
+		}
+
+		tmp_group = tmp_group->next;
+	}
+
+	/* Track not found */
+	*group = NULL;
+	*track = NULL;
+	return false;
+}
+
+/* Find a group by ID
+ *
+ * If found, return pointer to the group, otherwise, the pointer returned is NULL
+ *
+ * Returns true if found, false otherwise
+ */
+static bool find_group_by_id(const struct bt_mcp_media_control_server_player *pl, uint64_t id,
+			     struct bt_mcp_group **group)
+{
+	struct bt_mcp_group *tmp_group = pl->group;
+
+	while (tmp_group->prev != NULL) {
+		tmp_group = tmp_group->prev;
+	}
+
+	while (tmp_group != NULL) {
+		if (tmp_group->id == id) {
+			/* Found the group */
+			*group = tmp_group;
+			return true;
+		}
+
+		tmp_group = tmp_group->next;
+	}
+
+	/* Group not found */
+	*group = NULL;
+	return false;
+}
+
+/* Find the track whose Track Segments Object has this ID
+ *
+ * If found, return a pointer to the track, otherwise, the pointer returned is NULL
+ *
+ * Returns true if found, false otherwise
+ */
+static bool find_track_by_segments_id(const struct bt_mcp_media_control_server_player *pl,
+				      uint64_t id, struct bt_mcp_track **track)
+{
+	struct bt_mcp_group *tmp_group = pl->group;
+	struct bt_mcp_track *tmp_track;
+
+	while (tmp_group->prev != NULL) {
+		tmp_group = tmp_group->prev;
+	}
+
+	while (tmp_group != NULL) {
+		tmp_track = tmp_group->track;
+
+		while (tmp_track->prev != NULL) {
+			tmp_track = tmp_track->prev;
+		}
+
+		while (tmp_track != NULL) {
+			if (tmp_track->segments_id == id) {
+				*track = tmp_track;
+				return true;
+			}
+
+			tmp_track = tmp_track->next;
+		}
+
+		tmp_group = tmp_group->next;
+	}
+
+	*track = NULL;
+	return false;
+}
+
+/* Set up the content buffer for an object, found by its ID among all the tracks and groups: by the
+ * time a client reads it, it need not be the current or next track or group any more.
+ */
+static int setup_object(uint64_t id)
+{
+	struct bt_mcp_group *group;
+	struct bt_mcp_track *track;
 
 	if (id == media_player.icon_id) {
 		LOG_DBG("Icon Object ID");
 		(void)setup_icon_object();
-	} else if (id == media_player.group->track->segments_id) {
-		LOG_DBG("Current Track Segments Object ID");
-		(void)setup_segments_object(media_player.group->track);
-	} else if (id == media_player.group->track->id) {
-		LOG_DBG("Current Track Object ID");
-		(void)setup_track_object();
-	} else if (media_player.next_track_set && id == media_player.next.track->id) {
-		/* Next track, if the next track has been explicitly set */
-		LOG_DBG("Next Track Object ID");
-		(void)setup_track_object();
-	} else if (media_player.group->track->next != NULL &&
-		   id == media_player.group->track->next->id) {
-		/* Next track, if next track has not been explicitly set */
-		LOG_DBG("Next Track Object ID");
-		(void)setup_track_object();
 	} else if (id == media_player.group->parent->id) {
 		LOG_DBG("Parent Group Object ID");
 		(void)setup_parent_group_object(media_player.group);
-	} else if (id == media_player.group->id) {
-		LOG_DBG("Current Group Object ID");
-		(void)setup_group_object(media_player.group);
+	} else if (find_group_by_id(&media_player, id, &group)) {
+		LOG_DBG("Group Object ID");
+		(void)setup_group_object(group);
+	} else if (find_track_by_id(&media_player, id, &group, &track)) {
+		LOG_DBG("Track Object ID");
+		(void)setup_track_object();
+	} else if (find_track_by_segments_id(&media_player, id, &track)) {
+		LOG_DBG("Track Segments Object ID");
+		(void)setup_segments_object(track);
 	} else {
-		LOG_ERR("Unknown Object ID");
-		atomic_clear_bit(obj.flags, BT_MCP_OBJ_FLAG_BUSY);
-		return;
+		return -ENOENT;
 	}
 
-	obj.selected_id = id;
-	atomic_clear_bit(obj.flags, BT_MCP_OBJ_FLAG_BUSY);
+	obj.content_id = id;
+
+	return 0;
 }
 
 static int on_obj_created(struct bt_ots *ots, struct bt_conn *conn, uint64_t id,
@@ -759,6 +855,8 @@ static int on_obj_created(struct bt_ots *ots, struct bt_conn *conn, uint64_t id,
 	LOG_DBG("Object Id created: 0x%012llX", id);
 
 	*created_desc = *obj.desc;
+	/* The caller has set up the buffer for this object */
+	obj.content_id = id;
 
 	if (!bt_uuid_cmp(&add_param->type.uuid, BT_UUID_OTS_TYPE_MPL_ICON)) {
 		LOG_DBG("Icon Obj Type");
@@ -833,16 +931,24 @@ static ssize_t on_object_send(struct bt_ots *ots, struct bt_conn *conn,
 		LOG_DBG("Object Id %s, offset %lu, length %zu", t, (long)offset, len);
 	}
 
-	if (id != obj.selected_id) {
-		LOG_ERR("Read from unselected object");
-		atomic_clear_bit(obj.flags, BT_MCP_OBJ_FLAG_BUSY);
-		return -EINVAL;
-	}
-
 	if (!data) {
 		LOG_DBG("Read complete");
 		atomic_clear_bit(obj.flags, BT_MCP_OBJ_FLAG_BUSY);
 		return 0;
+	}
+
+	/* The content is built when a read from the start begins, or when the buffer holds another
+	 * object. Nothing else changes it: an OTS instance has one Object Transfer Channel, so no
+	 * other read can start until this one ends.
+	 */
+	if (offset == 0 || id != obj.content_id) {
+		int err = setup_object(id);
+
+		if (err != 0) {
+			LOG_DBG("No content for the object that is read: %d", err);
+			atomic_clear_bit(obj.flags, BT_MCP_OBJ_FLAG_BUSY);
+			return -EINVAL;
+		}
 	}
 
 	if (offset >= obj.content->len) {
@@ -866,7 +972,6 @@ static ssize_t on_object_send(struct bt_ots *ots, struct bt_conn *conn,
 static struct bt_ots_cb ots_cbs = {
 	.obj_created = on_obj_created,
 	.obj_read = on_object_send,
-	.obj_selected = on_obj_selected,
 	.obj_deleted = on_obj_deleted,
 };
 
@@ -1860,82 +1965,6 @@ static uint8_t (*command_handlers[BT_MCS_MEDIA_STATE_SEEKING + 1])(
 	paused_state_command_handler,
 	seeking_state_command_handler,
 };
-
-#ifdef CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS
-/* Find a track by ID
- *
- * If found, return pointers to the group of the track and the track,
- * otherwise, the pointers returned are NULL
- *
- * Returns true if found, false otherwise
- */
-static bool find_track_by_id(const struct bt_mcp_media_control_server_player *pl, uint64_t id,
-			     struct bt_mcp_group **group, struct bt_mcp_track **track)
-{
-	struct bt_mcp_group *tmp_group = pl->group;
-	struct bt_mcp_track *tmp_track;
-
-	while (tmp_group->prev != NULL) {
-		tmp_group = tmp_group->prev;
-	}
-
-	while (tmp_group != NULL) {
-		tmp_track = tmp_group->track;
-
-		while (tmp_track->prev != NULL) {
-			tmp_track = tmp_track->prev;
-		}
-
-		while (tmp_track != 0) {
-			if (tmp_track->id == id) {
-				/* Found the track */
-				*group = tmp_group;
-				*track = tmp_track;
-				return true;
-			}
-
-			tmp_track = tmp_track->next;
-		}
-
-		tmp_group = tmp_group->next;
-	}
-
-	/* Track not found */
-	*group = NULL;
-	*track = NULL;
-	return false;
-}
-
-/* Find a group by ID
- *
- * If found, return pointer to the group, otherwise, the pointer returned is NULL
- *
- * Returns true if found, false otherwise
- */
-static bool find_group_by_id(const struct bt_mcp_media_control_server_player *pl, uint64_t id,
-			     struct bt_mcp_group **group)
-{
-	struct bt_mcp_group *tmp_group = pl->group;
-
-	while (tmp_group->prev != NULL) {
-		tmp_group = tmp_group->prev;
-	}
-
-	while (tmp_group != NULL) {
-		if (tmp_group->id == id) {
-			/* Found the group */
-			*group = tmp_group;
-			return true;
-		}
-
-		tmp_group = tmp_group->next;
-	}
-
-	/* Group not found */
-	*group = NULL;
-	return false;
-}
-#endif /* CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS */
 
 static const char *get_player_name(void)
 {
