@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RH850 CPU
+
+compatible: "renesas,rh850"
+
+include: cpu.yaml
