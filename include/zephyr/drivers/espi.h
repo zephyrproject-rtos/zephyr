@@ -210,7 +210,15 @@ enum espi_virtual_peripheral {
 	ESPI_PERIPHERAL_8042_KBC,
 	/** Host I/O peripheral */
 	ESPI_PERIPHERAL_HOST_IO,
-	/** Debug Port 80 peripheral */
+	/**
+	 * Debug Port 80 peripheral.
+	 *
+	 * Captures host I/O writes to the BIOS debug ports, Port80 to Port84. The host I/O port
+	 * address is the port the host writes to, while the byte position is the offset of a byte
+	 * inside a captured multi-byte write: byte n of a write to port address p goes to port
+	 * address p + n. For example, a 16-bit write to Port80 carries Port80 at byte position 0
+	 * and Port81 at byte position 1, while a byte write to Port81 is at byte position 0.
+	 */
 	ESPI_PERIPHERAL_DEBUG_PORT80,
 	/** Private Host I/O peripheral */
 	ESPI_PERIPHERAL_HOST_IO_PVT,
