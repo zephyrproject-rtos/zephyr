@@ -231,6 +231,7 @@ class Maintainers:
                         bool(group_dict.get("defer-to-other-areas", False))
 
                     # Create match functions for this file group
+                    file_group._files = group_dict.get("files", [])
                     file_group._match_fn = \
                         _get_match_fn(group_dict.get("files"),
                                       group_dict.get("files-regex"))
@@ -246,6 +247,7 @@ class Maintainers:
 
             # area._match_fn(path) tests if the path matches files and/or
             # files-regex
+            area._files = area_dict.get("files", [])
             area._match_fn = \
                 _get_match_fn(area_dict.get("files"),
                               area_dict.get("files-regex"))
@@ -608,6 +610,49 @@ class Area:
         # True only if matched solely via deferred file-groups; otherwise
         # no file-group matched and the path is covered by area-level patterns.
         return matched_via_deferred
+
+    def match_specificity(self, path):
+        """
+        Returns a comparable ``(tier, detail)`` tuple representing how
+        specifically this area matches *path*:
+
+        - ``(4, len(pattern))``: exact literal file match (no wildcards, no trailing '/')
+        - ``(3, literal_len)``: file glob match (contains '*' or '?', no trailing '/')
+        - ``(2, len(pattern))``: literal directory prefix match (no wildcards, trailing '/')
+        - ``(1, literal_len)``: wildcard directory prefix match (contains '*' or '?', trailing '/')
+        - ``(0, 0)``: regex-only match or path not matched by this area
+        """
+        if not self._contains(path):
+            return (0, 0)
+
+        best = (0, 0)
+        globs = list(getattr(self, "_files", ()))
+        for file_group in self.file_groups:
+            if file_group._contains(path):
+                globs.extend(getattr(file_group, "_files", ()))
+
+        for glob in globs:
+            has_wildcard = "*" in glob or "?" in glob
+            if not has_wildcard:
+                if glob.endswith("/"):
+                    if not path.startswith(glob):
+                        continue
+                    score = (2, len(glob))
+                else:
+                    if path != glob:
+                        continue
+                    score = (4, len(glob))
+            else:
+                match_fn = _get_match_fn([glob], None)
+                if not (match_fn and match_fn(path)):
+                    continue
+                literal_len = len(glob.replace("*", "").replace("?", ""))
+                score = (1, literal_len) if glob.endswith("/") else (3, literal_len)
+
+            if score > best:
+                best = score
+
+        return best
 
     def __repr__(self):
         return "<Area {}>".format(self.name)

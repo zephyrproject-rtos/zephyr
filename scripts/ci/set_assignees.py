@@ -1323,6 +1323,7 @@ def process_pr(gh, args, maintainer_file, number: int):
 
     labels = set()
     area_counter = defaultdict(int)
+    area_specificity = defaultdict(lambda: (0, 0))
     found_maintainers = defaultdict(int)
     collab_per_path = set()
     additional_reviews = set()
@@ -1440,6 +1441,12 @@ def process_pr(gh, args, maintainer_file, number: int):
                 count = 1 if not is_instance else 0
 
             area_counter[area] += count
+            if count > 0:
+                match_spec = getattr(area, "match_specificity", None)
+                if callable(match_spec):
+                    t, length = match_spec(filename)
+                    cur_t, cur_len = area_specificity[area]
+                    area_specificity[area] = (cur_t + t, cur_len + length)
             area_files[area.name].add(filename)
             logger.debug("  area weight update: %s += %d", area.name, count)
             labels.update(area.labels)
@@ -1456,7 +1463,13 @@ def process_pr(gh, args, maintainer_file, number: int):
         for area in sorted_areas:
             collab_per_path.update(area.get_collaborators_for_path(filename))
 
-    area_counter = dict(sorted(area_counter.items(), key=lambda item: item[1], reverse=True))
+    area_counter = dict(
+        sorted(
+            area_counter.items(),
+            key=lambda item: (item[1], area_specificity[item[0]]),
+            reverse=True,
+        )
+    )
     logger.info("Area weights: %s", {a.name: c for a, c in area_counter.items()})
     logger.debug("Collected labels: %s", labels)
 
