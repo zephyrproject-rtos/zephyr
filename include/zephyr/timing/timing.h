@@ -314,6 +314,7 @@ uint64_t timing_ns_get(void);
  *
  * @return Timing counter.
  */
+__no_instrumentation__
 static inline timing_t timing_counter_get(void)
 {
 #if defined(CONFIG_BOARD_HAS_TIMING_FUNCTIONS)
@@ -335,6 +336,7 @@ static inline timing_t timing_counter_get(void)
  * @param end Pointer to counter at stop of a measured execution.
  * @return Number of cycles between start and end.
  */
+__no_instrumentation__
 static inline uint64_t timing_cycles_get(volatile timing_t *const start,
 					 volatile timing_t *const end)
 {
@@ -369,6 +371,7 @@ static inline uint64_t timing_freq_get(void)
  * @param cycles Number of cycles
  * @return Converted time value
  */
+__no_instrumentation__
 static inline uint64_t timing_cycles_to_ns(uint64_t cycles)
 {
 #if defined(CONFIG_BOARD_HAS_TIMING_FUNCTIONS)
