@@ -1,0 +1,44 @@
+/*
+ * Copyright 2025 by Markus Becker
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * DALI TX is on mikroBUS RST and is driven by a PWM output. pinctrl needs
+ * the SoC pin, so this overlay assumes the click is in slot 1 of the
+ * arduino_uno_click shield (RST -> A3 -> P0.29).
+ */
+
+&mikroe_dali2_click {
+	counter = <&timer2>;
+	chan-id-rx = <0>;
+	chan-id-tx = <1>;
+	pwms = <&pwm1 0 PWM_USEC(41) PWM_POLARITY_NORMAL>;
+	tx-prog-delay-us = <(-320)>;
+};
+
+&pinctrl {
+	pwm1_default_dali: pwm1_default_dali {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 0, 29)>;
+		};
+	};
+
+	pwm1_sleep_dali: pwm1_sleep_dali {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 0, 29)>;
+			low-power-enable;
+		};
+	};
+};
+
+&pwm1 {
+	pinctrl-0 = <&pwm1_default_dali>;
+	pinctrl-1 = <&pwm1_sleep_dali>;
+	pinctrl-names = "default", "sleep";
+	status = "okay";
+};
+
+&timer2 {
+	compatible = "nordic,nrf-timer";
+	prescaler = <4>;
+	status = "okay";
+};
