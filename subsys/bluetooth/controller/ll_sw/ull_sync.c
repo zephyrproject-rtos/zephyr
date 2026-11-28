@@ -1962,8 +1962,13 @@ void ull_sync_transfer_received(struct ll_conn *conn, uint16_t service_data,
 
 	conn_evt_current = ull_conn_event_counter(conn);
 
-	/* LLCP should have ensured this holds */
-	LL_ASSERT_DBG(sync_conn_event_count != conn_evt_current);
+	/* The sender may set syncConnEventCount to the connection event in which it sent the
+	 * PDU. A Peripheral recipient needs the drift corrected anchor of that event, so LLCP
+	 * defers to the next connection event in that case. A Central recipient owns the
+	 * connection timing and can use the current event's anchor directly.
+	 */
+	LL_ASSERT_DBG((conn->lll.role != BT_HCI_ROLE_PERIPHERAL) ||
+		      (sync_conn_event_count != conn_evt_current));
 
 	ull_sync_setup_from_sync_transfer(conn, service_data, sync, si,
 					  conn_event_count - conn_evt_current,
