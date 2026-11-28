@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_ARM_TIMER_MEM
+	bool "ARM memory-mapped timer counter driver"
+	default y
+	depends on DT_HAS_ARM_ARMV7_TIMER_MEM_FRAME_ENABLED
+	select CLOCK_CONTROL
+	select COUNTER_SUPPORTS_64BITS_TICKS
+	help
+	  Enable the counter driver for an Arm Generic Timer memory-mapped
+	  frame. Each frame is a count-up counter with one physical compare
+	  channel. The tick rate is the frame CNTFRQ register. When that
+	  register is zero, the driver uses the clock named by the block.
+	  The clock cell is named clkid.
+	  counter_stop() makes counter_get_value() return 0. The next
+	  counter_start() counts from 0 again.
