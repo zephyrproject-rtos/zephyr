@@ -9,3 +9,8 @@ target_include_directories(app PRIVATE ${ZEPHYR_BASE}/subsys/net/lib/wireguard)
 
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})
+
+if(CONFIG_WIREGUARD_HANDSHAKE_WORKQ_STACK_SIZE GREATER 0)
+  zephyr_include_directories(${ZEPHYR_BASE}/tests/crypto/psa/include)
+  zephyr_link_libraries(-Wl,--wrap=psa_raw_key_agreement)
+endif()

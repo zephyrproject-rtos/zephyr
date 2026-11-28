@@ -146,27 +146,22 @@ struct net_stats_vpn {
 	uint32_t valid_tx;
 };
 
-/**
- * @brief Network Management event information structure
- * Used to pass information on network event
- *   NET_EVENT_VPN_PEER_ADD
- * when CONFIG_NET_MGMT_EVENT_INFO enabled and event generator pass the
- * information.
- * The network event NET_EVENT_VPN_PEER_DEL will pass the peer id only
- * as a pointer in the event info.
- * Note that the pointers to the peer information are only valid during the
- * event handling and should not be used after the event is processed.
+/** @brief Information delivered to a NET_EVENT_VPN_PEER_ADD callback.
+ *
+ * The fields point to a snapshot valid for the duration of the callback.
+ * Copy any fields needed after the callback returns. Synchronous event
+ * waiters receive the notification without this callback-scoped payload.
  */
 struct net_event_vpn_peer {
-	/** VPN peer identifier */
+	/** VPN peer identifier. */
 	uint32_t id;
-	/** VPN peer public key */
+	/** Base64-encoded VPN peer public key. */
 	const char *public_key;
-	/** VPN peer endpoint */
+	/** Configured VPN peer endpoint. */
 	struct net_sockaddr *endpoint;
-	/** VPN peer allowed IP address (null terminated list) */
+	/** VPN peer allowed prefixes (NULL-terminated list). */
 	struct wireguard_allowed_ip *allowed_ip[WIREGUARD_MAX_SRC_IPS + 1];
-	/** VPN peer keepalive interval */
+	/** VPN peer keepalive interval in seconds. */
 	int keepalive_interval;
 };
 
@@ -188,13 +183,21 @@ int wireguard_peer_add(struct wireguard_peer_config *peer_config,
 /**
  * @brief Remove a Wireguard peer from the system.
  *
- * @details If successful, the virtual network interface is
- *          also removed and user is no longer be able to communicate
- *          with the peer.
+ * @details The interface emits NET_EVENT_VPN_CONNECTED when its first peer
+ *          authenticates transport data and NET_EVENT_VPN_DISCONNECTED when
+ *          the last such peer is removed.
  *
- * @param peer_id Peer id returned by wireguard_peer_add()
+ *          Success retires the peer ID and ends its transport callbacks. Removing
+ *          the last peer detaches the virtual interface and retains its provisioned key.
+ *          An active delivery or another peer lifecycle operation returns
+ *          -EBUSY. Retry from thread context after that operation completes.
  *
- * @return 0 on success, a negative errno otherwise.
+ * @param peer_id Peer ID returned by an add operation.
+ *
+ * @retval 0 Peer removed.
+ * @retval -EBUSY A peer lifecycle operation or packet delivery is in progress.
+ * @retval -ENOENT No peer with this ID.
+ * @return Other negative errno on failure.
  */
 int wireguard_peer_remove(int peer_id);
 
@@ -208,8 +211,10 @@ int wireguard_peer_remove(int peer_id);
  *
  * @param peer_id Peer id returned by wireguard_peer_add()
  *
- * @return 0 on success, -EDESTADDRREQ if there is no session and no endpoint
- *         to start the handshake with, a negative errno otherwise.
+ * @retval 0 Keepalive sent or handshake requested.
+ * @retval -ENETDOWN The peer interface is down.
+ * @retval -EDESTADDRREQ The peer has no session, transport or UDP endpoint.
+ * @return Other negative errno on failure.
  */
 int wireguard_peer_keepalive(int peer_id);
 

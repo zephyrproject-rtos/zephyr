@@ -71,6 +71,17 @@ union net_mgmt_events {
 
 #include "connection.h"
 
+struct net_mgmt_event_owned_info {
+	const void *data;
+	void (*release)(struct net_mgmt_event_owned_info *owner);
+};
+
+#ifdef CONFIG_NET_MGMT_EVENT_OWNED_INFO
+/* Takes ownership even if the event is dropped. Data is borrowed by callbacks. */
+void net_mgmt_event_notify_owned_info(uint64_t event, struct net_if *iface,
+				     struct net_mgmt_event_owned_info *owner, size_t length);
+#endif
+
 extern void net_if_init(void);
 extern void net_if_post_init(void);
 extern void net_if_stats_reset(struct net_if *iface);

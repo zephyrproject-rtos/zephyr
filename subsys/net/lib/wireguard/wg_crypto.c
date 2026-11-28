@@ -469,7 +469,7 @@ static void add_new_keypair(struct wg_peer *peer, struct wg_keypair *new_keypair
 /**
  * @brief Start new session with PSA-managed session keys
  */
-static void wg_start_session(struct wg_peer *peer, bool is_initiator)
+static int wg_start_session(struct wg_peer *peer, bool is_initiator)
 {
 	struct wg_handshake *handshake = &peer->handshake;
 	struct wg_keypair new_keypair;
@@ -491,10 +491,7 @@ static void wg_start_session(struct wg_peer *peer, bool is_initiator)
 					 is_initiator);
 	if (ret < 0) {
 		NET_DBG("Failed to derive session keys");
-		new_keypair.is_valid = false;
-		new_keypair.is_sending_valid = false;
-		new_keypair.is_receiving_valid = false;
-		return;
+		return ret;
 	}
 
 	/* Only mark keys as valid after successful derivation */
@@ -530,12 +527,15 @@ static void wg_start_session(struct wg_peer *peer, bool is_initiator)
 
 	NET_DBG("Started new session (send_key: %u, recv_key: %u)",
 		new_keypair.sending_key_id, new_keypair.receiving_key_id);
+	return 0;
 }
 
 /**
  * @brief Process handshake initiation (we are responder)
  */
 static struct wg_peer *wg_process_initiation_message(struct wg_iface_context *ctx,
+						     const struct wg_rx_scope *scope,
+						     struct wireguard_datagram_path *path,
 						     struct msg_handshake_init *msg)
 {
 	struct wg_peer *ret_peer = NULL;
@@ -572,7 +572,7 @@ static struct wg_peer *wg_process_initiation_message(struct wg_iface_context *ct
 	wg_mix_hash(hash, msg->ephemeral, WG_PUBLIC_KEY_LEN);
 
 	/* Calculate DH(Sprivi, Epubi) using PSA private key */
-	psa_ret = wg_psa_x25519_hybrid(dh_calculation, ctx->private_key_id, e);
+	psa_ret = handshake_key_agreement(ctx, NULL, dh_calculation, ctx->private_key_id, e);
 	if (psa_ret < 0) {
 		NET_DBG("Failed to compute DH");
 		vpn_stats_update_invalid_key(ctx);
@@ -602,9 +602,12 @@ static struct wg_peer *wg_process_initiation_message(struct wg_iface_context *ct
 
 	/* Lookup peer by decrypted public key */
 	peer = peer_lookup_by_pubkey(ctx, s);
-	if (peer == NULL) {
+	if (peer == NULL || !peer_matches_handshake_rx(scope, peer)) {
 		NET_DBG("Peer not found");
 		vpn_stats_update_peer_not_found(ctx);
+		goto out;
+	}
+	if (!wg_check_handshake_cookie(peer, path, (uint8_t *)msg, sizeof(*msg), msg->sender)) {
 		goto out;
 	}
 
@@ -632,13 +635,18 @@ static struct wg_peer *wg_process_initiation_message(struct wg_iface_context *ct
 
 	/* Check timestamp replay and rate limit */
 	replay = (memcmp(t, peer->greatest_timestamp, WG_TAI64N_LEN) <= 0);
-	rate_limit = (now - peer->last_initiation_rx) <
-		k_ms_to_ticks_ceil32(1000 / MAX_INITIATIONS_PER_SECOND);
+	rate_limit = !crypto_equal(peer->greatest_timestamp, zero_key, WG_TAI64N_LEN) &&
+		     (now - peer->last_initiation_rx) <
+			     k_ms_to_ticks_ceil32(1000 / MAX_INITIATIONS_PER_SECOND);
 
 	if (replay || rate_limit) {
 		NET_DBG("Initiation rejected (replay: %d, rate_limit: %d)",
 			replay, rate_limit);
 		vpn_stats_update_replay_error(ctx);
+		goto out;
+	}
+
+	if (peer_policy_denied(peer)) {
 		goto out;
 	}
 
@@ -649,6 +657,8 @@ static struct wg_peer *wg_process_initiation_message(struct wg_iface_context *ct
 		memcpy(peer->greatest_timestamp, t, WG_TAI64N_LEN);
 	}
 
+	wg_psa_destroy_key(handshake->ephemeral_private_id);
+	handshake->ephemeral_private_id = PSA_KEY_ID_NULL;
 	memcpy(handshake->remote_ephemeral, e, WG_PUBLIC_KEY_LEN);
 	memcpy(handshake->hash, hash, WG_HASH_LEN);
 	memcpy(handshake->chaining_key, chaining_key, WG_HASH_LEN);
@@ -709,7 +719,8 @@ static bool wg_process_handshake_response(struct wg_iface_context *ctx,
 	/* Cr := Kdf1(Cr, DH(Eprivi, Epubr))
 	 * Calculate DH using our ephemeral private key (PSA) and their ephemeral public key
 	 */
-	psa_ret = wg_psa_x25519_hybrid(dh_calculation, handshake->ephemeral_private_id, e);
+	psa_ret = handshake_key_agreement(ctx, peer, dh_calculation,
+					  handshake->ephemeral_private_id, e);
 	if (psa_ret < 0) {
 		NET_DBG("Failed to compute ephemeral DH (%d)", psa_ret);
 		vpn_stats_update_invalid_key(ctx);
@@ -727,7 +738,7 @@ static bool wg_process_handshake_response(struct wg_iface_context *ctx,
 	/* Cr := Kdf1(Cr, DH(Sprivi, Epubr))
 	 * Calculate DH using our static private key (PSA) and their ephemeral public key
 	 */
-	psa_ret = wg_psa_x25519_hybrid(dh_calculation, ctx->private_key_id, e);
+	psa_ret = handshake_key_agreement(ctx, peer, dh_calculation, ctx->private_key_id, e);
 	if (psa_ret < 0) {
 		NET_DBG("Failed to compute static DH (%d)", psa_ret);
 		vpn_stats_update_invalid_key(ctx);
@@ -773,6 +784,10 @@ static bool wg_process_handshake_response(struct wg_iface_context *ctx,
 	 * Not required as discarded
 	 */
 
+	if (peer_policy_denied(peer)) {
+		goto out;
+	}
+
 	memcpy(handshake->remote_ephemeral, e, WG_HASH_LEN);
 	memcpy(handshake->hash, hash, WG_HASH_LEN);
 	memcpy(handshake->chaining_key, chaining_key, WG_HASH_LEN);
@@ -814,6 +829,10 @@ static bool wg_process_cookie_message(struct wg_iface_context *ctx,
 	if (!ret) {
 		NET_DBG("Failed to decrypt AEAD (%d)", __LINE__);
 		vpn_stats_update_decrypt_failed(ctx);
+		goto out;
+	}
+	if (peer_policy_denied(peer)) {
+		ret = false;
 		goto out;
 	}
 
@@ -864,8 +883,7 @@ static bool wg_create_handshake_init(struct wg_iface_context *ctx,
 	}
 
 	/* (Eprivi, Epubi) := DH-Generate() */
-	psa_ret = wg_psa_generate_x25519_keypair(&handshake->ephemeral_private_id,
-						 msg_ephemeral);
+	psa_ret = handshake_generate_keypair(peer, msg_ephemeral);
 	if (psa_ret < 0) {
 		NET_DBG("Failed to generate ephemeral keypair");
 		vpn_stats_update_invalid_key(ctx);
@@ -883,9 +901,8 @@ static bool wg_create_handshake_init(struct wg_iface_context *ctx,
 	wg_mix_hash(handshake->hash, dst->ephemeral, WG_PUBLIC_KEY_LEN);
 
 	/* Calculate DH(Eprivi, Spubr) using PSA ephemeral private key */
-	psa_ret = wg_psa_x25519_hybrid(dh_calculation,
-				       handshake->ephemeral_private_id,
-				       peer->key.public_key);
+	psa_ret = handshake_key_agreement(ctx, peer, dh_calculation,
+					  handshake->ephemeral_private_id, peer->key.public_key);
 	if (psa_ret < 0) {
 		NET_DBG("Failed to compute ephemeral DH");
 		vpn_stats_update_invalid_key(ctx);
@@ -903,8 +920,11 @@ static bool wg_create_handshake_init(struct wg_iface_context *ctx,
 		WG_PUBLIC_KEY_LEN);
 
 	/* msg.static := AEAD(k,0,Spubi, Hi) */
-	wg_psa_aead_encrypt(dst->enc_static, ctx->public_key,
-			    WG_PUBLIC_KEY_LEN, handshake->hash, WG_HASH_LEN, 0, key);
+	psa_ret = wg_psa_aead_encrypt(dst->enc_static, ctx->public_key, WG_PUBLIC_KEY_LEN,
+				     handshake->hash, WG_HASH_LEN, 0, key);
+	if (psa_ret < 0) {
+		goto out_destroy_ephemeral;
+	}
 
 	/* Hi := Hash(Hi || msg.static) */
 	wg_mix_hash(handshake->hash, dst->enc_static, sizeof(dst->enc_static));
@@ -918,8 +938,11 @@ static bool wg_create_handshake_init(struct wg_iface_context *ctx,
 	/* msg.timestamp := AEAD(k, 0, Timestamp(), Hi) */
 	wg_tai64n_now(timestamp);
 
-	wg_psa_aead_encrypt(dst->enc_timestamp, timestamp, WG_TAI64N_LEN,
-			    handshake->hash, WG_HASH_LEN, 0, key);
+	psa_ret = wg_psa_aead_encrypt(dst->enc_timestamp, timestamp, WG_TAI64N_LEN,
+				     handshake->hash, WG_HASH_LEN, 0, key);
+	if (psa_ret < 0) {
+		goto out_destroy_ephemeral;
+	}
 
 	/* Hi := Hash(Hi || msg.timestamp) */
 	wg_mix_hash(handshake->hash, dst->enc_timestamp, sizeof(dst->enc_timestamp));
@@ -988,8 +1011,7 @@ static bool wg_create_handshake_response(struct wg_iface_context *ctx,
 	}
 
 	/* (Eprivr, Epubr) := DH-Generate() */
-	psa_ret = wg_psa_generate_x25519_keypair(&handshake->ephemeral_private_id,
-						 msg_ephemeral);
+	psa_ret = handshake_generate_keypair(peer, msg_ephemeral);
 	if (psa_ret < 0) {
 		NET_DBG("Failed to generate ephemeral keypair");
 		goto out;
@@ -1005,9 +1027,9 @@ static bool wg_create_handshake_response(struct wg_iface_context *ctx,
 	wg_mix_hash(handshake->hash, dst->ephemeral, WG_PUBLIC_KEY_LEN);
 
 	/* Cr := Kdf1(Cr, DH(Eprivr, Epubi)) */
-	psa_ret = wg_psa_x25519_hybrid(dh_calculation,
-				       handshake->ephemeral_private_id,
-				       handshake->remote_ephemeral);
+	psa_ret = handshake_key_agreement(ctx, peer, dh_calculation,
+					  handshake->ephemeral_private_id,
+					  handshake->remote_ephemeral);
 	if (psa_ret < 0) {
 		NET_DBG("Failed to compute ephemeral DH");
 		goto out_destroy_ephemeral;
@@ -1023,9 +1045,8 @@ static bool wg_create_handshake_response(struct wg_iface_context *ctx,
 		dh_calculation, WG_PUBLIC_KEY_LEN);
 
 	/* Cr := Kdf1(Cr, DH(Eprivr, Spubi)) */
-	psa_ret = wg_psa_x25519_hybrid(dh_calculation,
-				       handshake->ephemeral_private_id,
-				       peer->key.public_key);
+	psa_ret = handshake_key_agreement(ctx, peer, dh_calculation,
+					  handshake->ephemeral_private_id, peer->key.public_key);
 	if (psa_ret < 0) {
 		NET_DBG("Failed to compute static DH");
 		goto out_destroy_ephemeral;
@@ -1067,8 +1088,11 @@ static bool wg_create_handshake_response(struct wg_iface_context *ctx,
 	wg_mix_hash(handshake->hash, tau, WG_HASH_LEN);
 
 	/* msg.empty := AEAD(k, 0, E, Hr) */
-	wg_psa_aead_encrypt(dst->enc_empty, NULL, 0,
-			    handshake->hash, WG_HASH_LEN, 0, key);
+	psa_ret = wg_psa_aead_encrypt(dst->enc_empty, NULL, 0, handshake->hash, WG_HASH_LEN,
+				     0, key);
+	if (psa_ret < 0) {
+		goto out_destroy_ephemeral;
+	}
 
 	dst->type = MESSAGE_HANDSHAKE_RESPONSE;
 	dst->sender = generate_unique_index(ctx);
@@ -1108,12 +1132,12 @@ out:
 	return ret;
 }
 
-static int wg_create_cookie_reply(struct wg_iface_context *ctx,
-				  struct msg_cookie_reply *dst,
-				  const uint8_t *mac1,
-				  uint32_t index,
-				  uint8_t *source_addr_port,
-				  size_t source_length)
+ZTESTABLE_STATIC int wg_create_cookie_reply(struct wg_iface_context *ctx,
+					    struct msg_cookie_reply *dst,
+					    const uint8_t *mac1,
+					    uint32_t index,
+					    uint8_t *source_addr_port,
+					    size_t source_length)
 {
 	uint8_t cookie[WG_COOKIE_LEN];
 	int ret;
@@ -1135,24 +1159,23 @@ static int wg_create_cookie_reply(struct wg_iface_context *ctx,
 		return ret;
 	}
 
-	wg_psa_xaead_encrypt(dst->enc_cookie, cookie, WG_COOKIE_LEN,
-			     mac1, WG_COOKIE_LEN, dst->nonce,
-			     ctx->label_cookie_key);
-
-	return 0;
+	ret = wg_psa_xaead_encrypt(dst->enc_cookie, cookie, WG_COOKIE_LEN, mac1, WG_COOKIE_LEN,
+				   dst->nonce, ctx->label_cookie_key);
+	crypto_zero(cookie, sizeof(cookie));
+	return ret;
 }
 
 /**
  * @brief Encrypt packet using PSA session key
  */
-static void wg_encrypt_packet(uint8_t *dst, const uint8_t *src, size_t src_len,
-			      struct wg_keypair *keypair)
+static int wg_encrypt_packet(uint8_t *dst, const uint8_t *src, size_t src_len,
+			     struct wg_keypair *keypair)
 {
 	int ret;
 
 	if (!keypair->is_sending_valid) {
 		NET_DBG("Sending key not valid");
-		return;
+		return -EINVAL;
 	}
 
 	ret = wg_psa_aead_encrypt_by_id(dst, src, src_len,
@@ -1164,6 +1187,8 @@ static void wg_encrypt_packet(uint8_t *dst, const uint8_t *src, size_t src_len,
 	} else {
 		NET_DBG("Packet encryption failed");
 	}
+
+	return ret;
 }
 
 /**
@@ -1183,108 +1208,49 @@ static bool wg_decrypt_packet(uint8_t *dst, const uint8_t *src, size_t src_len,
 					 keypair->receiving_key_id);
 }
 
-static bool wg_check_initiation_message(struct wg_iface_context *ctx,
-					struct msg_handshake_init *msg,
-					struct net_sockaddr *addr)
+static bool wg_check_handshake_mac(struct wg_peer *peer, struct wireguard_datagram_path *path,
+				   uint8_t *msg, size_t len, uint32_t sender)
 {
-	bool ret = false;
+	const size_t mac1_offset = len - 2U * WG_COOKIE_LEN;
 
-	if (!wg_check_mac1(ctx, (uint8_t *)msg,
-			   sizeof(struct msg_handshake_init) - (2 * WG_COOKIE_LEN),
-			   msg->mac1)) {
-		vpn_stats_update_invalid_mac1(ctx);
-		goto out;
-	}
-
-	if (!wg_is_under_load()) {
-		/* If we aren't under load we only need mac1 to be correct */
-		ret = true;
-		goto out;
-	}
-
-	/* If we are under load then check mac2 */
-	ret = wg_check_mac2(ctx, (uint8_t *)msg,
-			    sizeof(struct msg_handshake_init) - WG_COOKIE_LEN,
-			    (uint8_t *)&net_sin(addr)->sin_port,
-			    addr->sa_family == NET_AF_INET ?
-			    (2U + sizeof(struct net_in_addr)) :
-			    (2U + sizeof(struct net_in6_addr)),
-			    msg->mac2);
-	if (!ret) {
-		/* mac2 is invalid (cookie may have expired) or not present
-		 * 5.3 Denial of Service Mitigation & Cookies
-		 * If the responder receives a message with a valid msg.mac1
-		 * yet with an invalid msg.mac2, and is under load, it may
-		 * respond with a cookie reply message
-		 */
-		wg_send_handshake_cookie(ctx, msg->mac1, msg->sender, addr);
-		vpn_stats_update_invalid_mac2(ctx);
-	}
-
-out:
-	return ret;
-}
-
-static bool wg_check_response_message(struct wg_iface_context *ctx,
-				      struct msg_handshake_response *msg,
-				      struct net_sockaddr *addr)
-{
-	bool ret;
-
-	if (!wg_check_mac1(ctx, (uint8_t *)msg,
-			   sizeof(struct msg_handshake_response) - (2 * WG_COOKIE_LEN),
-			   msg->mac1)) {
-		vpn_stats_update_invalid_mac1(ctx);
+	if (!wg_check_mac1(peer->ctx, msg, mac1_offset, msg + mac1_offset)) {
+		vpn_stats_update_invalid_mac1(peer->ctx);
 		return false;
 	}
-
-	/* mac1 is valid! */
-	if (!wg_is_under_load()) {
-		/* If we aren't under load we only need mac1 to be correct */
-		ret = true;
-		goto out;
-	}
-
-	/* If we are under load then check mac2 */
-	ret = wg_check_mac2(ctx, (uint8_t *)msg,
-			    sizeof(struct msg_handshake_response) - (WG_COOKIE_LEN),
-			    (uint8_t *)&net_sin(addr)->sin_port,
-			    addr->sa_family == NET_AF_INET ?
-			    (2U + sizeof(struct net_in_addr)) : (2U + sizeof(struct net_in6_addr)),
-			    msg->mac2);
-	if (!ret) {
-		/* mac2 is invalid (cookie may have expired) or not present
-		 * 5.3 Denial of Service Mitigation & Cookies
-		 * If the responder receives a message with a valid msg.mac1 yet
-		 * with an invalid msg.mac2, and is under load, it may respond
-		 * with a cookie reply message
-		 */
-		wg_send_handshake_cookie(ctx, msg->mac1, msg->sender, addr);
-		vpn_stats_update_invalid_mac2(ctx);
-	}
-
-out:
-	return ret;
+	return wg_check_handshake_cookie(peer, path, msg, len, sender);
 }
 
-static void wg_process_response_message(struct wg_iface_context *ctx,
-					struct wg_peer *peer,
-					struct msg_handshake_response *response,
-					struct net_sockaddr *addr)
+static bool wg_check_handshake_cookie(struct wg_peer *peer, struct wireguard_datagram_path *path,
+				      uint8_t *msg, size_t len, uint32_t sender)
 {
-	bool ret;
+	struct msg_cookie_reply reply;
+	uint8_t *mac2 = msg + len - WG_COOKIE_LEN;
+	uint8_t *mac1 = mac2 - WG_COOKIE_LEN;
+	uint8_t *source;
+	size_t source_len;
 
-	ret = wg_process_handshake_response(ctx, peer, response);
-	if (!ret) {
-		vpn_stats_update_invalid_handshake(ctx);
-		return;
+	if (!wg_is_under_load()) {
+		return true;
+	}
+	if (path->kind == WIREGUARD_PATH_DIRECT) {
+		source = (uint8_t *)&net_sin(net_sad(&path->remote))->sin_port;
+		source_len = sizeof(uint16_t) + (path->remote.ss_family == NET_AF_INET ?
+			     sizeof(struct net_in_addr) : sizeof(struct net_in6_addr));
+	} else {
+		/* The relay adapter binds the sender key to this peer. */
+		source = peer->key.public_key;
+		source_len = sizeof(peer->key.public_key);
+	}
+	if (wg_check_mac2(peer->ctx, msg, mac2 - msg, source, source_len, mac2)) {
+		return true;
 	}
 
-	update_peer_addr(peer, addr);
-
-	wg_start_session(peer, true);
-
-	(void)wg_send_keepalive(ctx, peer);
+	vpn_stats_update_invalid_mac2(peer->ctx);
+	if (wg_create_cookie_reply(peer->ctx, &reply, mac1, sender, source, source_len) == 0) {
+		(void)send_datagram(peer, path, (uint8_t *)&reply, sizeof(reply),
+				    NET_IPV4_DSCP_AF41, NULL);
+	}
+	return false;
 }
 
 ZTESTABLE_STATIC int wg_process_data_message(struct wg_iface_context *ctx,
@@ -1292,16 +1258,18 @@ ZTESTABLE_STATIC int wg_process_data_message(struct wg_iface_context *ctx,
 					     struct msg_transport_data *data_hdr,
 					     struct net_pkt *pkt,
 					     size_t ip_udp_hdr_len,
-					     struct net_sockaddr *addr)
+					     struct net_sockaddr *addr,
+					     struct wg_rx_result *result)
 {
 	struct net_pkt *pkt_decrypted = NULL;
 	uint32_t idx = data_hdr->receiver;
 	struct net_buf *buf = NULL;
 	struct wg_keypair *keypair;
-	enum net_verdict verdict;
-	uint16_t pkt_len;
 	uint8_t vtc_vhl;
 	uint64_t nonce;
+	size_t payload_offset = ip_udp_hdr_len + sizeof(struct msg_transport_data);
+	size_t pkt_len = net_pkt_get_len(pkt);
+	size_t ip_hdr_len;
 	size_t data_len;
 	size_t copied;
 	bool addr_found;
@@ -1336,7 +1304,12 @@ ZTESTABLE_STATIC int wg_process_data_message(struct wg_iface_context *ctx,
 	 * TODO: make crypto support data in multiple net_buf's so we
 	 * don't need to linearize the packet.
 	 */
-	data_len = net_pkt_get_len(pkt) - sizeof(struct msg_transport_data) - ip_udp_hdr_len;
+	if (payload_offset > pkt_len || pkt_len - payload_offset < WG_AUTHTAG_LEN) {
+		vpn_stats_update_invalid_packet_len(ctx);
+		return -EMSGSIZE;
+	}
+
+	data_len = pkt_len - payload_offset;
 
 	/* A 16-byte payload (empty plaintext + Poly1305 tag) is a keepalive
 	 * message. It must still be authenticated and replay-checked below
@@ -1357,15 +1330,14 @@ ZTESTABLE_STATIC int wg_process_data_message(struct wg_iface_context *ctx,
 	/* We don't know the unpadded size until we have decrypted the packet
 	 * and validated/inspected the IP header
 	 */
-	buf = net_buf_alloc(&msg_pool, BUF_ALLOC_TIMEOUT);
+	buf = net_buf_alloc(&rx_msg_pool, K_NO_WAIT);
 	if (buf == NULL) {
 		NET_DBG("Failed to allocate %s buffer", "decrypt");
 		vpn_stats_update_alloc_failed(ctx);
 		return -ENOMEM;
 	}
 
-	copied = net_buf_linearize(buf->data, net_buf_tailroom(buf), pkt->buffer,
-				   ip_udp_hdr_len + sizeof(struct msg_transport_data),
+	copied = net_buf_linearize(buf->data, net_buf_tailroom(buf), pkt->buffer, payload_offset,
 				   data_len);
 	if (copied != data_len) {
 		NET_DBG("Failed to linearize data (%zu != %zu)", copied, data_len);
@@ -1384,6 +1356,10 @@ ZTESTABLE_STATIC int wg_process_data_message(struct wg_iface_context *ctx,
 		vpn_stats_update_decrypt_failed(ctx);
 		goto out;
 	}
+	if (peer_policy_denied(peer)) {
+		ret = -EACCES;
+		goto out;
+	}
 
 	/* The packet authenticated correctly. Validate the anti-replay counter
 	 * before committing any peer state. A replayed-but-authentic packet
@@ -1397,7 +1373,7 @@ ZTESTABLE_STATIC int wg_process_data_message(struct wg_iface_context *ctx,
 	}
 
 	if (!peer->first_valid) {
-		net_mgmt_event_notify(NET_EVENT_VPN_CONNECTED, peer->iface);
+		result->connected = true;
 		peer->first_valid = true;
 	}
 
@@ -1429,10 +1405,9 @@ ZTESTABLE_STATIC int wg_process_data_message(struct wg_iface_context *ctx,
 	 * so peer liveness/roaming has been updated above; there is nothing to
 	 * deliver to the network stack.
 	 */
-	if (data_len == 16U) {
-		NET_DBG("Keepalive message received from %s",
-			net_sprint_addr(addr->sa_family,
-					(const void *)&net_sin(addr)->sin_addr));
+	data_len -= WG_AUTHTAG_LEN;
+	if (data_len == 0) {
+		NET_DBG("Keepalive message received from peer %d", peer->id);
 		vpn_stats_update_keepalive_rx(ctx);
 		ret = 0;
 		goto out;
@@ -1441,7 +1416,7 @@ ZTESTABLE_STATIC int wg_process_data_message(struct wg_iface_context *ctx,
 	/* We then need to copy the decrypted data into a net_pkt so that it can
 	 * be processed by the network stack.
 	 */
-	pkt_decrypted = net_pkt_alloc_from_slab(&decrypted_pkts, PKT_ALLOC_WAIT_TIME);
+	pkt_decrypted = net_pkt_alloc_from_slab(&decrypted_pkts, K_NO_WAIT);
 	if (pkt_decrypted == NULL) {
 		NET_DBG("Failed to allocate packet");
 		ret = -ENOMEM;
@@ -1460,13 +1435,17 @@ ZTESTABLE_STATIC int wg_process_data_message(struct wg_iface_context *ctx,
 	vtc_vhl = NET_IPV6_HDR(pkt_decrypted)->vtc & 0xf0;
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && vtc_vhl == 0x60) {
-		net_pkt_set_ip_hdr_len(pkt_decrypted, sizeof(struct net_ipv6_hdr));
+		ip_hdr_len = sizeof(struct net_ipv6_hdr);
+		if (data_len < ip_hdr_len) {
+			goto invalid_length;
+		}
+
+		net_pkt_set_ip_hdr_len(pkt_decrypted, ip_hdr_len);
 		net_pkt_set_ipv6_ext_len(pkt_decrypted, 0);
 		pkt_len = net_ntohs(NET_IPV6_HDR(pkt_decrypted)->len) +
 			sizeof(struct net_ipv6_hdr);
 
-		addr_found = wg_peer_is_allowed_ip(peer, NET_AF_INET6,
-						   NET_IPV6_HDR(pkt_decrypted)->src);
+		addr_found = wg_peer_owns_ip(peer, NET_AF_INET6, NET_IPV6_HDR(pkt_decrypted)->src);
 
 		if (!addr_found) {
 			NET_DBG("Address %s not found in allowed list",
@@ -1475,12 +1454,16 @@ ZTESTABLE_STATIC int wg_process_data_message(struct wg_iface_context *ctx,
 		}
 
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) && vtc_vhl == 0x40) {
-		net_pkt_set_ip_hdr_len(pkt_decrypted, sizeof(struct net_ipv4_hdr));
+		ip_hdr_len = sizeof(struct net_ipv4_hdr);
+		if (data_len < ip_hdr_len) {
+			goto invalid_length;
+		}
+
+		net_pkt_set_ip_hdr_len(pkt_decrypted, ip_hdr_len);
 		net_pkt_set_ipv4_opts_len(pkt_decrypted, 0);
 		pkt_len = net_ntohs(NET_IPV4_HDR(pkt_decrypted)->len);
 
-		addr_found = wg_peer_is_allowed_ip(peer, NET_AF_INET,
-						   NET_IPV4_HDR(pkt_decrypted)->src);
+		addr_found = wg_peer_owns_ip(peer, NET_AF_INET, NET_IPV4_HDR(pkt_decrypted)->src);
 
 		if (!addr_found) {
 			NET_DBG("Address %s not found in allowed list",
@@ -1501,12 +1484,20 @@ ZTESTABLE_STATIC int wg_process_data_message(struct wg_iface_context *ctx,
 		goto out;
 	}
 
-	if (data_len < pkt_len) {
-		NET_DBG("Packet length mismatch %d < %d", data_len, pkt_len);
-		ret = -EINVAL;
-		vpn_stats_update_invalid_packet_len(ctx);
+	if (pkt_len < ip_hdr_len || pkt_len > data_len) {
+		NET_DBG("Unexpected IP packet length %zu (plaintext %zu)", pkt_len, data_len);
+		goto invalid_length;
+	}
+
+#if defined(CONFIG_WIREGUARD_PEER_POLICY)
+	if (ctx->policy_input != NULL &&
+	    !ctx->policy_input(peer->policy_identity, pkt_decrypted->buffer->data, pkt_len,
+			       ctx->policy_context)) {
+		vpn_stats_update_denied_ip(ctx);
+		ret = -EACCES;
 		goto out;
 	}
+#endif
 
 	if (data_len != pkt_len) {
 		/* We need to adjust the length of the packet to match the
@@ -1514,26 +1505,19 @@ ZTESTABLE_STATIC int wg_process_data_message(struct wg_iface_context *ctx,
 		 */
 		pkt_decrypted->buffer->len = pkt_len;
 
-		NET_DBG("Packet length adjusted %d -> %d", data_len, pkt_len);
+		NET_DBG("Packet length adjusted %zu -> %zu", data_len, pkt_len);
 	}
 
 	net_pkt_set_iface(pkt_decrypted, ctx->iface);
 
-	/* The packet is now ready to be passed to the network stack */
-	verdict = net_if_l2(ctx->iface)->recv(ctx->iface, pkt_decrypted);
-	if (verdict == NET_DROP) {
-		ret = -ENETRESET;
-		vpn_stats_update_drop_rx(ctx);
-		goto out;
-	} else {
-		/* The packet has been consumed by the core stack,
-		 * don't free it.
-		 */
-		pkt_decrypted = NULL;
-		vpn_stats_update_valid_rx(ctx);
-	}
-
+	result->plaintext = pkt_decrypted;
+	pkt_decrypted = NULL;
 	ret = 0;
+	goto out;
+
+invalid_length:
+	vpn_stats_update_invalid_packet_len(ctx);
+	ret = -EMSGSIZE;
 out:
 	if (pkt_decrypted != NULL) {
 		net_pkt_unref(pkt_decrypted);
@@ -1546,9 +1530,16 @@ out:
 	return ret;
 }
 
-/**
- * @brief Initialize interface private key (PSA or legacy)
- */
+static void wg_cleanup_interface_keys(struct wg_iface_context *ctx)
+{
+	if (ctx->private_key_id != PSA_KEY_ID_NULL) {
+		wg_psa_destroy_key(ctx->private_key_id);
+		ctx->private_key_id = PSA_KEY_ID_NULL;
+	}
+
+	crypto_zero(ctx->public_key, WG_PUBLIC_KEY_LEN);
+}
+
 static int wg_set_interface_private_key(struct wg_iface_context *ctx,
 					const uint8_t *private_key_data)
 {
@@ -1559,10 +1550,7 @@ static int wg_set_interface_private_key(struct wg_iface_context *ctx,
 	memcpy(private_key, private_key_data, WG_PRIVATE_KEY_LEN);
 	wg_clamp_private_key(private_key);
 
-	/* Destroy old key if exists */
-	if (ctx->private_key_id != PSA_KEY_ID_NULL) {
-		wg_psa_destroy_key(ctx->private_key_id);
-	}
+	wg_cleanup_interface_keys(ctx);
 
 	/* Import as PSA key */
 	ret = wg_psa_import_x25519_private(&ctx->private_key_id, private_key);
@@ -1576,19 +1564,6 @@ static int wg_set_interface_private_key(struct wg_iface_context *ctx,
 	crypto_zero(private_key, sizeof(private_key));
 
 	return ret;
-}
-
-/**
- * @brief Cleanup interface keys (PSA or legacy)
- */
-static void wg_cleanup_interface_keys(struct wg_iface_context *ctx)
-{
-	if (ctx->private_key_id != PSA_KEY_ID_NULL) {
-		wg_psa_destroy_key(ctx->private_key_id);
-		ctx->private_key_id = PSA_KEY_ID_NULL;
-	}
-
-	crypto_zero(ctx->public_key, WG_PUBLIC_KEY_LEN);
 }
 
 /**

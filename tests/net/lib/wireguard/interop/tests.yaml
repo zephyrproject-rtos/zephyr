@@ -1,0 +1,7 @@
+tests:
+  net.wireguard.linux_interop:
+    platform_allow: native_sim/native/64
+    tags:
+      - net
+      - wireguard
+    build_only: true

@@ -34,6 +34,10 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 #include <zephyr/net/socket.h>
 #include <zephyr/sys/iterable_sections.h>
 
+#ifdef CONFIG_WIREGUARD_MULTI_PEER
+#include "../lib/wireguard/wg_private.h"
+#endif
+
 #include "net_private.h"
 #include "../l2/ethernet/arp.h"
 #include "ipv4.h"
@@ -385,6 +389,13 @@ void net_if_try_queue_tx(struct net_if *iface, struct net_pkt *pkt, k_timeout_t 
 	size_t len = net_pkt_get_len(pkt);
 	uint8_t prio = net_pkt_priority(pkt);
 	uint8_t tc = net_tx_priority2tc(prio);
+#if defined(CONFIG_WIREGUARD_MULTI_PEER)
+	struct net_if *tx_iface = net_pkt_iface(pkt);
+
+	if (net_if_l2(tx_iface) == &NET_L2_GET_NAME(VIRTUAL)) {
+		wireguard_prepare_tx(tx_iface, pkt);
+	}
+#endif
 
 #if NET_TC_TX_COUNT > 1
 	NET_DBG("TC %d with prio %d pkt %p", tc, prio, pkt);

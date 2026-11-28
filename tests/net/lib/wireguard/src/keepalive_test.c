@@ -8,6 +8,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
+#include <zephyr/net/net_event.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_mgmt.h>
@@ -17,6 +18,7 @@
 #include <zephyr/net/wireguard.h>
 #include <zephyr/sys/base64.h>
 
+#include "wg_private.h"
 #include "wg_test_helpers.h"
 
 static void find_vpn_iface(struct net_if *iface, void *user_data)
@@ -68,6 +70,57 @@ static void set_test_endpoint(struct wireguard_peer_config *config)
 	cfg_endpoint->sin_addr.s_addr = net_htonl(0xC0000201U); /* 192.0.2.1 */
 }
 
+K_MSGQ_DEFINE(added_ids, sizeof(int), 2, sizeof(int));
+
+static void record_added_id(struct net_mgmt_event_callback *cb, uint64_t event,
+			    struct net_if *iface)
+{
+	if (event == NET_EVENT_VPN_PEER_ADD &&
+	    cb->info_length == sizeof(struct net_event_vpn_peer)) {
+		struct net_event_vpn_peer added;
+		int id;
+
+		memcpy(&added, cb->info, sizeof(added));
+		id = added.id;
+		(void)k_msgq_put(&added_ids, &id, K_NO_WAIT);
+	}
+}
+
+ZTEST(wireguard_keepalive, test_added_peer_configuration_snapshot)
+{
+	struct wireguard_peer_config config = {.public_key = peer_public_key};
+	struct net_mgmt_event_callback cb;
+	struct wireguard_peer_info info = {0};
+	struct net_if *iface;
+	int observed = 0;
+	int id;
+
+	set_private_key();
+	set_test_endpoint(&config);
+	config.keepalive_interval = 30;
+	config.allowed_ip[0].addr.family = NET_AF_INET;
+	config.allowed_ip[0].addr.in_addr.s_addr = net_htonl(0xc6336402U);
+	config.allowed_ip[0].mask_len = 32;
+	config.allowed_ip[0].is_valid = true;
+	net_mgmt_init_event_callback(&cb, record_added_id, NET_EVENT_VPN_PEER_ADD);
+	net_mgmt_add_event_callback(&cb);
+	id = wireguard_peer_add(&config, &iface);
+	zexpect_true(id > 0);
+	zexpect_ok(k_msgq_get(&added_ids, &observed, K_SECONDS(1)));
+	net_mgmt_del_event_callback(&cb);
+	zexpect_equal(observed, id);
+	zexpect_ok(wireguard_peer_get_info(id, &info));
+	zexpect_mem_equal(&info.endpoint, &config.endpoint_ip, sizeof(info.endpoint));
+	zexpect_equal(info.keepalive_interval, 30);
+	zexpect_true(info.allowed_ip[0].is_valid);
+	zexpect_equal(info.allowed_ip[0].mask_len, 32);
+	zexpect_equal(info.allowed_ip[0].addr.in_addr.s_addr, net_htonl(0xc6336402U));
+	zexpect_equal(info.public_key[0], 0x7c);
+	zexpect_ok(wireguard_peer_remove(id));
+	zexpect_equal(wireguard_peer_get_info(id, &info), -ENOENT);
+	zexpect_equal(info.public_key[0], 0x7c);
+}
+
 /* With a Wireguard work queue of its own, the periodic timer sends the first
  * initiation there, after the call that started it has returned.
  */
@@ -89,6 +142,67 @@ static uint32_t wait_for_init_tx(int peer_id, uint32_t count)
 	} while (!sys_timepoint_expired(end));
 
 	return stats.handshake_init_tx;
+}
+
+ZTEST(wireguard_keepalive, test_readd_uses_provisioned_private_key)
+{
+	struct wireguard_peer_config config = {.public_key = peer_public_key};
+	struct net_stats_vpn before = {0};
+	struct net_if *iface;
+	struct net_if *reattached;
+	int id;
+	int new_id;
+
+	set_private_key();
+	set_test_endpoint(&config);
+	id = wireguard_peer_add(&config, &iface);
+	zassert_true(id > 0, "Peer add failed (%d)", id);
+	zassert_ok(wireguard_peer_remove(id));
+
+	new_id = wireguard_peer_add(&config, &reattached);
+	zassert_true(new_id > 0, "Peer re-add failed (%d)", new_id);
+	zexpect_not_equal(new_id, id);
+	zexpect_equal_ptr(reattached, iface);
+	zexpect_ok(wireguard_test_get_stats(new_id, &before));
+	zexpect_ok(wireguard_peer_keepalive(new_id));
+	zexpect_equal(wait_for_init_tx(new_id, before.handshake_init_tx + 1U),
+		      before.handshake_init_tx + 1U);
+	zexpect_ok(wireguard_peer_remove(new_id));
+}
+
+ZTEST(wireguard_keepalive, test_keepalive_drops_on_encryption_failure)
+{
+	const struct wireguard_test_session session = {
+		.recv_key = { 1U },
+		.send_key = { 2U },
+		.local_index = 1U,
+		.remote_index = 2U,
+	};
+	struct wireguard_peer_config config = { .public_key = peer_public_key };
+	struct net_stats_vpn before = { 0 };
+	struct net_stats_vpn after = { 0 };
+	struct net_if *iface;
+	int id;
+
+	set_private_key();
+	set_test_endpoint(&config);
+	id = wireguard_peer_add(&config, &iface);
+	zassert_true(id > 0, "Peer add failed (%d)", id);
+
+	zexpect_ok(wireguard_test_get_stats(id, &before));
+	zexpect_ok(wireguard_peer_keepalive(id));
+	zexpect_equal(wait_for_init_tx(id, before.handshake_init_tx + 1U),
+		      before.handshake_init_tx + 1U);
+	zexpect_ok(wireguard_test_install_session(id, &session));
+	zexpect_ok(wireguard_peer_keepalive(id));
+	zexpect_ok(wireguard_test_get_stats(id, &before));
+
+	zexpect_ok(wireguard_test_destroy_sending_key(id));
+	zexpect_true(wireguard_peer_keepalive(id) < 0);
+	zexpect_ok(wireguard_test_get_stats(id, &after));
+	zexpect_equal(after.valid_tx, before.valid_tx);
+	zexpect_equal(after.keepalive_tx, before.keepalive_tx);
+	zexpect_ok(wireguard_peer_remove(id));
 }
 
 /* A peer that was just added has no endpoint learnt from it yet. A keepalive

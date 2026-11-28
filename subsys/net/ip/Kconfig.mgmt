@@ -19,6 +19,10 @@ config NET_MGMT_EVENT
 
 if NET_MGMT_EVENT
 
+config NET_MGMT_EVENT_OWNED_INFO
+	bool
+	depends on NET_MGMT_EVENT_INFO
+
 choice NET_MGMT_EVENT_WORKER
 	prompt "Network event scheduling"
 	default NET_MGMT_EVENT_THREAD

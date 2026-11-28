@@ -759,6 +759,11 @@ Bluetooth Mesh
 Networking
 **********
 
+* The :c:macro:`NET_EVENT_VPN_PEER_ADD` peer snapshot is available in network
+  management event callbacks. To use the data after the callback returns,
+  copy the fields you need inside the callback. Synchronous waiters receive
+  the event notification without the peer snapshot.
+
 * The ``ZFD_IOCTL_POLL_PREPARE``, ``ZFD_IOCTL_POLL_UPDATE``, and
   ``ZFD_IOCTL_POLL_OFFLOAD`` requests have been deprecated. Implement ``poll_prepare``,
   ``poll_update``, and ``poll_offload`` in :c:struct:`fd_op_vtable` instead. Out-of-tree ioctl

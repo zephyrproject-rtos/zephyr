@@ -28,6 +28,9 @@ struct mgmt_event_entry {
 #endif /* CONFIG_NET_MGMT_EVENT_QUEUE */
 	size_t info_length;
 #endif /* CONFIG_NET_MGMT_EVENT_INFO */
+#ifdef CONFIG_NET_MGMT_EVENT_OWNED_INFO
+	struct net_mgmt_event_owned_info *owner;
+#endif
 	uint64_t event;
 	struct net_if *iface;
 };
@@ -74,13 +77,18 @@ static K_WORK_DEFINE(mgmt_work, mgmt_event_work_handler);
 static bool mgmt_current_event_valid;
 static uint64_t mgmt_current_event;
 
-static inline void mgmt_push_event(uint64_t mgmt_event, struct net_if *iface,
-				   const void *info, size_t length)
+static bool mgmt_push_event(uint64_t mgmt_event, struct net_if *iface, const void *info,
+			    size_t length, struct net_mgmt_event_owned_info *owner)
 {
+	bool queued;
+
 #ifndef CONFIG_NET_MGMT_EVENT_INFO
 	ARG_UNUSED(info);
 	ARG_UNUSED(length);
 #endif /* CONFIG_NET_MGMT_EVENT_INFO */
+#ifndef CONFIG_NET_MGMT_EVENT_OWNED_INFO
+	ARG_UNUSED(owner);
+#endif
 
 	(void)k_mutex_lock(&net_mgmt_event_lock, K_FOREVER);
 
@@ -96,16 +104,23 @@ static inline void mgmt_push_event(uint64_t mgmt_event, struct net_if *iface,
 				mgmt_event, length, NET_EVENT_INFO_MAX_SIZE);
 			(void)k_mutex_unlock(&net_mgmt_event_lock);
 
-			return;
+			return false;
 		}
 	}
 #endif /* CONFIG_NET_MGMT_EVENT_INFO */
 
+#ifdef CONFIG_NET_MGMT_EVENT_OWNED_INFO
+	if (owner != NULL) {
+		new_event.owner = owner;
+		new_event.info_length = length;
+	}
+#endif
 	new_event.event = mgmt_event;
 	new_event.iface = iface;
 
-	if (k_msgq_put(&event_msgq, &new_event,
-		K_MSEC(CONFIG_NET_MGMT_EVENT_QUEUE_TIMEOUT)) != 0) {
+	queued = k_msgq_put(&event_msgq, &new_event,
+			    K_MSEC(CONFIG_NET_MGMT_EVENT_QUEUE_TIMEOUT)) == 0;
+	if (!queued) {
 		NET_WARN("Failure to push event (0x%" PRIx64 "), "
 			 "handling (0x%" PRIx64 ", %s), "
 			 "try increasing the 'CONFIG_NET_MGMT_EVENT_QUEUE_SIZE' "
@@ -118,6 +133,7 @@ static inline void mgmt_push_event(uint64_t mgmt_event, struct net_if *iface,
 	(void)k_mutex_unlock(&net_mgmt_event_lock);
 
 	k_work_submit_to_queue(mgmt_work_q, &mgmt_work);
+	return queued;
 }
 
 static void mgmt_event_work_handler(struct k_work *work)
@@ -141,23 +157,30 @@ static void mgmt_event_work_handler(struct k_work *work)
 
 #else
 
-static inline void mgmt_push_event(uint64_t event, struct net_if *iface,
-				   const void *info, size_t length)
+static bool mgmt_push_event(uint64_t event, struct net_if *iface, const void *info, size_t length,
+			    struct net_mgmt_event_owned_info *owner)
 {
 #ifndef CONFIG_NET_MGMT_EVENT_INFO
 	ARG_UNUSED(info);
 	ARG_UNUSED(length);
 #endif /* CONFIG_NET_MGMT_EVENT_INFO */
+#ifndef CONFIG_NET_MGMT_EVENT_OWNED_INFO
+	ARG_UNUSED(owner);
+#endif
 	const struct mgmt_event_entry mgmt_event = {
 #if defined(CONFIG_NET_MGMT_EVENT_INFO)
 		.info = info,
 		.info_length = length,
 #endif /* CONFIG_NET_MGMT_EVENT_INFO */
+#ifdef CONFIG_NET_MGMT_EVENT_OWNED_INFO
+		.owner = owner,
+#endif
 		.event = event,
 		.iface = iface,
 	};
 
 	mgmt_run_callbacks(&mgmt_event);
+	return true;
 }
 
 #endif /* CONFIG_NET_MGMT_EVENT_QUEUE */
@@ -195,6 +218,21 @@ static inline bool mgmt_is_event_handled(uint64_t mgmt_event)
 		 NET_MGMT_GET_COMMAND(mgmt_event)));
 }
 
+#ifdef CONFIG_NET_MGMT_EVENT_INFO
+static const void *mgmt_event_info(const struct mgmt_event_entry *event, bool synchronous)
+{
+#ifdef CONFIG_NET_MGMT_EVENT_OWNED_INFO
+	if (event->owner != NULL) {
+		/* A synchronous waiter cannot keep a callback-scoped snapshot. */
+		return synchronous ? NULL : event->owner->data;
+	}
+#else
+	ARG_UNUSED(synchronous);
+#endif
+	return event->info;
+}
+#endif
+
 static inline void mgmt_run_slist_callbacks(const struct mgmt_event_entry * const mgmt_event)
 {
 	sys_snode_t *prev = NULL;
@@ -207,6 +245,8 @@ static inline void mgmt_run_slist_callbacks(const struct mgmt_event_entry * cons
 		NET_MGMT_GET_COMMAND(mgmt_event->event));
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&event_callbacks, cb, tmp, node) {
+		bool synchronous = NET_MGMT_EVENT_SYNCHRONOUS(cb->event_mask);
+
 		if (!(NET_MGMT_GET_LAYER(mgmt_event->event) ==
 		      NET_MGMT_GET_LAYER(cb->event_mask)) ||
 		    !(NET_MGMT_GET_LAYER_CODE(mgmt_event->event) ==
@@ -219,16 +259,12 @@ static inline void mgmt_run_slist_callbacks(const struct mgmt_event_entry * cons
 		}
 
 #ifdef CONFIG_NET_MGMT_EVENT_INFO
-		if (mgmt_event->info_length) {
-			cb->info = (void *)mgmt_event->info;
-			cb->info_length = mgmt_event->info_length;
-		} else {
-			cb->info = NULL;
-			cb->info_length = 0;
-		}
+		cb->info = mgmt_event->info_length != 0U ?
+			   mgmt_event_info(mgmt_event, synchronous) : NULL;
+		cb->info_length = cb->info != NULL ? mgmt_event->info_length : 0U;
 #endif /* CONFIG_NET_MGMT_EVENT_INFO */
 
-		if (NET_MGMT_EVENT_SYNCHRONOUS(cb->event_mask)) {
+		if (synchronous) {
 			struct mgmt_event_wait *sync_data =
 				CONTAINER_OF(cb->sync_call,
 					     struct mgmt_event_wait, sync_call);
@@ -276,7 +312,8 @@ static inline void mgmt_run_static_callbacks(const struct mgmt_event_entry * con
 
 		it->handler(mgmt_event->event, mgmt_event->iface,
 #ifdef CONFIG_NET_MGMT_EVENT_INFO
-			    (void *)mgmt_event->info, mgmt_event->info_length,
+				    (void *)mgmt_event_info(mgmt_event, false),
+				    mgmt_event->info_length,
 #else
 			    NULL, 0U,
 #endif
@@ -299,6 +336,12 @@ static void mgmt_run_callbacks(const struct mgmt_event_entry * const mgmt_event)
 
 	(void)atomic_ptr_set(&callback_thread, prev);
 	(void)k_mutex_unlock(&net_mgmt_callback_lock);
+
+#ifdef CONFIG_NET_MGMT_EVENT_OWNED_INFO
+	if (mgmt_event->owner != NULL) {
+		mgmt_event->owner->release(mgmt_event->owner);
+	}
+#endif
 }
 
 bool net_mgmt_is_event_context(void)
@@ -405,8 +448,8 @@ void net_mgmt_del_event_callback(struct net_mgmt_event_callback *cb)
 	(void)k_mutex_unlock(&net_mgmt_callback_lock);
 }
 
-void net_mgmt_event_notify_with_info(uint64_t mgmt_event, struct net_if *iface,
-				     const void *info, size_t length)
+static bool mgmt_notify_event(uint64_t mgmt_event, struct net_if *iface, const void *info,
+			      size_t length, struct net_mgmt_event_owned_info *owner)
 {
 	if (mgmt_is_event_handled(mgmt_event)) {
 		/* Readable layer code is starting from 1, thus the increment */
@@ -415,9 +458,27 @@ void net_mgmt_event_notify_with_info(uint64_t mgmt_event, struct net_if *iface,
 			NET_MGMT_GET_LAYER_CODE(mgmt_event),
 			NET_MGMT_GET_COMMAND(mgmt_event));
 
-		mgmt_push_event(mgmt_event, iface, info, length);
+		return mgmt_push_event(mgmt_event, iface, info, length, owner);
+	}
+
+	return false;
+}
+
+void net_mgmt_event_notify_with_info(uint64_t mgmt_event, struct net_if *iface,
+				     const void *info, size_t length)
+{
+	(void)mgmt_notify_event(mgmt_event, iface, info, length, NULL);
+}
+
+#ifdef CONFIG_NET_MGMT_EVENT_OWNED_INFO
+void net_mgmt_event_notify_owned_info(uint64_t event, struct net_if *iface,
+				     struct net_mgmt_event_owned_info *owner, size_t length)
+{
+	if (!mgmt_notify_event(event, iface, NULL, length, owner)) {
+		owner->release(owner);
 	}
 }
+#endif
 
 int net_mgmt_event_wait(uint64_t mgmt_event_mask,
 			uint64_t *raised_event,
