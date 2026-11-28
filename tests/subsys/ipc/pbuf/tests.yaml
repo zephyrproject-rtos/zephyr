@@ -11,3 +11,14 @@ tests:
     integration_platforms:
       - native_sim
     timeout: 120
+  ipc.icmsg_pbuf.cpp:
+    tags: cpp
+    platform_allow:
+      - native_sim/native
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+    extra_configs:
+      - CONFIG_CPP=y
+      - CONFIG_STD_CPP20=y
+    timeout: 120

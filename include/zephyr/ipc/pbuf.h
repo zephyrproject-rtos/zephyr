@@ -124,12 +124,12 @@ struct pbuf {
 				_PBUF_IDX_SIZE) : NULL,					\
 	.wr_idx_loc = (uint32_t *)((uint8_t *)(mem_addr) + MAX(dcache_align,		\
 				(use_handshake ? 2 : 1) * _PBUF_IDX_SIZE)),		\
+	.dcache_alignment = (dcache_align),						\
+	.len = (uint32_t)((uint32_t)(size) - MAX(dcache_align,				\
+			(use_handshake ? 2 : 1) * _PBUF_IDX_SIZE) - _PBUF_IDX_SIZE),	\
 	.data_loc = (uint8_t *)((uint8_t *)(mem_addr) +					\
 				MAX(dcache_align, (use_handshake ? 2 : 1) *		\
 						  _PBUF_IDX_SIZE) + _PBUF_IDX_SIZE),	\
-	.len = (uint32_t)((uint32_t)(size) - MAX(dcache_align,				\
-			(use_handshake ? 2 : 1) * _PBUF_IDX_SIZE) - _PBUF_IDX_SIZE),	\
-	.dcache_alignment = (dcache_align),						\
 }
 
 /**
