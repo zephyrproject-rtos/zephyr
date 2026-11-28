@@ -39,6 +39,7 @@
 #include "bap_stream.h"
 #include "bap_stream_expects.h"
 #include "conn.h"
+#include "gatt.h"
 #include "iso.h"
 
 #include "test_common.h"
@@ -702,6 +703,185 @@ ZTEST_F(test_sink_ase_state_transition, test_server_streaming_to_releasing)
 	expect_bt_bap_stream_ops_disconnected_called(1, (const struct bt_bap_stream **)&stream);
 }
 
+/* Request a release that stays pending, as the ASE state notification is out of buffers */
+static void test_release_pending(struct bt_bap_stream *stream)
+{
+	int err;
+
+	mock_bt_gatt_notify_cb_fake.return_val = -ENOMEM;
+
+	err = bt_ascs_release_ase(stream->ep);
+	zassert_false(err < 0, "bt_ascs_release_ase returned err %d", err);
+}
+
+/* Let the pending ASE state change be notified */
+static void test_notify_retry(struct bt_conn *conn)
+{
+	struct bt_conn_info info;
+	int err;
+
+	mock_bt_gatt_notify_cb_fake.return_val = 0;
+
+	err = bt_conn_get_info(conn, &info);
+	zassert_equal(err, 0);
+
+	/* Wait for the ASE state notification retry */
+	k_sleep(K_USEC(2U * info.le.interval_us));
+
+	test_drain_syswq(); /* Ensure that state transitions are completed */
+}
+
+ZTEST_F(test_sink_ase_state_transition, test_server_metadata_while_release_pending)
+{
+	const uint8_t meta[] = {
+		BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT,
+				    BT_BYTES_LIST_LE16(BT_AUDIO_CONTEXT_TYPE_MEDIA)),
+	};
+	struct bt_bap_stream *stream = &fixture->stream;
+	struct bt_conn *conn = &fixture->conn;
+	uint8_t ase_id = fixture->ase.id;
+	struct bt_iso_chan *chan;
+	int err;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SNK);
+
+	test_preamble_state_streaming(conn, ase_id, stream, &chan, false);
+
+	test_release_pending(stream);
+
+	/* A local metadata update must not replace the pending Releasing state */
+	err = bt_ascs_metadata_ase(stream->ep, meta, ARRAY_SIZE(meta));
+	zassert_equal(err, -EBUSY, "bt_ascs_metadata_ase returned err %d", err);
+
+	test_notify_retry(conn);
+
+	/* Client disconnects the ISO */
+	mock_bt_iso_disconnected(chan, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+
+	test_drain_syswq(); /* Ensure that state transitions are completed */
+
+	/* Verification */
+	expect_bt_bap_stream_ops_released_called(1, (const struct bt_bap_stream **)&stream);
+}
+
+ZTEST_F(test_sink_ase_state_transition, test_server_iso_disconnect_while_release_pending)
+{
+	struct bt_bap_stream *stream = &fixture->stream;
+	struct bt_conn *conn = &fixture->conn;
+	uint8_t ase_id = fixture->ase.id;
+	struct bt_iso_chan *chan;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SNK);
+
+	test_preamble_state_streaming(conn, ase_id, stream, &chan, false);
+
+	test_release_pending(stream);
+
+	/* The CIS link loss must not replace the pending Releasing state */
+	mock_bt_iso_disconnected(chan, BT_HCI_ERR_CONN_TIMEOUT);
+
+	test_notify_retry(conn);
+
+	/* Verification */
+	expect_bt_bap_stream_ops_qos_configured_called(0, NULL);
+	expect_bt_bap_stream_ops_released_called(1, (const struct bt_bap_stream **)&stream);
+}
+
+ZTEST_F(test_sink_ase_state_transition, test_server_iso_connect_while_release_pending)
+{
+	struct bt_bap_stream *stream = &fixture->stream;
+	struct bt_conn *conn = &fixture->conn;
+	uint8_t ase_id = fixture->ase.id;
+	struct bt_iso_chan *chan;
+	int err;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SNK);
+
+	test_preamble_state_enabling(conn, ase_id, stream);
+
+	/* Ready to receive, waiting for the CIS */
+	err = bt_ascs_start_ase(stream->ep);
+	zassert_equal(0, err, "bt_ascs_start_ase err %d", err);
+
+	test_release_pending(stream);
+
+	/* The CIS getting connected must not replace the pending Releasing state */
+	err = mock_bt_iso_accept(conn, 0x01, 0x01, &chan);
+	zassert_equal(0, err, "Failed to connect iso: err %d", err);
+
+	test_notify_retry(conn);
+
+	/* Client disconnects the ISO */
+	mock_bt_iso_disconnected(chan, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+
+	test_drain_syswq(); /* Ensure that state transitions are completed */
+
+	/* Verification */
+	expect_bt_bap_stream_ops_started_called(0, NULL);
+	expect_bt_bap_stream_ops_released_called(1, (const struct bt_bap_stream **)&stream);
+}
+
+ZTEST_F(test_sink_ase_state_transition, test_server_start_while_release_pending)
+{
+	struct bt_bap_stream *stream = &fixture->stream;
+	struct bt_conn *conn = &fixture->conn;
+	uint8_t ase_id = fixture->ase.id;
+	struct bt_iso_chan *chan;
+	int err;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SNK);
+
+	test_preamble_state_enabling(conn, ase_id, stream);
+
+	err = mock_bt_iso_accept(conn, 0x01, 0x01, &chan);
+	zassert_equal(0, err, "Failed to connect iso: err %d", err);
+
+	test_drain_syswq(); /* Ensure that state transitions are completed */
+
+	test_release_pending(stream);
+
+	/* A local start must not replace the pending Releasing state */
+	err = bt_ascs_start_ase(stream->ep);
+	zassert_equal(err, -EBUSY, "bt_ascs_start_ase returned err %d", err);
+
+	test_notify_retry(conn);
+
+	/* Client disconnects the ISO */
+	mock_bt_iso_disconnected(chan, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+
+	test_drain_syswq(); /* Ensure that state transitions are completed */
+
+	/* Verification */
+	expect_bt_bap_stream_ops_started_called(0, NULL);
+	expect_bt_bap_stream_ops_released_called(1, (const struct bt_bap_stream **)&stream);
+}
+
+ZTEST_F(test_sink_ase_state_transition, test_server_reconfig_while_release_pending)
+{
+	struct bt_audio_codec_cfg codec_cfg = BT_AUDIO_CODEC_LC3_CONFIG(
+		BT_AUDIO_CODEC_CFG_FREQ_16KHZ, BT_AUDIO_CODEC_CFG_DURATION_10,
+		BT_AUDIO_LOCATION_FRONT_LEFT, 40U, 1, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+	struct bt_bap_stream *stream = &fixture->stream;
+	struct bt_conn *conn = &fixture->conn;
+	uint8_t ase_id = fixture->ase.id;
+	int err;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SNK);
+
+	test_preamble_state_codec_configured(conn, ase_id, stream);
+
+	test_release_pending(stream);
+
+	/* A local reconfiguration must not replace the pending Releasing state */
+	err = bt_ascs_reconfig_ase(stream->ep, &codec_cfg);
+	zassert_equal(err, -EBUSY, "bt_ascs_reconfig_ase returned err %d", err);
+
+	test_notify_retry(conn);
+
+	/* Verification */
+	expect_bt_bap_stream_ops_released_called(1, (const struct bt_bap_stream **)&stream);
+}
+
 static void *test_source_ase_state_transition_setup(void)
 {
 	struct test_ase_state_transition_fixture *fixture;
@@ -1320,4 +1500,86 @@ ZTEST_F(test_source_ase_state_transition, test_server_streaming_to_releasing)
 	expect_bt_bap_stream_ops_released_called(1, (const struct bt_bap_stream **)&stream);
 	expect_bt_bap_stream_ops_disabled_called(0, NULL);
 	expect_bt_bap_stream_ops_disconnected_called(1, (const struct bt_bap_stream **)&stream);
+}
+
+ZTEST_F(test_source_ase_state_transition, test_server_iso_disconnect_while_release_pending)
+{
+	struct bt_bap_stream *stream = &fixture->stream;
+	struct bt_conn *conn = &fixture->conn;
+	uint8_t ase_id = fixture->ase.id;
+	struct bt_iso_chan *chan;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SRC);
+
+	test_preamble_state_streaming(conn, ase_id, stream, &chan, true);
+
+	test_release_pending(stream);
+
+	/* The CIS link loss must not replace the pending Releasing state */
+	mock_bt_iso_disconnected(chan, BT_HCI_ERR_CONN_TIMEOUT);
+
+	test_notify_retry(conn);
+
+	/* Verification */
+	expect_bt_bap_stream_ops_qos_configured_called(0, NULL);
+	expect_bt_bap_stream_ops_released_called(1, (const struct bt_bap_stream **)&stream);
+}
+
+ZTEST_F(test_source_ase_state_transition, test_server_metadata_while_release_pending)
+{
+	const uint8_t meta[] = {
+		BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT,
+				    BT_BYTES_LIST_LE16(BT_AUDIO_CONTEXT_TYPE_MEDIA)),
+	};
+	struct bt_bap_stream *stream = &fixture->stream;
+	struct bt_conn *conn = &fixture->conn;
+	uint8_t ase_id = fixture->ase.id;
+	struct bt_iso_chan *chan;
+	int err;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SRC);
+
+	test_preamble_state_streaming(conn, ase_id, stream, &chan, true);
+
+	test_release_pending(stream);
+
+	/* A local metadata update must not replace the pending Releasing state */
+	err = bt_ascs_metadata_ase(stream->ep, meta, ARRAY_SIZE(meta));
+	zassert_equal(err, -EBUSY, "bt_ascs_metadata_ase returned err %d", err);
+
+	test_notify_retry(conn);
+
+	/* Client disconnects the ISO */
+	mock_bt_iso_disconnected(chan, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+
+	test_drain_syswq(); /* Ensure that state transitions are completed */
+
+	/* Verification */
+	expect_bt_bap_stream_ops_released_called(1, (const struct bt_bap_stream **)&stream);
+}
+
+ZTEST_F(test_source_ase_state_transition, test_server_reconfig_while_release_pending)
+{
+	struct bt_audio_codec_cfg codec_cfg = BT_AUDIO_CODEC_LC3_CONFIG(
+		BT_AUDIO_CODEC_CFG_FREQ_16KHZ, BT_AUDIO_CODEC_CFG_DURATION_10,
+		BT_AUDIO_LOCATION_FRONT_LEFT, 40U, 1, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+	struct bt_bap_stream *stream = &fixture->stream;
+	struct bt_conn *conn = &fixture->conn;
+	uint8_t ase_id = fixture->ase.id;
+	int err;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SRC);
+
+	test_preamble_state_codec_configured(conn, ase_id, stream);
+
+	test_release_pending(stream);
+
+	/* A local reconfiguration must not replace the pending Releasing state */
+	err = bt_ascs_reconfig_ase(stream->ep, &codec_cfg);
+	zassert_equal(err, -EBUSY, "bt_ascs_reconfig_ase returned err %d", err);
+
+	test_notify_retry(conn);
+
+	/* Verification */
+	expect_bt_bap_stream_ops_released_called(1, (const struct bt_bap_stream **)&stream);
 }

@@ -538,6 +538,12 @@ static void ase_enter_state_releasing(struct bt_ascs_ase *ase)
 	}
 }
 
+/* A Releasing state that is still waiting to be notified must not be replaced by a CIS event */
+static bool ase_release_pending(const struct bt_ascs_ase *ase)
+{
+	return ase->has_pending_state && ase->state_pending == BT_BAP_EP_STATE_RELEASING;
+}
+
 static struct ascs_client *client_from_conn(const struct bt_conn *conn)
 {
 	ARRAY_FOR_EACH_PTR(ascs.clients, client) {
@@ -1060,7 +1066,7 @@ static void ascs_ep_iso_connected(struct bt_bap_ep *ep)
 		stream_ops->connected(stream);
 	}
 
-	if (ep->dir == BT_AUDIO_DIR_SINK && ep->receiver_ready) {
+	if (ep->dir == BT_AUDIO_DIR_SINK && ep->receiver_ready && !ase_release_pending(ase)) {
 		/* Source ASEs shall be ISO connected first, and then receive
 		 * the receiver start ready command to enter the streaming
 		 * state
@@ -1110,6 +1116,11 @@ static void ascs_ep_iso_disconnected(struct bt_bap_ep *ep, uint8_t reason)
 	/* Cancel ASE disconnect work if pending */
 	(void)k_work_cancel_delayable(&ase->disconnect_work);
 	ep->reason = reason;
+
+	if (ase_release_pending(ase)) {
+		/* The Releasing state goes to Idle by itself once notified, as the CIS is down */
+		return;
+	}
 
 	if (ep->state == BT_BAP_EP_STATE_RELEASING) {
 		ascs_ep_set_state(ep, BT_BAP_EP_STATE_IDLE);
@@ -1958,6 +1969,19 @@ int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
 	return 0;
 }
 
+/* A local operation must not replace a state change that is still waiting to be notified */
+static bool ep_has_pending_state(struct bt_bap_ep *ep)
+{
+	const struct bt_ascs_ase *ase = CONTAINER_OF(ep, struct bt_ascs_ase, ep);
+
+	if (ase->has_pending_state) {
+		LOG_DBG("Rejecting due to ASE %p having a pending state change", ase);
+		return true;
+	}
+
+	return false;
+}
+
 int bt_ascs_reconfig_ase(struct bt_bap_ep *ep, const struct bt_audio_codec_cfg *codec_cfg)
 {
 	/* rsp is not used for other purposes than to provide a pointer to the callback */
@@ -1981,6 +2005,10 @@ int bt_ascs_reconfig_ase(struct bt_bap_ep *ep, const struct bt_audio_codec_cfg *
 	default:
 		LOG_DBG("Invalid state: %s", bt_bap_ep_state_str(state));
 		return -EBADMSG;
+	}
+
+	if (ep_has_pending_state(ep)) {
+		return -EBUSY;
 	}
 
 	if (ascs_cb != NULL && ascs_cb->reconfig != NULL) {
@@ -2021,6 +2049,10 @@ int bt_ascs_start_ase(struct bt_bap_ep *ep)
 		LOG_DBG("Invalid state: %s", bt_bap_ep_state_str(ep->state));
 
 		return -EBADMSG;
+	}
+
+	if (ep_has_pending_state(ep)) {
+		return -EBUSY;
 	}
 
 	if (ascs_cb != NULL && ascs_cb->start != NULL) {
@@ -2072,6 +2104,10 @@ int bt_ascs_metadata_ase(struct bt_bap_ep *ep, const uint8_t meta[], size_t meta
 
 	if (meta_len > sizeof(ep->codec_cfg.meta)) {
 		return -ENOMEM;
+	}
+
+	if (ep_has_pending_state(ep)) {
+		return -EBUSY;
 	}
 
 	if (ascs_cb != NULL && ascs_cb->metadata != NULL) {
