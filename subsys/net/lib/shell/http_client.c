@@ -13,7 +13,7 @@ LOG_MODULE_DECLARE(net_shell);
 
 #include <zephyr/net/conn_mgr_monitor.h>
 #include <zephyr/net/http/client.h>
-#include <zephyr/net/http/parser_url.h>
+#include <zephyr/net/url.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/dns_resolve.h>
 #if defined(CONFIG_TLS_CREDENTIALS)
@@ -25,7 +25,6 @@ LOG_MODULE_DECLARE(net_shell);
 #define DEFAULT_HTTPS_PORT 443
 #define DEFAULT_HTTP_PORT  80
 
-#define HTTP_SCHEMA_LEN   sizeof("https://")
 #define HTTP_PROTOCOL_LEN sizeof("HTTP/1.1")
 #define HTTP_PORT_LEN     sizeof("65535")
 #define HTTP_HEADERS_LEN  (2 * CONFIG_NET_SHELL_HTTP_CLIENT_MAX_HEADERS + 1)
@@ -35,9 +34,8 @@ static K_SEM_DEFINE(l4_wait, 0, 1);
 static K_SEM_DEFINE(dns_wait, 0, 1);
 
 struct http_client_url_fields {
-	uint8_t schema[HTTP_SCHEMA_LEN];
-	uint8_t hostname[ZSOCK_NI_MAXHOST];
-	uint8_t uri[CONFIG_NET_SHELL_HTTP_CLIENT_URL_LEN];
+	char hostname[ZSOCK_NI_MAXHOST];
+	char uri[CONFIG_NET_SHELL_HTTP_CLIENT_URL_LEN];
 	uint16_t port;
 	bool has_port;
 	bool is_ssl;
@@ -65,105 +63,48 @@ struct http_client_sh_ctx {
 	const struct shell *sh;
 };
 
-static int http_client_url_fields_get(const uint8_t *url, const struct http_parser_url *purl,
-				      enum http_parser_url_fields url_field, uint8_t *field,
-				      uint16_t field_len)
-{
-	size_t off = purl->field_data[url_field].off;
-	size_t len = purl->field_data[url_field].len;
-
-	if (len == 0) {
-		return -EINVAL;
-	}
-
-	if (url_field == UF_PATH) {
-		/* The request target is the path and the query; the fragment is not sent. */
-		const uint8_t *hash = memchr(url + off, '#', strlen(url) - off);
-
-		len = (hash != NULL ? (size_t)(hash - url) : strlen(url)) - off;
-	}
-
-	if (len >= field_len) {
-		return -ENOBUFS;
-	}
-
-	memcpy(field, url + off, len);
-	field[len] = '\0';
-
-	return 0;
-}
-
-static int http_client_url_parser(struct http_client_sh_ctx *ctx, const uint8_t *url)
+static int http_client_url_parser(struct http_client_sh_ctx *ctx, const char *url)
 {
 	int ret;
 	const struct shell *sh = ctx->sh;
-	struct http_parser_url purl;
-	uint8_t *schema = ctx->url_fields.schema;
-	uint8_t *hostname = ctx->url_fields.hostname;
-	uint16_t *port = &ctx->url_fields.port;
-	uint8_t *uri = ctx->url_fields.uri;
-	bool *is_ssl = &ctx->url_fields.is_ssl;
-	uint8_t port_ascii[HTTP_PORT_LEN];
+	struct http_client_url_fields *fields = &ctx->url_fields;
+	struct net_url purl;
 
-	http_parser_url_init(&purl);
-
-	ret = http_parser_parse_url(url, strlen(url), 0, &purl);
+	ret = net_url_parse(url, &purl);
 	if (ret < 0) {
 		PR_ERROR("Failed to parse URL (%d)\n", ret);
 		return ret;
 	}
 
-	ret = http_client_url_fields_get(url, &purl, UF_SCHEMA, schema,
-					 sizeof(ctx->url_fields.schema));
+	if (purl.scheme.len == 0U) {
+		PR_ERROR("Failed to parse schema\n");
+		return -EINVAL;
+	}
+
+	fields->is_ssl = net_url_scheme_is(&purl, "https");
+
+	if (purl.host.len == 0U) {
+		PR_ERROR("Failed to parse hostname\n");
+		return -EINVAL;
+	}
+
+	ret = net_url_field_copy(&purl, &purl.host, fields->hostname, sizeof(fields->hostname));
 	if (ret < 0) {
-		PR_ERROR("Failed to parse schema (%d)\n", ret);
+		PR_ERROR("Hostname too long (max %zu bytes)\n", sizeof(fields->hostname) - 1);
 		return ret;
 	}
 
-	if (memcmp(schema, "https", sizeof("https")) == 0) {
-		*is_ssl = true;
-	}
-
-	ret = http_client_url_fields_get(url, &purl, UF_HOST, hostname,
-					 sizeof(ctx->url_fields.hostname));
-	if (ret < 0) {
-		PR_ERROR("Failed to parse hostname (%d)\n", ret);
-		return ret;
-	}
-
-	ret = http_client_url_fields_get(url, &purl, UF_PORT, port_ascii, sizeof(port_ascii));
-	ctx->url_fields.has_port = ret == 0;
-	if (ret < 0) {
-		if (*is_ssl) {
-			*port = DEFAULT_HTTPS_PORT;
-		} else {
-			*port = DEFAULT_HTTP_PORT;
-		}
+	fields->has_port = (purl.port != 0U);
+	if (fields->has_port) {
+		fields->port = purl.port;
 	} else {
-		*port = (uint16_t)shell_strtol(port_ascii, 10, &ret);
-		if (ret < 0) {
-			PR_ERROR("Failed to parse port\n");
-			return ret;
-		}
+		fields->port = fields->is_ssl ? DEFAULT_HTTPS_PORT : DEFAULT_HTTP_PORT;
 	}
 
-	ret = http_client_url_fields_get(url, &purl, UF_PATH, uri, sizeof(ctx->url_fields.uri));
-	if (ret == -ENOBUFS) {
-		PR_ERROR("URL path too long (max %zu bytes)\n", sizeof(ctx->url_fields.uri) - 1);
+	ret = net_url_target_copy(&purl, fields->uri, sizeof(fields->uri));
+	if (ret < 0) {
+		PR_ERROR("URL path too long (max %zu bytes)\n", sizeof(fields->uri) - 1);
 		return ret;
-	} else if (ret < 0) {
-		/* An empty path is sent as "/", followed by the query if there is one. */
-		memcpy(uri, "/?", sizeof("/?"));
-
-		ret = http_client_url_fields_get(url, &purl, UF_QUERY, uri + 2,
-						 sizeof(ctx->url_fields.uri) - 2);
-		if (ret == -ENOBUFS) {
-			PR_ERROR("URL query too long (max %zu bytes)\n",
-				 sizeof(ctx->url_fields.uri) - 3);
-			return ret;
-		} else if (ret < 0) {
-			uri[1] = '\0';
-		}
 	}
 
 	return 0;
@@ -437,7 +378,7 @@ static int http_client_help(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
-static int http_client_init(struct http_client_sh_ctx *ctx, const uint8_t *url)
+static int http_client_init(struct http_client_sh_ctx *ctx, const char *url)
 {
 	int ret;
 	const struct shell *sh = ctx->sh;

@@ -4,7 +4,7 @@
 menuconfig LWM2M
 	bool "OMA LwM2M protocol stack"
 	select COAP
-	select HTTP_PARSER_URL
+	select NET_URL
 	select NET_SOCKETS
 	help
 	  This option adds logic for managing OMA LwM2M data
@@ -683,7 +683,7 @@ config LWM2M_FIRMWARE_UPDATE_OBJ_INSTANCE_COUNT
 config LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
 	bool "Firmware Update object pull support"
 	default y
-	depends on (HTTP_PARSER || HTTP_PARSER_URL)
+	depends on NET_URL
 	help
 	  Include support for pulling a file from a remote server via
 	  block transfer and "FIRMWARE PACKAGE URI" resource.  This option

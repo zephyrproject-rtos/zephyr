@@ -53,6 +53,8 @@ source "subsys/net/lib/tls_credentials/Kconfig"
 
 source "subsys/net/lib/shell/Kconfig"
 
+source "subsys/net/lib/utils/Kconfig"
+
 endmenu
 
 menu "Network additional services"

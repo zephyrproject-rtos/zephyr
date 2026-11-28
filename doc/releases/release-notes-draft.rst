@@ -153,6 +153,9 @@ Libraries / Subsystems
   * The connection manager tracks name resolution readiness, see
     :ref:`conn_mgr_monitoring_dns`: :c:macro:`NET_EVENT_L4_DNS_READY`,
     :c:macro:`NET_EVENT_L4_DNS_LOST` and :c:func:`conn_mgr_dns_is_ready`.
+  * :c:func:`net_url_parse` splits a URL into its components without copying, with helpers
+    to copy a component or the HTTP request target into a buffer and to compare the scheme.
+    See :ref:`net_url_interface`.
   * Threads can block until the network is ready with :c:func:`conn_mgr_wait_ready`,
     instead of tracking connection manager events, see :ref:`conn_mgr_monitoring_waiting`.
     With a ``last_seen`` value, it also paces retries after a failed connection attempt.

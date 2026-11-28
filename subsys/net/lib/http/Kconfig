@@ -63,7 +63,7 @@ config HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE_DEPRECATED
 config HTTP_CLIENT
 	bool "HTTP client API"
 	select HTTP_PARSER
-	select HTTP_PARSER_URL
+	select NET_URL
 	help
 	  HTTP client API
 

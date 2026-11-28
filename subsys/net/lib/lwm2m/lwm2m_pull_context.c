@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <stdio.h>
 #include <string.h>
 
-#include <zephyr/net/http/parser.h>
+#include <zephyr/net/url.h>
 #include <zephyr/net/socket.h>
 
 #include "lwm2m_pull_context.h"
@@ -115,8 +115,8 @@ static int transfer_request(struct coap_block_context *ctx, uint8_t *token, uint
 	int ret;
 	char *cursor;
 #if !defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
-	struct http_parser_url parser;
-	uint16_t off, len;
+	struct net_url u;
+	uint16_t len;
 	char *next_slash;
 #endif
 
@@ -158,18 +158,16 @@ static int transfer_request(struct coap_block_context *ctx, uint8_t *token, uint
 		goto cleanup;
 	}
 #else
-	http_parser_url_init(&parser);
-	ret = http_parser_parse_url(context.uri, strlen(context.uri), 0, &parser);
+	ret = net_url_parse(context.uri, &u);
 	if (ret < 0) {
 		LOG_ERR("Invalid firmware url: %s", context.uri);
 		ret = -ENOTSUP;
 		goto cleanup;
 	}
 
-	/* if path is not available, off/len will be zero */
-	off = parser.field_data[UF_PATH].off;
-	len = parser.field_data[UF_PATH].len;
-	cursor = context.uri + off;
+	/* if path is not available, len will be zero */
+	len = u.path.len;
+	cursor = context.uri + u.path.off;
 
 	/* add path portions (separated by slashes) */
 	while (len > 0 && (next_slash = strchr(cursor, '/')) != NULL) {

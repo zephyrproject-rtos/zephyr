@@ -14,7 +14,7 @@
 #include <zephyr/net/socket.h>
 #include <zephyr/net/http/client.h>
 #include <zephyr/net/http/parser.h>
-#include <zephyr/net/http/parser_url.h>
+#include <zephyr/net/url.h>
 #include <zephyr/dfu/flash_img.h>
 #include <zephyr/dfu/mcuboot.h>
 #include <zephyr/storage/flash_map.h>
@@ -166,90 +166,45 @@ static int upload_area_id(uint8_t image_index)
 	}
 }
 
-static int copy_field(const char *url, const struct http_parser_url *u,
-		      enum http_parser_url_fields field, char *dst, size_t dst_len)
-{
-	uint16_t off = u->field_data[field].off;
-	uint16_t len = u->field_data[field].len;
-
-	if (len >= dst_len) {
-		return -EINVAL;
-	}
-
-	memcpy(dst, url + off, len);
-	dst[len] = '\0';
-
-	return 0;
-}
-
 static int parse_url(const char *url, struct fota_http_url *out)
 {
-	struct http_parser_url u;
-	size_t path_len;
+	struct net_url u;
 	int ret;
 
-	http_parser_url_init(&u);
-	if (http_parser_parse_url(url, strlen(url), 0, &u) != 0) {
+	ret = net_url_parse(url, &u);
+	if (ret != 0 || u.host.len == 0U) {
 		return -EINVAL;
 	}
 
-	if (!(u.field_set & BIT(UF_HOST))) {
-		return -EINVAL;
-	}
-
-	ret = copy_field(url, &u, UF_HOST, out->host, sizeof(out->host));
+	ret = net_url_field_copy(&u, &u.host, out->host, sizeof(out->host));
 	if (ret != 0) {
-		return ret;
+		return -EINVAL;
 	}
 
-	out->tls = false;
-	if (u.field_set & BIT(UF_SCHEMA)) {
-		const char *schema = url + u.field_data[UF_SCHEMA].off;
-		uint16_t len = u.field_data[UF_SCHEMA].len;
-
-		if (len == 5 && strncmp(schema, "https", len) == 0) {
-			out->tls = true;
-		} else if (len != 4 || strncmp(schema, "http", len) != 0) {
-			return -ENOTSUP;
-		}
+	out->tls = net_url_scheme_is(&u, "https");
+	if (u.scheme.len > 0U && !out->tls && !net_url_scheme_is(&u, "http")) {
+		return -ENOTSUP;
 	}
 
 	if (out->tls && !IS_ENABLED(CONFIG_FOTA_HTTP_TLS)) {
 		return -ENOTSUP;
 	}
 
-	if (u.field_set & BIT(UF_PORT)) {
+	if (u.port != 0U) {
 		snprintk(out->port, sizeof(out->port), "%u", u.port);
 	} else {
 		strcpy(out->port, out->tls ? "443" : "80");
 	}
 
-	if (u.field_set & BIT(UF_PATH)) {
-		ret = copy_field(url, &u, UF_PATH, out->path, sizeof(out->path));
-		if (ret != 0) {
-			return ret;
-		}
-	} else {
-		strcpy(out->path, "/");
+	ret = net_url_target_copy(&u, out->path, sizeof(out->path));
+	if (ret != 0) {
+		return -EINVAL;
 	}
 
 	if (strchr(out->host, ':') != NULL) {
 		snprintk(out->host_hdr, sizeof(out->host_hdr), "[%s]", out->host);
 	} else {
 		strcpy(out->host_hdr, out->host);
-	}
-
-	if (u.field_set & BIT(UF_QUERY)) {
-		path_len = strlen(out->path);
-		if (path_len + 1 >= sizeof(out->path)) {
-			return -EINVAL;
-		}
-		out->path[path_len++] = '?';
-		ret = copy_field(url, &u, UF_QUERY, out->path + path_len,
-				 sizeof(out->path) - path_len);
-		if (ret != 0) {
-			return ret;
-		}
 	}
 
 	return 0;
