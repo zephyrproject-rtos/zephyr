@@ -226,6 +226,9 @@ static void net_tcp_iface_init(struct net_if *iface)
 	uint8_t *mac = net_tcp_get_mac(net_if_get_device(iface));
 
 	net_if_set_link_addr(iface, mac, 6, NET_LINK_ETHERNET);
+
+	/* The tester only reads the packets it is given */
+	net_if_set_tx_sg_frags(iface, NET_IF_TX_SG_FRAGS_UNLIMITED);
 }
 
 struct net_tcp_context net_tcp_context_data;
@@ -666,6 +669,38 @@ static int test_tcp_send_cb(struct net_pkt *pkt)
 	return ret;
 }
 
+/* Data segments sent while seg_hold_on is set, each with a reference held
+ * so its payload can be checked after the stack is done with it.
+ */
+#define SEG_HOLD_MAX 8
+static struct net_pkt *seg_held[SEG_HOLD_MAX];
+static size_t seg_held_count;
+static bool seg_hold_on;
+
+static size_t seg_hdr_len(struct net_pkt *pkt, struct tcphdr *th)
+{
+	return net_pkt_ip_hdr_len(pkt) + net_pkt_ip_opts_len(pkt) + th->th_off * 4U;
+}
+
+static void seg_hold(struct net_pkt *pkt, struct tcphdr *th)
+{
+	if (!seg_hold_on || (net_pkt_get_len(pkt) == seg_hdr_len(pkt, th))) {
+		return;
+	}
+
+	zassert_true(seg_held_count < SEG_HOLD_MAX, "Too many segments to hold");
+	seg_held[seg_held_count++] = net_pkt_ref(pkt);
+}
+
+static void seg_release(void)
+{
+	seg_hold_on = false;
+
+	while (seg_held_count > 0U) {
+		net_pkt_unref(seg_held[--seg_held_count]);
+	}
+}
+
 static int tester_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct tcphdr th;
@@ -680,6 +715,8 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 	if (ret < 0) {
 		goto fail;
 	}
+
+	seg_hold(pkt, &th);
 
 	switch (test_case_no) {
 	case TEST_CLIENT_IPV4:
@@ -5585,15 +5622,569 @@ ZTEST(net_tcp, test_isn_rfc6528)
 #endif
 }
 
+#define SEG_VIEW_LEN 60U
+
+/* Check that the payload of a held segment is data, and return how many of
+ * its fragments are views into the send queue.
+ */
+static size_t seg_expect_payload(struct net_pkt *pkt, const uint8_t *data, size_t len)
+{
+	uint8_t payload[NET_IPV4_MTU];
+	struct tcphdr th;
+	size_t payload_len;
+	size_t views = 0U;
+
+	zassert_ok(read_tcp_header(pkt, &th), "Cannot read the held segment");
+	payload_len = net_pkt_get_len(pkt) - seg_hdr_len(pkt, &th);
+	zassert_equal(payload_len, len, "Payload of %zu bytes, expected %zu", payload_len, len);
+
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_overwrite(pkt, true);
+	zassert_ok(net_pkt_skip(pkt, seg_hdr_len(pkt, &th)), "Cannot skip the headers");
+	zassert_ok(net_pkt_read(pkt, payload, payload_len), "Cannot read the payload");
+	zexpect_mem_equal(payload, data, len, "Payload changed after it was sent");
+
+	for (struct net_buf *buf = pkt->buffer; buf != NULL; buf = buf->frags) {
+		if ((buf->flags & NET_BUF_EXTERNAL_DATA) != 0U) {
+			views++;
+		}
+	}
+
+	return views;
+}
+
+static void seg_send(struct net_context *ctx, const uint8_t *data, size_t len)
+{
+	int ret;
+
+	ret = net_context_send(ctx, data, len, NULL, K_NO_WAIT, NULL);
+	zassert_equal(ret, (int)len, "Failed to send data (%d)", ret);
+}
+
+/* Send data, then wait until the tester has acknowledged it */
+static void seg_exchange(struct net_context *ctx, const uint8_t *data, size_t len)
+{
+	seg_send(ctx, data, len);
+	test_sem_take(K_MSEC(1000), __LINE__);
+
+	/* Let the stack process the ACK */
+	k_msleep(10);
+}
+
+static void seg_wait_held(size_t count)
+{
+	for (int i = 0; (i < 300) && (seg_held_count < count); i++) {
+		k_msleep(10);
+	}
+
+	zassert_true(seg_held_count >= count, "%zu segments sent, expected %zu", seg_held_count,
+		     count);
+}
+
+/* The tester acknowledges the data of the last segment it saw */
+static void seg_ack_last(void)
+{
+	struct net_pkt *reply;
+
+	ack = rtt_last_seq + (uint32_t)rtt_last_len;
+	reply = prepare_ack_packet(NET_AF_INET, net_htons(MY_PORT), rtt_port);
+	zassert_not_null(reply, "Failed to prepare ACK");
+	zassert_ok(net_recv_data(net_iface, reply), "Failed to send ACK");
+	k_msleep(10);
+}
+
+static void seg_fill(uint8_t *data, size_t len, uint8_t first)
+{
+	for (size_t i = 0; i < len; i++) {
+		data[i] = (uint8_t)(first + i);
+	}
+}
+
+/* Test case scenario IPv4
+ *   send data A, expect it, ACK it,
+ *   send data B, expect it, ACK it,
+ *   expect the segment of A to still carry A: its views keep the send queue
+ *   buffers allocated after the ACK has dropped them from the queue, so B
+ *   cannot be written into them.
+ */
+ZTEST(net_tcp, test_client_tx_views_after_ack)
+{
+	uint8_t data_a[SEG_VIEW_LEN];
+	uint8_t data_b[SEG_VIEW_LEN];
+	struct net_context *ctx;
+	size_t views;
+
+	seg_fill(data_a, sizeof(data_a), 0x10);
+	seg_fill(data_b, sizeof(data_b), 0x80);
+
+	ctx = rtt_connect(0U, false);
+	seg_hold_on = true;
+
+	seg_exchange(ctx, data_a, sizeof(data_a));
+	seg_exchange(ctx, data_b, sizeof(data_b));
+	seg_hold_on = false;
+
+	zassert_equal(seg_held_count, 2U, "%zu segments sent, expected 2", seg_held_count);
+
+	views = seg_expect_payload(seg_held[0], data_a, sizeof(data_a));
+	zexpect_equal(views > 0U, IS_ENABLED(CONFIG_NET_TCP_TX_SEGMENT_VIEWS),
+		      "Segment of %zu bytes with %zu views", sizeof(data_a), views);
+	(void)seg_expect_payload(seg_held[1], data_b, sizeof(data_b));
+
+	seg_release();
+	rtt_close(ctx);
+}
+
+/* Test case scenario IPv4
+ *   send data A, expect it, do not ACK it,
+ *   expect A again after the RTO,
+ *   ACK A, send data B, expect it, ACK it,
+ *   expect every segment to carry the data it was sent with.
+ */
+ZTEST(net_tcp, test_client_tx_views_retransmit)
+{
+	uint8_t data_a[SEG_VIEW_LEN];
+	uint8_t data_b[SEG_VIEW_LEN];
+	struct net_context *ctx;
+	size_t count;
+
+	seg_fill(data_a, sizeof(data_a), 0x20);
+	seg_fill(data_b, sizeof(data_b), 0xa0);
+
+	ctx = rtt_connect(0U, false);
+	rtt_hold = true;
+	seg_hold_on = true;
+
+	seg_send(ctx, data_a, sizeof(data_a));
+	seg_wait_held(2U);
+	zexpect_true(rtt_rexmit > 0U, "No retransmission");
+
+	rtt_hold = false;
+	seg_ack_last();
+	seg_exchange(ctx, data_b, sizeof(data_b));
+	seg_hold_on = false;
+
+	count = seg_held_count;
+	for (size_t i = 0; i < count - 1U; i++) {
+		(void)seg_expect_payload(seg_held[i], data_a, sizeof(data_a));
+	}
+
+	(void)seg_expect_payload(seg_held[count - 1U], data_b, sizeof(data_b));
+
+	seg_release();
+	rtt_close(ctx);
+}
+
+/* Test case scenario IPv4, with Nagle's algorithm
+ *   send 20 bytes, expect them, do not ACK them,
+ *   send 60 bytes in writes of 4 bytes, which wait for the ACK,
+ *   ACK the 20 bytes, expect one segment with the 60 bytes.
+ * With fixed size buffers the writes fill one buffer and the segment is a
+ * view of it. With variable size buffers each write is a buffer of its own,
+ * so a view would carry 4 bytes, less than
+ * CONFIG_NET_TCP_TX_SEGMENT_VIEW_MIN_LEN, and the segment is copied.
+ */
+ZTEST(net_tcp, test_client_tx_views_small_writes)
+{
+	uint8_t data[80];
+	struct net_context *ctx;
+	int no_delay = 0;
+	size_t views;
+
+	seg_fill(data, sizeof(data), 0x30);
+
+	ctx = rtt_connect(0U, false);
+	zassert_ok(net_tcp_set_option(ctx, TCP_OPT_NODELAY, &no_delay, sizeof(no_delay)),
+		   "Failed to enable Nagle");
+	rtt_hold = true;
+	seg_hold_on = true;
+
+	seg_send(ctx, data, 20U);
+	seg_wait_held(1U);
+
+	for (size_t pos = 20U; pos < sizeof(data); pos += 4U) {
+		seg_send(ctx, &data[pos], 4U);
+	}
+
+	k_msleep(10);
+	zexpect_equal(seg_held_count, 1U, "Small writes sent before the ACK");
+
+	rtt_hold = false;
+	seg_ack_last();
+	test_sem_take(K_MSEC(1000), __LINE__);
+	k_msleep(10);
+	seg_hold_on = false;
+
+	zassert_equal(seg_held_count, 2U, "%zu segments sent, expected 2", seg_held_count);
+	(void)seg_expect_payload(seg_held[0], data, 20U);
+	views = seg_expect_payload(seg_held[1], &data[20], sizeof(data) - 20U);
+
+	if (!IS_ENABLED(CONFIG_NET_TCP_TX_SEGMENT_VIEWS)) {
+		zexpect_equal(views, 0U, "Views without CONFIG_NET_TCP_TX_SEGMENT_VIEWS");
+	} else if (IS_ENABLED(CONFIG_NET_BUF_VARIABLE_DATA_SIZE)) {
+		zexpect_equal(views, 0U, "%zu views of %zu small writes", views,
+			      (sizeof(data) - 20U) / 4U);
+	} else {
+		zexpect_equal(views, 1U, "%zu views of one buffer", views);
+	}
+
+	seg_release();
+	rtt_close(ctx);
+}
+
+/* Test case scenario IPv4
+ *   send data A, expect it, ACK it,
+ *   take all TX packets, send data B: the views of B are taken, then the
+ *   packet allocation fails; expect the views back in their pool,
+ *   free the TX packets, expect B after the RTO, ACK it.
+ */
+ZTEST(net_tcp, test_client_tx_views_alloc_failure)
+{
+#if defined(CONFIG_NET_TCP_TX_SEGMENT_VIEWS) && defined(CONFIG_NET_BUF_POOL_USAGE)
+	static struct net_pkt *pkts[CONFIG_NET_PKT_TX_COUNT];
+	uint8_t data_a[SEG_VIEW_LEN];
+	uint8_t data_b[SEG_VIEW_LEN];
+	struct net_buf_pool *view_pool = NULL;
+	struct net_context *ctx;
+	atomic_val_t view_avail;
+	size_t count = 0U;
+	int ret;
+
+	seg_fill(data_a, sizeof(data_a), 0x40);
+	seg_fill(data_b, sizeof(data_b), 0xc0);
+
+	ctx = rtt_connect(0U, false);
+	seg_hold_on = true;
+	seg_exchange(ctx, data_a, sizeof(data_a));
+	seg_hold_on = false;
+
+	zassert_equal(seg_held_count, 1U, "%zu segments sent, expected 1", seg_held_count);
+	for (struct net_buf *buf = seg_held[0]->buffer; buf != NULL; buf = buf->frags) {
+		if ((buf->flags & NET_BUF_EXTERNAL_DATA) != 0U) {
+			view_pool = net_buf_pool_get(buf->pool_id);
+		}
+	}
+
+	seg_release();
+	zassert_not_null(view_pool, "Segment sent without views");
+	view_avail = atomic_get(&view_pool->avail_count);
+
+	while (count < ARRAY_SIZE(pkts)) {
+		pkts[count] = net_pkt_alloc(K_NO_WAIT);
+		if (pkts[count] == NULL) {
+			break;
+		}
+
+		count++;
+	}
+
+	seg_hold_on = true;
+	ret = net_context_send(ctx, data_b, sizeof(data_b), NULL, K_NO_WAIT, NULL);
+	zexpect_equal(ret, (int)sizeof(data_b), "Data not queued (%d)", ret);
+	zexpect_equal(seg_held_count, 0U, "Segment sent without a packet");
+	zexpect_equal(atomic_get(&view_pool->avail_count), view_avail,
+		      "Views not freed after the packet allocation failed");
+
+	while (count > 0U) {
+		net_pkt_unref(pkts[--count]);
+	}
+
+	/* The retransmission timer sends the queued data */
+	test_sem_take(K_MSEC(1000), __LINE__);
+	k_msleep(10);
+	seg_hold_on = false;
+
+	zassert_equal(seg_held_count, 1U, "%zu segments sent, expected 1", seg_held_count);
+	(void)seg_expect_payload(seg_held[0], data_b, sizeof(data_b));
+
+	seg_release();
+	rtt_close(ctx);
+#else
+	ztest_test_skip();
+#endif
+}
+
 /* Always clear the TX intercept hook after every test so a test that installs
  * it (and possibly aborts) cannot affect the following tests.
  */
+/* Longest write the test interface MTU sends as one segment */
+#define SEG_WRITE_MAX 80U
+
+/* Size of a send queue buffer, 0 when each write is a buffer of its own */
+#if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
+#define SEG_BUF_LEN CONFIG_NET_BUF_DATA_SIZE
+#else
+#define SEG_BUF_LEN 0U
+#endif
+
+/* Whether prefix bytes and a segment of len bytes fit in the congestion
+ * window after two acknowledged writes of SEG_WRITE_MAX bytes.
+ */
+#define SEG_FITS_UNACKED(prefix, len) (((prefix) + (len)) <= (3U * SEG_WRITE_MAX))
+
+/* Send prefix bytes on a new connection with the interface sending
+ * max_frags buffers per packet at no extra cost, without the tester acknowledging them, then
+ * len bytes. Return the views of the segment that carries the len bytes.
+ */
+static size_t seg_views_after(uint8_t max_frags, size_t prefix, size_t len)
+{
+	static uint8_t data[SEG_WRITE_MAX];
+	struct net_context *ctx;
+	size_t views;
+
+	zassert_true(len <= sizeof(data), "Segment of %zu bytes too long", len);
+	seg_fill(data, sizeof(data), max_frags);
+	net_if_set_tx_sg_frags(net_iface, max_frags);
+
+	ctx = rtt_connect(0U, false);
+
+	/* Acknowledged writes open the congestion window for the prefix, and
+	 * leave the send queue empty.
+	 */
+	if (prefix > 0U) {
+		seg_exchange(ctx, data, SEG_WRITE_MAX);
+		seg_exchange(ctx, data, SEG_WRITE_MAX);
+	}
+
+	rtt_hold = true;
+
+	for (size_t left = prefix; left > 0U; left -= MIN(left, SEG_WRITE_MAX)) {
+		seg_send(ctx, data, MIN(left, SEG_WRITE_MAX));
+	}
+
+	seg_hold_on = true;
+	seg_send(ctx, data, len);
+	seg_wait_held(1U);
+	seg_hold_on = false;
+
+	views = seg_expect_payload(seg_held[0], data, len);
+
+	rtt_hold = false;
+	seg_ack_last();
+	seg_release();
+	rtt_close(ctx);
+
+	return views;
+}
+
+/* Test case scenario IPv4, for each TX scatter-gather count of the interface
+ *   send 60 bytes, expect them in one buffer of the send queue,
+ *   expect views only when the headers and the views fit in the count,
+ *   where the headers can take two buffers,
+ * and with fixed size buffers,
+ *   send a buffer less 48 bytes without an ACK, then 60 bytes, which span
+ *   two buffers of the send queue,
+ *   expect two views only when four buffers are allowed.
+ */
+ZTEST(net_tcp, test_client_tx_views_iface_limit)
+{
+	size_t prefix = SEG_BUF_LEN - 48U;
+	size_t views;
+
+	if (!IS_ENABLED(CONFIG_NET_TCP_TX_SEGMENT_VIEWS)) {
+		ztest_test_skip();
+	}
+
+	views = seg_views_after(0U, 0U, 60U);
+	zexpect_equal(views, 0U, "%zu views without a count set", views);
+
+	views = seg_views_after(2U, 0U, 60U);
+	zexpect_equal(views, 0U, "%zu views with room only for the headers", views);
+
+	views = seg_views_after(3U, 0U, 60U);
+	zexpect_equal(views, 1U, "%zu views with room for one", views);
+
+	if ((SEG_BUF_LEN == 0U) || !SEG_FITS_UNACKED(prefix, 60U)) {
+		return;
+	}
+
+	views = seg_views_after(3U, prefix, 60U);
+	zexpect_equal(views, 0U, "%zu views with room for one, two needed", views);
+
+	views = seg_views_after(4U, prefix, 60U);
+	zexpect_equal(views, 2U, "%zu views with room for two", views);
+}
+
+/* Test case scenario IPv4, fixed size buffers
+ *   send 20 bytes, expect them in one view,
+ *   send a buffer less 8 bytes without an ACK, then 20 bytes: 8 go into the
+ *   first buffer and 12 into a new one,
+ *   expect the 20 bytes copied, as two views would carry 10 bytes each,
+ *   less than CONFIG_NET_TCP_TX_SEGMENT_VIEW_MIN_LEN.
+ */
+ZTEST(net_tcp, test_client_tx_views_short_views)
+{
+#if defined(CONFIG_NET_TCP_TX_SEGMENT_VIEWS) && defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
+	size_t prefix = SEG_BUF_LEN - 8U;
+	size_t views;
+
+	BUILD_ASSERT(CONFIG_NET_TCP_TX_SEGMENT_VIEW_MIN_LEN > 10,
+		     "Two views of 20 bytes must be too short");
+
+	if (!SEG_FITS_UNACKED(prefix, 20U)) {
+		ztest_test_skip();
+	}
+
+	views = seg_views_after(NET_IF_TX_SG_FRAGS_UNLIMITED, 0U, 20U);
+	zexpect_equal(views, 1U, "%zu views of 20 bytes in one buffer", views);
+
+	views = seg_views_after(NET_IF_TX_SG_FRAGS_UNLIMITED, prefix, 20U);
+	zexpect_equal(views, 0U, "%zu views of 20 bytes in two buffers", views);
+#else
+	ztest_test_skip();
+#endif
+}
+
+/* Port of the listener in test_tx_views_own_address */
+#define OWN_PORT 4250
+
+static K_SEM_DEFINE(own_rx_sem, 0, 2);
+static struct net_context *own_accepted;
+static struct net_pkt *own_rx[2];
+static size_t own_rx_count;
+
+/* Hold each packet with data the receiving end gets */
+static void own_recv_cb(struct net_context *context, struct net_pkt *pkt,
+			union net_ip_header *ip_hdr, union net_proto_header *proto_hdr,
+			int status, void *user_data)
+{
+	if (pkt == NULL) {
+		return;
+	}
+
+	if (own_rx_count < ARRAY_SIZE(own_rx)) {
+		own_rx[own_rx_count++] = pkt;
+		k_sem_give(&own_rx_sem);
+	} else {
+		net_pkt_unref(pkt);
+	}
+}
+
+static void own_accept_cb(struct net_context *ctx, struct net_sockaddr *addr,
+			  net_socklen_t addrlen, int status, void *user_data)
+{
+	if (status != 0) {
+		return;
+	}
+
+	net_context_ref(ctx);
+	own_accepted = ctx;
+	(void)net_context_recv(ctx, own_recv_cb, K_NO_WAIT, NULL);
+}
+
+static void own_release(void)
+{
+	while (own_rx_count > 0U) {
+		net_pkt_unref(own_rx[--own_rx_count]);
+	}
+
+	k_sem_reset(&own_rx_sem);
+}
+
+static void own_wait_acked(struct tcp *conn)
+{
+	for (int i = 0; (i < 100) && (conn->unacked_len != 0); i++) {
+		k_msleep(10);
+	}
+
+	zassert_equal(conn->unacked_len, 0, "%d bytes not acknowledged", conn->unacked_len);
+}
+
+/* Check that the payload of a received packet is data, and return how many
+ * of its fragments are views into a send queue.
+ */
+static size_t own_expect_payload(struct net_pkt *pkt, const uint8_t *data, size_t len)
+{
+	uint8_t payload[SEG_VIEW_LEN];
+	size_t payload_len = net_pkt_remaining_data(pkt);
+	size_t views = 0U;
+
+	zassert_equal(payload_len, len, "Payload of %zu bytes, expected %zu", payload_len, len);
+	zassert_true(len <= sizeof(payload), "Payload of %zu bytes too long", len);
+	zassert_ok(net_pkt_read(pkt, payload, len), "Cannot read the payload");
+	zexpect_mem_equal(payload, data, len, "Payload changed after it was received");
+
+	for (struct net_buf *buf = pkt->buffer; buf != NULL; buf = buf->frags) {
+		if ((buf->flags & NET_BUF_EXTERNAL_DATA) != 0U) {
+			views++;
+		}
+	}
+
+	return views;
+}
+
+/* Test case scenario IPv4, both ends on the test interface
+ *   listen on our own address and connect to it: each segment goes up the
+ *   receive path as the same packet, and the tester sees none of them,
+ *   send data A, hold the packet the receiving end gets, wait for the ACK,
+ *   which drops A from the send queue,
+ *   send data B into buffers the send queue allocates again,
+ *   expect the held packet to still carry A, from views into the send queue
+ *   of the sending end, and the packet of B to carry B.
+ */
+ZTEST(net_tcp, test_tx_views_own_address)
+{
+	struct net_sockaddr_in addr = my_addr_s;
+	uint8_t data_a[SEG_VIEW_LEN];
+	uint8_t data_b[SEG_VIEW_LEN];
+	struct net_context *listener;
+	struct net_context *ctx;
+	size_t views;
+	int ret;
+
+	seg_fill(data_a, sizeof(data_a), 0x50);
+	seg_fill(data_b, sizeof(data_b), 0xd0);
+	addr.sin_port = net_htons(OWN_PORT);
+
+	ret = net_context_get(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TCP, &listener);
+	zassert_ok(ret, "Failed to get net_context");
+	net_context_ref(listener);
+
+	ret = net_context_bind(listener, (struct net_sockaddr *)&addr, sizeof(addr));
+	zassert_ok(ret, "Failed to bind net_context");
+	zassert_ok(net_context_listen(listener, 1), "Failed to listen on net_context");
+	ret = net_context_accept(listener, own_accept_cb, K_NO_WAIT, NULL);
+	zassert_ok(ret, "Failed to set accept on net_context");
+
+	ret = net_context_get(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TCP, &ctx);
+	zassert_ok(ret, "Failed to get net_context");
+	net_context_ref(ctx);
+
+	ret = net_context_connect(ctx, (struct net_sockaddr *)&addr, sizeof(addr), NULL,
+				  K_MSEC(1000), NULL);
+	zassert_ok(ret, "Failed to connect to our own address (%d)", ret);
+
+	seg_send(ctx, data_a, sizeof(data_a));
+	zassert_ok(k_sem_take(&own_rx_sem, K_MSEC(1000)), "Data A not received");
+	own_wait_acked(ctx->tcp);
+
+	seg_send(ctx, data_b, sizeof(data_b));
+	zassert_ok(k_sem_take(&own_rx_sem, K_MSEC(1000)), "Data B not received");
+	own_wait_acked(ctx->tcp);
+
+	views = own_expect_payload(own_rx[0], data_a, sizeof(data_a));
+	zexpect_equal(views > 0U, IS_ENABLED(CONFIG_NET_TCP_TX_SEGMENT_VIEWS),
+		      "Received %zu bytes with %zu views", sizeof(data_a), views);
+	(void)own_expect_payload(own_rx[1], data_b, sizeof(data_b));
+
+	own_release();
+	net_context_put(ctx);
+	net_context_put(own_accepted);
+	net_context_put(listener);
+
+	/* Both ends close, so wait for the end in TIME_WAIT */
+	k_msleep(2 * CONFIG_NET_TCP_TIME_WAIT_DELAY);
+}
+
 static void net_tcp_after(void *fixture)
 {
 	ARG_UNUSED(fixture);
 
 	tcp_send_cb = NULL;
 	ack_at_window_edge_cleanup();
+	seg_release();
+	own_release();
+	net_if_set_tx_sg_frags(net_iface, NET_IF_TX_SG_FRAGS_UNLIMITED);
 }
 
 ZTEST_SUITE(net_tcp, NULL, presetup, NULL, net_tcp_after, NULL);

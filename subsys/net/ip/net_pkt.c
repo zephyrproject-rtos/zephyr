@@ -152,6 +152,23 @@ NET_BUF_POOL_VAR_ALIGN_DEFINE(tx_bufs, CONFIG_NET_BUF_TX_COUNT,
 
 #endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
 
+#if defined(CONFIG_NET_PKT_TX_VIEWS)
+static void tx_view_destroy(struct net_buf *view);
+
+/* A view keeps the buffer it points into in its user data, after the part
+ * that other users of the user data of TX buffers may use.
+ */
+#define TX_VIEW_PARENT_OFFSET ROUND_UP(CONFIG_NET_PKT_BUF_USER_DATA_SIZE, sizeof(void *))
+
+NET_BUF_POOL_FIXED_DEFINE(tx_views, CONFIG_NET_BUF_TX_VIEW_COUNT, 0,
+			  TX_VIEW_PARENT_OFFSET + sizeof(struct net_buf *), tx_view_destroy);
+
+static inline struct net_buf **tx_view_parent(struct net_buf *view)
+{
+	return (struct net_buf **)((uint8_t *)net_buf_user_data(view) + TX_VIEW_PARENT_OFFSET);
+}
+#endif /* CONFIG_NET_PKT_TX_VIEWS */
+
 /* Allocation tracking is only available if separately enabled */
 #if defined(CONFIG_NET_DEBUG_NET_PKT_ALLOC)
 struct net_pkt_alloc {
@@ -168,10 +185,17 @@ struct net_pkt_alloc {
 	bool is_pkt;
 };
 
+#if defined(CONFIG_NET_PKT_TX_VIEWS)
+#define NET_PKT_TX_VIEW_ALLOCS CONFIG_NET_BUF_TX_VIEW_COUNT
+#else
+#define NET_PKT_TX_VIEW_ALLOCS 0
+#endif
+
 #define MAX_NET_PKT_ALLOCS (CONFIG_NET_PKT_RX_COUNT + \
 			    CONFIG_NET_PKT_TX_COUNT + \
 			    CONFIG_NET_BUF_RX_COUNT + \
 			    CONFIG_NET_BUF_TX_COUNT + \
+			    NET_PKT_TX_VIEW_ALLOCS + \
 			    CONFIG_NET_DEBUG_NET_PKT_EXTERNALS)
 
 static struct net_pkt_alloc net_pkt_allocs[MAX_NET_PKT_ALLOCS];
@@ -316,6 +340,12 @@ const char *net_pkt_pool2str(struct net_buf_pool *pool)
 	} else if (pool == &tx_bufs) {
 		return "TDATA";
 	}
+
+#if defined(CONFIG_NET_PKT_TX_VIEWS)
+	if (pool == &tx_views) {
+		return "TVIEW";
+	}
+#endif
 
 	return "EDATA";
 }
@@ -2451,6 +2481,140 @@ struct net_pkt *net_pkt_shallow_clone(struct net_pkt *pkt, k_timeout_t timeout)
 
 	return clone_pkt;
 }
+
+#if defined(CONFIG_NET_PKT_TX_VIEWS)
+/* Drop the reference a view holds on its parent.
+ *
+ * The parent stays linked in the frag chain of its owner for as long as the
+ * owner holds its own reference, and the owner unlinks it before dropping that
+ * reference. net_buf_unref() reads ->frags before its decrement, so a view
+ * dropping the last reference at the same moment could follow a link the
+ * owner is just clearing, and free the rest of the owner's chain. Only a
+ * reference that is not the last one is dropped here directly. The last one
+ * goes through net_pkt_frag_unref(), and by then no one else can reach the
+ * parent and its ->frags is final.
+ */
+static void tx_view_parent_unref(struct net_buf *parent)
+{
+	atomic_val_t old_word;
+	uint8_t old_ref;
+
+	do {
+		old_word = atomic_get(&parent->ref_word);
+		old_ref = (uint8_t)old_word;
+
+		if (old_ref == UINT8_MAX) {
+			/* Saturated, never freed, see net_buf_ref() */
+			return;
+		}
+
+		if (old_ref <= 1U) {
+			net_pkt_frag_unref(parent);
+			return;
+		}
+	} while (!atomic_cas(&parent->ref_word, old_word, old_word - 1));
+}
+
+static void tx_view_destroy(struct net_buf *view)
+{
+	struct net_buf *parent = *tx_view_parent(view);
+
+	net_buf_destroy(view);
+	tx_view_parent_unref(parent);
+}
+
+/* Whether len bytes from pos in buf and the buffers after it are there and
+ * fit in max_frags views
+ */
+static bool tx_view_fits(struct net_buf *buf, size_t pos, size_t len, size_t max_frags)
+{
+	size_t count = 0U;
+
+	for (; buf != NULL && len > 0U; buf = buf->frags) {
+		size_t chunk = MIN((size_t)buf->len - pos, len);
+
+		if (chunk == 0U) {
+			continue;
+		}
+
+		if (count == max_frags) {
+			return false;
+		}
+
+		count++;
+		len -= chunk;
+		pos = 0U;
+	}
+
+	return len == 0U;
+}
+
+struct net_buf *net_pkt_get_view(struct net_pkt *src, size_t pos, size_t len, size_t max_frags)
+{
+	struct net_buf *head = NULL;
+	struct net_buf *tail = NULL;
+	struct net_buf *buf;
+	size_t left = len;
+	size_t count = 0U;
+
+	if (len == 0U) {
+		return NULL;
+	}
+
+	for (buf = src->buffer; buf != NULL && pos >= buf->len; buf = buf->frags) {
+		pos -= buf->len;
+	}
+
+	/* Allocate nothing for a range that cannot be covered */
+	if (!tx_view_fits(buf, pos, len, max_frags)) {
+		return NULL;
+	}
+
+	for (; buf != NULL && left > 0U; buf = buf->frags) {
+		size_t chunk = MIN((size_t)buf->len - pos, left);
+		struct net_buf *view;
+
+		if (chunk == 0U) {
+			continue;
+		}
+
+		/* Another reference must not saturate the count of the parent */
+		if ((count == max_frags) || (buf->ref >= (UINT8_MAX - 1U))) {
+			goto fail;
+		}
+
+		view = net_buf_alloc_with_data(&tx_views, buf->data + pos, chunk, K_NO_WAIT);
+		if (view == NULL) {
+			goto fail;
+		}
+
+		net_pkt_alloc_add(view, false, __func__, __LINE__);
+		*tx_view_parent(view) = net_buf_ref(buf);
+
+		if (tail == NULL) {
+			head = view;
+		} else {
+			tail->frags = view;
+		}
+
+		tail = view;
+		count++;
+		left -= chunk;
+		pos = 0U;
+	}
+
+	if (left == 0U) {
+		return head;
+	}
+
+fail:
+	if (head != NULL) {
+		net_pkt_frag_unref(head);
+	}
+
+	return NULL;
+}
+#endif /* CONFIG_NET_PKT_TX_VIEWS */
 
 size_t net_pkt_remaining_data(struct net_pkt *pkt)
 {

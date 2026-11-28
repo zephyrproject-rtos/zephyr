@@ -114,6 +114,27 @@ extern void net_pkt_init(void);
 static inline void net_pkt_init(void) { }
 #endif
 
+/**
+ * @brief Get views of a part of the data of a packet.
+ *
+ * Each view is a buffer without data of its own that points into one buffer
+ * of @p src and holds a reference on it, so the data stays allocated until
+ * the view is freed, even after @p src drops the buffer. The data must not be
+ * written through a view, and the views have no headroom or tailroom.
+ * Neither @p src nor its cursor change.
+ *
+ * @param src Packet whose data the views point into.
+ * @param pos Offset of the first byte in the data of @p src.
+ * @param len Number of bytes, more than zero.
+ * @param max_frags Largest number of views to return.
+ *
+ * @return Frag chain of views covering @p len bytes from @p pos, or NULL
+ *         when the range needs more than @p max_frags views, a buffer of
+ *         @p src holds too many references already, @p src is too short or
+ *         no view is free. Nothing stays allocated when NULL is returned.
+ */
+struct net_buf *net_pkt_get_view(struct net_pkt *src, size_t pos, size_t len, size_t max_frags);
+
 #if defined(CONFIG_NET_CONTEXT)
 extern const char *net_context_state(struct net_context *context);
 extern bool net_context_is_reuseaddr_set(struct net_context *context);

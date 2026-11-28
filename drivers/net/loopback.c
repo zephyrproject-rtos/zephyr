@@ -51,6 +51,9 @@ static void loopback_init(struct net_if *iface)
 	 */
 	net_if_flag_set(iface, NET_IF_IPV6_NO_ND);
 
+	/* Each sent packet is cloned into new buffers */
+	net_if_set_tx_sg_frags(iface, NET_IF_TX_SG_FRAGS_UNLIMITED);
+
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
 		struct net_in_addr ipv4_loopback = NET_INADDR_LOOPBACK_INIT;
 		struct net_in_addr netmask = { { { 255, 0, 0, 0 } } };

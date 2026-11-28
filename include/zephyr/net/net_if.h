@@ -839,6 +839,12 @@ struct net_if_dev {
 	/** The hardware MTU */
 	uint16_t mtu;
 
+	/** Number of buffers in a sent packet that costs the driver no more
+	 *  than a single buffer, 0 when the driver has not set it. A hint for
+	 *  the stack, not a limit it enforces.
+	 */
+	uint8_t tx_sg_frags;
+
 #if defined(CONFIG_NET_SOCKETS_OFFLOAD)
 	/** A function pointer to create an offloaded socket.
 	 *  If non-NULL, the interface is considered offloaded at socket level.
@@ -1612,6 +1618,56 @@ static inline void net_if_set_mtu(struct net_if *iface,
 	}
 
 	iface->if_dev->mtu = mtu;
+}
+
+/** Value of net_if_set_tx_sg_frags() for a driver that sends any number of buffers */
+#define NET_IF_TX_SG_FRAGS_UNLIMITED UINT8_MAX
+
+/**
+ * @brief Set how many buffers a sent packet can have at no extra cost
+ *
+ * A driver sets this when a packet of several buffers costs it no more to
+ * send than a packet of one buffer, for instance because it copies every
+ * packet into a buffer of its own or gives the fragment list to a DMA engine.
+ * The count includes every buffer of the packet the driver receives, also one
+ * for the link layer header. The stack may then send data from views of
+ * buffers it already holds, within this count, instead of copying the data
+ * into new buffers. A driver that sends single buffer packets without copying
+ * them, or that needs aligned fragments, leaves it unset.
+ *
+ * This is a hint, not a limit the stack enforces. Packets whose data the
+ * stack copies, such as copied TCP segments, UDP and ICMP, are split over as
+ * many buffers as the data needs, whatever the count is. A driver that cannot
+ * send a packet of more buffers than it has DMA descriptors still has to
+ * handle such packets itself.
+ *
+ * @param iface Pointer to a network interface structure
+ * @param sg_frags Number of buffers, NET_IF_TX_SG_FRAGS_UNLIMITED for any
+ *        number, or 0 for the stack to copy data into new buffers
+ */
+static inline void net_if_set_tx_sg_frags(struct net_if *iface, uint8_t sg_frags)
+{
+	if (iface == NULL) {
+		return;
+	}
+
+	iface->if_dev->tx_sg_frags = sg_frags;
+}
+
+/**
+ * @brief Get how many buffers a sent packet can have at no extra cost
+ *
+ * @param iface Pointer to a network interface structure
+ *
+ * @return The count set with net_if_set_tx_sg_frags(), 0 when it is not set
+ */
+static inline uint8_t net_if_get_tx_sg_frags(struct net_if *iface)
+{
+	if (iface == NULL) {
+		return 0U;
+	}
+
+	return iface->if_dev->tx_sg_frags;
 }
 
 /**

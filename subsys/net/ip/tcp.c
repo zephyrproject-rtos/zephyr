@@ -1975,18 +1975,61 @@ err:
 	tcp_pkt_unref(rst);
 }
 
+#if defined(CONFIG_NET_TCP_TX_SEGMENT_VIEWS)
+/* A segment from views has a buffer for its IP and TCP headers, and may get
+ * one more for the link layer header.
+ */
+#define TCP_TX_VIEW_HDR_FRAGS 2U
+
+/* Views of len bytes of the send queue from pos, or NULL to copy them */
+static struct net_buf *tcp_payload_views(struct tcp *conn, size_t pos, size_t len)
+{
+	uint8_t if_frags = net_if_get_tx_sg_frags(conn->iface);
+	size_t max_views;
+
+	if (if_frags <= TCP_TX_VIEW_HDR_FRAGS) {
+		return NULL;
+	}
+
+	/* Each view has to carry the minimum length on average */
+	max_views = MIN((size_t)if_frags - TCP_TX_VIEW_HDR_FRAGS,
+			len / CONFIG_NET_TCP_TX_SEGMENT_VIEW_MIN_LEN);
+	if (max_views == 0U) {
+		return NULL;
+	}
+
+	return net_pkt_get_view(&conn->send_data, pos, len, max_views);
+}
+#else
+static struct net_buf *tcp_payload_views(struct tcp *conn, size_t pos, size_t len)
+{
+	ARG_UNUSED(conn);
+	ARG_UNUSED(pos);
+	ARG_UNUSED(len);
+
+	return NULL;
+}
+#endif /* CONFIG_NET_TCP_TX_SEGMENT_VIEWS */
+
 static int tcp_out_ext(struct tcp *conn, uint8_t flags, size_t data_len, uint32_t seq)
 {
+	struct net_buf *views;
 	struct net_pkt *pkt;
 	int ret = 0;
 
+	/* The payload is sent from views into the send queue when it can be.
+	 * The queued data is dropped only when the peer acknowledges it, and
+	 * each view keeps its part allocated until the segment is sent.
+	 */
+	views = tcp_payload_views(conn, (size_t)(seq - conn->seq), data_len);
+
 	/* The allocation adds the IP and TCP header estimate on top of the
-	 * requested length, so the headers written below and the copied
+	 * requested length, so the headers written below and a copied
 	 * payload share the same buffer. The whole segment ends up in a
 	 * single net_buf when it fits in one buffer, larger segments span
 	 * multiple fragments.
 	 */
-	pkt = tcp_pkt_alloc(conn, data_len);
+	pkt = tcp_pkt_alloc(conn, (views != NULL) ? 0U : data_len);
 	if (pkt == NULL) {
 		ret = -ENOBUFS;
 		goto out;
@@ -2034,10 +2077,19 @@ static int tcp_out_ext(struct tcp *conn, uint8_t flags, size_t data_len, uint32_
 		}
 	}
 
-	if (data_len > 0) {
+	if (views != NULL) {
+		/* The headers are complete, so nothing below writes past them
+		 * into the views. Header buffers left unused are dropped first.
+		 */
+		if (pkt->buffer->frags != NULL) {
+			net_pkt_trim_buffer(pkt);
+		}
+
+		net_pkt_append_buffer(pkt, views);
+		views = NULL;
+	} else if (data_len > 0) {
 		/* Copy the payload right after the headers, without
-		 * consuming the send queue: the queued data is dropped
-		 * only when the peer acknowledges it.
+		 * consuming the send queue.
 		 */
 		ret = tcp_pkt_peek(pkt, &conn->send_data, conn->unacked_len, data_len);
 		if (ret < 0) {
@@ -2079,6 +2131,10 @@ static int tcp_out_ext(struct tcp *conn, uint8_t flags, size_t data_len, uint32_
 		tcp_send(pkt);
 	}
 out:
+	if (views != NULL) {
+		net_pkt_frag_unref(views);
+	}
+
 	return ret;
 }
 

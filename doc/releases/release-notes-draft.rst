@@ -218,6 +218,17 @@ Libraries / Subsystems
     window. The RTO is kept between :kconfig:option:`CONFIG_NET_TCP_MIN_RTO` and
     :kconfig:option:`CONFIG_NET_TCP_MAX_RTO`. The retransmissions, and so the time until an
     unanswered connection fails with ``-ETIMEDOUT``, grow with the RTO of the connection.
+  * TCP can send the payload of a segment from views into its send queue instead of copying it a
+    second time, when :kconfig:option:`CONFIG_NET_TCP_TX_SEGMENT_VIEWS` is enabled. The option
+    is disabled by default. Views are used only on interfaces whose driver sends packets of
+    several buffers at no extra cost, as it says with :c:func:`net_if_set_tx_sg_frags`, within
+    that count of buffers, and only when each view carries at least
+    :kconfig:option:`CONFIG_NET_TCP_TX_SEGMENT_VIEW_MIN_LEN` payload bytes on average. Other
+    segments are still copied. The count is a hint for the stack, not a limit it
+    enforces on other packets. The NXP ENET and loopback drivers send any number of buffers. The
+    views come from a pool of :kconfig:option:`CONFIG_NET_BUF_TX_VIEW_COUNT` buffers without data
+    of their own. With the option enabled, network drivers and L2 code must not write into the
+    payload of a packet they send, nor pad a frame by adding to the tailroom of its fragments.
 
   * Wi-Fi
 
