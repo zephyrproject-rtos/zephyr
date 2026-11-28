@@ -8,7 +8,11 @@
 #include <stdlib.h>
 #include <zephyr/drivers/virtualization/ivshmem.h>
 
+#if defined(CONFIG_IVSHMEM) && DT_HAS_COMPAT_STATUS_OKAY(qemu_ivshmem)
 static const struct device *ivshmem = DEVICE_DT_GET_ONE(qemu_ivshmem);
+#else
+static const struct device *ivshmem = DEVICE_DT_GET_ONE(qemu_ivshmem_flat);
+#endif
 
 #ifdef CONFIG_IVSHMEM_DOORBELL
 
@@ -79,10 +83,10 @@ static int cmd_ivshmem_shmem(const struct shell *sh,
 
 	shell_fprintf(sh, SHELL_NORMAL,
 		      "IVshmem up and running: \n"
-		      "\tShared memory: 0x%lx of size %lu bytes\n"
+		      "\tShared memory: %p of size %zu bytes\n"
 		      "\tPeer id: %u\n"
 		      "\tNotification vectors: %u\n",
-		      mem, size, id, vectors);
+		      (void *)mem, size, id, vectors);
 
 	return 0;
 }

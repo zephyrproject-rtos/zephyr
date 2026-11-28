@@ -1,0 +1,14 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flat0 {
+	/delete-property/ interrupts;
+	interrupts-extended = <&nvic 25 2>;
+};
+
+&flat1 {
+	/delete-property/ interrupts;
+	interrupts-extended = <&nvic 26 2>;
+};
