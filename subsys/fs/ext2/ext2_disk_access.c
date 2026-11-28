@@ -150,6 +150,14 @@ static int disk_access_sync(struct ext2_data *fs)
 	return disk_access_ioctl(disk->name, DISK_IOCTL_CTRL_SYNC, NULL);
 }
 
+static int disk_access_deinit(struct ext2_data *fs)
+{
+	struct disk_data *disk = fs->backend;
+
+	LOG_DBG("Deinitialize disk %s", disk->name);
+	return disk_access_ioctl(disk->name, DISK_IOCTL_CTRL_DEINIT, NULL);
+}
+
 static const struct ext2_backend_ops disk_access_ops = {
 	.get_device_size = disk_access_device_size,
 	.get_write_size = disk_access_write_size,
@@ -157,6 +165,7 @@ static const struct ext2_backend_ops disk_access_ops = {
 	.write_block = disk_access_write_block,
 	.read_superblock = disk_access_read_superblock,
 	.sync = disk_access_sync,
+	.deinit = disk_access_deinit,
 };
 
 int ext2_init_disk_access_backend(struct ext2_data *fs, const void *storage_dev, int flags)

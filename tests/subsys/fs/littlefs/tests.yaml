@@ -47,6 +47,19 @@ tests:
       - lpcxpresso55s36
       - lpcxpresso55s69/lpc55s69/cpu0
       - mimxrt1024_evk
+
+  filesystem.littlefs.block_device:
+    timeout: 60
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="ramdisk.overlay"
+    extra_configs:
+      - CONFIG_DISK_ACCESS=y
+      - CONFIG_FS_LITTLEFS_BLK_DEV=y
+      - CONFIG_FS_LITTLEFS_CACHE_SIZE=512
+
   filesystem.littlefs.custom:
     timeout: 180
     extra_configs:

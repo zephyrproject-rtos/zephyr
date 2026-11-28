@@ -434,6 +434,15 @@ int ext2_close_fs(struct ext2_data *fs)
 
 int ext2_close_struct(struct ext2_data *fs)
 {
+	int ret;
+
+	if (fs->backend_ops != NULL && fs->backend_ops->deinit != NULL) {
+		ret = fs->backend_ops->deinit(fs);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
 	memset(fs, 0, sizeof(struct ext2_data));
 	initialized = false;
 	return 0;

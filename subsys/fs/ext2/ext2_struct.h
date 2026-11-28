@@ -222,6 +222,7 @@ struct ext2_backend_ops {
 	int (*write_block)(struct ext2_data *fs, const void *buf, uint32_t num);
 	int (*read_superblock)(struct ext2_data *fs, struct ext2_disk_superblock *sb);
 	int (*sync)(struct ext2_data *fs);
+	int (*deinit)(struct ext2_data *fs);
 };
 
 #define MAX_INODES (CONFIG_EXT2_MAX_FILES + 2)
