@@ -1,0 +1,11 @@
+/*
+ * SPDX-FileCopyrightText: Copyright RAKwireless Technology Limited
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "rakwireless_rak12014_common.dtsi"
+
+&vl53l0x_rak12014 {
+	xshut-gpios = <&wisblock_sensor_d WISBLOCK_SENSOR_GPIO1 GPIO_ACTIVE_LOW>;
+	int-gpios = <&wisblock_sensor_d WISBLOCK_SENSOR_GPIO2 GPIO_ACTIVE_LOW>;
+};

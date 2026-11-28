@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: Copyright RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+shields:
+  - name: rakwireless_rak12014_sensor_c
+    full_name: RAK12014 WisBlock ToF Sensor Module on Sensor Slot C
+    vendor: rakwireless
+    supported_features:
+      - sensor
+
+  - name: rakwireless_rak12014_sensor_d
+    full_name: RAK12014 WisBlock ToF Sensor Module on Sensor Slot D
+    vendor: rakwireless
+    supported_features:
+      - sensor
+
+  - name: rakwireless_rak12014_sensor_e
+    full_name: RAK12014 WisBlock ToF Sensor Module on Sensor Slot E
+    vendor: rakwireless
+    supported_features:
+      - sensor
+
+  - name: rakwireless_rak12014_sensor_f
+    full_name: RAK12014 WisBlock ToF Sensor Module on Sensor Slot F
+    vendor: rakwireless
+    supported_features:
+      - sensor

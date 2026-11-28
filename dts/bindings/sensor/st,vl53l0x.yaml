@@ -12,3 +12,11 @@ properties:
     type: phandle-array
     description: |
       Xshutdown pin, Active LOW.
+
+  int-gpios:
+    type: phandle-array
+    description: |
+      An interrupt is raised when a distance measurement is ready.
+      GPIO1 is the interrupt pin on the VL53L0X (active low). It is an
+      open drain output, so the driver enables a pull-up on the input.
+      Leave it out to have the driver poll for the result instead.

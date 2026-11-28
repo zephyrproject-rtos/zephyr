@@ -1,0 +1,27 @@
+/*
+ * SPDX-FileCopyrightText: Copyright RAKwireless Technology Limited
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/wisblock-sensor-slot.h>
+
+/ {
+	aliases {
+		distance0 = &vl53l0x_rak12014;
+	};
+};
+
+&wisblock_3v3_s {
+	status = "okay";
+};
+
+&wisblock_i2c1 {
+	status = "okay";
+
+	vl53l0x_rak12014: vl53l0x@29 {
+		compatible = "st,vl53l0x";
+		reg = <0x29>;
+		power-domains = <&wisblock_3v3_s>;
+	};
+};
