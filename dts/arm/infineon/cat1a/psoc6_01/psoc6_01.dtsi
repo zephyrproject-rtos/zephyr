@@ -542,6 +542,16 @@
 			status = "disabled";
 		};
 
+		usbfs0: usbfs@403f0000 {
+			compatible = "infineon,usbfs";
+			reg = <0x403f0000 0x10000>;
+			interrupts = <145 6>, <144 2>, <143 6>;
+			interrupt-names = "lo", "med", "hi";
+			num-bidir-endpoints = <9>;
+			clk-dst = <0x3a>;
+			status = "disabled";
+		};
+
 		sdhc0: sdhc@40460000 {
 			compatible = "infineon,sdhc-sdio";
 			reg = <0x40460000 0x2000>;
