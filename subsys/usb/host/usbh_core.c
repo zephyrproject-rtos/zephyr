@@ -158,6 +158,7 @@ static void usbh_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 
 	struct usbh_context *uhs_ctx;
+	struct usbh_xfer_anchor *anchor;
 	struct uhc_event event;
 	usbh_udev_cb_t cb;
 	int ret;
@@ -169,10 +170,22 @@ static void usbh_thread(void *p1, void *p2, void *p3)
 		uhs_ctx = (void *)uhc_get_event_ctx(event.dev);
 		cb = event.xfer->cb;
 
+		/*
+		 * Unanchor before the completion callback so a driver may free
+		 * or resubmit the transfer from within its callback. Release
+		 * after the callback has returned, so a drain does not finish
+		 * while the callback is still running.
+		 */
+		anchor = usbh_xfer_unanchor(event.xfer);
+
 		if (event.xfer->cb) {
 			ret = cb(event.xfer->udev, event.xfer);
 		} else {
 			ret = discard_ep_request(uhs_ctx, event.xfer);
+		}
+
+		if (anchor != NULL) {
+			usbh_xfer_anchor_release(anchor);
 		}
 
 		if (ret) {

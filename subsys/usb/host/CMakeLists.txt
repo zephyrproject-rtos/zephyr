@@ -5,6 +5,7 @@ zephyr_library()
 zephyr_library_include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 zephyr_library_sources(
+  usbh_anchor.c
   usbh_ch9.c
   usbh_class.c
   usbh_core.c
@@ -36,6 +37,11 @@ zephyr_library_sources_ifdef(
 zephyr_library_sources_ifdef(
   CONFIG_USBIP
   usbip.c
+)
+
+zephyr_library_sources_ifdef(
+  CONFIG_USBH_TESTUSB
+  class/usbh_testusb.c
 )
 
 zephyr_linker_sources(DATA_SECTIONS usbh_data.ld)
