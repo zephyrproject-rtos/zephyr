@@ -20,6 +20,17 @@ menuconfig MCUMGR_TRANSPORT_UDP
 
 if MCUMGR_TRANSPORT_UDP
 
+config MCUMGR_TRANSPORT_UDP_PKTINFO
+	bool
+	default y if !MCUMGR_TRANSPORT_UDP_DTLS && !NET_NATIVE_OFFLOADED_SOCKETS
+	select NET_CONTEXT_RECV_PKTINFO
+	help
+	  Replies leave through the interface a request came in on, from
+	  the address it was sent to, with IP_PKTINFO / IPV6_PKTINFO. Not
+	  with DTLS, whose TLS layer replies from the local address of each
+	  session itself, nor with native simulator offloaded sockets, which
+	  leave the choice to the host.
+
 config MCUMGR_TRANSPORT_UDP_IPV4
 	bool "UDP SMP using IPv4"
 	depends on NET_IPV4

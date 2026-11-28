@@ -42,9 +42,33 @@ BUILD_ASSERT(0, "Either IPv4 or IPv6 SMP must be enabled for the MCUmgr UDP SMP 
 		"CONFIG_MCUMGR_TRANSPORT_UDP_IPV4 or CONFIG_MCUMGR_TRANSPORT_UDP_IPV6");
 #endif
 
-BUILD_ASSERT(sizeof(struct net_sockaddr_storage) <= CONFIG_MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE,
-	     "CONFIG_MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE must be >= sizeof(struct "
-	     "net_sockaddr_storage)");
+/* What a reply needs, kept in the user data of the request's buffer: the
+ * sender, and the interface and local address the request came in on. With two
+ * interfaces on one subnet, replying by destination alone could leave through
+ * the other interface, from its address, and the client would drop the reply.
+ * ifindex is 0 when unknown: an SMP client request, or a socket without
+ * PKTINFO. Without CONFIG_MCUMGR_TRANSPORT_UDP_PKTINFO only the sender is kept:
+ * with DTLS, the TLS layer replies from the local address of each session
+ * itself, and native simulator offloaded sockets leave the choice to the host
+ * (their addresses are also too large to fit more).
+ */
+struct smp_udp_ud {
+	struct net_sockaddr_storage remote;
+#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_PKTINFO
+	union {
+#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
+		struct net_in_addr in;
+#endif
+#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV6
+		struct net_in6_addr in6;
+#endif
+	} local;
+	int ifindex;
+#endif
+};
+
+BUILD_ASSERT(sizeof(struct smp_udp_ud) <= CONFIG_MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE,
+	     "CONFIG_MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE must be >= sizeof(struct smp_udp_ud)");
 
 enum proto_type {
 	PROTOCOL_IPV4 = 0,
@@ -56,6 +80,9 @@ struct config {
 	enum proto_type proto;
 	struct k_sem network_ready_sem;
 	struct smp_transport smp_transport;
+#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_PKTINFO
+	bool pktinfo;
+#endif
 	char recv_buffer[CONFIG_MCUMGR_TRANSPORT_UDP_MTU];
 	struct k_thread thread;
 	K_KERNEL_STACK_MEMBER(stack, CONFIG_MCUMGR_TRANSPORT_UDP_STACK_SIZE);
@@ -99,18 +126,79 @@ static const char *smp_udp_proto_to_name(enum proto_type proto)
 	return "??";
 }
 
-#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
-static int smp_udp4_tx(struct net_buf *nb)
+#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_PKTINFO
+/* Send through the interface and from the local address of the request, with
+ * IP_PKTINFO or IPV6_PKTINFO. An unspecified local address (a request to a
+ * multicast group) lets the interface pick one of its own.
+ */
+static int smp_udp_sendmsg(int sock, struct net_buf *nb, const struct smp_udp_ud *ud,
+			   net_socklen_t addr_len)
 {
-	int ret;
-	struct net_sockaddr *addr = net_buf_user_data(nb);
+	union {
+		struct net_cmsghdr hdr;
+		uint8_t buf[NET_CMSG_SPACE(sizeof(struct net_in6_pktinfo))];
+	} cmsg_storage = {0};
+	struct net_cmsghdr *cmsg = &cmsg_storage.hdr;
+	struct net_iovec io_vec = {.iov_base = nb->data, .iov_len = nb->len};
+	struct net_msghdr msg = {
+		.msg_name = (void *)&ud->remote,
+		.msg_namelen = addr_len,
+		.msg_iov = &io_vec,
+		.msg_iovlen = 1,
+		.msg_control = cmsg_storage.buf,
+	};
 
-	/* The reply goes to the IPv4 peer with the length of its address: a DTLS
-	 * server socket matches the session by the exact address length, and
-	 * sizeof(struct net_sockaddr) is larger than an IPv4 address.
-	 */
-	ret = zsock_sendto(smp_udp_configs.ipv4.sock, nb->data, nb->len, 0, addr,
-			   sizeof(struct net_sockaddr_in));
+#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV6
+	if (ud->remote.ss_family == NET_AF_INET6) {
+		struct net_in6_pktinfo info = {
+			.ipi6_addr = ud->local.in6,
+			.ipi6_ifindex = (unsigned int)ud->ifindex,
+		};
+
+		cmsg->cmsg_level = NET_IPPROTO_IPV6;
+		cmsg->cmsg_type = ZSOCK_IPV6_PKTINFO;
+		cmsg->cmsg_len = NET_CMSG_LEN(sizeof(info));
+		memcpy(NET_CMSG_DATA(cmsg), &info, sizeof(info));
+		msg.msg_controllen = NET_CMSG_SPACE(sizeof(info));
+	}
+#endif
+
+#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
+	if (ud->remote.ss_family == NET_AF_INET) {
+		struct net_in_pktinfo info = {
+			.ipi_ifindex = (unsigned int)ud->ifindex,
+			.ipi_spec_dst = ud->local.in,
+		};
+
+		cmsg->cmsg_level = NET_IPPROTO_IP;
+		cmsg->cmsg_type = ZSOCK_IP_PKTINFO;
+		cmsg->cmsg_len = NET_CMSG_LEN(sizeof(info));
+		memcpy(NET_CMSG_DATA(cmsg), &info, sizeof(info));
+		msg.msg_controllen = NET_CMSG_SPACE(sizeof(info));
+	}
+#endif
+
+	return zsock_sendmsg(sock, &msg, 0);
+}
+#endif
+
+/* The reply goes to the peer with the length of its address: a DTLS server
+ * socket matches the session by the exact address length, and
+ * sizeof(struct net_sockaddr) is larger than an IPv4 address.
+ */
+static int smp_udp_tx(int sock, struct net_buf *nb, net_socklen_t addr_len)
+{
+	const struct smp_udp_ud *ud = net_buf_user_data(nb);
+	int ret;
+
+#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_PKTINFO
+	if (ud->ifindex != 0) {
+		ret = smp_udp_sendmsg(sock, nb, ud, addr_len);
+	} else
+#endif
+	{
+		ret = zsock_sendto(sock, nb->data, nb->len, 0, net_sad(&ud->remote), addr_len);
+	}
 
 	if (ret < 0) {
 		if (errno == ENOMEM) {
@@ -126,30 +214,18 @@ static int smp_udp4_tx(struct net_buf *nb)
 
 	return ret;
 }
+
+#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
+static int smp_udp4_tx(struct net_buf *nb)
+{
+	return smp_udp_tx(smp_udp_configs.ipv4.sock, nb, sizeof(struct net_sockaddr_in));
+}
 #endif
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV6
 static int smp_udp6_tx(struct net_buf *nb)
 {
-	int ret;
-	struct net_sockaddr *addr = net_buf_user_data(nb);
-
-	ret = zsock_sendto(smp_udp_configs.ipv6.sock, nb->data, nb->len, 0, addr,
-			   sizeof(struct net_sockaddr_in6));
-
-	if (ret < 0) {
-		if (errno == ENOMEM) {
-			ret = MGMT_ERR_EMSGSIZE;
-		} else {
-			ret = MGMT_ERR_EINVAL;
-		}
-	} else {
-		ret = MGMT_ERR_EOK;
-	}
-
-	smp_packet_free(nb);
-
-	return ret;
+	return smp_udp_tx(smp_udp_configs.ipv6.sock, nb, sizeof(struct net_sockaddr_in6));
 }
 #endif
 
@@ -162,23 +238,30 @@ static uint16_t smp_udp_get_mtu(const struct net_buf *nb)
 
 static int smp_udp_ud_copy(struct net_buf *dst, const struct net_buf *src)
 {
-	const struct net_sockaddr_storage *src_ud = net_buf_user_data(src);
-	struct net_sockaddr_storage *dst_ud = net_buf_user_data(dst);
+	const struct smp_udp_ud *src_ud = net_buf_user_data(src);
+	struct smp_udp_ud *dst_ud = net_buf_user_data(dst);
 
 	memcpy(dst_ud, src_ud, sizeof(*dst_ud));
 
 	return MGMT_ERR_EOK;
 }
 
+/* An SMP client request: sent by destination, with no interface of its own. */
 static void smp_udp_ud_init(struct net_buf *nb, void *priv)
 {
-	struct net_sockaddr_storage *ud = net_buf_user_data(nb);
+	struct smp_udp_ud *ud = net_buf_user_data(nb);
 	const struct net_sockaddr *addr = priv;
 
 	if (addr != NULL) {
 		/* The address may be smaller than the storage, copy its family's size */
-		memcpy(ud, addr, MIN(net_family2size(addr->sa_family), sizeof(*ud)));
+		memcpy(&ud->remote, addr,
+		       MIN(net_family2size(addr->sa_family), sizeof(ud->remote)));
 	}
+
+#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_PKTINFO
+	memset(&ud->local, 0, sizeof(ud->local));
+	ud->ifindex = 0;
+#endif
 }
 
 static int create_socket(enum proto_type proto, int *sock)
@@ -276,6 +359,110 @@ static int create_socket(enum proto_type proto, int *sock)
 	return 0;
 }
 
+#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_PKTINFO
+/* Learn the interface and local address of each request, to reply through them.
+ * Not every offloaded socket supports it; without it, replies are sent by
+ * destination, as before.
+ */
+static bool smp_udp_enable_pktinfo(const struct config *conf)
+{
+	int on = 1;
+	int rc;
+
+	if (IS_ENABLED(CONFIG_MCUMGR_TRANSPORT_UDP_IPV6) && conf->proto == PROTOCOL_IPV6) {
+		rc = zsock_setsockopt(conf->sock, NET_IPPROTO_IPV6, ZSOCK_IPV6_RECVPKTINFO, &on,
+				      sizeof(on));
+	} else {
+		rc = zsock_setsockopt(conf->sock, NET_IPPROTO_IP, ZSOCK_IP_PKTINFO, &on,
+				      sizeof(on));
+	}
+
+	if (rc < 0) {
+		LOG_WRN("No PKTINFO (%s), err: %i: replies are sent by destination only",
+			smp_udp_proto_to_name(conf->proto), errno);
+		return false;
+	}
+
+	return true;
+}
+
+/* Take the interface and local address of a request from its PKTINFO. For IPv4,
+ * ipi_spec_dst is the address to reply from (one of the interface's own for a
+ * multicast or broadcast request). For IPv6, a multicast destination leaves the
+ * local address unspecified, so that the interface picks one of its own.
+ */
+static void smp_udp_ud_set_local(struct smp_udp_ud *ud, struct net_msghdr *msg)
+{
+	struct net_cmsghdr *cmsg;
+
+	for (cmsg = NET_CMSG_FIRSTHDR(msg); cmsg != NULL; cmsg = NET_CMSG_NXTHDR(msg, cmsg)) {
+#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV6
+		if (cmsg->cmsg_level == NET_IPPROTO_IPV6 && cmsg->cmsg_type == ZSOCK_IPV6_PKTINFO &&
+		    cmsg->cmsg_len == NET_CMSG_LEN(sizeof(struct net_in6_pktinfo))) {
+			struct net_in6_pktinfo info;
+
+			memcpy(&info, NET_CMSG_DATA(cmsg), sizeof(info));
+			if (!net_ipv6_is_addr_mcast(&info.ipi6_addr)) {
+				ud->local.in6 = info.ipi6_addr;
+			}
+
+			ud->ifindex = (int)info.ipi6_ifindex;
+			return;
+		}
+#endif
+
+#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
+		if (cmsg->cmsg_level == NET_IPPROTO_IP && cmsg->cmsg_type == ZSOCK_IP_PKTINFO &&
+		    cmsg->cmsg_len == NET_CMSG_LEN(sizeof(struct net_in_pktinfo))) {
+			struct net_in_pktinfo info;
+
+			memcpy(&info, NET_CMSG_DATA(cmsg), sizeof(info));
+			ud->local.in = info.ipi_spec_dst;
+			ud->ifindex = (int)info.ipi_ifindex;
+			return;
+		}
+#endif
+	}
+}
+#endif
+
+/* Receive one request into conf->recv_buffer, and what its reply needs into ud. */
+static int smp_udp_recv(struct config *conf, struct smp_udp_ud *ud)
+{
+#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_PKTINFO
+	if (conf->pktinfo) {
+		union {
+			struct net_cmsghdr hdr;
+			uint8_t buf[NET_CMSG_SPACE(sizeof(struct net_in6_pktinfo))];
+		} cmsg_storage = {0};
+		struct net_iovec io_vec = {
+			.iov_base = conf->recv_buffer,
+			.iov_len = CONFIG_MCUMGR_TRANSPORT_UDP_MTU,
+		};
+		struct net_msghdr msg = {
+			.msg_name = &ud->remote,
+			.msg_namelen = sizeof(ud->remote),
+			.msg_iov = &io_vec,
+			.msg_iovlen = 1,
+			.msg_control = cmsg_storage.buf,
+			.msg_controllen = sizeof(cmsg_storage.buf),
+		};
+		int len = zsock_recvmsg(conf->sock, &msg, 0);
+
+		if (len > 0) {
+			smp_udp_ud_set_local(ud, &msg);
+		}
+
+		return len;
+	}
+#endif
+
+	net_socklen_t addr_len = sizeof(ud->remote);
+
+	return zsock_recvfrom(conf->sock, conf->recv_buffer, CONFIG_MCUMGR_TRANSPORT_UDP_MTU, 0,
+			      net_sad(&ud->remote), &addr_len);
+}
+
 static void smp_udp_receive_thread(void *p1, void *p2, void *p3)
 {
 	struct config *conf = (struct config *)p1;
@@ -292,21 +479,19 @@ static void smp_udp_receive_thread(void *p1, void *p2, void *p3)
 	}
 
 	__ASSERT(rc >= 0, "Socket is invalid");
+#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_PKTINFO
+	conf->pktinfo = smp_udp_enable_pktinfo(conf);
+#endif
 	LOG_INF("Started (%s)", smp_udp_proto_to_name(conf->proto));
 
 	while (1) {
-		struct net_sockaddr_storage addr = { 0 };
-		net_socklen_t addr_len = sizeof(addr);
-
-		int len = zsock_recvfrom(conf->sock, conf->recv_buffer,
-					 CONFIG_MCUMGR_TRANSPORT_UDP_MTU, 0, net_sad(&addr),
-					 &addr_len);
+		struct smp_udp_ud ud = {0};
+		int len = smp_udp_recv(conf, &ud);
 
 		if (len > 0) {
-			struct net_sockaddr_storage *ud;
 			struct net_buf *nb;
 
-			/* Store sender address in user data for reply */
+			/* Store what the reply needs in user data */
 			nb = smp_packet_alloc();
 			if (!nb) {
 				LOG_ERR("Failed to allocate mcumgr buffer");
@@ -322,12 +507,11 @@ static void smp_udp_receive_thread(void *p1, void *p2, void *p3)
 			}
 
 			net_buf_add_mem(nb, conf->recv_buffer, len);
-			ud = net_buf_user_data(nb);
-			memcpy(ud, &addr, sizeof(addr));
+			memcpy(net_buf_user_data(nb), &ud, sizeof(ud));
 
 			smp_rx_req(&conf->smp_transport, nb);
 		} else if (len < 0) {
-			LOG_ERR("recvfrom error (%s): %i, %d", smp_udp_proto_to_name(conf->proto),
+			LOG_ERR("Receive error (%s): %i, %d", smp_udp_proto_to_name(conf->proto),
 				errno, len);
 		}
 	}
