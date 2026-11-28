@@ -1,0 +1,60 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test_uart_both: test-uart-both {
+		compatible = "zephyr,uart-emul";
+		tx-fifo-size = <16>;
+		latch-buffer-size = <16>;
+		status = "okay";
+	};
+
+	test_emul_both: test-emul-both {
+		compatible = "zephyr,uart-emul";
+		tx-fifo-size = <32>;
+		latch-buffer-size = <8>;
+		status = "okay";
+	};
+
+	test-bridge-both {
+		compatible = "zephyr,uart-emul-bridge";
+		uart = <&test_uart_both>;
+		emul = <&test_emul_both>;
+	};
+
+	test_uart_forward: test-uart-forward {
+		compatible = "zephyr,uart-emul";
+		status = "okay";
+	};
+
+	test_emul_forward: test-emul-forward {
+		compatible = "zephyr,uart-emul";
+		status = "okay";
+	};
+
+	test-bridge-forward {
+		compatible = "zephyr,uart-emul-bridge";
+		uart = <&test_uart_forward>;
+		emul = <&test_emul_forward>;
+		direction = "forward";
+	};
+
+	test_uart_backward: test-uart-backward {
+		compatible = "zephyr,uart-emul";
+		status = "okay";
+	};
+
+	test_emul_backward: test-emul-backward {
+		compatible = "zephyr,uart-emul";
+		status = "okay";
+	};
+
+	test-bridge-backward {
+		compatible = "zephyr,uart-emul-bridge";
+		uart = <&test_uart_backward>;
+		emul = <&test_emul_backward>;
+		direction = "backward";
+	};
+};
