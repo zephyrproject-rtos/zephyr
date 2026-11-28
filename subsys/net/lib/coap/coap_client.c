@@ -223,15 +223,29 @@ static bool has_ongoing_exchange(const struct coap_client *client)
 
 static struct coap_client_internal_request *get_free_request(struct coap_client *client)
 {
+	struct coap_client_internal_request *oldest = NULL;
+
 	for (int i = 0; i < CONFIG_COAP_CLIENT_MAX_REQUESTS; i++) {
-		if (client->requests[i].request_ongoing == false &&
-		    atomic_get(&client->requests[i].in_callback) == 0 &&
-		    exchange_lifetime_exceeded(&client->requests[i])) {
-			return &client->requests[i];
+		struct coap_client_internal_request *req = &client->requests[i];
+
+		if (req->request_ongoing || atomic_get(&req->in_callback) != 0) {
+			continue;
+		}
+
+		if (exchange_lifetime_exceeded(req)) {
+			return req;
+		}
+
+		/* A completed request is only held to recognize a response the
+		 * server sends again. If no request is free, the one that started
+		 * first gives up that role.
+		 */
+		if (oldest == NULL || req->pending.t0 < oldest->pending.t0) {
+			oldest = req;
 		}
 	}
 
-	return NULL;
+	return oldest;
 }
 
 static bool has_ongoing_exchanges(void)
