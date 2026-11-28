@@ -34,6 +34,18 @@ static int akm09918c_flush_cqes(struct rtio *rtio_ctx)
 	return res;
 }
 
+static void akm09918c_finish(struct akm09918c_data *data, struct rtio_iodev_sqe *iodev_sqe, int rc)
+{
+	data->work_ctx.iodev_sqe = NULL;
+	atomic_clear(&data->busy);
+
+	if (rc == 0) {
+		rtio_iodev_sqe_ok(iodev_sqe, 0);
+	} else {
+		rtio_iodev_sqe_err(iodev_sqe, rc);
+	}
+}
+
 void akm09918c_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 {
 	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
@@ -56,6 +68,12 @@ void akm09918c_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe
 			return;
 		}
 	}
+
+	if (!atomic_cas(&data->busy, 0, 1)) {
+		rtio_iodev_sqe_err(iodev_sqe, -EBUSY);
+		return;
+	}
+
 	struct rtio_sqe *writeByte_sqe = i2c_rtio_copy_reg_write_byte(
 		data->rtio_ctx, data->iodev, AKM09918C_REG_CNTL2, AKM09918C_CNTL2_SINGLE_MEASURE);
 	struct rtio_sqe *cb_sqe = rtio_sqe_acquire(data->rtio_ctx);
@@ -66,10 +84,14 @@ void akm09918c_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe
 					      NULL);
 		/* The device returns to power-down mode after a single measurement */
 		data->mode = AKM09918C_CNTL2_PWR_DOWN;
-		rtio_submit(data->rtio_ctx, 0);
+		int rc = rtio_submit(data->rtio_ctx, 0);
+
+		if (rc < 0) {
+			akm09918c_finish(data, iodev_sqe, rc);
+		}
 	} else {
 		rtio_sqe_drop_all(data->rtio_ctx);
-		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
+		akm09918c_finish(data, iodev_sqe, -ENOMEM);
 	}
 }
 
@@ -86,10 +108,16 @@ void akm09918_after_start_cb(struct rtio *rtio_ctx, const struct rtio_sqe *sqe,
 	uint64_t cycles;
 	int rc;
 
+	rc = akm09918c_flush_cqes(data->rtio_ctx);
+	if (rc != 0) {
+		akm09918c_finish(data, iodev_sqe, rc);
+		return;
+	}
+
 	rc = sensor_clock_get_cycles(&cycles);
 	if (rc != 0) {
 		LOG_ERR("Failed to get sensor clock cycles");
-		rtio_iodev_sqe_err(iodev_sqe, rc);
+		akm09918c_finish(data, iodev_sqe, rc);
 		return;
 	}
 
@@ -97,17 +125,11 @@ void akm09918_after_start_cb(struct rtio *rtio_ctx, const struct rtio_sqe *sqe,
 	data->work_ctx.timestamp = sensor_clock_cycles_to_ns(cycles);
 	data->work_ctx.iodev_sqe = iodev_sqe;
 
-	rc = akm09918c_flush_cqes(data->rtio_ctx);
-	if (rc != 0) {
-		rtio_iodev_sqe_err(iodev_sqe, rc);
-		return;
-	}
-
 	rc = k_work_schedule(&data->work_ctx.async_fetch_work, K_USEC(AKM09918C_MEASURE_TIME_US));
-	if (rc == 0) {
+	if (rc <= 0) {
 		LOG_ERR("The last fetch has not finished yet. "
 			"Try again later when the last sensor read operation has finished.");
-		rtio_iodev_sqe_err(iodev_sqe, -EBUSY);
+		akm09918c_finish(data, iodev_sqe, (rc == 0) ? -EBUSY : rc);
 	}
 	return;
 }
@@ -130,7 +152,7 @@ void akm09918_async_fetch(struct k_work *work)
 	rc = rtio_sqe_rx_buf(ctx->iodev_sqe, req_buf_len, req_buf_len, &buf, &buf_len);
 	if (rc != 0) {
 		LOG_ERR("Failed to get a read buffer of size %u bytes", req_buf_len);
-		rtio_iodev_sqe_err(ctx->iodev_sqe, rc);
+		akm09918c_finish(data, ctx->iodev_sqe, rc);
 		return;
 	}
 	edata = (struct akm09918c_encoded_data *)buf;
@@ -145,14 +167,17 @@ void akm09918_async_fetch(struct k_work *work)
 
 	if (burstRead_sqe == NULL || cb_sqe == NULL) {
 		rtio_sqe_drop_all(data->rtio_ctx);
-		rtio_iodev_sqe_err(ctx->iodev_sqe, -ENOMEM);
+		akm09918c_finish(data, ctx->iodev_sqe, -ENOMEM);
 		return;
 	}
 
 	rtio_sqe_prep_callback_no_cqe(cb_sqe, akm09918_complete_cb, (void *)ctx->iodev_sqe, NULL);
 
 	burstRead_sqe->flags |= RTIO_SQE_CHAINED;
-	rtio_submit(data->rtio_ctx, 0);
+	rc = rtio_submit(data->rtio_ctx, 0);
+	if (rc < 0) {
+		akm09918c_finish(data, ctx->iodev_sqe, rc);
+	}
 }
 
 void akm09918_complete_cb(struct rtio *rtio_ctx, const struct rtio_sqe *sqe, int result, void *arg0)
@@ -165,10 +190,13 @@ void akm09918_complete_cb(struct rtio *rtio_ctx, const struct rtio_sqe *sqe, int
 	uint32_t buf_len;
 	uint8_t *buf;
 	int rc;
+	const struct sensor_read_config *cfg = parent_iodev_sqe->sqe.iodev->data;
+	const struct device *dev = cfg->sensor;
+	struct akm09918c_data *data = dev->data;
 
 	rc = akm09918c_flush_cqes(rtio_ctx);
 	if (rc != 0) {
-		rtio_iodev_sqe_err(parent_iodev_sqe, rc);
+		akm09918c_finish(data, parent_iodev_sqe, rc);
 		return;
 	}
 
@@ -177,14 +205,14 @@ void akm09918_complete_cb(struct rtio *rtio_ctx, const struct rtio_sqe *sqe, int
 	 */
 	rc = rtio_sqe_rx_buf(parent_iodev_sqe, req_buf_len, req_buf_len, &buf, &buf_len);
 	if (rc != 0) {
-		rtio_iodev_sqe_err(parent_iodev_sqe, rc);
+		akm09918c_finish(data, parent_iodev_sqe, rc);
 		return;
 	}
 	edata = (struct akm09918c_encoded_data *)buf;
 
 	if (FIELD_GET(AKM09918C_ST1_DRDY, edata->reading.st1) == 0) {
 		LOG_ERR("Data not ready, st1=0x%02x", edata->reading.st1);
-		rtio_iodev_sqe_err(parent_iodev_sqe, -EBUSY);
+		akm09918c_finish(data, parent_iodev_sqe, -EBUSY);
 		return;
 	}
 
@@ -192,5 +220,5 @@ void akm09918_complete_cb(struct rtio *rtio_ctx, const struct rtio_sqe *sqe, int
 	edata->reading.data[1] = sys_le16_to_cpu(edata->reading.data[1]);
 	edata->reading.data[2] = sys_le16_to_cpu(edata->reading.data[2]);
 
-	rtio_iodev_sqe_ok(parent_iodev_sqe, 0);
+	akm09918c_finish(data, parent_iodev_sqe, 0);
 }
