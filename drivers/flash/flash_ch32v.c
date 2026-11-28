@@ -24,7 +24,9 @@
 #define FLASH_CTLR_PAGE_FTPG FLASH_CTLR_PAGE_PG
 #endif
 #ifndef FLASH_CTLR_PAGE_FTER
+#ifdef FLASH_CTLR_PAGE_ER
 #define FLASH_CTLR_PAGE_FTER FLASH_CTLR_PAGE_ER
+#endif
 #endif
 #ifndef FLASH_CTLR_FLOCK
 #define FLASH_CTLR_FLOCK FLASH_CTLR_FAST_LOCK
@@ -32,6 +34,13 @@
 #ifndef FLASH_STATR_WRBSY
 #define FLASH_STATR_WRBSY BIT(1)
 #endif
+
+/*
+ * Standard page erase (PER) is a 4 KiB sector erase on the CH32V4x7 (RM 32.5.4), which has no
+ * fast page erase. On the other supported parts the standard page is 1 KiB, so this driver only
+ * uses fast page erase (FTER, 64 to 256 bytes) there.
+ */
+#define FLASH_CH32V_STD_ERASE_SHIFT 12
 
 struct flash_ch32v_config {
 	FLASH_TypeDef *regs;
@@ -179,7 +188,14 @@ static int flash_ch32v_erase(const struct device *dev, off_t offset, size_t size
 {
 	const struct flash_ch32v_config *config = dev->config;
 	FLASH_TypeDef *regs = config->regs;
-	uint32_t erase_block_size = 1U << config->erase_block_shift;
+	const uint32_t erase_block_size = 1U << config->erase_block_shift;
+#ifdef FLASH_CTLR_PAGE_FTER
+	const uint32_t erase_mode = config->erase_block_shift == FLASH_CH32V_STD_ERASE_SHIFT
+					    ? FLASH_CTLR_PER
+					    : FLASH_CTLR_PAGE_FTER;
+#else
+	const uint32_t erase_mode = FLASH_CTLR_PER;
+#endif
 	int rc;
 
 	if (size == 0) {
@@ -202,22 +218,20 @@ static int flash_ch32v_erase(const struct device *dev, off_t offset, size_t size
 		goto out;
 	}
 
-	/* Enable fast erase mode */
-	regs->CTLR |= FLASH_CTLR_PAGE_FTER;
+	regs->CTLR |= erase_mode;
 
 	for (off_t addr = offset; addr < offset + size; addr += erase_block_size) {
 		regs->ADDR = (uint32_t)(config->base_addr + addr);
 		regs->CTLR |= FLASH_CTLR_STRT;
 
 		rc = flash_ch32v_wait_busy(regs);
-		regs->CTLR &= ~FLASH_CTLR_PER;
 		if (rc < 0) {
 			goto out;
 		}
 	}
 
 out:
-	regs->CTLR &= ~FLASH_CTLR_PAGE_FTER;
+	regs->CTLR &= ~erase_mode;
 	flash_ch32v_lock(regs);
 	return rc;
 }
@@ -280,7 +294,17 @@ static int flash_ch32v_init(const struct device *dev)
 #define FLASH_CH32V_INIT_LAYOUT(idx)
 #endif
 
+#ifdef FLASH_CTLR_PAGE_FTER
+#define FLASH_CH32V_CHECK_ERASE_SIZE(idx)
+#else
+#define FLASH_CH32V_CHECK_ERASE_SIZE(idx)                                                          \
+	BUILD_ASSERT(DT_PROP(SOC_NV_FLASH_CHILD_NODE(idx), erase_block_size) ==                    \
+			     BIT(FLASH_CH32V_STD_ERASE_SHIFT),                                     \
+		     "This part only supports 4 KiB erase blocks");
+#endif
+
 #define FLASH_CH32V_INIT(idx)                                                                      \
+	FLASH_CH32V_CHECK_ERASE_SIZE(idx)                                                          \
 	static const struct flash_ch32v_config flash_ch32v_##idx##_config = {                      \
 		.regs = (FLASH_TypeDef *)DT_INST_REG_ADDR(idx),                                    \
 		.base_addr = (uint8_t *)DT_REG_ADDR(DT_INST(idx, soc_nv_flash)),                   \
