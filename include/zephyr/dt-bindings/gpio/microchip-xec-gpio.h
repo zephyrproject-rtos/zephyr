@@ -3,15 +3,27 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Microchip XEC GPIO pin numbering helpers.
+ * @ingroup gpio_interface_xec
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_MICROCHIP_XEC_GPIO_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_MICROCHIP_XEC_GPIO_H_
 
 /**
  * @brief Microchip XEC GPIO bank and bit position convenience defines
+ * @defgroup gpio_interface_xec Microchip XEC GPIO pin numbering
+ * @ingroup gpio_interface_ext
  *
  * Microchip XEC documentation uses octal GPIO pin
  * numbering. These macros do not require the user to do octal arithmetic
  * to derive the pin's bit position.
+ *
+ * @c MCHP_GPIO_DECODE_\<NNN\> expands to the GPIO controller and pin of GPIO NNN, where NNN
+ * is the octal pin number, from 000 to 276.
  *
  * Example DT usage:
  *
@@ -22,6 +34,7 @@
  * @{
  */
 
+/** @cond INTERNAL_HIDDEN */
 #define XEC_GPIO_HELPER(gpio_bank, gpio_bitpos)	gpio_bank gpio_bitpos
 
 /* bank A */
@@ -221,6 +234,7 @@
 #define MCHP_GPIO_DECODE_274 XEC_GPIO_HELPER(&gpio_240_276, 28)
 #define MCHP_GPIO_DECODE_275 XEC_GPIO_HELPER(&gpio_240_276, 29)
 #define MCHP_GPIO_DECODE_276 XEC_GPIO_HELPER(&gpio_240_276, 30)
+/** @endcond */
 
 /** @} */
 

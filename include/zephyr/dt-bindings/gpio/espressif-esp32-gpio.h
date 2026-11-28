@@ -4,8 +4,21 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief ESP32-specific GPIO devicetree flags.
+ * @ingroup gpio_interface_esp32
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_ESPRESSIF_ESP32_GPIO_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_ESPRESSIF_ESP32_GPIO_H_
+
+/**
+ * @defgroup gpio_interface_esp32 ESP32-specific GPIO flags
+ * @ingroup gpio_interface_ext
+ * @{
+ */
 
 /**
  * @name GPIO drive strength flags
@@ -82,6 +95,8 @@
 
 /** Enable GPIO state hold during sleep */
 #define ESP32_GPIO_SLEEP_HOLD_EN (1 << 14)
+
+/** @} */
 
 /** @} */
 

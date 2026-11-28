@@ -3,11 +3,19 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief NXP SIUL2-specific GPIO devicetree flags.
+ * @ingroup gpio_interface_nxp_siul2
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_NXP_SIUL2_GPIO_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_NXP_SIUL2_GPIO_H_
 
 /**
  * @brief NXP SIUL2 GPIO specific flags
+ * @defgroup gpio_interface_nxp_siul2 NXP SIUL2-specific GPIO flags
  *
  * The driver flags are encoded in the 8 upper bits of @ref gpio_dt_flags_t as
  * follows:

@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief STM32-specific GPIO devicetree flags.
+ * @ingroup gpio_interface_stm32
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_STM32_GPIO_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_STM32_GPIO_H_
 
@@ -33,6 +39,11 @@
 #define STM32_GPIO_SPEED_MASK  0x3
 /** @endcond */
 
+/**
+ * @name GPIO output speed
+ * @{
+ */
+
 /** Configure the GPIO pin output speed to be low */
 #define STM32_GPIO_LOW_SPEED (0x0 << STM32_GPIO_SPEED_SHIFT)
 
@@ -44,6 +55,8 @@
 
 /** Configure the GPIO pin output speed to be very high */
 #define STM32_GPIO_VERY_HIGH_SPEED (0x3 << STM32_GPIO_SPEED_SHIFT)
+
+/** @} */
 
 /** @} */
 

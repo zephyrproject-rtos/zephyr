@@ -3,8 +3,21 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Nuvoton NPCX-specific GPIO devicetree flags.
+ * @ingroup gpio_interface_npcx
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_NUVOTON_NPCX_GPIO_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_NUVOTON_NPCX_GPIO_H_
+
+/**
+ * @defgroup gpio_interface_npcx NPCX-specific GPIO flags
+ * @ingroup gpio_interface_ext
+ * @{
+ */
 
 /**
  * @name GPIO pin voltage flags
@@ -24,6 +37,8 @@
 #define NPCX_GPIO_VOLTAGE_DEFAULT	(0U << NPCX_GPIO_VOLTAGE_POS)
 /** Set pin voltage level at 1.8 V */
 #define NPCX_GPIO_VOLTAGE_1P8		(1U << NPCX_GPIO_VOLTAGE_POS)
+
+/** @} */
 
 /** @} */
 

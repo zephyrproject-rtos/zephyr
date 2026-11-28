@@ -5,8 +5,29 @@
  * Author: Lin Yu-Cheng <lin_yu_cheng@realtek.com>
  */
 
+/**
+ * @file
+ * @brief Realtek RTS5912-specific GPIO devicetree flags and pin numbering.
+ * @ingroup gpio_interface_rts5912
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_REALTEK_GPIO_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_REALTEK_GPIO_H_
+
+/**
+ * @defgroup gpio_interface_rts5912 RTS5912-specific GPIO flags
+ * @ingroup gpio_interface_ext
+ *
+ * RTS5912 documentation uses octal GPIO pin numbering. @c RTS5912_GPIO\<NNN\> expands to
+ * the GPIO controller and pin of GPIO NNN, where NNN is the octal pin number, from 000 to
+ * 131, so that devicetree can use the documented pin names:
+ *
+ * @code{.dts}
+ * gpios = <RTS5912_GPIO102 (GPIO_OUTPUT)>;
+ * @endcode
+ *
+ * @{
+ */
 
 /** Enable input detect */
 #define RTS5912_GPIO_INDETEN  BIT(8)
@@ -17,8 +38,15 @@
 /** Enable Schmitt-trigger */
 #define RTS5912_GPIO_SCHEN    BIT(11)
 
+/** @cond INTERNAL_HIDDEN */
 #define RTS5912_GPIO_VOLTAGE_POS     12
 #define RTS5912_GPIO_VOLTAGE_MASK    GENMASK(13, 12)
+/** @endcond */
+
+/**
+ * @name Pin voltage level
+ * @{
+ */
 /** Set pin at the default voltage level */
 #define RTS5912_GPIO_VOLTAGE_DEFAULT (0U << RTS5912_GPIO_VOLTAGE_POS)
 /** Set pin voltage level at 1.8 V */
@@ -27,33 +55,31 @@
 #define RTS5912_GPIO_VOLTAGE_3V3     (2U << RTS5912_GPIO_VOLTAGE_POS)
 /** Set pin voltage level at 5.0 V */
 #define RTS5912_GPIO_VOLTAGE_5V0     (3U << RTS5912_GPIO_VOLTAGE_POS)
+/** @} */
 
-/** Multi function */
+/** @cond INTERNAL_HIDDEN */
 #define RTS5912_GPIO_MFCTRL_POS  14
 #define RTS5912_GPIO_MFCTRL_MASK GENMASK(15, 14)
-/** 0x00:Function 0 0x01: Function 1 0x02: Function 2 0x03: Function 3 */
+/** @endcond */
+
+/**
+ * @name Pin function selection
+ * @{
+ */
+/** Select pin function 0 */
 #define RTS5912_GPIO_MFCTRL_0    (0U << RTS5912_GPIO_MFCTRL_POS)
+/** Select pin function 1 */
 #define RTS5912_GPIO_MFCTRL_1    (1U << RTS5912_GPIO_MFCTRL_POS)
+/** Select pin function 2 */
 #define RTS5912_GPIO_MFCTRL_2    (2U << RTS5912_GPIO_MFCTRL_POS)
+/** Select pin function 3 */
 #define RTS5912_GPIO_MFCTRL_3    (3U << RTS5912_GPIO_MFCTRL_POS)
+/** @} */
+
 /** Interrupt Mask since rts5912 does not support GPIO_INT_LEVELS_LOGICAL*/
 #define RTS5912_GPIO_INTR_MASK   (1U << 21 | 1U << 22 | 1U << 24 | 1U << 25 | 1U << 26)
 
-/**
- * @brief Map GPIO signal name to devicetree binding.
- *
- * RTS5912 documentation uses octal GPIO pin
- * numbering. These macros do not require the user to do the transfer for gpio.
- *
- * Example DT usage:
- *
- * @code{.dts}
- * gpios = <RTS5912_GPIO102 (GPIO_OUTPUT)>;
- * @endcode
- *
- * @{
- */
-
+/** @cond INTERNAL_HIDDEN */
 #define RTS5912_GPIO000 &gpioa 0
 #define RTS5912_GPIO001 &gpioa 1
 #define RTS5912_GPIO002 &gpioa 2
@@ -160,6 +186,7 @@
 #define RTS5912_GPIO128 &gpioi 0
 #define RTS5912_GPIO130 &gpioi 2
 #define RTS5912_GPIO131 &gpioi 3
+/** @endcond */
 
 /** @} */
 

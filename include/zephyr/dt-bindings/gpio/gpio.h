@@ -4,6 +4,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Devicetree GPIO flags.
+ * @ingroup gpio_interface
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_GPIO_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_GPIO_H_
 
