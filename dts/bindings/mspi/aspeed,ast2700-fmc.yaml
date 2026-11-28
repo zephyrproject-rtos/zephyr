@@ -1,0 +1,9 @@
+# Copyright (c) 2026 ASPEED Technology Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: ASPEED AST2700 firmware SPI flash controller (FMC), three chip selects
+
+compatible: "aspeed,ast2700-fmc"
+
+include: aspeed,mspi-common.yaml

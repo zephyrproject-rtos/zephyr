@@ -380,6 +380,7 @@ ASPEED Platforms:
     - drivers/*/*_ast10x0.c
     - drivers/*/*_ast27xx*.c
     - drivers/*/*ast2700*.c
+    - drivers/*/*_aspeed*.c
     - drivers/*/Kconfig.aspeed
     - include/zephyr/dt-bindings/*/ast27xx*
   labels:

@@ -12,10 +12,29 @@
 	compatible = "aspeed,ast2700-evb";
 	model = "Aspeed AST2700 Evaluation Board BootMCU";
 
+	aliases {
+		mspi0 = &fmc;
+	};
+
 	chosen {
 		zephyr,sram = &sram;
 		zephyr,console = &uart12;
 		zephyr,shell-uart = &uart12;
+	};
+};
+
+&fmc {
+	status = "okay";
+
+	fmc_cs0: flash@0 {
+		compatible = "jedec,nor";
+		reg = <0>;
+		mspi-max-frequency = <25000000>;
+		mspi-io-mode = "MSPI_IO_MODE_SINGLE";
+		mspi-endian = "MSPI_BIG_ENDIAN";
+		size = <0x40000000>;
+		jedec-id = [ef 40 21];
+		use-4byte-addressing;
 	};
 };
 

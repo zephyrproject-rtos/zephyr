@@ -2,6 +2,8 @@
 #
 # Copyright (c) 2026 ASPEED Technology Inc.
 
+zephyr_include_directories(.)
+
 set(SOC_LINKER_SCRIPT
   ${ZEPHYR_BASE}/include/zephyr/arch/riscv/common/linker.ld
   CACHE INTERNAL ""
