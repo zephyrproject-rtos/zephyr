@@ -1060,7 +1060,7 @@ static int execute(const struct shell *sh)
 	const char *argv[CONFIG_SHELL_ARGC_MAX + 1] = {0}; /* +1 reserved for NULL */
 	const struct shell_static_entry *parent = selected_cmd_get(sh);
 	const struct shell_static_entry *entry = NULL;
-	struct shell_static_entry help_entry;
+	struct shell_static_entry help_entry = {.help = NULL};
 	size_t cmd_lvl = 0;
 	size_t cmd_with_handler_lvl = 0;
 	bool wildcard_found = false;
@@ -1116,7 +1116,6 @@ static int execute(const struct shell *sh)
 				   &cmd_lvl, &cmd_with_handler_lvl, &args_left);
 		cmd_lvl++;
 	} else {
-		help_entry.help = NULL;
 		argvp = &argv[0];
 	}
 
