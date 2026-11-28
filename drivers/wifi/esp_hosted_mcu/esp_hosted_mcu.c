@@ -240,6 +240,15 @@ static void esp_hosted_mcu_rx_data(const uint8_t *payload, uint16_t len, uint8_t
  * calls that drives the coprocessor's esp_wifi state machine.
  */
 
+/*
+ * Length of an SSID from the coprocessor. It sends esp_wifi's C strings with
+ * their terminating NUL counted, except for a 32 byte SSID, which has none.
+ */
+static uint8_t esp_hosted_mcu_ssid_len(const uint8_t *ssid, size_t size)
+{
+	return strnlen((const char *)ssid, MIN(size, WIFI_SSID_MAX_LEN));
+}
+
 /* Map an esp_wifi wifi_auth_mode_t to the Zephyr security enum. */
 static enum wifi_security_type esp_hosted_mcu_map_security(int authmode)
 {
@@ -330,7 +339,7 @@ static int esp_hosted_mcu_scan(const struct device *dev, struct net_if *iface,
 		const wifi_ap_record *ap = &recs->ap_records[i];
 		struct wifi_scan_result res = {0};
 
-		res.ssid_length = MIN(ap->ssid.size, WIFI_SSID_MAX_LEN);
+		res.ssid_length = esp_hosted_mcu_ssid_len(ap->ssid.bytes, ap->ssid.size);
 		memcpy(res.ssid, ap->ssid.bytes, res.ssid_length);
 		res.mac_length = MIN(ap->bssid.size, WIFI_MAC_ADDR_LEN);
 		memcpy(res.mac, ap->bssid.bytes, res.mac_length);
@@ -809,7 +818,7 @@ static int esp_hosted_mcu_ap_status(struct wifi_iface_status *status)
 
 	ap = &resp.payload.resp_wifi_get_config.cfg.u.ap;
 
-	status->ssid_len = MIN(ap->ssid.size, WIFI_SSID_MAX_LEN);
+	status->ssid_len = esp_hosted_mcu_ssid_len(ap->ssid.bytes, ap->ssid.size);
 	memcpy(status->ssid, ap->ssid.bytes, status->ssid_len);
 	status->channel = ap->channel;
 	status->security = esp_hosted_mcu_map_security(ap->authmode);
@@ -868,7 +877,7 @@ static int esp_hosted_mcu_iface_status(const struct device *dev, struct net_if *
 
 	ap = &resp.payload.resp_wifi_sta_get_ap_info.ap_record;
 
-	status->ssid_len = MIN(ap->ssid.size, WIFI_SSID_MAX_LEN);
+	status->ssid_len = esp_hosted_mcu_ssid_len(ap->ssid.bytes, ap->ssid.size);
 	memcpy(status->ssid, ap->ssid.bytes, status->ssid_len);
 	memcpy(status->bssid, ap->bssid.bytes, MIN(ap->bssid.size, WIFI_MAC_ADDR_LEN));
 	status->channel = ap->primary;
