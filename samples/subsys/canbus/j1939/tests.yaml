@@ -1,0 +1,16 @@
+sample:
+  name: J1939 sample
+tests:
+  sample.subsys.canbus.j1939:
+    tags:
+      - can
+      - j1939
+    depends_on: can
+    filter: dt_chosen_enabled("zephyr,canbus")
+    extra_configs:
+      - CONFIG_SAMPLE_LOOPBACK_MODE=y
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "(.*)Number of nodes: 2"
