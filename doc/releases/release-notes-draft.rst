@@ -290,6 +290,12 @@ Other notable changes
     interrupts use the interrupt stack, which fixes return address corruption by a nested IRQ
     (:github:`122601`).
 
+* Boards
+
+  * :zephyr:board:`STM32L496G-DISCO <stm32l496g_disco>` supports the 1.54 inch 240x240 ST7789V TFT
+    display, connected over the FMC parallel interface, and its capacitive touch panel. The display
+    accepts RGB565 pixels only; other pixel formats are not supported on this interface yet.
+
 * Bluetooth
 
   * :kconfig:option:`CONFIG_BT_PRIVACY` can now be enabled in Broadcaster- and Observer-only builds,

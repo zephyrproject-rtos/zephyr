@@ -9,6 +9,8 @@
 #include <st/l4/stm32l496a(e-g)ix-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/memory-controller/stm32-fmc-nor-psram.h>
+#include <zephyr/dt-bindings/display/panel.h>
 
 / {
 	compatible = "st,stm32l496g-disco";
@@ -20,6 +22,8 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,flash-controller = &ext_flash_ctrl;
+		zephyr,display = &st7789v;
+		zephyr,touch = &ft6146;
 	};
 
 	leds {
@@ -235,5 +239,110 @@ zephyr_udc0: &usbotg_fs {
 		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
 		mspi-hardware-ce-num = <0>;
 		status = "okay";
+	};
+};
+
+&fmc {
+	pinctrl-0 = <&fmc_ne1_pd7 &fmc_noe_pd4 &fmc_nwe_pd5 &fmc_a18_pd13
+		     &fmc_d0_pd14 &fmc_d1_pd15 &fmc_d2_pd0 &fmc_d3_pd1
+		     &fmc_d4_pe7 &fmc_d5_pe8 &fmc_d6_pe9 &fmc_d7_pe10
+		     &fmc_d8_pe11 &fmc_d9_pe12 &fmc_d10_pe13 &fmc_d11_pe14
+		     &fmc_d12_pe15 &fmc_d13_pd8 &fmc_d14_pd9 &fmc_d15_pd10>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	sram {
+		compatible = "st,stm32-fmc-nor-psram";
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		bank@0 {
+			reg = <STM32_FMC_NORSRAM_BANK1>;
+			st,control = <STM32_FMC_DATA_ADDRESS_MUX_DISABLE
+				      STM32_FMC_MEMORY_TYPE_SRAM
+				      STM32_FMC_NORSRAM_MEM_BUS_WIDTH_16
+				      STM32_FMC_BURST_ACCESS_MODE_DISABLE
+				      STM32_FMC_WAIT_SIGNAL_POLARITY_LOW
+				      STM32_FMC_WAIT_TIMING_BEFORE_WS
+				      STM32_FMC_WRITE_OPERATION_ENABLE
+				      STM32_FMC_WAIT_SIGNAL_DISABLE
+				      STM32_FMC_EXTENDED_MODE_DISABLE
+				      STM32_FMC_ASYNCHRONOUS_WAIT_DISABLE
+				      STM32_FMC_WRITE_BURST_DISABLE
+				      STM32_FMC_CONTINUOUS_CLOCK_SYNC_ONLY
+				      STM32_FMC_WRITE_FIFO_DISABLE
+				      STM32_FMC_PAGE_SIZE_NONE>;
+			st,timing = <3 0 40 0 2 2 STM32_FMC_ACCESS_MODE_A>;
+
+			fmc-mipi-dbi {
+				compatible = "st,stm32-fmc-mipi-dbi";
+				reset-gpios = <&mfx 2 GPIO_ACTIVE_LOW>;
+				power-gpios = <&gpioh 0 GPIO_ACTIVE_LOW>;
+				register-select-pin = <18>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				st7789v: lcd-panel@0 {
+					compatible = "sitronix,st7789v";
+					reg = <0>;
+					mipi-mode = "MIPI_DBI_MODE_8080_BUS_16_BIT";
+					mipi-max-frequency = <14705882>;
+					width = <240>;
+					height = <240>;
+					x-offset = <0>;
+					y-offset = <0>;
+					mdac = <0x00>;
+					pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+				};
+			};
+		};
+	};
+};
+
+/* MFX expander: LCD reset (MFX_GPIO2) */
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_ph4 &i2c2_sda_pb14>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
+
+	/* Capacitive touch panel (CN13), FT6x36 family, same bus as MFX */
+	ft6146: touchscreen@38 {
+		compatible = "focaltech,ft6146";
+		reg = <0x38>;
+		int-gpios = <&gpiog 14 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&mfx 1 GPIO_ACTIVE_LOW>;
+		swapped-x-y;
+		inverted-x;
+		screen-width = <240>;
+		screen-height = <240>;
+	};
+
+	mfx: gpio@42 {
+		compatible = "st,mfxstm32l152";
+		reg = <0x42>;
+		ngpios = <24>;
+		int-gpios = <&gpioh 6 GPIO_ACTIVE_LOW>;
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+};
+
+/* TFT backlight (LCD_BL, PI0) */
+&gpioi {
+	lcd_backlight: lcd-backlight {
+		gpio-hog;
+		gpios = <0 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
+
+/* TFT power (LCD_PWR_ON, PH0): active low, drives the P-channel switch */
+&gpioh {
+	lcd_power: lcd-power {
+		gpio-hog;
+		gpios = <0 GPIO_ACTIVE_LOW>;
+		output-high;
 	};
 };

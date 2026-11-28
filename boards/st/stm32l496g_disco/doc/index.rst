@@ -137,8 +137,23 @@ Default Zephyr Peripheral Mapping:
 - USB DM/DP/ID : PA11/PA12/PA10
 - I2C_1_SCL : PB8
 - I2C_1_SDA : PB7
+- I2C_2_SCL/SDA : PH4/PB14 (touch panel and MFX expander)
+- FMC (TFT display): NE1/NOE/NWE/A18 on PD7/PD4/PD5/PD13, D0-D15 on PD14-PD15, PD0-PD1,
+  PE7-PE15, PD8-PD10
 - PWM_2_CH1 : PA0
 - LD2 : PB13
+
+Display and Touch
+-----------------
+
+The board has a 1.54 inch 240x240 ST7789V TFT display connected over the FMC parallel
+interface (FMC bank 1, NE1, RS on A18). It is attached through ``st,stm32-fmc-mipi-dbi`` and
+``sitronix,st7789v`` and selected as ``zephyr,display``. Its power (PH0, active low) and
+backlight (PI0) are held on by GPIO hogs. The display accepts RGB565 pixels only.
+
+The capacitive touch panel is an FT6x36-family controller on I2C2, which it shares with the
+MFX expander. It is attached as ``focaltech,ft6146``, with INT on PG14 and reset on MFX_GPIO1,
+and selected as ``zephyr,touch``.
 
 System Clock
 ------------
