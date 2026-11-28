@@ -1,0 +1,39 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 Microchip Technology Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* connect PA04 to PA05 */
+
+#define PWM_NODE    tcc0
+#define PWM_PINCTRL tcc0_pwm_default
+#define PWM_COMPAT "microchip,tcc-g1-pwm"
+#include "mchp_pwm_loopback_support.dtsi"
+
+/ {
+	zephyr,user {
+		pwms = <&tcc0 0 PWM_MSEC(20) 0>;
+		gpios = <&porta 5 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&porta {
+	status = "okay";
+};
+
+/* The board enables tc5 and adc0 on PA4/PA5, which would remux the loopback pins */
+&tc5 {
+	status = "disabled";
+};
+
+&adc0 {
+	status = "disabled";
+};
+
+&pinctrl {
+	tcc0_pwm_default: tcc0_pwm_default {
+		group1 {
+			pinmux = <PA4E_TCC0_WO0>;
+		};
+	};
+};

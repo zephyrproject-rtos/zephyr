@@ -46,8 +46,6 @@ tests:
       - esp32h2_devkitm
 
   drivers.pwm.gpio_loopback.nrf:
-    extra_configs:
-      - CONFIG_SAMPLING_TIME=100
     platform_allow:
       - nrf5340dk/nrf5340/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
@@ -56,9 +54,7 @@ tests:
       - nrf54lm20dk/nrf54lm20a/cpuapp
       - nrf54lm20dk/nrf54lm20b/cpuapp
       - nrf7120dk/nrf7120/cpuapp
-      - nrf7120dk/nrf7120e/cpuapp
       - nrf7120dk/nrf7120/cpuapp/ns
-      - nrf7120dk/nrf7120e/cpuapp/ns
       - ophelia4ev/nrf54l15/cpuapp
 
   drivers.pwm.gpio_loopback.silabs:
@@ -74,44 +70,16 @@ tests:
       - cyw920829m2evk_02/cyw20829b1340
       - cyw920829m2evk_02/cyw20829b1010
       - cyw920829m2evk_02/cyw20829b0lkml
-      - kit_psc3m6_eval/psc3m6ges3ahq1
       - kit_pse84_eval/pse846gps2dbzc4a/m33
       - kit_pse84_eval/pse846gps2dbzc4a/m55
-
-  drivers.pwm.gpio_loopback_tcc0.mchp:
-    platform_allow:
-      - pic32cx_sg61_cult
-      - pic32cx_sg41_cult
-      - sam_e54_xpro
-    extra_args:
-      - FILE_SUFFIX=tcc0
-
-  drivers.pwm.gpio_loopback_tcc1.mchp:
-    platform_allow:
-      - pic32cx_sg61_cult
-      - pic32cx_sg41_cult
-      - sam_e54_xpro
-    extra_args:
-      - FILE_SUFFIX=tcc1
-
-  drivers.pwm.gpio_loopback_tcc3.mchp:
-    platform_allow:
-      - sam_e54_xpro
-    extra_args:
-      - FILE_SUFFIX=tcc3
-
-  drivers.pwm.gpio_loopback_tcc4.mchp:
-    platform_allow:
-      - pic32cx_sg61_cult
-      - pic32cx_sg41_cult
-      - sam_e54_xpro
-    extra_args:
-      - FILE_SUFFIX=tcc4
 
   drivers.pwm.gpio_loopback_tc0.mchp:
     platform_allow:
       - sam_e54_xpro
+      - pic32cx_sg41_cult
       - pic32cx_sg61_cult
+      - pic32cx_sg41_cult
+      - pic32cm_jh01_cpro
     extra_args:
       - FILE_SUFFIX=tc0
 
@@ -120,6 +88,18 @@ tests:
       - sam_e54_xpro
     extra_args:
       - FILE_SUFFIX=tc1
+
+  drivers.pwm.gpio_loopback_tc2.mchp:
+    platform_allow:
+      - pic32cm_jh01_cpro
+    extra_args:
+      - FILE_SUFFIX=tc2
+
+  drivers.pwm.gpio_loopback_tc3.mchp:
+    platform_allow:
+      - pic32cm_jh01_cpro
+    extra_args:
+      - FILE_SUFFIX=tc3
 
   drivers.pwm.gpio_loopback_tc4.mchp:
     platform_allow:
@@ -144,3 +124,42 @@ tests:
       - sam_e54_xpro
     extra_args:
       - FILE_SUFFIX=tc7
+
+  drivers.pwm.gpio_loopback_tcc0.mchp:
+    platform_allow:
+      - pic32cx_sg41_cult
+      - pic32cm_jh01_cpro
+      - sam_e54_xpro
+    extra_args:
+      - FILE_SUFFIX=tcc0
+
+  drivers.pwm.gpio_loopback_tcc1.mchp:
+    platform_allow:
+      - pic32cx_sg41_cult
+      - pic32cm_jh01_cpro
+    extra_args:
+      - FILE_SUFFIX=tcc1
+
+  drivers.pwm.gpio_loopback_tcc2.mchp:
+    platform_allow:
+      - pic32cm_jh01_cpro
+    extra_args:
+      - FILE_SUFFIX=tcc2
+
+  drivers.pwm.gpio_loopback_tcc4.mchp:
+    platform_allow:
+      - pic32cx_sg41_cult
+    extra_args:
+      - FILE_SUFFIX=tcc4
+
+  drivers.pwm.gpio_loopback_tcc6.mchp:
+    extra_args:
+      platform:pic32ck_gc01_cult/pic32ck2051gc01144:DTC_OVERLAY_FILE="boards/microchip/pic32ck_gc01_cult_tcc6.overlay"
+    platform_allow:
+      - pic32ck_gc01_cult
+
+  drivers.pwm.gpio_loopback_tcc7.mchp:
+    extra_args:
+      platform:pic32ck_gc01_cult/pic32ck2051gc01144:DTC_OVERLAY_FILE="boards/microchip/pic32ck_gc01_cult_tcc7.overlay"
+    platform_allow:
+      - pic32ck_gc01_cult
