@@ -24,7 +24,7 @@ extern "C" {
  * @brief Interfaces for DMA (Direct Memory Access) controllers.
  * @defgroup dma_interface DMA
  * @since 1.5
- * @version 1.1.0
+ * @version 1.2.0
  * @ingroup io_interfaces
  * @{
  */
