@@ -5,6 +5,10 @@
 
 if SOC_FAMILY_XILINX_ZYNQ7000
 
+# The PL310 (L2C-310) outer cache is provided by the Cortex-A/R arch driver
+# (CONFIG_ARM_PL310), probed from the arm,pl310-cache devicetree node; see
+# arch/arm/core/cortex_a_r/pl310.c.
+
 rsource "*/Kconfig"
 
 endif # SOC_FAMILY_XILINX_ZYNQ7000
