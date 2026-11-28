@@ -59,9 +59,33 @@ config COVERAGE_GCOV_HEAP_SIZE
 	help
 	  This option configures the heap size allocated for gcov coverage
 	  data to be dumped over serial. If the value is 0, no buffer will be used,
-	  data will be dumped directly over serial.
+	  data will be dumped directly over serial. With clang only the semihost
+	  dump uses this heap and it must not be 0, the console dump always
+	  prints directly.
 
 if COVERAGE_GCOV
+
+config COVERAGE_GCOV_LLVM
+	bool
+	default y if "$(TOOLCHAIN_VARIANT_COMPILER)" = "llvm"
+	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "llvm"
+	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "xt-clang"
+	select STATIC_INIT_GNU
+	help
+	  Use the gcov runtime for code built with clang, which implements the
+	  llvm_gcda_*() hooks that clang --coverage calls instead of the GCC gcov
+	  interface. Objects register themselves from constructors, so this
+	  needs STATIC_INIT_GNU.
+
+config COVERAGE_GCOV_LLVM_MAX_OBJECTS
+	int "Maximum number of instrumented objects with clang"
+	depends on COVERAGE_GCOV_LLVM
+	default 256
+	help
+	  Clang registers every object built with --coverage, including objects
+	  excluded with -fprofile-filter-files, which contribute no data.
+	  Objects past this limit are left out of the coverage data and a
+	  warning is printed at the start of the dump.
 
 choice COVERAGE_DUMP_METHOD
 	prompt "Method to dump coverage data"

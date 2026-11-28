@@ -120,6 +120,9 @@ if(CONFIG_GEN_ISR_TABLES)
 
   add_dependencies(isr_tables zephyr_generated_headers)
   target_link_libraries(isr_tables zephyr_interface)
+  # Keep the placeholder tables identical to the generated ones in the final
+  # image, which is built without coverage (see ZEPHYR_NO_COVERAGE below).
+  set_property(TARGET isr_tables PROPERTY ZEPHYR_NO_COVERAGE TRUE)
   zephyr_library_link_libraries(isr_tables)
 
   zephyr_link_libraries($<TARGET_PROPERTY:linker,undefined>_sw_isr_table)
@@ -127,7 +130,16 @@ if(CONFIG_GEN_ISR_TABLES)
 endif()
 
 if(CONFIG_COVERAGE)
-  zephyr_compile_options($<TARGET_PROPERTY:compiler,coverage>)
+  # Targets with the ZEPHYR_NO_COVERAGE property are built without coverage.
+  # This is used for the link stage executables: they only contain generated
+  # code, and instrumenting it differently in each stage would move code
+  # between the intermediate and the final image. The expression is also kept
+  # in a global property so that it can be filtered out again where the
+  # coverage flags are not wanted (see KOBJECT_HASH_COMPILE_OPTIONS).
+  set(coverage_compile_options
+    "$<$<NOT:$<BOOL:$<TARGET_PROPERTY:ZEPHYR_NO_COVERAGE>>>:$<TARGET_PROPERTY:compiler,coverage>>")
+  set_property(GLOBAL PROPERTY ZEPHYR_COVERAGE_COMPILE_OPTIONS ${coverage_compile_options})
+  zephyr_compile_options(${coverage_compile_options})
   zephyr_link_libraries_ifndef(CONFIG_NATIVE_LIBRARY $<TARGET_PROPERTY:linker,coverage>)
 endif()
 
