@@ -12,6 +12,7 @@ config COUNTER_MCHP_TC_G1
 	bool "Microchip TC G1 Counter driver"
 	default y
 	depends on DT_HAS_MICROCHIP_TC_G1_COUNTER_ENABLED
+	select SHARED_INTERRUPTS if SOC_FAMILY_MICROCHIP_PIC32CM_JH
 	help
 	  This option enables the counter driver for Microchip timer peripherals.
 
