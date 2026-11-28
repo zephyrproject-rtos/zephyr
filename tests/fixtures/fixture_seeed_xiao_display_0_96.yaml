@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A Seeed Studio XIAO display gadget with the 0.96 inch IPS LCD, carrying a soldered XIAO
+  nRF52840 Plus or XIAO ESP32S3 Plus module (SHIELD=seeed_xiao_display_0_96).

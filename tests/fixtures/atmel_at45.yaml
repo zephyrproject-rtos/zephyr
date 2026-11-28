@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  An Atmel/Adesto AT45 DataFlash on the SPI bus named by the board overlay (nrf9160dk:
+  AT45DB321E on SPI3, SCK P0.11, MOSI P0.12, MISO P0.13, CS P0.10). The test region of the chip
+  is erased and rewritten.

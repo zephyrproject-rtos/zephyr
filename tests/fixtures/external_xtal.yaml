@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  An external 32 kHz crystal fitted to the 32K_XP and 32K_XN pins of the Espressif SoC, so the
+  RTC slow clock can be tested with the XTAL32K source.

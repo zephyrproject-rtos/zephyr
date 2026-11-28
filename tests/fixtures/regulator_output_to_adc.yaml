@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  On NXP boards, the output of the on-chip regulator routed to an ADC input so the programmed
+  voltage can be measured. Most of the allowed boards connect VREFO to the ADC internally; where
+  a wire is needed the test's board overlay says so (for example a 220 nF capacitor between P2_7
+  and GND on frdm_mcxa577).

@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A Digilent Pmod ACL (ADXL345 accelerometer) on the Pmod connector of an apard32690, aliased as
+  accel0 (SHIELD=pmod_acl).

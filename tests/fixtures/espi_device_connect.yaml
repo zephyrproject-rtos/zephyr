@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  The eSPI bus of the DUT, acting as eSPI target, connected to an eSPI host such as an Intel RVP
+  that performs the reset, virtual wire, OOB and flash channel handshake.

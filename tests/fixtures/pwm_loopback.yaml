@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  The two PWM pins listed in the pwms property of the test-pwm-loopback node wired together: the
+  first generates the signal and the second captures it. The board overlay gives the pins.

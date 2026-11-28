@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  An ADI EVAL-ADXL372-ARDZ accelerometer shield on the Arduino header of an apard32690, aliased
+  as accel0 (SHIELD=eval_adxl372_ardz).

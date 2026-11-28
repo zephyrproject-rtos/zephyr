@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A Maxim MAX6675 thermocouple converter with a K-type thermocouple on its inputs, on the SPI
+  bus named by the board overlay (nucleo_f030r8: CS 0 of the Arduino SPI header).

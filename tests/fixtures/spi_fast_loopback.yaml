@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  On nrf54lm20dk, a jumper from P2.02 (MOSI) to P2.04 (MISO) of the spi00 instance, which runs
+  the loopback test at 16 and 32 MHz.

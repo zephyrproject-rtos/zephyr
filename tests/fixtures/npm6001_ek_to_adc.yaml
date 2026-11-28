@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  An nPM6001-EK on an nrf52840dk (SHIELD=npm6001_ek) with its BUCK0, BUCK1, BUCK2, BUCK3 and
+  LDO0 outputs wired, in that order, to SAADC inputs AIN1 to AIN5 (P0.03, P0.04, P0.05, P0.28,
+  P0.29) so the programmed voltages can be read back.

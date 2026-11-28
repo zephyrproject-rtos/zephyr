@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  An Adafruit DS2484 I2C to 1-Wire adapter (SHIELD=adafruit_ds2484) on the STEMMA QT connector
+  of an adafruit_qt_py_rp2040 with one or more 1-Wire devices on its bus.
