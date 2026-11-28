@@ -1,0 +1,68 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_TI_AM62L_BCDMA
+	bool "TI AM62L BCDMA driver"
+	default y
+	depends on DT_HAS_TI_AM62L_BCDMA_ENABLED
+	depends on DCACHE
+	select DMA_64BIT
+	select CACHE_MANAGEMENT
+	help
+	  Driver for the Block Copy DMA (BCDMA) of the TI AM62L main DMSS.
+	  Supports memory to memory transfers on the block-copy channels and
+	  peripheral transfers on the split channels paired with the PDMA.
+	  The driver keeps its own descriptors and rings coherent; callers
+	  maintain the cache for their data buffers unless the channel uses
+	  ASEL 14 or 15 (ACP).
+
+if DMA_TI_AM62L_BCDMA
+
+config DMA_TI_AM62L_BCDMA_MEMCPY_CHANNELS
+	int "Block-copy channels with descriptor memory"
+	default 2
+	range 1 16
+	help
+	  Number of block-copy channels, starting at channel 128, that get
+	  ring and descriptor memory. Each costs RING_SIZE descriptors of
+	  about 64 bytes per TR plus 64.
+
+config DMA_TI_AM62L_BCDMA_SPLIT_CHANNELS
+	int "Split channels with descriptor memory"
+	default 2
+	range 1 16
+	help
+	  Number of split TX/RX channels (0-127) that can be configured at
+	  the same time. A channel takes a slot on its first dma_config()
+	  and keeps it. Each costs as much memory as a block-copy channel.
+
+config DMA_TI_AM62L_BCDMA_SPLIT_TEARDOWN_TIMEOUT_US
+	int "Teardown wait of a split channel, in microseconds"
+	default 20000
+	range 1000 1000000
+	help
+	  How long dma_stop() busy-waits for each teardown stage (normal,
+	  then forced) of a split channel. A split channel ends its teardown
+	  at the end of the current TR, and a TX TR ends only when the
+	  peripheral has taken its data, so this should cover the longest
+	  block in flight. The wait runs with the driver lock held.
+
+config DMA_TI_AM62L_BCDMA_RING_SIZE
+	int "Descriptors per channel"
+	default 8
+	range 8 64
+	help
+	  Ring entries and descriptors of one channel: how many transfers,
+	  from dma_config() and dma_reload(), a channel can hold queued.
+	  Must be a power of two.
+
+config DMA_TI_AM62L_BCDMA_MAX_TR
+	int "Transfer requests per descriptor"
+	default 8
+	range 1 64
+	help
+	  Largest number of TRs in one descriptor. A block takes one TR, or
+	  two when it is larger than 64 KiB and not a multiple of 32 KiB, so
+	  this bounds the block count of one dma_config().
+
+endif # DMA_TI_AM62L_BCDMA

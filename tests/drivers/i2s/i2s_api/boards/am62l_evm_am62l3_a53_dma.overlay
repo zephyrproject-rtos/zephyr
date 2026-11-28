@@ -1,0 +1,11 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * McASP0 data on the DMA (drivers.i2s.mcasp_dma): enable the BCDMA that
+ * serves its tx and rx channels.
+ */
+
+&main_bcdma {
+	status = "okay";
+};

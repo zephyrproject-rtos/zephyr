@@ -1,0 +1,103 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: TI AM62L main DMSS Block Copy DMA (BCDMA)
+
+description: |
+  TI AM62L main DMSS Block Copy DMA (BCDMA)
+
+  The BCDMA moves data described by Transfer Request (TR) descriptors that
+  software places on a ring per channel. The driver writes the channel and
+  ring registers directly and uses no TISCI resource manager. Each ring has
+  its own GIC SPI, so the ring interrupts are described with an
+  interrupt-map keyed by the ring index. The ring-to-SPI table is not in
+  the TRM; it follows the TI vendor devicetree.
+
+  Channel numbers use one index space shared with the rings and with the
+  interrupt-map child specifier:
+
+    0-127    split TX/RX channels that serve the PDMA peripherals
+             (CHANRT index)
+    128-143  block-copy (memory to memory) channels; the CHANRT and ring
+             index is the channel number, block-copy channel n is 128 + n
+
+  A DMA specifier has two cells, the channel number and the ASEL (address
+  space select, TRM 11.3.2.4.3) used for the rings, descriptors and data of
+  that channel. ASEL 14 and 15 route the transfers through the A53 ACP so
+  they are coherent with the CPU caches (TRM 3.5).
+
+  A split channel pairs with its PDMA peer through CHANRT_CTL.AUTOPAIR, so
+  the specifier carries no PSI-L thread. The McASP endpoints use the rings
+  48-53 of the interrupt-map. The vendor devicetree gives each McASP
+  instance and direction a PSI-L thread (in parentheses, TX threads have
+  bit 15 set; the RX ones are in the PDMA_MCASP range of TRM Table 4-81)
+  and no channel number: the numbering below follows the ring order and
+  only McASP0 (channels 48 and 49) ran on hardware. The driver sets ACC32
+  and BURST of the PDMA static TR for the channels 48-53, the only PDMA
+  endpoints it serves, because the DMA API has no field for them:
+
+    McASP0 tx / rx   <&main_bcdma 49 0> (0xc500)  <&main_bcdma 48 0> (0x4500)
+    McASP1 tx / rx   <&main_bcdma 51 0> (0xc501)  <&main_bcdma 50 0> (0x4501)
+    McASP2 tx / rx   <&main_bcdma 53 0> (0xc502)  <&main_bcdma 52 0> (0x4502)
+
+compatible: "ti,am62l-bcdma"
+
+include: [dma-controller.yaml, interrupt-nexus.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Global configuration (gcfg), split channel realtime (chanrt),
+      block-copy channel realtime (bchanrt) and ring realtime (ringrt)
+      regions.
+
+  reg-names:
+    required: true
+
+  "#address-cells":
+    required: true
+    const: 0
+
+  "#interrupt-cells":
+    const: 1
+
+  "#dma-cells":
+    const: 2
+
+  dma-channels:
+    required: true
+    const: 144
+
+  dma-buf-addr-alignment:
+    const: 64
+
+  ti,asel:
+    type: int
+    default: 0
+    enum: [0, 14, 15]
+    description: |
+      ASEL of the block-copy channels when the DMA configuration does not
+      select one. 0 is the default address space; 14 and 15 go through the
+      A53 ACP.
+
+dma-cells:
+  - channel_id
+  - asel
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+
+    main_bcdma: dma-controller@485c4000 {
+      compatible = "ti,am62l-bcdma";
+      reg = <0x485c4000 0x4000>, <0x48800000 0x80000>,
+            <0x48880000 0x10000>, <0x47000000 0x200000>;
+      reg-names = "gcfg", "chanrt", "bchanrt", "ringrt";
+      #address-cells = <0>;
+      #interrupt-cells = <1>;
+      interrupt-map = <128 &gic 0 GIC_SPI 516 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+      #dma-cells = <2>;
+      dma-channels = <144>;
+      dma-buf-addr-alignment = <64>;
+    };

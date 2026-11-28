@@ -149,6 +149,14 @@
 	};
 };
 
+&mcasp0 {
+	pinctrl-0 = <&main_mcasp0_aclkx &main_mcasp0_afsx
+		     &main_mcasp0_axr0 &main_mcasp0_axr1>;
+	pinctrl-names = "default";
+	serial-dir = <1 2 0 0>;
+	status = "okay";
+};
+
 &main_rti0 {
 	status = "okay";
 };
