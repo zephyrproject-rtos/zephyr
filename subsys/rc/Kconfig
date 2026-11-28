@@ -1,0 +1,129 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig RC
+	bool "Remote control (IR) support"
+	select RTIO
+	select RTIO_SYS_MEM_BLOCKS
+	help
+	  Enable the remote control subsystem: raw pulse and space capture,
+	  protocol decoding and encoding, and transmission for infrared
+	  remote controls.
+
+if RC
+
+config RC_INIT_PRIORITY
+	int "Remote control device init priority"
+	default 90
+	help
+	  Init priority of remote control devices. Must be higher than the
+	  priority of devices they depend on, such as Pulse IO controllers.
+
+config RC_RAW_BUFFER_SIZE
+	int "Raw receive buffer size per device, in words"
+	default 128
+	help
+	  Number of raw pulse and space words buffered per device between
+	  the driver and the rc receive work queue. Must be a power of 2.
+
+config RC_DECODER_STATE_SIZE
+	int "Decoder state size per device, in bytes"
+	default 128
+	help
+	  Memory per device for the state of all built protocol decoders.
+	  Device init fails if the built decoders need more.
+
+config RC_RX_WORKQ_STACK_SIZE
+	int "Receive work queue stack size"
+	default 2048 if 64BIT || SPARC
+	default 1024
+	help
+	  Stack size of the work queue that decodes raw words of all rc
+	  devices.
+
+config RC_RX_WORKQ_PRIORITY
+	int "Receive work queue priority"
+	default 10
+	help
+	  Preemptible priority of the work queue that decodes raw words of
+	  all rc devices.
+
+config RC_RAW_CHUNK_WORDS
+	int "Raw words per raw iodev completion"
+	default 32
+	range 1 256
+	help
+	  Raw words drained from a device's receive buffer are delivered to
+	  raw iodev readers in chunks of at most this many words, one
+	  completion per pending read per chunk. The chunk is a stack buffer
+	  of the rc receive work queue, used only when a raw iodev exists.
+
+config RC_RECEIVE_SYNC_MAX
+	int "Maximum concurrent rc_receive_sync() calls"
+	default 2
+	range 1 64
+	help
+	  Number of threads that can wait in rc_receive_sync() at the same
+	  time. One global limit shared by all rc devices. Sizes the
+	  rc-owned RTIO context used by the call.
+
+config RC_TX
+	bool
+	help
+	  Transmit support: the rc transmit work queue, RC_DT_TX_IODEV(),
+	  rc_send_sync(), rc_send_raw_sync() and rc_set_tx_carrier().
+	  Selected by drivers of devices that can transmit.
+
+if RC_TX
+
+config RC_TX_WORKQ_STACK_SIZE
+	int "Transmit work queue stack size"
+	default 2048 if 64BIT || SPARC
+	default 1024
+	help
+	  Stack size of the work queue that transmits for all rc devices.
+
+config RC_TX_WORKQ_PRIORITY
+	int "Transmit work queue priority"
+	default 12
+	help
+	  Preemptible priority of the work queue that transmits for all rc
+	  devices. Lower than the receive work queue by default, so decoding
+	  is not delayed by a driver transmitting.
+
+config RC_SEND_SYNC_MAX
+	int "Maximum concurrent rc_send_sync() and rc_send_raw_sync() calls"
+	default 2
+	range 1 64
+	help
+	  Number of threads that can wait in rc_send_sync() and
+	  rc_send_raw_sync() at the same time. One global limit shared by
+	  all rc devices. Sizes the rc-owned RTIO context used by the calls.
+
+config RC_TX_BUFFER_WORDS
+	int "Transmit buffer size, in words"
+	default 256
+	range 1 4096
+	help
+	  Size of the buffer that raw transmissions are copied into and that
+	  protocol encoders fill for a scancode transmission, shared by all
+	  rc devices. A raw transmission or an encoded frame has at most this
+	  many words.
+
+config RC_TX_MAX_DURATION_MS
+	int "Maximum duration of a scancode transmission, in ms"
+	default 2000
+	range 1 65535
+	help
+	  Longest scancode request, from the start of its first frame to the
+	  end of its last repeat. Longer requests are rejected before any
+	  frame is sent. Bounds the time the rc transmit work queue is busy
+	  with one request.
+
+endif # RC_TX
+
+module = RC
+module-str = rc
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # RC

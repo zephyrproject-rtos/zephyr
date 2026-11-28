@@ -1,0 +1,27 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/rc/rc-proto.h>
+
+/ {
+	rc-loopback-0 {
+		compatible = "zephyr,rc-loopback";
+		status = "okay";
+	};
+
+	rc-loopback-1 {
+		compatible = "zephyr,rc-loopback";
+		protocols = <RC_PROTO_NEC RC_PROTO_RC5>;
+		rx-timeout-us = <100000>;
+		status = "okay";
+	};
+
+	rc-loopback-2 {
+		compatible = "zephyr,rc-loopback";
+		hw-rx-timeout;
+		rx-timeout-us = <5000>;
+		status = "okay";
+	};
+};
