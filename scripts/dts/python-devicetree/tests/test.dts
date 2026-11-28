@@ -613,9 +613,25 @@
 
 	dependency-mode-target {};
 
+	dependency-mode-deferred-target {
+		compatible = "dependency-mode-test";
+		zephyr,deferred-init;
+	};
+
 	dependency-mode-normal {
 		compatible = "dependency-mode-test";
 		normal-ref = <&{/dependency-mode-target}>;
+	};
+
+	dependency-mode-deferred {
+		compatible = "dependency-mode-test";
+		deferred-ref = <&{/dependency-mode-deferred-target}>;
+	};
+
+	dependency-mode-deferred-and-normal {
+		compatible = "dependency-mode-test";
+		normal-ref = <&{/dependency-mode-deferred-target}>;
+		deferred-ref = <&{/dependency-mode-deferred-target}>;
 	};
 
 	dependency-mode-reverse {

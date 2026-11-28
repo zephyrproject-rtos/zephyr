@@ -581,11 +581,13 @@ class testValidator(unittest.TestCase):
         validator._ord2node[1]._binding = None
         validator._ord2node[1].path = "/1"
         validator._ord2node[1].props = {}
+        validator._ord2node[1].has_deferred_dependency_on.return_value = False
         validator._ord2node[2]._binding = None
         validator._ord2node[2].path = "/2"
         validator._ord2node[2].props = {
             check_init_priorities._DEFERRED_INIT_PROP_NAME: mock.Mock(val=True)
         }
+        validator._ord2node[2].has_deferred_dependency_on.return_value = False
 
         validator._obj.devices = {1: (10, "i1"), 2: (5, "i2")}
 
@@ -596,6 +598,43 @@ class testValidator(unittest.TestCase):
         validator.log.error.assert_has_calls(
             [mock.call("Non-deferred device /1 depends on deferred device /2")]
         )
+        self.assertEqual(validator.errors, 1)
+
+    @mock.patch("check_init_priorities.Validator.__init__", return_value=None)
+    def test_check_deferred_dependency_priority_inversion(self, mock_vinit):
+        validator = check_init_priorities.Validator("", "", None, None)
+        validator.log = mock.Mock()
+        validator._obj = mock.Mock()
+        validator.errors = 0
+
+        validator._ord2node = {1: mock.Mock(), 2: mock.Mock()}
+        validator._ord2node[1]._binding = None
+        validator._ord2node[1].path = "/1"
+        validator._ord2node[1].props = {}
+        validator._ord2node[1].has_deferred_dependency_on.return_value = True
+        validator._ord2node[2]._binding = None
+        validator._ord2node[2].path = "/2"
+        validator._ord2node[2].props = {
+            check_init_priorities._DEFERRED_INIT_PROP_NAME: mock.Mock(val=True)
+        }
+
+        validator._obj.devices = {1: (5, "i1"), 2: (10, "i2")}
+
+        validator._check_dep(1, 2)
+
+        validator.log.error.assert_has_calls(
+            [
+                mock.call(
+                    "Device initialization priority validation failed, "
+                    "the sequence of initialization calls does not match "
+                    "the devicetree dependencies."
+                ),
+                mock.call(
+                    "/1 <i1> is initialized before its dependency /2 <i2> (5 < 10)"
+                ),
+            ]
+        )
+        validator.log.warning.assert_not_called()
         self.assertEqual(validator.errors, 1)
 
     @mock.patch("check_init_priorities.Validator._check_dep")
@@ -610,10 +649,16 @@ class testValidator(unittest.TestCase):
 
         dev0 = mock.Mock()
         dev0.depends_on = [d0]
+        dev0.props = {}
+        dev0.has_deferred_dependency_on.return_value = False
         dev1 = mock.Mock()
         dev1.depends_on = [d1]
+        dev1.props = {}
+        dev1.has_deferred_dependency_on.return_value = False
         dev2 = mock.Mock()
         dev2.depends_on = [d2]
+        dev2.props = {}
+        dev2.has_deferred_dependency_on.return_value = False
 
         validator = check_init_priorities.Validator("", "", None, None)
         validator._ord2node = {1: dev0, 2: dev1, 3: dev2}
@@ -630,7 +675,6 @@ class testValidator(unittest.TestCase):
                 mock.call(3, 3),
             ],
         )
-
 
 if __name__ == "__main__":
     unittest.main()

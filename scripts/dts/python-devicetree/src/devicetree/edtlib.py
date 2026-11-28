@@ -568,6 +568,7 @@ class Binding:
                         "enum", "const", "default", "deprecated",
                         "specifier-space", "min", "max", "min-len", "max-len",
                         "dependency-mode"}
+        dependency_modes = {"normal", "deferred", "reverse", "ignore", "child-ignore"}
 
         for prop_name, options in raw["properties"].items():
             for key in options:
@@ -578,6 +579,14 @@ class Binding:
 
             _check_prop_by_type(prop_name, options, self.path,
                                 self._local_props.props.get(prop_name) or {})
+
+            if "dependency-mode" in options:
+                dependency_mode = options["dependency-mode"]
+                if (not isinstance(dependency_mode, str)
+                    or dependency_mode not in dependency_modes):
+                    _err(f"malformed 'dependency-mode:' setting '{dependency_mode}' for "
+                         f"'{prop_name}' in 'properties' in {self.path}, expected one of "
+                         f"{', '.join(dependency_modes)}")
 
             for true_false_opt in ["required", "deprecated"]:
                 if true_false_opt in options:
@@ -679,7 +688,7 @@ class PropertySpec:
 
     dependency_mode:
       Specifies how the dependency graph should handle this property.
-      Can be "ignore", "child-ignore", "reverse", "normal" or None.
+      Can be "ignore", "child-ignore", "reverse", "deferred", "normal" or None.
     """
 
     def __init__(self, name: str, binding: Binding):
@@ -1415,6 +1424,10 @@ class Node:
     def depends_on(self) -> list['Node']:
         "See the class docstring"
         return self.edt._graph.depends_on(self)
+
+    def has_deferred_dependency_on(self, node: 'Node') -> bool:
+        """Return whether this node depends on node only through deferred edges."""
+        return self.edt._graph.is_deferred_edge(self, node)
 
     @property
     def status(self) -> str:
@@ -2726,6 +2739,16 @@ class EDT:
         match prop.spec.dependency_mode:
             case None | "normal":
                 self._graph.add_edge(root_node, dep_node)
+            case "deferred":
+                deferred_init = dep_node.props.get("zephyr,deferred-init")
+                if deferred_init is None or deferred_init.val is not True:
+                    _err(
+                        f"'{prop.name}' in node {root_node.path} uses "
+                        "'dependency-mode: deferred', but referenced node "
+                        f"{dep_node.path} does not have 'zephyr,deferred-init' "
+                        "set to true"
+                    )
+                self._graph.add_edge(root_node, dep_node, deferred=True)
             case "reverse":
                 self._graph.add_edge(dep_node, root_node)
             case "ignore":

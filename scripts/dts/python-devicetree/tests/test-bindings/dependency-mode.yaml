@@ -23,3 +23,10 @@ properties:
   child-ignore-external-ref:
     type: phandle
     dependency-mode: child-ignore
+
+  deferred-ref:
+    type: phandle
+    dependency-mode: deferred
+
+  zephyr,deferred-init:
+    type: boolean

@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: "Invalid dependency-mode value should be forbidden"
+
+compatible: "wrong-dependency-mode"
+
+properties:
+  bad-dependency-mode:
+    type: phandle
+    dependency-mode: invalid
