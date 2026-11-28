@@ -1765,3 +1765,10 @@ test_i2c_ictx53xx: ictx53xx@e5 {
 	compatible = "invensense,ictx53xx";
 	reg = <0xe5>;
 };
+
+test_i2c_mlx90632: mlx90632@e6 {
+	compatible = "melexis,mlx90632";
+	reg = <0xe6>;
+	power-mode = "continuous";
+	refresh-rate = <2>;
+};
