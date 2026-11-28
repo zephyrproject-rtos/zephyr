@@ -451,7 +451,14 @@ static int start_scan(struct bt_le_scan_param *scan_param)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) && BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
-		return start_le_scan_ext(scan_param);
+		int err = start_le_scan_ext(scan_param);
+
+		if (err != 0) {
+			/* No scan is running, so none that is limited by a timeout either */
+			atomic_clear_bit(bt_dev.flags, BT_DEV_SCAN_LIMITED);
+		}
+
+		return err;
 	}
 
 	return start_le_scan_legacy(scan_param);
@@ -2019,6 +2026,7 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 int bt_le_scan_stop(void)
 {
 	__maybe_unused int unlock_err;
+	bool limited;
 	int err;
 
 	/* Take the same lock as bt_le_scan_start(), so that the state it sets
@@ -2032,19 +2040,23 @@ int bt_le_scan_stop(void)
 	bt_scan_softreset();
 	scan_dev_found_cb = NULL;
 
-	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
-	    atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_SCAN_LIMITED)) {
+	limited = IS_ENABLED(CONFIG_BT_EXT_ADV) &&
+		  atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_SCAN_LIMITED);
+	if (limited) {
 		atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_VALID);
-
-#if defined(CONFIG_BT_SMP)
-		bt_id_pending_keys_update();
-#endif
 	}
 
 	err = bt_le_scan_user_remove(BT_LE_SCAN_USER_EXPLICIT_SCAN);
 
 	unlock_err = k_mutex_unlock(&scan_explicit_params_mutex);
 	__ASSERT_NO_MSG(unlock_err == 0);
+
+	/* Updates that waited for the limited scan are done once the scanner is off, so that it
+	 * is not enabled again for them.
+	 */
+	if (IS_ENABLED(CONFIG_BT_SMP) && limited) {
+		bt_id_pending_keys_update();
+	}
 
 	return err;
 }
