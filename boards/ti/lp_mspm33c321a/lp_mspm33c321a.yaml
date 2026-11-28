@@ -10,4 +10,6 @@ supported:
   - hwinfo
   - watchdog
   - rtc
+  - uart
+  - gpio
 vendor: ti
