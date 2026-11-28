@@ -308,6 +308,11 @@ static bool dma_emul_config_valid(const struct device *dev, uint32_t channel,
 		return false;
 	}
 
+	if (xfer_config->source_burst_length == 0U || xfer_config->dest_burst_length == 0U) {
+		LOG_ERR("invalid zero burst length");
+		return false;
+	}
+
 	if (xfer_config->dest_burst_length != xfer_config->source_burst_length) {
 		LOG_ERR("burst length does not agree. source: %u dest: %u ",
 			xfer_config->source_burst_length, xfer_config->dest_burst_length);
