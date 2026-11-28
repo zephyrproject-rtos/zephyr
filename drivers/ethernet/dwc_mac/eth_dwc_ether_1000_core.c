@@ -482,6 +482,12 @@ static int dwmac_set_config(const struct device *dev, struct net_if *iface __unu
 	return 0;
 }
 
+__weak void dwmac_platform_link_speed_changed(const struct device *dev, enum phy_link_speed speed)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(speed);
+}
+
 static void phy_link_state_changed(const struct device *phy_dev __unused,
 				   struct phy_link_state *state, void *user_data)
 {
@@ -507,6 +513,7 @@ static void phy_link_state_changed(const struct device *phy_dev __unused,
 		}
 
 		DWMAC_REG_WRITE(DWMAC_MACCR, reg);
+		dwmac_platform_link_speed_changed(dev, state->speed);
 	}
 
 	net_eth_carrier_set(p->iface, state->is_up);
@@ -713,7 +720,7 @@ int dwmac_probe(const struct device *dev)
 	memset(p->rx_descs, 0, NB_RX_DESCS * sizeof(struct dwmac_dma_desc));
 
 	reg_val = DWMAC_REG_READ(DWMAC_DMABMR) & ~DWMAC_DMABMR_PBL;
-	reg_val |= FIELD_PREP(DWMAC_DMABMR_PBL, 32);
+	reg_val |= FIELD_PREP(DWMAC_DMABMR_PBL, CONFIG_ETH_DWC_ETHER_1000_CORE_PBL);
 
 	if (IS_ENABLED(CONFIG_ETH_DWC_ETHER_1000_CORE_EDFE)) {
 		reg_val |= DWMAC_DMABMR_EDFE;

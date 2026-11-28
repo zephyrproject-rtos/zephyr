@@ -1,0 +1,42 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+configdefault ETH_DRIVER
+	default y
+
+config CLOCK_CONTROL_FIXED_RATE_CLOCK
+	default y if ETH_PHY_DRIVER
+
+if NET_L2_ETHERNET
+
+# One buffer per full-size Ethernet frame, a multiple of the cache line size
+configdefault NET_BUF_DATA_SIZE
+	default 1536
+
+configdefault NET_PKT_RX_COUNT
+	default 64
+
+configdefault NET_PKT_TX_COUNT
+	default 64
+
+configdefault NET_BUF_RX_COUNT
+	default 160
+
+configdefault NET_BUF_TX_COUNT
+	default 80
+
+# Run the network stack and the Ethernet driver text from the TCM for better performance
+configdefault CODE_DATA_RELOCATION
+	default y if !NET_RAW_MODE
+
+endif # NET_L2_ETHERNET
+
+if ETH_DWC_ETHER_1000_CORE
+
+configdefault DWMAC_NB_RX_DESCS
+	default 64
+
+configdefault DWMAC_NB_TX_DESCS
+	default 32
+
+endif # ETH_DWC_ETHER_1000_CORE

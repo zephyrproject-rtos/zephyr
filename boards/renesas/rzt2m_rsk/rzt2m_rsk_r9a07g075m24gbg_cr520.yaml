@@ -15,6 +15,7 @@ supported:
   - pwm
   - adc
   - i2c
+  - netif:eth
   - counter
   - dma
   - spi
