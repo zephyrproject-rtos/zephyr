@@ -72,6 +72,8 @@
 			 * There should only be one vnd,phandle-holder in the entire DTS.
 			 */
 			compatible = "vnd,phandle-holder";
+			path-by-label = &test_arrays;
+			path-by-string = "/test/array-holder";
 			/*
 			 * At least one of these phandles must refer to
 			 * test_gpio_1, or dependency ordinal tests may fail.
