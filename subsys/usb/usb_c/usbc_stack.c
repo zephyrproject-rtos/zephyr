@@ -75,6 +75,8 @@ static ALWAYS_INLINE void usbc_handler(void *port_dev)
 	}                                                                                          \
                                                                                                    \
 	static struct usbc_port_data usbc_port_data_##inst = {                                     \
+		.role_cap = (enum tc_power_role_capability)DT_ENUM_IDX(DT_DRV_INST(inst),          \
+								      power_role),                 \
 		.tc = &tc_##inst,                                                                  \
 		.pe = &pe_##inst,                                                                  \
 		.prl_rx = &prl_rx_##inst,                                                          \

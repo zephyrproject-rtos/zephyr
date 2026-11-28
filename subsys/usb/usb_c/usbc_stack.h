@@ -97,6 +97,8 @@ struct usbc_port_data {
 
 	/** Power Delivery revisions for each packet type */
 	enum pd_rev_type rev[NUM_SOP_STAR_TYPES];
+	/** Power role this port is wired for, from the power-role property */
+	enum tc_power_role_capability role_cap;
 	/** The Type-C Port Controller on this port */
 	const struct device *tcpc;
 	/** VBUS Measurement and control device on this port */

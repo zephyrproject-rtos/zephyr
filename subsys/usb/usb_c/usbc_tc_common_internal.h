@@ -223,6 +223,24 @@ void tc_run(const struct device *dev, int32_t dpm_request);
 bool tc_is_in_attached_state(const struct device *dev);
 
 /**
+ * @brief Whether this port's power-role allows it to toggle between roles
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ *
+ * @retval true if the port is a Dual Role Power port
+ */
+bool tc_is_drp(const struct device *dev);
+
+/**
+ * @brief The power role this port is wired for
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ *
+ * @retval the port's power-role capability
+ */
+enum tc_power_role_capability tc_role_cap(const struct device *dev);
+
+/**
  * @brief Sets the Collision Avoidance Rp value
  *
  * @param dev Pointer to the device structure for the driver instance.
