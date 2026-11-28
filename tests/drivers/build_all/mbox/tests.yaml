@@ -6,6 +6,7 @@ common:
 tests:
   drivers.build_all.mbox:
     platform_allow:
+      - ast2700_evb/ast2700/bootmcu
       - rpi_pico2/rp2350a/m33_0
       - qemu_cortex_m3
       - qemu_cortex_a53

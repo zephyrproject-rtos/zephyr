@@ -13,4 +13,13 @@
 		interrupts = <10 0>;
 		#mbox-cells = <1>;
 	};
+
+	aspeed_mbox: mbox@88890000 {
+		compatible = "aspeed,ast2700-mailbox";
+		reg = <0x88890000 0x100>, <0x88890100 0x100>;
+		reg-names = "tx", "rx";
+		interrupt-parent = <&nvic>;
+		interrupts = <11 0>;
+		#mbox-cells = <1>;
+	};
 };

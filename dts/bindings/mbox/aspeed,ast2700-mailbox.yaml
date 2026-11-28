@@ -1,0 +1,29 @@
+# Copyright (c) 2026 ASPEED Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ASPEED AST2700 mailbox controller. Each node describes a pair of TX and
+  RX register blocks for communication with one peer. Each direction has
+  four channels with 32 bytes of message data per channel.
+
+  The interrupt signals a message in the RX block. Without it, as on the
+  BootMCU, which has no mailbox interrupt, the driver polls the RX block.
+
+compatible: "aspeed,ast2700-mailbox"
+
+include: [base.yaml, mailbox-controller.yaml]
+
+properties:
+  reg:
+    required: true
+    description: TX register block followed by RX register block, each 0x100 bytes.
+
+  reg-names:
+    required: true
+    description: Names of the two register blocks, in order "tx", "rx".
+
+  "#mbox-cells":
+    const: 1
+
+mbox-cells:
+  - channel
