@@ -570,6 +570,12 @@ Serial
   removed; the baud rate is now computed from ``clock-frequency`` and ``current-speed``.
   (:github:`114729`)
 
+SPI
+===
+
+* ``CONFIG_SPI_SHELL_MAX_DEVICE_SLOTS`` has been removed: the SPI shell now takes its list of SPI
+  buses from the devicetree. Remove the option from application configurations.
+
 Timers
 ======
 
