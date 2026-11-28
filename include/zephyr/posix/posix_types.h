@@ -162,7 +162,7 @@ typedef uint32_t pthread_rwlock_t;
 #endif
 
 struct pthread_once {
-	bool flag;
+	atomic_t state;
 };
 
 #if !defined(CONFIG_NEWLIB_LIBC) && !defined(CONFIG_XTENSA_LIBC)
