@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2026 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/dac/silabs-vdac.h>
+#include <zephyr/dt-bindings/pinctrl/silabs/xg23-pinctrl.h>
+
+/ {
+	zephyr,user {
+		dac = <&vdac0>;
+		dac-channel-id = <0>;
+		dac-resolution = <12>;
+	};
+};
+
+/* VDAC0 CH0 auxiliary output is PC8, routed to LED0 (and boards C8 breakout-pad) */
+&pinctrl {
+	vdac0_default: vdac0_default {
+		group0 {
+			silabs,analog-bus = <ABUS_CDEVEN0_VDAC0CH0>;
+		};
+	};
+};
+
+&vdac0 {
+	status = "okay";
+	voltage-reference = "AVDD";
+	pinctrl-0 = <&vdac0_default>;
+	pinctrl-names = "default";
+
+	channel@0 {
+		aux-output = <VDAC_OUTPUT_PC8>;
+	};
+};
