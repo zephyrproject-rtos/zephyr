@@ -14,7 +14,7 @@
  * @brief Attribute Protocol (ATT)
  * @defgroup bt_att Attribute Protocol (ATT)
  * @since 1.1
- * @version 1.1.1
+ * @version 1.2.0
  * @ingroup bluetooth
  * @{
  */
@@ -23,6 +23,8 @@
 #include <stddef.h>
 
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util_macro.h>
 
@@ -179,7 +181,8 @@ int bt_eatt_reconfigure(struct bt_conn *conn, uint16_t mtu);
  *
  * @return 0 in case of success or negative value in case of error.
  * @retval 0 Requests were sent for 1 to @p num_channels channels.
- * @retval -EINVAL @p num_channels is not in the allowed range or @p conn is NULL.
+ * @retval -EINVAL @p num_channels is not in the allowed range, or @p conn is NULL
+ *         or not an LE connection.
  * @retval -EPERM The security level of @p conn is below @ref BT_SECURITY_L2.
  * @retval -ENOMEM No channel could be allocated, or no resources to send a request.
  * @retval -ENOTCONN @p conn is not connected.
@@ -196,6 +199,127 @@ int bt_eatt_connect(struct bt_conn *conn, size_t num_channels);
  * Returns 0 if @p conn is NULL or not connected.
  */
 size_t bt_eatt_count(struct bt_conn *conn);
+
+/** @brief ATT bearer over BR/EDR callbacks
+ *
+ * The callbacks are called on the Bluetooth workqueue.
+ */
+struct bt_att_br_cb {
+	/** @brief The ATT bearer over BR/EDR has connected, or failed to
+	 *
+	 * Called when a bearer connects, whichever device connected it. GATT
+	 * procedures can then be used on @p conn. For a bearer requested with
+	 * @ref bt_att_br_connect, also called when it does not connect.
+	 *
+	 * @param conn BR/EDR ACL connection.
+	 * @param err 0 if the bearer is connected, otherwise a negative error
+	 *            code for a bearer that @ref bt_att_br_connect requested:
+	 *            - -ENOTCONN The ACL connection was lost before the
+	 *              bearer connected.
+	 *            - -ECONNREFUSED The channel was closed before it was
+	 *              connected: the peer refused it or did not answer, or
+	 *              the connection could not be secured.
+	 *            - Other negative error codes from the L2CAP channel
+	 *              connection.
+	 */
+	void (*connected)(struct bt_conn *conn, int err);
+
+	/** @brief The ATT bearer over BR/EDR has disconnected
+	 *
+	 * Called for a bearer that @ref bt_att_br_cb.connected reported as
+	 * connected, also when the ACL connection is lost. After an ATT
+	 * transaction timeout or a protocol error the bearer is disconnected
+	 * while the ACL connection stays.
+	 *
+	 * @param conn BR/EDR ACL connection.
+	 */
+	void (*disconnected)(struct bt_conn *conn);
+
+	/** @internal Internally used field for list handling */
+	sys_snode_t _node;
+};
+
+/** @brief Register ATT bearer over BR/EDR callbacks
+ *
+ * @kconfig_dep{CONFIG_BT_ATT_BR}
+ *
+ * @param cb Callback struct. Must point to memory that remains valid.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL @p cb is NULL.
+ * @retval -EEXIST @p cb was already registered.
+ */
+int bt_att_br_cb_register(struct bt_att_br_cb *cb);
+
+/** @brief Connect the ATT bearer over BR/EDR
+ *
+ * Creates the Unenhanced ATT bearer by connecting an L2CAP channel to the
+ * ATT PSM (0x001F) of the peer. The result is reported with
+ * @ref bt_att_br_cb.connected. The ATT_MTU is negotiated by L2CAP
+ * configuration, so the Exchange MTU procedure is not used.
+ *
+ * The connection is encrypted before the channel is connected, as required by
+ * Core v6.2 Vol 3 Part G 5.1.2.
+ *
+ * @kconfig_dep{CONFIG_BT_ATT_BR}
+ *
+ * @param conn BR/EDR ACL connection.
+ *
+ * @retval 0 Connection procedure started.
+ * @retval -EINVAL @p conn is NULL or not a BR/EDR connection.
+ * @retval -ENOTCONN @p conn is not connected.
+ * @retval -EALREADY An ATT bearer exists or is being connected on @p conn.
+ * @retval -ENOMEM No ATT context or channel available.
+ */
+int bt_att_br_connect(struct bt_conn *conn);
+
+/** @brief Disconnect the ATT bearer over BR/EDR
+ *
+ * Disconnects the L2CAP channel of the ATT bearer. The ACL connection is not
+ * affected.
+ *
+ * @kconfig_dep{CONFIG_BT_ATT_BR}
+ *
+ * @param conn BR/EDR ACL connection.
+ *
+ * @retval 0 Disconnection procedure started.
+ * @retval -EINVAL @p conn is NULL or not a BR/EDR connection.
+ * @retval -ENOTCONN No ATT bearer on @p conn.
+ * @retval -EBUSY The bearer requested with @ref bt_att_br_connect has not
+ *         started to connect yet. Wait for @ref bt_att_br_cb.connected.
+ * @retval -EALREADY The ATT bearer is already being disconnected.
+ */
+int bt_att_br_disconnect(struct bt_conn *conn);
+
+/** @brief GATT service published in SDP for the ATT bearer over BR/EDR
+ *
+ * Defined with @ref BT_ATT_BR_SDP_SERVICE.
+ */
+struct bt_att_br_sdp_service {
+	/** UUID of the primary service */
+	const struct bt_uuid *uuid;
+};
+
+/** @brief Publish the SDP record of a GATT service for BR/EDR
+ *
+ * With @kconfig{CONFIG_BT_ATT_BR}, an SDP record is published for each
+ * registered primary service with UUID @p _uuid, so that the service can be
+ * discovered with SDP on BR/EDR (Core v6.2 Vol 3 Part G 9). The records of the
+ * GAP and GATT services are always published. This is intended for services
+ * whose specification defines SDP interoperability; other services do not
+ * have SDP records.
+ *
+ * Without @kconfig{CONFIG_BT_ATT_BR}, the macro defines nothing.
+ *
+ * @param _name Name of the definition.
+ * @param _uuid Service UUID, a pointer to a @ref bt_uuid.
+ */
+#define BT_ATT_BR_SDP_SERVICE(_name, _uuid)                                                        \
+	COND_CODE_1(CONFIG_BT_ATT_BR,                                                              \
+		    (static const STRUCT_SECTION_ITERABLE(bt_att_br_sdp_service,                   \
+			_CONCAT(bt_att_br_sdp_service_, _name)) = {.uuid = (_uuid)}),              \
+		    (extern const struct bt_att_br_sdp_service                                     \
+			_CONCAT(bt_att_br_sdp_service_, _name)))
 
 /** @brief ATT channel option bit field values.
  * @note @ref BT_ATT_CHAN_OPT_UNENHANCED_ONLY and @ref BT_ATT_CHAN_OPT_ENHANCED_ONLY are mutually

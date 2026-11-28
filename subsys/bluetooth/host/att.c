@@ -100,6 +100,9 @@ enum {
 	ATT_ENHANCED,
 	ATT_PENDING_SENT,
 	ATT_OUT_OF_SYNC_SENT,
+	ATT_BR,
+	/* A BR/EDR bearer that bt_att_br_connect() requested */
+	ATT_BR_INITIATOR,
 
 	/* Total number of flags - must be at the end of the enum */
 	ATT_NUM_FLAGS,
@@ -123,13 +126,59 @@ struct bt_att_tx_meta_data {
 struct bt_att_chan {
 	/* Connection this channel is associated with */
 	struct bt_att		*att;
-	struct bt_l2cap_le_chan	chan;
+	union {
+		struct bt_l2cap_le_chan	chan;
+#if defined(CONFIG_BT_ATT_BR)
+		struct bt_l2cap_br_chan	br_chan;
+#endif /* CONFIG_BT_ATT_BR */
+	};
 	ATOMIC_DEFINE(flags, ATT_NUM_FLAGS);
 	struct bt_att_req	*req;
 	struct k_fifo		tx_queue;
 	struct k_work_delayable	timeout_work;
 	sys_snode_t		node;
+#if defined(CONFIG_BT_ATT_BR)
+	/* Owners of a BR/EDR channel: the L2CAP layer and, while connecting, the caller */
+	atomic_t		br_refs;
+	/* Index of the BR/EDR connection, L2CAP clears the conn before releasing */
+	uint8_t			br_conn_index;
+	/* Connects the channel of bt_att_br_connect() on the Bluetooth workqueue */
+	struct k_work		br_connect_work;
+	/* The connection that br_connect_work connects on, referenced */
+	struct bt_conn		*br_connect_conn;
+#endif /* CONFIG_BT_ATT_BR */
 };
+
+#if defined(CONFIG_BT_ATT_BR)
+/* BR/EDR connections with an ATT bearer, set before the bearer is published
+ * to L2CAP so that an incoming and an outgoing channel cannot both be created.
+ */
+static ATOMIC_DEFINE(att_br_bearers, CONFIG_BT_MAX_CONN);
+
+static sys_slist_t att_br_cbs = SYS_SLIST_STATIC_INIT(&att_br_cbs);
+
+static void att_br_notify_connected(struct bt_conn *conn, int err)
+{
+	struct bt_att_br_cb *cb;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&att_br_cbs, cb, _node) {
+		if (cb->connected != NULL) {
+			cb->connected(conn, err);
+		}
+	}
+}
+
+static void att_br_notify_disconnected(struct bt_conn *conn)
+{
+	struct bt_att_br_cb *cb;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&att_br_cbs, cb, _node) {
+		if (cb->disconnected != NULL) {
+			cb->disconnected(conn);
+		}
+	}
+}
+#endif /* CONFIG_BT_ATT_BR */
 
 static bool bt_att_is_enhanced(struct bt_att_chan *chan)
 {
@@ -139,6 +188,11 @@ static bool bt_att_is_enhanced(struct bt_att_chan *chan)
 	}
 
 	return atomic_test_bit(chan->flags, ATT_ENHANCED);
+}
+
+static bool att_chan_is_br(const struct bt_att_chan *chan)
+{
+	return IS_ENABLED(CONFIG_BT_ATT_BR) && atomic_test_bit(chan->flags, ATT_BR);
 }
 
 /* Accessors for the L2CAP channel backing an ATT bearer */
@@ -154,38 +208,83 @@ static struct bt_conn *att_chan_get_conn(struct bt_att_chan *att_chan)
 
 static uint16_t att_chan_get_tx_cid(const struct bt_att_chan *chan)
 {
+#if defined(CONFIG_BT_ATT_BR)
+	if (att_chan_is_br(chan)) {
+		return chan->br_chan.tx.cid;
+	}
+#endif /* CONFIG_BT_ATT_BR */
+
 	return chan->chan.tx.cid;
 }
 
 static uint16_t att_chan_get_rx_mtu(const struct bt_att_chan *chan)
 {
+#if defined(CONFIG_BT_ATT_BR)
+	if (att_chan_is_br(chan)) {
+		return chan->br_chan.rx.mtu;
+	}
+#endif /* CONFIG_BT_ATT_BR */
+
 	return chan->chan.rx.mtu;
 }
 
 static uint16_t att_chan_get_tx_mtu(const struct bt_att_chan *chan)
 {
+#if defined(CONFIG_BT_ATT_BR)
+	if (att_chan_is_br(chan)) {
+		return chan->br_chan.tx.mtu;
+	}
+#endif /* CONFIG_BT_ATT_BR */
+
 	return chan->chan.tx.mtu;
 }
 
 static void att_chan_set_rx_mtu(struct bt_att_chan *chan, uint16_t mtu)
 {
+#if defined(CONFIG_BT_ATT_BR)
+	if (att_chan_is_br(chan)) {
+		chan->br_chan.rx.mtu = mtu;
+		return;
+	}
+#endif /* CONFIG_BT_ATT_BR */
+
 	chan->chan.rx.mtu = mtu;
 }
 
 static void att_chan_set_tx_mtu(struct bt_att_chan *chan, uint16_t mtu)
 {
+#if defined(CONFIG_BT_ATT_BR)
+	if (att_chan_is_br(chan)) {
+		chan->br_chan.tx.mtu = mtu;
+		return;
+	}
+#endif /* CONFIG_BT_ATT_BR */
+
 	chan->chan.tx.mtu = mtu;
 }
 
 /* Tear down the bearer after a protocol error or a transaction timeout */
 static int att_chan_disconnect_bearer(struct bt_att_chan *chan)
 {
+#if defined(CONFIG_BT_ATT_BR)
+	if (att_chan_is_br(chan)) {
+		/* The BR/EDR ACL may be used by other profiles, close only the ATT bearer */
+		return bt_l2cap_chan_disconnect(att_chan_get_l2cap(chan));
+	}
+#endif /* CONFIG_BT_ATT_BR */
+
 	return bt_conn_disconnect(att_chan_get_conn(chan), BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 }
 
 /* Send a PDU on an Unenhanced ATT bearer */
 static int att_chan_send_uatt(struct bt_att_chan *chan, struct net_buf *buf)
 {
+#if defined(CONFIG_BT_ATT_BR)
+	if (att_chan_is_br(chan)) {
+		return bt_l2cap_br_chan_send_cb(att_chan_get_l2cap(chan), buf, NULL, NULL);
+	}
+#endif /* CONFIG_BT_ATT_BR */
+
 	return bt_l2cap_send_pdu(&chan->chan, buf, NULL, NULL);
 }
 
@@ -227,20 +326,6 @@ K_MEM_SLAB_DEFINE_STATIC_TYPE(att_slab, struct bt_att,
 K_MEM_SLAB_DEFINE_STATIC_TYPE(chan_slab, struct bt_att_chan,
 			      CONFIG_BT_MAX_CONN * ATT_CHAN_MAX);
 static struct bt_att_req cancel;
-
-/** The thread ATT response handlers likely run on.
- *
- *  Blocking this thread while waiting for an ATT request to resolve can cause a
- *  deadlock.
- *
- *  This can happen if the application queues ATT requests in the context of a
- *  callback from the Bluetooth stack. This is because queuing an ATT request
- *  will block until a request-resource is available, and the callbacks run on
- *  the same thread as the ATT response handler that frees request-resources.
- *
- *  The intended use of this value is to detect the above situation.
- */
-static k_tid_t att_handle_rsp_thread;
 
 static struct bt_att_tx_meta_data tx_meta_data_storage[CONFIG_BT_ATT_TX_COUNT];
 
@@ -425,6 +510,7 @@ static int bt_att_chan_send(struct bt_att_chan *chan, struct net_buf *buf);
 
 static void att_chan_mtu_updated(struct bt_att_chan *updated_chan);
 static void bt_att_disconnected(struct bt_l2cap_chan *chan);
+static const struct bt_l2cap_chan_ops att_chan_ops;
 
 static struct net_buf *att_create_rsp_pdu(struct bt_att_chan *chan, uint8_t op);
 
@@ -472,8 +558,9 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_EATT) && hdr->code == BT_ATT_OP_MTU_REQ &&
-	    att_chan_get_tx_cid(chan) != BT_L2CAP_CID_ATT) {
+	if (hdr->code == BT_ATT_OP_MTU_REQ &&
+	    (att_chan_is_br(chan) ||
+	     (IS_ENABLED(CONFIG_BT_EATT) && att_chan_get_tx_cid(chan) != BT_L2CAP_CID_ATT))) {
 		/* The Exchange MTU sub-procedure shall only be supported on
 		 * the LE Fixed Channel Unenhanced ATT bearer
 		 */
@@ -528,6 +615,13 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 	}
 
 	if (hdr->code == BT_ATT_OP_SIGNED_WRITE_CMD) {
+		/* Core v6.2 Vol 3 Part F 3.4.5.4: not used on BR/EDR, the
+		 * bearer is always encrypted.
+		 */
+		if (att_chan_is_br(chan)) {
+			return -ENOTSUP;
+		}
+
 		net_buf_simple_save(&buf->b, &state);
 
 		err = bt_smp_sign(chan->att->conn, buf);
@@ -590,7 +684,7 @@ static bool att_chan_matches_chan_opt(struct bt_att_chan *chan, enum bt_att_chan
  */
 static bool att_chan_can_carry(struct bt_att_chan *chan, struct net_buf *buf)
 {
-	return !bt_att_is_enhanced(chan) || buf->len <= chan->chan.tx.mtu;
+	return !bt_att_is_enhanced(chan) || buf->len <= att_chan_get_tx_mtu(chan);
 }
 
 static struct net_buf *get_first_buf_matching_chan(struct k_fifo *fifo, struct bt_att_chan *chan)
@@ -911,8 +1005,10 @@ static struct net_buf *bt_att_chan_create_pdu(struct bt_att_chan *chan, uint8_t 
 		if (current_thread == k_work_queue_thread_get(&k_sys_work_q)) {
 			/* No blocking in the sysqueue. */
 			timeout = K_NO_WAIT;
-		} else if (current_thread == att_handle_rsp_thread) {
-			/* Blocking would cause deadlock. */
+		} else if (bt_is_work_thread()) {
+			/* The RX thread handles the ATT responses, blocking it
+			 * would cause a deadlock.
+			 */
 			timeout = K_NO_WAIT;
 		} else {
 			timeout = K_FOREVER;
@@ -965,7 +1061,7 @@ static void att_send_process(struct bt_att *att)
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&att->chans, chan, tmp, node) {
 		if (err == -ENOENT && prev &&
 		    (bt_att_is_enhanced(chan) == bt_att_is_enhanced(prev)) &&
-		    (chan->chan.tx.mtu <= prev->chan.tx.mtu)) {
+		    (att_chan_get_tx_mtu(chan) <= att_chan_get_tx_mtu(prev))) {
 			/* If there was nothing to send for the previous channel and the current
 			 * channel has the same "enhancedness" and no larger MTU, there will be
 			 * nothing to send for this channel either.
@@ -1027,9 +1123,10 @@ static uint8_t att_mtu_req(struct bt_att_chan *chan, struct net_buf *buf)
 	uint16_t mtu_client, mtu_server;
 
 	/* Exchange MTU sub-procedure shall only be supported on the
-	 * LE Fixed Channel Unenhanced ATT bearer.
+	 * LE Fixed Channel Unenhanced ATT bearer. On BR/EDR the MTU is
+	 * negotiated by L2CAP configuration (Core v6.2 Vol 3 Part G 4.3.1).
 	 */
-	if (bt_att_is_enhanced(chan)) {
+	if (bt_att_is_enhanced(chan) || att_chan_is_br(chan)) {
 		return BT_ATT_ERR_NOT_SUPPORTED;
 	}
 
@@ -1167,6 +1264,13 @@ static uint8_t att_mtu_rsp(struct bt_att_chan *chan, struct net_buf *buf)
 	uint16_t mtu;
 
 	rsp = (void *)buf->data;
+
+	/* Never requested on BR/EDR, where L2CAP configuration sets the
+	 * ATT_MTU (Core v6.2 Vol 3 Part G 4.3.1).
+	 */
+	if (att_chan_is_br(chan)) {
+		return att_handle_rsp(chan, NULL, 0, BT_ATT_ERR_INVALID_PDU);
+	}
 
 	mtu = sys_le16_to_cpu(rsp->mtu);
 
@@ -2645,7 +2749,7 @@ static uint8_t att_signed_write_cmd(struct bt_att_chan *chan, struct net_buf *bu
 	/* The Signed Write Without Response sub-procedure shall only be supported
 	 * on the LE Fixed Channel Unenhanced ATT bearer.
 	 */
-	if (bt_att_is_enhanced(chan)) {
+	if (bt_att_is_enhanced(chan) || att_chan_is_br(chan)) {
 		/* No response for this command */
 		return 0;
 	}
@@ -3190,10 +3294,30 @@ static int bt_att_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	return 0;
 }
 
-/* Get the Unenhanced ATT bearer */
+/* Get the Unenhanced ATT bearer: the LE fixed channel or the BR/EDR channel */
 static struct bt_att_chan *att_get_uatt_chan(struct bt_conn *conn)
 {
 	struct bt_l2cap_chan *chan;
+
+	if (IS_ENABLED(CONFIG_BT_ATT_BR) && bt_conn_is_br(conn)) {
+		struct bt_att_chan *found = NULL;
+
+		/* Application threads get here too, while the Bluetooth
+		 * workqueue adds and removes channels under the host lock
+		 */
+		bt_dev_lock();
+
+		SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
+			if (chan->ops == &att_chan_ops) {
+				found = ATT_CHAN(chan);
+				break;
+			}
+		}
+
+		bt_dev_unlock();
+
+		return found;
+	}
 
 	chan = bt_l2cap_le_lookup_rx_cid(conn, BT_L2CAP_CID_ATT);
 	if (chan == NULL) {
@@ -3214,7 +3338,13 @@ static struct bt_att *att_get(struct bt_conn *conn)
 
 	att_chan = att_get_uatt_chan(conn);
 	if (att_chan == NULL) {
-		LOG_ERR("Unable to find ATT channel");
+		if (bt_conn_is_br(conn)) {
+			/* The ATT bearer is optional on BR/EDR */
+			LOG_DBG("No ATT channel on BR/EDR conn %p", conn);
+		} else {
+			LOG_ERR("Unable to find ATT channel");
+		}
+
 		return NULL;
 	}
 
@@ -3398,12 +3528,19 @@ static void bt_att_connected(struct bt_l2cap_chan *chan)
 	k_work_init_delayable(&att_chan->timeout_work, att_timeout);
 
 	bt_gatt_connected(att_chan_get_conn(att_chan));
+
+#if defined(CONFIG_BT_ATT_BR)
+	if (att_chan_is_br(att_chan)) {
+		att_br_notify_connected(att_chan_get_conn(att_chan), 0);
+	}
+#endif /* CONFIG_BT_ATT_BR */
 }
 
 static void bt_att_disconnected(struct bt_l2cap_chan *chan)
 {
 	struct bt_att_chan *att_chan = ATT_CHAN(chan);
 	struct bt_att *att = att_chan->att;
+	bool connected;
 
 	LOG_DBG("chan %p cid 0x%04x", chan, att_chan_get_tx_cid(att_chan));
 
@@ -3411,6 +3548,8 @@ static void bt_att_disconnected(struct bt_l2cap_chan *chan)
 		LOG_DBG("Ignore disconnect on detached ATT chan");
 		return;
 	}
+
+	connected = atomic_test_bit(att_chan->flags, ATT_CONNECTED);
 
 	att_chan_detach(att_chan);
 
@@ -3421,7 +3560,27 @@ static void bt_att_disconnected(struct bt_l2cap_chan *chan)
 
 	att_reset(att);
 
-	bt_gatt_disconnected(att_chan_get_conn(att_chan));
+	/* A BR/EDR channel is also released when its L2CAP connection fails */
+	if (connected || !att_chan_is_br(att_chan)) {
+		bt_gatt_disconnected(att_chan_get_conn(att_chan));
+	}
+
+#if defined(CONFIG_BT_ATT_BR)
+	if (att_chan_is_br(att_chan)) {
+		if (connected) {
+			att_br_notify_disconnected(att_chan_get_conn(att_chan));
+		} else if (atomic_test_bit(att_chan->flags, ATT_BR_INITIATOR)) {
+			struct bt_conn *conn = att_chan_get_conn(att_chan);
+
+			/* Either the ACL went down while the channel connected, or,
+			 * as L2CAP does not tell which, the peer refused the channel
+			 * or did not answer, or the link could not be secured.
+			 */
+			att_br_notify_connected(conn, (conn->state == BT_CONN_CONNECTED) ?
+							      -ECONNREFUSED : -ENOTCONN);
+		}
+	}
+#endif /* CONFIG_BT_ATT_BR */
 }
 
 #if defined(CONFIG_BT_SMP)
@@ -3560,6 +3719,12 @@ static void att_chan_free(struct bt_att_chan *chan)
 		}
 	}
 
+#if defined(CONFIG_BT_ATT_BR)
+	if (att_chan_is_br(chan)) {
+		atomic_clear_bit(att_br_bearers, chan->br_conn_index);
+	}
+#endif /* CONFIG_BT_ATT_BR */
+
 	k_mem_slab_free(&chan_slab, (void *)chan);
 }
 
@@ -3568,6 +3733,26 @@ static void bt_att_released(struct bt_l2cap_chan *ch)
 	struct bt_att_chan *chan = ATT_CHAN(ch);
 
 	LOG_DBG("chan %p", chan);
+
+#if defined(CONFIG_BT_ATT_BR)
+	if (att_chan_is_br(chan)) {
+		if (atomic_dec(&chan->br_refs) > 1) {
+			/* Still referenced by bt_att_br_chan_connect() */
+			return;
+		}
+
+		if (chan->att != NULL) {
+			/* L2CAP released the channel without disconnected(),
+			 * e.g. when no CID was left for an incoming connection,
+			 * so the bearer is still attached.
+			 */
+			struct bt_att *att = chan->att;
+
+			att_chan_detach(chan);
+			att_reset(att);
+		}
+	}
+#endif /* CONFIG_BT_ATT_BR */
 
 	att_chan_free(chan);
 }
@@ -3631,6 +3816,11 @@ static struct bt_att_chan *att_chan_new(struct bt_att *att, atomic_val_t flags)
 		 * TX MTU is received on L2CAP-level.
 		 */
 		att_chan_set_rx_mtu(chan, BT_LOCAL_ATT_MTU_EATT);
+	} else if (att_chan_is_br(chan)) {
+		/* BR/EDR: ATT_MTU is the minimum of the MTUs negotiated by
+		 * L2CAP configuration (Core v6.2 Vol 3 Part G 5.1.1).
+		 */
+		att_chan_set_rx_mtu(chan, BT_LOCAL_ATT_MTU_UATT);
 	} else {
 		/* UATT: L2CAP Basic is not able to communicate the L2CAP MTU
 		 * without help. ATT has to manage the MTU. The initial MTU is
@@ -3721,8 +3911,6 @@ static int bt_att_accept(struct bt_conn *conn, struct bt_l2cap_chan **ch)
 		return -ENOMEM;
 	}
 
-	att_handle_rsp_thread = k_current_get();
-
 	chan = att_chan_new(att, 0);
 	if (!chan) {
 		k_mem_slab_free(&att_slab, (void *)att);
@@ -3742,6 +3930,189 @@ BT_L2CAP_FIXED_CHANNEL_DEFINE(z_att_fixed_chan) = {
 	.cid = BT_L2CAP_CID_ATT,
 	.accept = bt_att_accept,
 };
+
+#if defined(CONFIG_BT_ATT_BR)
+static int att_br_chan_new(struct bt_conn *conn, atomic_val_t refs, struct bt_att_chan **chan)
+{
+	uint8_t index = bt_conn_index(conn);
+	struct bt_att *att;
+
+	if (atomic_test_and_set_bit(att_br_bearers, index)) {
+		return -EALREADY;
+	}
+
+	att = att_new(conn);
+	if (att == NULL) {
+		atomic_clear_bit(att_br_bearers, index);
+		return -ENOMEM;
+	}
+
+	*chan = att_chan_new(att, BIT(ATT_BR));
+	if (*chan == NULL) {
+		k_mem_slab_free(&att_slab, (void *)att);
+		atomic_clear_bit(att_br_bearers, index);
+		return -ENOMEM;
+	}
+
+	(void)atomic_set(&(*chan)->br_refs, refs);
+	(*chan)->br_conn_index = index;
+
+	return 0;
+}
+
+int bt_att_br_chan_alloc(struct bt_conn *conn, struct bt_l2cap_chan **ch)
+{
+	struct bt_att_chan *chan;
+	int err;
+
+	err = att_br_chan_new(conn, 1, &chan);
+	if (err != 0) {
+		return err;
+	}
+
+	*ch = att_chan_get_l2cap(chan);
+
+	return 0;
+}
+
+/* Free a channel that L2CAP does not have */
+static void att_br_chan_drop(struct bt_att_chan *chan)
+{
+	struct bt_att *att = chan->att;
+
+	if (att != NULL) {
+		att_chan_detach(chan);
+		att_reset(att);
+	}
+
+	att_chan_free(chan);
+}
+
+static void att_br_connect_work(struct k_work *work)
+{
+	struct bt_att_chan *chan = CONTAINER_OF(work, struct bt_att_chan, br_connect_work);
+	struct bt_conn *conn = chan->br_connect_conn;
+	int err;
+
+	chan->br_connect_conn = NULL;
+
+	/* On the Bluetooth workqueue the ACL cannot go down meanwhile */
+	if (conn->state != BT_CONN_CONNECTED) {
+		att_br_chan_drop(chan);
+		att_br_notify_connected(conn, -ENOTCONN);
+		bt_conn_unref(conn);
+		return;
+	}
+
+	err = bt_l2cap_chan_connect(conn, att_chan_get_l2cap(chan), BT_ATT_PSM);
+	if ((err != 0) && (chan->att != NULL)) {
+		/* L2CAP did not take the channel, so it will not release it */
+		att_br_chan_drop(chan);
+		att_br_notify_connected(conn, err);
+		bt_conn_unref(conn);
+		return;
+	}
+
+	/* A failure that L2CAP has reported with disconnected() was notified */
+	if (atomic_dec(&chan->br_refs) == 1) {
+		/* L2CAP has released the channel already */
+		att_chan_free(chan);
+	}
+
+	bt_conn_unref(conn);
+}
+
+int bt_att_br_chan_connect(struct bt_conn *conn)
+{
+	struct bt_att_chan *chan;
+	int err;
+
+	LOG_DBG("conn %p", conn);
+
+	/* Hold a reference so the channel outlives a synchronous L2CAP failure */
+	err = att_br_chan_new(conn, 2, &chan);
+	if (err != 0) {
+		return err;
+	}
+
+	chan->br_chan.required_sec_level = BT_SECURITY_L2;
+	atomic_set_bit(chan->flags, ATT_BR_INITIATOR);
+
+	/* Connect on the Bluetooth workqueue, which also handles the ACL
+	 * disconnection, rather than on the thread of the caller, which the
+	 * disconnection could otherwise preempt inside L2CAP.
+	 */
+	chan->br_connect_conn = bt_conn_ref(conn);
+	if (chan->br_connect_conn == NULL) {
+		att_br_chan_drop(chan);
+		return -ENOTCONN;
+	}
+
+	k_work_init(&chan->br_connect_work, att_br_connect_work);
+	err = bt_work_submit(&chan->br_connect_work);
+	if (err < 0) {
+		bt_conn_drop(&chan->br_connect_conn);
+		att_br_chan_drop(chan);
+		return err;
+	}
+
+	return 0;
+}
+
+int bt_att_br_cb_register(struct bt_att_br_cb *cb)
+{
+	if (cb == NULL) {
+		return -EINVAL;
+	}
+
+	if (sys_slist_find(&att_br_cbs, &cb->_node, NULL)) {
+		return -EEXIST;
+	}
+
+	sys_slist_append(&att_br_cbs, &cb->_node);
+
+	return 0;
+}
+
+/* The lookup and the use of the channel are under the host lock, which the
+ * removal of the channel holds, as these are called from application threads.
+ */
+bool bt_att_br_chan_connected(struct bt_conn *conn)
+{
+	struct bt_att_chan *chan;
+	bool connected;
+
+	bt_dev_lock();
+
+	chan = att_get_uatt_chan(conn);
+	connected = (chan != NULL) && atomic_test_bit(chan->flags, ATT_CONNECTED);
+
+	bt_dev_unlock();
+
+	return connected;
+}
+
+int bt_att_br_chan_disconnect(struct bt_conn *conn)
+{
+	struct bt_att_chan *chan;
+	int err;
+
+	bt_dev_lock();
+
+	chan = att_get_uatt_chan(conn);
+	if (chan == NULL) {
+		/* bt_att_br_connect() has not given the channel to L2CAP yet */
+		err = atomic_test_bit(att_br_bearers, bt_conn_index(conn)) ? -EBUSY : -ENOTCONN;
+	} else {
+		/* Does not wait: the request is allocated without blocking */
+		err = bt_l2cap_chan_disconnect(att_chan_get_l2cap(chan));
+	}
+
+	bt_dev_unlock();
+
+	return err;
+}
+#endif /* CONFIG_BT_ATT_BR */
 
 #if defined(CONFIG_BT_EATT)
 static k_timeout_t credit_based_connection_delay(struct bt_conn *conn)
@@ -3888,6 +4259,11 @@ int bt_eatt_connect(struct bt_conn *conn, size_t num_channels)
 		return -EINVAL;
 	}
 
+	/* EATT is LE only, although a BR/EDR connection can have an ATT bearer */
+	if (!bt_conn_is_le(conn)) {
+		return -EINVAL;
+	}
+
 	att = att_get(conn);
 	if (att == NULL) {
 		return -ENOTCONN;
@@ -3952,7 +4328,7 @@ int bt_eatt_disconnect(struct bt_conn *conn)
 	struct bt_att *att;
 	int err = -ENOTCONN;
 
-	if (!conn) {
+	if ((conn == NULL) || !bt_conn_is_le(conn)) {
 		return -EINVAL;
 	}
 
@@ -3976,7 +4352,7 @@ int bt_eatt_disconnect_one(struct bt_conn *conn)
 	struct bt_att *att;
 	struct bt_att_chan *chan;
 
-	if (!conn) {
+	if ((conn == NULL) || !bt_conn_is_le(conn)) {
 		return -EINVAL;
 	}
 
@@ -4002,6 +4378,10 @@ int bt_eatt_reconfigure(struct bt_conn *conn, uint16_t mtu)
 	size_t offset = 0;
 	size_t i = 0;
 	int err;
+
+	if (!bt_conn_is_le(conn)) {
+		return -EINVAL;
+	}
 
 	att = att_get(conn);
 	if (att == NULL) {
@@ -4090,6 +4470,10 @@ void bt_att_init(void)
 			CONFIG_BT_ATT_PREPARE_COUNT, PREP_QUEUE_MAX);
 	}
 #endif /* CONFIG_BT_ATT_PREPARE_COUNT > 0 */
+
+#if defined(CONFIG_BT_ATT_BR)
+	bt_att_br_init();
+#endif /* CONFIG_BT_ATT_BR */
 }
 
 uint16_t bt_att_get_mtu(struct bt_conn *conn)
@@ -4145,8 +4529,8 @@ int bt_att_get_max_notify_size(struct bt_conn *conn, enum bt_att_chan_opt chan_o
 		return -EINVAL;
 	}
 
-	if (!bt_conn_is_le(conn)) {
-		LOG_DBG("conn %p is not LE ACL", conn);
+	if (!bt_conn_is_le(conn) && !(IS_ENABLED(CONFIG_BT_ATT_BR) && bt_conn_is_br(conn))) {
+		LOG_DBG("conn %p is not an ACL with an ATT bearer", conn);
 		return -EINVAL;
 	}
 
@@ -4210,21 +4594,17 @@ struct bt_att_req *bt_att_req_alloc(k_timeout_t timeout)
 	struct bt_att_req *req = NULL;
 	k_tid_t current_thread = k_current_get();
 
-	if (current_thread == att_handle_rsp_thread ||
-	    current_thread == k_work_queue_thread_get(&k_sys_work_q)) {
-		/* bt_att_req are released by the att_handle_rsp_thread.
-		 * A blocking allocation the same thread would cause a
-		 * deadlock.
+	if (bt_is_work_thread() || current_thread == k_work_queue_thread_get(&k_sys_work_q)) {
+		/* bt_att_req are released by the RX thread, which handles the
+		 * ATT responses. An application that queues an ATT request from
+		 * a callback of the Bluetooth stack runs on that thread, so a
+		 * blocking allocation would cause a deadlock.
 		 *
 		 * Likewise, the system work queue is used for
 		 * tx_processor(), which is needed to send currently
 		 * pending requests. Blocking here in a situation where
 		 * all the request holding a bt_att_req have yet to go
 		 * through the tx_processor() would cause a deadlock.
-		 *
-		 * Note the att_handle_rsp_thread might be the system
-		 * work queue thread or the dedicated BT RX WQ thread,
-		 * depending on kconfig.
 		 */
 		LOG_DBG("Timeout discarded. No blocking on BT RX WQ or SYS WQ threads.");
 		timeout = K_NO_WAIT;
