@@ -116,8 +116,13 @@ static int rm3100_decoder_get_frame_count(const uint8_t *buffer,
 static int rm3100_convert_raw_to_q31(uint16_t cycle_count, uint32_t raw_reading,
 				     q31_t *out, int8_t *shift)
 {
-	int64_t value;
-	uint8_t divider;
+	int32_t value;
+	int32_t combined_divider;
+	int32_t p2;
+	int32_t q1;
+	int32_t r1;
+	int32_t a1;
+	int32_t b1;
 
 	raw_reading = sys_be24_to_cpu(raw_reading);
 	value = sign_extend(raw_reading, 23);
@@ -127,19 +132,36 @@ static int rm3100_convert_raw_to_q31(uint16_t cycle_count, uint32_t raw_reading,
 	 */
 	if (cycle_count == RM3100_CYCLE_COUNT_DEFAULT) {
 		*shift = 11;
-		divider = 75;
+		combined_divider = 7500;	/* 75 LSB/uT * 100 uT/Gauss */
 	} else {
 		/** Otherwise, it's 38 LSB = 1 uT at Cycle-counting for 600 Hz ODR (100):
 		 * 12-bits max value.
 		 */
 		*shift = 12;
-		divider = 38;
+		combined_divider = 3800;	/* 38 LSB/uT * 100 uT/Gauss */
 	}
 
-	int64_t micro_tesla_scaled = ((int64_t)value << (31 - *shift)) / divider;
-	int64_t gauss_scaled = (int64_t)micro_tesla_scaled / 100;
+	/** The conversion is value * 2^(31 - *shift) / (divider * 100), with two
+	 * truncating divisions on a 64-bit dividend in the previous form. The
+	 * two divisions compose into one division by divider * 100 (exact for
+	 * C truncation semantics with positive divisors), the powers of two of
+	 * the divisor fold into the shift, and the rest splits so that every
+	 * product stays within int32. This avoids pulling the software 64-bit
+	 * division helper onto divider-less cores.
+	 */
+	p2 = 31 - *shift;
+	while ((combined_divider % 2) == 0) {
+		combined_divider /= 2;
+		p2--;
+	}
 
-	*out = gauss_scaled;
+	q1 = value / combined_divider;
+	r1 = value % combined_divider;
+	a1 = r1 / combined_divider;
+	b1 = r1 % combined_divider;
+
+	*out = q1 * (1 << p2) + a1 * (1 << p2)
+	     + b1 * (1 << p2) / combined_divider;
 
 	return 0;
 }
