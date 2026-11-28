@@ -70,8 +70,8 @@ static struct k_spinlock lock;
 #else
 static ALWAYS_INLINE void nds_l2_cache_enable(void) { }
 static ALWAYS_INLINE void nds_l2_cache_disable(void) { }
-static ALWAYS_INLINE int nds_l2_cache_range(void *addr, size_t size, int op) { return 0; }
-static ALWAYS_INLINE int nds_l2_cache_all(int op) { return 0; }
+static ALWAYS_INLINE int nds_l2_cache_range(void *addr, size_t size, int op) { return -ENODEV; }
+static ALWAYS_INLINE int nds_l2_cache_all(int op) { return -ENODEV; }
 static ALWAYS_INLINE int nds_l2_cache_is_inclusive(void) { return 0; }
 static ALWAYS_INLINE int nds_l2_cache_init(uint8_t line_size) { return 0; }
 #endif /* DT_NODE_HAS_COMPAT_STATUS(DT_INST(0, andestech_l2c), andestech_l2c, okay) */
@@ -283,7 +283,7 @@ void cache_instr_disable(void)
 
 int cache_data_invd_all(void)
 {
-	unsigned long ret = 0;
+	int ret = 0;
 
 	if (!cache_cfg.is_cctl_supported) {
 		return -ENOTSUP;
@@ -291,13 +291,25 @@ int cache_data_invd_all(void)
 
 	K_SPINLOCK(&lock) {
 		if (cache_cfg.l2_cache_inclusive) {
-			ret |= nds_l2_cache_all(K_CACHE_WB);
-			ret |= nds_l2_cache_all(K_CACHE_INVD);
+			ret = nds_l2_cache_all(K_CACHE_WB);
+			if (ret < 0) {
+				K_SPINLOCK_BREAK;
+			}
+			ret = nds_l2_cache_all(K_CACHE_INVD);
 		} else {
-			ret |= nds_l1d_cache_all(K_CACHE_WB);
-			ret |= nds_l2_cache_all(K_CACHE_WB);
-			ret |= nds_l2_cache_all(K_CACHE_INVD);
-			ret |= nds_l1d_cache_all(K_CACHE_INVD);
+			ret = nds_l1d_cache_all(K_CACHE_WB);
+			if (ret < 0) {
+				K_SPINLOCK_BREAK;
+			}
+			ret = nds_l2_cache_all(K_CACHE_WB);
+			if (ret < 0 && ret != -ENODEV) {
+				K_SPINLOCK_BREAK;
+			}
+			ret = nds_l2_cache_all(K_CACHE_INVD);
+			if (ret < 0 && ret != -ENODEV) {
+				K_SPINLOCK_BREAK;
+			}
+			ret = nds_l1d_cache_all(K_CACHE_INVD);
 		}
 	}
 
@@ -306,7 +318,7 @@ int cache_data_invd_all(void)
 
 int cache_data_invd_range(void *addr, size_t size)
 {
-	unsigned long ret = 0;
+	int ret = 0;
 
 	if (!cache_cfg.is_cctl_supported) {
 		return -ENOTSUP;
@@ -314,10 +326,13 @@ int cache_data_invd_range(void *addr, size_t size)
 
 	K_SPINLOCK(&lock) {
 		if (cache_cfg.l2_cache_inclusive) {
-			ret |= nds_l2_cache_range(addr, size, K_CACHE_INVD);
+			ret = nds_l2_cache_range(addr, size, K_CACHE_INVD);
 		} else {
-			ret |= nds_l2_cache_range(addr, size, K_CACHE_INVD);
-			ret |= nds_l1d_cache_range(addr, size, K_CACHE_INVD);
+			ret = nds_l2_cache_range(addr, size, K_CACHE_INVD);
+			if (ret < 0 && ret != -ENODEV) {
+				K_SPINLOCK_BREAK;
+			}
+			ret = nds_l1d_cache_range(addr, size, K_CACHE_INVD);
 		}
 	}
 
@@ -326,7 +341,7 @@ int cache_data_invd_range(void *addr, size_t size)
 
 int cache_instr_invd_all(void)
 {
-	unsigned long ret = 0;
+	int ret = 0;
 
 	if (!cache_cfg.is_cctl_supported) {
 		return -ENOTSUP;
@@ -355,7 +370,7 @@ int cache_instr_invd_all(void)
 	}
 
 	K_SPINLOCK(&lock) {
-		ret |= nds_l1i_cache_all(K_CACHE_INVD);
+		ret = nds_l1i_cache_all(K_CACHE_INVD);
 	}
 
 	return ret;
@@ -363,7 +378,7 @@ int cache_instr_invd_all(void)
 
 int cache_instr_invd_range(void *addr, size_t size)
 {
-	unsigned long ret = 0;
+	int ret = 0;
 
 	if (!cache_cfg.is_cctl_supported) {
 		return -ENOTSUP;
@@ -377,7 +392,7 @@ int cache_instr_invd_range(void *addr, size_t size)
 	}
 
 	K_SPINLOCK(&lock) {
-		ret |= nds_l1i_cache_range(addr, size, K_CACHE_INVD);
+		ret = nds_l1i_cache_range(addr, size, K_CACHE_INVD);
 	}
 
 	return ret;
@@ -385,7 +400,7 @@ int cache_instr_invd_range(void *addr, size_t size)
 
 int cache_data_flush_all(void)
 {
-	unsigned long ret = 0;
+	int ret = 0;
 
 	if (!cache_cfg.is_cctl_supported) {
 		return -ENOTSUP;
@@ -393,10 +408,16 @@ int cache_data_flush_all(void)
 
 	K_SPINLOCK(&lock) {
 		if (cache_cfg.l2_cache_inclusive) {
-			ret |= nds_l2_cache_all(K_CACHE_WB);
+			ret = nds_l2_cache_all(K_CACHE_WB);
 		} else {
-			ret |= nds_l1d_cache_all(K_CACHE_WB);
-			ret |= nds_l2_cache_all(K_CACHE_WB);
+			ret = nds_l1d_cache_all(K_CACHE_WB);
+			if (ret < 0) {
+				K_SPINLOCK_BREAK;
+			}
+			ret = nds_l2_cache_all(K_CACHE_WB);
+			if (ret == -ENODEV) {
+				ret = 0;
+			}
 		}
 	}
 
@@ -405,7 +426,7 @@ int cache_data_flush_all(void)
 
 int cache_data_flush_range(void *addr, size_t size)
 {
-	unsigned long ret = 0;
+	int ret = 0;
 
 	if (!cache_cfg.is_cctl_supported) {
 		return -ENOTSUP;
@@ -413,10 +434,16 @@ int cache_data_flush_range(void *addr, size_t size)
 
 	K_SPINLOCK(&lock) {
 		if (cache_cfg.l2_cache_inclusive) {
-			ret |= nds_l2_cache_range(addr, size, K_CACHE_WB);
+			ret = nds_l2_cache_range(addr, size, K_CACHE_WB);
 		} else {
-			ret |= nds_l1d_cache_range(addr, size, K_CACHE_WB);
-			ret |= nds_l2_cache_range(addr, size, K_CACHE_WB);
+			ret = nds_l1d_cache_range(addr, size, K_CACHE_WB);
+			if (ret < 0) {
+				K_SPINLOCK_BREAK;
+			}
+			ret = nds_l2_cache_range(addr, size, K_CACHE_WB);
+			if (ret == -ENODEV) {
+				ret = 0;
+			}
 		}
 	}
 
@@ -425,7 +452,7 @@ int cache_data_flush_range(void *addr, size_t size)
 
 int cache_data_flush_and_invd_all(void)
 {
-	unsigned long ret = 0;
+	int ret = 0;
 
 	if (!cache_cfg.is_cctl_supported) {
 		return -ENOTSUP;
@@ -434,14 +461,20 @@ int cache_data_flush_and_invd_all(void)
 	K_SPINLOCK(&lock) {
 		if (cache_cfg.l2_cache_size) {
 			if (cache_cfg.l2_cache_inclusive) {
-				ret |= nds_l2_cache_all(K_CACHE_WB_INVD);
+				ret = nds_l2_cache_all(K_CACHE_WB_INVD);
 			} else {
-				ret |= nds_l1d_cache_all(K_CACHE_WB);
-				ret |= nds_l2_cache_all(K_CACHE_WB_INVD);
-				ret |= nds_l1d_cache_all(K_CACHE_INVD);
+				ret = nds_l1d_cache_all(K_CACHE_WB);
+				if (ret < 0) {
+					K_SPINLOCK_BREAK;
+				}
+				ret = nds_l2_cache_all(K_CACHE_WB_INVD);
+				if (ret < 0 && ret != -ENODEV) {
+					K_SPINLOCK_BREAK;
+				}
+				ret = nds_l1d_cache_all(K_CACHE_INVD);
 			}
 		} else {
-			ret |= nds_l1d_cache_all(K_CACHE_WB_INVD);
+			ret = nds_l1d_cache_all(K_CACHE_WB_INVD);
 		}
 	}
 
@@ -450,7 +483,7 @@ int cache_data_flush_and_invd_all(void)
 
 int cache_data_flush_and_invd_range(void *addr, size_t size)
 {
-	unsigned long ret = 0;
+	int ret = 0;
 
 	if (!cache_cfg.is_cctl_supported) {
 		return -ENOTSUP;
@@ -459,14 +492,20 @@ int cache_data_flush_and_invd_range(void *addr, size_t size)
 	K_SPINLOCK(&lock) {
 		if (cache_cfg.l2_cache_size) {
 			if (cache_cfg.l2_cache_inclusive) {
-				ret |= nds_l2_cache_range(addr, size, K_CACHE_WB_INVD);
+				ret = nds_l2_cache_range(addr, size, K_CACHE_WB_INVD);
 			} else {
-				ret |= nds_l1d_cache_range(addr, size, K_CACHE_WB);
-				ret |= nds_l2_cache_range(addr, size, K_CACHE_WB_INVD);
-				ret |= nds_l1d_cache_range(addr, size, K_CACHE_INVD);
+				ret = nds_l1d_cache_range(addr, size, K_CACHE_WB);
+				if (ret < 0) {
+					K_SPINLOCK_BREAK;
+				}
+				ret = nds_l2_cache_range(addr, size, K_CACHE_WB_INVD);
+				if (ret < 0 && ret != -ENODEV) {
+					K_SPINLOCK_BREAK;
+				}
+				ret = nds_l1d_cache_range(addr, size, K_CACHE_INVD);
 			}
 		} else {
-			ret |= nds_l1d_cache_range(addr, size, K_CACHE_WB_INVD);
+			ret = nds_l1d_cache_range(addr, size, K_CACHE_WB_INVD);
 		}
 	}
 
