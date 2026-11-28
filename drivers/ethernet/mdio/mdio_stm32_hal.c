@@ -44,6 +44,8 @@ struct mdio_stm32_config {
 static int mdio_stm32_read(const struct device *dev, uint8_t prtad,
 			   uint8_t regad, uint16_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct mdio_stm32_data *const dev_data = dev->data;
 	const struct mdio_stm32_config *const config = dev->config;
 	struct eth_stm32_hal_dev_data *eth_dev_data = config->ethernet_dev->data;
@@ -75,6 +77,8 @@ static int mdio_stm32_read(const struct device *dev, uint8_t prtad,
 static int mdio_stm32_write(const struct device *dev, uint8_t prtad,
 			    uint8_t regad, uint16_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct mdio_stm32_data *const dev_data = dev->data;
 	const struct mdio_stm32_config *const config = dev->config;
 	struct eth_stm32_hal_dev_data *eth_dev_data = config->ethernet_dev->data;
@@ -102,6 +106,8 @@ static int mdio_stm32_write(const struct device *dev, uint8_t prtad,
 
 static int mdio_stm32_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct mdio_stm32_data *const dev_data = dev->data;
 
 #if MDIO_STM32_PINCTRL_ENABLED

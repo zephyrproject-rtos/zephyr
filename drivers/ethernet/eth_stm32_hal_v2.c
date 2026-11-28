@@ -189,6 +189,8 @@ allocate_tx_context_async(struct eth_stm32_hal_dev_data *dev_data, struct net_pk
 
 int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
 	int res = 0;
@@ -307,6 +309,8 @@ allocate_tx_context(struct eth_stm32_hal_dev_data *dev_data, struct net_pkt *pkt
 
 int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
 	int res;
@@ -451,6 +455,8 @@ error:
 
 struct net_pkt *eth_stm32_rx(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_stm32_hal_dev_cfg *cfg = dev->config;
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
@@ -660,6 +666,8 @@ void HAL_ETH_ErrorCallback(ETH_HandleTypeDef *heth)
 
 int eth_stm32_hal_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_stm32_hal_dev_cfg *cfg = dev->config;
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
@@ -723,6 +731,8 @@ int eth_stm32_hal_init(const struct device *dev)
 
 void eth_stm32_set_mac_config(const struct device *dev, struct phy_link_state *state)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
 	HAL_StatusTypeDef hal_ret;
@@ -785,6 +795,8 @@ void eth_stm32_setup_mac_filter(ETH_HandleTypeDef *heth)
 
 int eth_stm32_hal_start(const struct device *dev, struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
 	HAL_StatusTypeDef hal_ret;
@@ -802,6 +814,8 @@ int eth_stm32_hal_start(const struct device *dev, struct net_if *iface __unused)
 
 int eth_stm32_hal_stop(const struct device *dev, struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
 	HAL_StatusTypeDef hal_ret;
@@ -823,6 +837,8 @@ int eth_stm32_hal_set_config(const struct device *dev,
 			     enum ethernet_config_type type,
 			     const struct ethernet_config *config)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
 

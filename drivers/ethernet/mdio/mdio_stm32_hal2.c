@@ -40,6 +40,8 @@ struct mdio_stm32_config {
 
 static int mdio_stm32_read(const struct device *dev, uint8_t prtad, uint8_t regad, uint16_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct mdio_stm32_data *const dev_data = dev->data;
 	hal_eth_handle_t *heth = &dev_data->heth;
 	hal_status_t ret;
@@ -59,6 +61,8 @@ static int mdio_stm32_read(const struct device *dev, uint8_t prtad, uint8_t rega
 
 static int mdio_stm32_write(const struct device *dev, uint8_t prtad, uint8_t regad, uint16_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct mdio_stm32_data *const dev_data = dev->data;
 	hal_eth_handle_t *heth = &dev_data->heth;
 	hal_status_t ret;
@@ -78,6 +82,8 @@ static int mdio_stm32_write(const struct device *dev, uint8_t prtad, uint8_t reg
 
 static int mdio_stm32_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct mdio_stm32_data *const dev_data = dev->data;
 	hal_eth_handle_t *heth = &dev_data->heth;
 
