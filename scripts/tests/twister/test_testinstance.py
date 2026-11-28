@@ -12,7 +12,6 @@ from contextlib import nullcontext
 from unittest import mock
 
 import pytest
-from expr_parser import reserved
 from twisterlib.error import BuildError
 from twisterlib.handlers import QEMUHandler
 from twisterlib.platform import Simulator
@@ -222,8 +221,7 @@ TESTDATA_PART_3 = [
 
 @pytest.mark.parametrize("filter_expr, expected_stages", TESTDATA_PART_3)
 def test_which_filter_stages(filter_expr, expected_stages):
-    logic_keys = reserved.keys()
-    stages = TwisterRunner.get_cmake_filter_stages(filter_expr, logic_keys)
+    stages = TwisterRunner.get_cmake_filter_stages(filter_expr)
     assert sorted(stages) == sorted(expected_stages)
 
 
