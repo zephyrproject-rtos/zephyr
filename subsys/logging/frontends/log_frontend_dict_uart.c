@@ -269,7 +269,7 @@ static void sync_msg(const void *source,
 	}
 }
 
-static void log_frontend_msg_with_timestamp(const void *source,
+void log_frontend_msg_with_timestamp(const void *source,
 		      const struct log_msg_desc desc,
 		      uint8_t *package, const void *data, log_timestamp_t timestamp)
 {

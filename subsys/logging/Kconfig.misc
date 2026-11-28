@@ -121,7 +121,7 @@ config LOG_FAILURE_REPORT_PERIOD
 
 config LOG_DOMAIN_NAME
 	string "Domain name"
-	default ""
+	default "cpu0"
 
 if LOG_MULTIDOMAIN
 
