@@ -554,6 +554,14 @@ PTP Clock
   addend register from its nominal value. All in-tree drivers have been converted.
   (:github:`120828`)
 
+Sensor
+======
+
+* The deprecated ``gain``, ``integration-time`` and ``measurement-rate`` properties of
+  :dtcompatible:`liteon,ltr329` have been removed. Use ``als-gain``, ``als-integration-time`` and
+  ``als-measurement-rate`` instead, which take the gain factor and the times in milliseconds
+  rather than register field values (for example ``gain = <3>`` becomes ``als-gain = <8>``).
+
 Serial
 ======
 

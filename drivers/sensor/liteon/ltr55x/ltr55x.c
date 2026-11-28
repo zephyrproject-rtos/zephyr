@@ -404,16 +404,6 @@ static DEVICE_API(sensor, ltr55x_driver_api) = {
 	.channel_get = ltr55x_channel_get,
 };
 
-#define LTR55X_ALS_GAIN_REG(n)                                                                     \
-	COND_CODE_1(DT_NODE_HAS_PROP(n, gain), (DT_PROP(n, gain)),                                 \
-		    (UTIL_CAT(LTR55X_ALS_GAIN_VALUE_, DT_PROP_OR(n, als_gain, 1))))
-#define LTR55X_ALS_INT_TIME_REG(n)                                                                 \
-	COND_CODE_1(DT_NODE_HAS_PROP(n, integration_time), (DT_PROP(n, integration_time)),         \
-		    (DT_ENUM_IDX_OR(n, als_integration_time, 0)))
-#define LTR55X_ALS_MEAS_RATE_REG(n)                                                                \
-	COND_CODE_1(DT_NODE_HAS_PROP(n, measurement_rate), (DT_PROP(n, measurement_rate)),         \
-		    (DT_ENUM_IDX_OR(n, als_measurement_rate, 3)))
-
 #define DEFINE_LTRXXX(node_id, partid)                                                             \
 	BUILD_ASSERT(DT_PROP_OR(node_id, ps_offset, 0) <= LTR55X_PS_DATA_MAX);                     \
 	BUILD_ASSERT(DT_PROP_OR(node_id, ps_upper_threshold, LTR55X_PS_DATA_MASK) <=               \
@@ -429,9 +419,9 @@ static DEVICE_API(sensor, ltr55x_driver_api) = {
 	static const struct ltr55x_config ltr55x_config_##node_id = {                              \
 		.bus = I2C_DT_SPEC_GET(node_id),                                                   \
 		.part_id = partid,                                                                 \
-		.als_gain = LTR55X_ALS_GAIN_REG(node_id),                                          \
-		.als_integration_time = LTR55X_ALS_INT_TIME_REG(node_id),                          \
-		.als_measurement_rate = LTR55X_ALS_MEAS_RATE_REG(node_id),                         \
+		.als_gain = UTIL_CAT(LTR55X_ALS_GAIN_VALUE_, DT_PROP_OR(node_id, als_gain, 1)),    \
+		.als_integration_time = DT_ENUM_IDX_OR(node_id, als_integration_time, 0),          \
+		.als_measurement_rate = DT_ENUM_IDX_OR(node_id, als_measurement_rate, 3),          \
 		.ps_led_pulse_freq = DT_ENUM_IDX_OR(node_id, ps_led_pulse_frequency, 3),           \
 		.ps_led_duty_cycle = DT_ENUM_IDX_OR(node_id, ps_led_duty_cycle, 3),                \
 		.ps_led_current = DT_ENUM_IDX_OR(node_id, ps_led_current, 4),                      \
