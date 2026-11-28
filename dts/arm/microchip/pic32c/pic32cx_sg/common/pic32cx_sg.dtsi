@@ -22,12 +22,21 @@
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
 			device_type = "cpu";
+			cpu-power-states = <&idle>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv7m-mpu";
 				reg = <0xe000ed90 0x2c>;
+			};
+		};
+
+		power-states {
+			/* PM.SLEEPCFG IDLE: CPU, AHB and APB clocks stopped */
+			idle: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
 			};
 		};
 	};
@@ -352,6 +361,32 @@
 			max-bit-width = <16>;
 			prescaler = <1>;
 			channels = <2>;
+			status = "disabled";
+		};
+
+		can0: can@42000000 {
+			compatible = "atmel,sam0-can";
+			reg = <0x42000000 0x400>;
+			interrupts = <78 0>, <78 0>;
+			interrupt-names = "int0", "int1";
+			clocks = <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_CAN0>,
+				 <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_AHB_CAN0>;
+			clock-names = "GCLK", "MCLK";
+			bosch,mram-cfg = <0x0 128 64 64 64 0 32 32>;
+			zephyr,disabling-power-states = <&idle>;
+			status = "disabled";
+		};
+
+		can1: can@42000400 {
+			compatible = "atmel,sam0-can";
+			reg = <0x42000400 0x400>;
+			interrupts = <79 0>, <79 0>;
+			interrupt-names = "int0", "int1";
+			clocks = <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_CAN1>,
+				 <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_AHB_CAN1>;
+			clock-names = "GCLK", "MCLK";
+			bosch,mram-cfg = <0x0 128 64 64 64 0 32 32>;
+			zephyr,disabling-power-states = <&idle>;
 			status = "disabled";
 		};
 

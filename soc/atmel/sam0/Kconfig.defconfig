@@ -17,6 +17,10 @@ config HWINFO_SAM0
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
 
+# The M_CAN message RAM must be in the first 64 KB of SRAM.
+config CAN_SAM0_MRAM_SECTION
+	default y if CAN_SAM0 && (SOC_SERIES_SAME51 || SOC_SERIES_SAME54)
+
 if USB_DEVICE_DRIVER
 
 config HEAP_MEM_POOL_ADD_SIZE_SOC

@@ -10,10 +10,13 @@
 
 #include <zephyr/drivers/can.h>
 #include "can_mcan.h"
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/sys/atomic.h>
 #include <soc.h>
 
 LOG_MODULE_REGISTER(can_sam0, CONFIG_CAN_LOG_LEVEL);
@@ -27,12 +30,27 @@ struct can_sam0_config {
 	mem_addr_t mram;
 	void (*config_irq)(void);
 	const struct pinctrl_dev_config *pcfg;
+#ifdef CONFIG_SOC_FAMILY_ATMEL_SAM0
 	volatile uint32_t *mclk;
 	uint32_t mclk_mask;
 	uint32_t gclk_gen;
 	uint16_t gclk_id;
 	int divider;
+#else
+	const struct device *clock_dev;
+	clock_control_subsys_t mclk_sys;
+	clock_control_subsys_t gclk_sys;
+#endif /* CONFIG_SOC_FAMILY_ATMEL_SAM0 */
 };
+
+#ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
+/* Bit in can_sam0_data.flags: this controller holds its power state locks. */
+#define CAN_SAM0_PM_LOCK_HELD 0
+
+struct can_sam0_data {
+	atomic_t flags;
+};
+#endif /* CONFIG_PM_POLICY_DEVICE_CONSTRAINTS */
 
 static int can_sam0_read_reg(const struct device *dev, uint16_t reg, uint32_t *val)
 {
@@ -100,6 +118,7 @@ static int can_sam0_get_core_clock(const struct device *dev, uint32_t *rate)
 	const struct can_mcan_config *mcan_cfg = dev->config;
 	const struct can_sam0_config *sam_cfg = mcan_cfg->custom;
 
+#ifdef CONFIG_SOC_FAMILY_ATMEL_SAM0
 #if defined(CONFIG_SOC_SERIES_SAME51) || defined(CONFIG_SOC_SERIES_SAME54)
 	/*DFFL has to be used as clock source for the ATSAME51/54 family of SoCs*/
 	*rate = SOC_ATMEL_SAM0_DFLL48_FREQ_HZ / (sam_cfg->divider);
@@ -109,9 +128,13 @@ static int can_sam0_get_core_clock(const struct device *dev, uint32_t *rate)
 #endif
 
 	return 0;
+#else
+	return clock_control_get_rate(sam_cfg->clock_dev, sam_cfg->gclk_sys, rate);
+#endif /* CONFIG_SOC_FAMILY_ATMEL_SAM0 */
 }
 
-static void can_sam0_clock_enable(const struct can_sam0_config *cfg)
+#ifdef CONFIG_SOC_FAMILY_ATMEL_SAM0
+static int can_sam0_clock_enable(const struct can_sam0_config *cfg)
 {
 	uint8_t gen_index = cfg->gclk_gen;
 
@@ -132,7 +155,29 @@ static void can_sam0_clock_enable(const struct can_sam0_config *cfg)
 			     | GCLK_GENCTRL_DIV(cfg->divider)
 			     | GCLK_GENCTRL_GENEN;
 #endif
+
+	return 0;
 }
+#else
+static int can_sam0_clock_enable(const struct can_sam0_config *cfg)
+{
+	int ret;
+
+	ret = clock_control_on(cfg->clock_dev, cfg->mclk_sys);
+	if ((ret < 0) && (ret != -EALREADY)) {
+		LOG_ERR("failed to enable the bus clock: %d", ret);
+		return ret;
+	}
+
+	ret = clock_control_on(cfg->clock_dev, cfg->gclk_sys);
+	if ((ret < 0) && (ret != -EALREADY)) {
+		LOG_ERR("failed to enable the generic clock: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_SOC_FAMILY_ATMEL_SAM0 */
 
 static int can_sam0_init(const struct device *dev)
 {
@@ -140,7 +185,10 @@ static int can_sam0_init(const struct device *dev)
 	const struct can_sam0_config *sam_cfg = mcan_cfg->custom;
 	int ret;
 
-	can_sam0_clock_enable(sam_cfg);
+	ret = can_sam0_clock_enable(sam_cfg);
+	if (ret < 0) {
+		return ret;
+	}
 
 	ret = pinctrl_apply_state(sam_cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
@@ -165,10 +213,52 @@ static int can_sam0_init(const struct device *dev)
 	return ret;
 }
 
+#ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
+/*
+ * The M_CAN reads and writes its message RAM as an AHB bus master. Keep the power states listed
+ * in zephyr,disabling-power-states, such as one that stops the AHB clock, locked while the
+ * controller is started.
+ *
+ * The flag makes each controller hold its locks at most once, whatever the sequence of start and
+ * stop calls, including concurrent ones. The idle thread cannot run between a successful start
+ * and taking the locks, as the calling thread is still runnable.
+ */
+static int can_sam0_start(const struct device *dev)
+{
+	const struct can_mcan_data *mcan_data = dev->data;
+	struct can_sam0_data *data = mcan_data->custom;
+	int ret = can_mcan_start(dev);
+
+	if ((ret == 0) && !atomic_test_and_set_bit(&data->flags, CAN_SAM0_PM_LOCK_HELD)) {
+		pm_policy_device_power_lock_get(dev);
+	}
+
+	return ret;
+}
+
+static int can_sam0_stop(const struct device *dev)
+{
+	const struct can_mcan_data *mcan_data = dev->data;
+	struct can_sam0_data *data = mcan_data->custom;
+	int ret = can_mcan_stop(dev);
+
+	if ((ret == 0) && atomic_test_and_clear_bit(&data->flags, CAN_SAM0_PM_LOCK_HELD)) {
+		pm_policy_device_power_lock_put(dev);
+	}
+
+	return ret;
+}
+#endif /* CONFIG_PM_POLICY_DEVICE_CONSTRAINTS */
+
 static DEVICE_API(can, can_sam0_driver_api) = {
 	.get_capabilities = can_mcan_get_capabilities,
+#ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
+	.start = can_sam0_start,
+	.stop = can_sam0_stop,
+#else
 	.start = can_mcan_start,
 	.stop = can_mcan_stop,
+#endif /* CONFIG_PM_POLICY_DEVICE_CONSTRAINTS */
 	.set_mode = can_mcan_set_mode,
 	.set_timing = can_mcan_set_timing,
 	.send = can_mcan_send,
@@ -207,16 +297,30 @@ static void config_can_##inst##_irq(void)						\
 	irq_enable(DT_INST_IRQ_BY_NAME(inst, int0, irq));				\
 }
 
+#ifdef CONFIG_SOC_FAMILY_ATMEL_SAM0
 #define ASSIGNED_CLOCKS_CELL_BY_NAME							\
 	ATMEL_SAM0_DT_INST_ASSIGNED_CLOCKS_CELL_BY_NAME
 
+#define CAN_SAM0_CLOCK_CFG(inst)							\
+		.gclk_gen = ASSIGNED_CLOCKS_CELL_BY_NAME(inst, gclk, gen),		\
+		.gclk_id = DT_INST_CLOCKS_CELL_BY_NAME(inst, gclk, id),			\
+		.mclk = ATMEL_SAM0_DT_INST_MCLK_PM_REG_ADDR_OFFSET(inst),		\
+		.mclk_mask = ATMEL_SAM0_DT_INST_MCLK_PM_PERIPH_MASK(inst, bit),		\
+		.divider = DT_INST_PROP(inst, divider),
+#else
+#define CAN_SAM0_CLOCK_CFG(inst)							\
+		.clock_dev = DEVICE_DT_GET(DT_NODELABEL(clock)),			\
+		.mclk_sys = (void *)DT_INST_CLOCKS_CELL_BY_NAME(inst, mclk, subsystem),	\
+		.gclk_sys = (void *)DT_INST_CLOCKS_CELL_BY_NAME(inst, gclk, subsystem),
+#endif /* CONFIG_SOC_FAMILY_ATMEL_SAM0 */
+
 /*
- * On devices with more than 64 KB SRAM, place the MCAN Message RAM buffers
+ * On SoCs with more than 64 KB SRAM, place the MCAN Message RAM buffers
  * in a dedicated section to ensure they are located in the first 64 KB of
  * SRAM, as required by section 39.9.1 of the SAM D5x/E5x Family Data Sheet
  * (DS60001507N).
  */
-#if CONFIG_SRAM_SIZE > 64
+#ifdef CONFIG_CAN_SAM0_MRAM_SECTION
 #define CAN_SAM0_DT_INST_MRAM_DEFINE(inst, _name)                                       \
 	CAN_MCAN_DT_INST_MRAM_DEFINE_SECTION(inst, _name, ".can_message_ram")
 
@@ -231,11 +335,7 @@ static void config_can_##inst##_irq(void)						\
 	static const struct can_sam0_config can_sam0_cfg_##inst = {			\
 		.base = CAN_MCAN_DT_INST_MCAN_ADDR(inst),				\
 		.mram = (mem_addr_t)POINTER_TO_UINT(&can_sam0_mram_##inst),		\
-		.gclk_gen = ASSIGNED_CLOCKS_CELL_BY_NAME(inst, gclk, gen),		\
-		.gclk_id = DT_INST_CLOCKS_CELL_BY_NAME(inst, gclk, id),			\
-		.mclk = ATMEL_SAM0_DT_INST_MCLK_PM_REG_ADDR_OFFSET(inst),		\
-		.mclk_mask = ATMEL_SAM0_DT_INST_MCLK_PM_PERIPH_MASK(inst, bit),		\
-		.divider = DT_INST_PROP(inst, divider),					\
+		CAN_SAM0_CLOCK_CFG(inst)						\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),				\
 		.config_irq = config_can_##inst##_irq,					\
 	};										\
@@ -244,7 +344,17 @@ static void config_can_##inst##_irq(void)						\
 		CAN_MCAN_DT_CONFIG_INST_GET(inst, &can_sam0_cfg_##inst, &can_sam0_ops,  \
 					    &can_sam0_cbs_##inst);
 
-#define CAN_SAM0_DATA_INST(inst) CAN_MCAN_DATA_DEFINE(can_mcan_data_##inst, NULL);
+#ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
+#define CAN_SAM0_DATA_DEFINE(inst) static struct can_sam0_data can_sam0_data_##inst;
+#define CAN_SAM0_DATA_PTR(inst) (&can_sam0_data_##inst)
+#else
+#define CAN_SAM0_DATA_DEFINE(inst)
+#define CAN_SAM0_DATA_PTR(inst) NULL
+#endif /* CONFIG_PM_POLICY_DEVICE_CONSTRAINTS */
+
+#define CAN_SAM0_DATA_INST(inst)							\
+	CAN_SAM0_DATA_DEFINE(inst)							\
+	CAN_MCAN_DATA_DEFINE(can_mcan_data_##inst, CAN_SAM0_DATA_PTR(inst));
 
 #define CAN_SAM0_DEVICE_INST(inst)							\
 	CAN_DEVICE_DT_INST_DEFINE(inst, can_sam0_init, NULL,				\
