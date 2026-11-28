@@ -291,9 +291,9 @@ static inline int smartbond_clock_control_off(const struct device *dev,
 	switch (clk) {
 	case SMARTBOND_CLK_RC32K:
 		/* RC32K is used by POWERUP and WAKEUP HW FSM */
+		ret = -EPERM;
 		BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(rc32k)),
 				"RC32K is not allowed to be turned off");
-		ret = -EPERM;
 		break;
 	case SMARTBOND_CLK_RCX:
 		if (((CRG_TOP->CLK_CTRL_REG & CRG_TOP_CLK_CTRL_REG_LP_CLK_SEL_Msk) >>
