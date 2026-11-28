@@ -1,0 +1,12 @@
+common:
+  tags:
+    - kernel
+    - riscv
+  platform_allow:
+    - qemu_riscv64/qemu_virt_riscv64/opensbi
+    - qemu_riscv64/qemu_virt_riscv64/opensbi_smp
+  integration_platforms:
+    - qemu_riscv64/qemu_virt_riscv64/opensbi
+tests:
+  arch.riscv.soc_reset_hook.clobber_a0:
+    harness: ztest
