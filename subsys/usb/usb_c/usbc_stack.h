@@ -88,6 +88,12 @@ struct usbc_port_data {
 	struct protocol_layer_tx_t *prl_tx;
 	/** Protocol Hard Reset Layer state machine object */
 	struct protocol_hard_reset_t *prl_hr;
+#ifdef CONFIG_USBC_CHUNKING
+	/** Chunked Rx Handler state machine object */
+	struct protocol_layer_rch_t *prl_rch;
+	/** Chunked Tx Handler state machine object */
+	struct protocol_layer_tch_t *prl_tch;
+#endif
 	/** Enables or Disables the Protocol Layer state machine */
 	bool prl_enabled;
 	/** The state of the Protocol Layer state machine */
@@ -132,6 +138,13 @@ struct usbc_port_data {
 	 */
 	bool (*policy_cb_wait_notify)(const struct device *dev,
 				      const enum usbc_policy_wait_t policy_notify);
+
+	/**
+	 * Callback delivering a received Extended Message to the DPM
+	 */
+	bool (*policy_cb_ext_msg_received)(const struct device *dev,
+					   const enum pd_ext_msg_type type, const uint8_t *data,
+					   const uint32_t len);
 
 #ifdef CONFIG_USBC_CSM_SUPPORTS_SINK
 	/**

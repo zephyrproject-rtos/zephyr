@@ -286,6 +286,13 @@ typedef int (*tcpc_api_mask_status_register_t)(const struct device *dev, enum tc
 					       uint32_t mask);
 
 /**
+ * @brief Callback API to inform the TCPC of the negotiated PD revision.
+ *
+ * See tcpc_set_pd_rev() for argument description.
+ */
+typedef int (*tcpc_api_set_pd_rev_t)(const struct device *dev, enum pd_rev_type rev);
+
+/**
  * @brief Callback API to enable or disable debug accessory control.
  *
  * See tcpc_set_debug_accessory() for argument description.
@@ -413,6 +420,8 @@ __subsystem struct tcpc_driver_api {
 	tcpc_api_dump_std_reg_t dump_std_reg;
 	/** @driver_ops_optional @copybrief tcpc_mask_status_register */
 	tcpc_api_mask_status_register_t mask_status_register;
+	/** @driver_ops_optional @copybrief tcpc_set_pd_rev */
+	tcpc_api_set_pd_rev_t set_pd_rev;
 	/** @driver_ops_optional @copybrief tcpc_set_debug_accessory */
 	tcpc_api_set_debug_accessory_t set_debug_accessory;
 	/** @driver_ops_optional @copybrief tcpc_set_debug_detach */
@@ -873,6 +882,32 @@ static inline int tcpc_mask_status_register(const struct device *dev, enum tcpc_
 	}
 
 	return api->mask_status_register(dev, reg, mask);
+}
+
+/**
+ * @brief Inform the TCPC of the PD revision in force on this port
+ *
+ * A TCPCI part carries the Specification Revision in its Message Header Info
+ * register and uses it in the GoodCRC messages it generates on its own. The
+ * stack calls this whenever the revision for SOP changes, so that register
+ * can follow what was negotiated with the port partner.
+ *
+ * @param dev Runtime device structure
+ * @param rev Negotiated PD revision for SOP messages
+ *
+ * @retval 0 on success
+ * @retval -EIO on failure
+ * @retval -ENOSYS if not implemented
+ */
+static inline int tcpc_set_pd_rev(const struct device *dev, enum pd_rev_type rev)
+{
+	const struct tcpc_driver_api *api = DEVICE_API_GET(tcpc, dev);
+
+	if (api->set_pd_rev == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->set_pd_rev(dev, rev);
 }
 
 /**

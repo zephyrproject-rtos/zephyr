@@ -267,6 +267,54 @@ extern "C" {
 #define PD_T_SINK_REQUEST_MIN_MS 100
 
 /**
+ * @brief Minimum time a Chunked Message sender waits for the next Chunk
+ *	  Request before abandoning the transmission
+ *	  See Table 6-68 Time Values
+ *	  Parameter Name: tChunkSenderRequest
+ */
+#define PD_T_CHUNK_SENDER_REQUEST_MIN_MS 24
+
+/**
+ * @brief Nominal time a Chunked Message sender waits for the next Chunk
+ *	  Request before abandoning the transmission
+ *	  See Table 6-68 Time Values
+ *	  Parameter Name: tChunkSenderRequest
+ */
+#define PD_T_CHUNK_SENDER_REQUEST_NOM_MS 27
+
+/**
+ * @brief Maximum time a Chunked Message sender waits for the next Chunk
+ *	  Request before abandoning the transmission
+ *	  See Table 6-68 Time Values
+ *	  Parameter Name: tChunkSenderRequest
+ */
+#define PD_T_CHUNK_SENDER_REQUEST_MAX_MS 30
+
+/**
+ * @brief Minimum time a Chunked Message receiver waits for the next Chunk
+ *	  after sending a Chunk Request
+ *	  See Table 6-68 Time Values
+ *	  Parameter Name: tChunkSenderResponse
+ */
+#define PD_T_CHUNK_SENDER_RESPONSE_MIN_MS 24
+
+/**
+ * @brief Nominal time a Chunked Message receiver waits for the next Chunk
+ *	  after sending a Chunk Request
+ *	  See Table 6-68 Time Values
+ *	  Parameter Name: tChunkSenderResponse
+ */
+#define PD_T_CHUNK_SENDER_RESPONSE_NOM_MS 27
+
+/**
+ * @brief Maximum time a Chunked Message receiver waits for the next Chunk
+ *	  after sending a Chunk Request
+ *	  See Table 6-68 Time Values
+ *	  Parameter Name: tChunkSenderResponse
+ */
+#define PD_T_CHUNK_SENDER_RESPONSE_MAX_MS 30
+
+/**
  * @brief Minimum time to wait before sending a Not_Supported message after receiving a
  *	  Chunked message
  *	  See Table 6-68 Time Values
