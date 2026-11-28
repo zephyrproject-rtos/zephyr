@@ -23,7 +23,9 @@
 			reg = <0x40026000 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 16)>;
 			resets = <&rctl STM32_RESET(AHB1, 16)>;
-			interrupts = <31 0>;
+			/* Interrupt is shared with RNG: keep the driver in polling mode
+			 * interrupts = <31 0>;
+			 */
 			status = "disabled";
 		};
 	};

@@ -74,6 +74,31 @@ static uint8_t cbc_plaintext[16] = {0x6b, 0xc1, 0xbe, 0xe2, 0x2e, 0x40, 0x9f, 0x
 static uint8_t cbc_ciphertext[16] = {0x76, 0x49, 0xab, 0xac, 0x81, 0x19, 0xb2, 0x46,
 				     0xce, 0xe9, 0x8e, 0x9b, 0x12, 0xe9, 0x19, 0x7d};
 
+/*
+ * CBC Mode Test Vector - AES-192, NIST SP 800-38A F.2.3/F.2.4 (same IV and
+ * first plaintext block as the AES-128 vector above; ciphertext computed
+ * and verified independently with `openssl enc -aes-192-cbc`).
+ */
+static uint8_t cbc_key_192[24] = {0x8e, 0x73, 0xb0, 0xf7, 0xda, 0x0e, 0x64, 0x52,
+				  0xc8, 0x10, 0xf3, 0x2b, 0x80, 0x90, 0x79, 0xe5,
+				  0x62, 0xf8, 0xea, 0xd2, 0x52, 0x2c, 0x6b, 0x7b};
+
+static uint8_t cbc_ciphertext_192[16] = {0x4f, 0x02, 0x1d, 0xb2, 0x43, 0xbc, 0x63, 0x3d,
+					 0x71, 0x78, 0x18, 0x3a, 0x9f, 0xa0, 0x71, 0xe8};
+
+/*
+ * CBC Mode Test Vector - AES-256, NIST SP 800-38A F.2.5/F.2.6 (same IV and
+ * first plaintext block as the AES-128 vector above; ciphertext computed
+ * and verified independently with `openssl enc -aes-256-cbc`).
+ */
+static uint8_t cbc_key_256[32] = {0x60, 0x3d, 0xeb, 0x10, 0x15, 0xca, 0x71, 0xbe,
+				  0x2b, 0x73, 0xae, 0xf0, 0x85, 0x7d, 0x77, 0x81,
+				  0x1f, 0x35, 0x2c, 0x07, 0x3b, 0x61, 0x08, 0xd7,
+				  0x2d, 0x98, 0x10, 0xa3, 0x09, 0x14, 0xdf, 0xf4};
+
+static uint8_t cbc_ciphertext_256[16] = {0xf5, 0x8c, 0x4c, 0x04, 0xd6, 0xe5, 0xf1, 0xba,
+					 0x77, 0x9e, 0xab, 0xfb, 0x5f, 0x7b, 0xfb, 0xd6};
+
 /* CTR Mode Test Vectors */
 static uint8_t ctr_key[16] = {0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
 			      0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c};
@@ -133,6 +158,10 @@ static uint8_t gcm_ciphertext[58] = {
 	0xd3, 0x75, 0x22, 0x74, 0xd3, 0xa0, 0x19, 0xfb, 0xca, 0xed, 0x09, 0xa4, 0x25, 0xcd, 0x9b,
 	0x2e, 0x1c, 0x9b, 0x72, 0xee, 0xe7, 0xc9, 0xde, 0x7d, 0x52, 0xb3, 0xf3, 0xd6, 0xa5, 0x28,
 	0x4f, 0x4a, 0x6d, 0x3f, 0xe2, 0x2a, 0x5d, 0x6c, 0x2b, 0x96, 0x04, 0x94, 0xc3};
+
+/* Tag of the same message authenticated with only the first 13 bytes of gcm_hdr */
+static uint8_t gcm_tag_hdr13[16] = {0x2d, 0x85, 0x8a, 0x56, 0xcf, 0xc8, 0x68, 0x05,
+				    0xc5, 0x15, 0xda, 0x90, 0x63, 0x3f, 0xf4, 0x38};
 
 static inline const struct device *get_crypto_dev(void)
 {
@@ -337,6 +366,216 @@ ZTEST(crypto_aes, test_cbc_decrypt)
 	rc = memcmp(decrypted, cbc_plaintext, sizeof(cbc_plaintext));
 	cipher_free_session(crypto_dev, &ctx);
 	zassert_equal(rc, 0, "CBC decrypt output mismatch");
+}
+
+/*
+ * AES-192 CBC Mode Tests: same as the AES-128 CBC tests above, with a
+ * 192-bit key. Guards against a PSA/mbedTLS (or any other backend)
+ * configuration silently rejecting 192-bit keys without CI noticing, since
+ * none of the other KAT vectors in this file exercise that key size.
+ */
+ZTEST(crypto_aes, test_cbc_encrypt_aes192)
+{
+	uint8_t encrypted[BUFFER_PAD(32)] __aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t plaintext_buf[BUFFER_PAD(sizeof(cbc_plaintext))]
+		__aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t iv_copy[16];
+
+	memcpy(iv_copy, cbc_iv, sizeof(cbc_iv));
+	memcpy(plaintext_buf, cbc_plaintext, sizeof(cbc_plaintext));
+
+	struct cipher_ctx ctx = {
+		.keylen = sizeof(cbc_key_192),
+		.key.bit_stream = cbc_key_192,
+		.flags = CAP_RAW_KEY | CAP_SYNC_OPS | CAP_SEPARATE_IO_BUFS,
+	};
+
+	struct cipher_pkt pkt = {
+		.in_buf = plaintext_buf,
+		.in_len = sizeof(cbc_plaintext),
+		.out_buf_max = sizeof(encrypted),
+		.out_buf = encrypted,
+	};
+
+	int rc = cipher_begin_session(crypto_dev, &ctx, CRYPTO_CIPHER_ALGO_AES,
+				      CRYPTO_CIPHER_MODE_CBC, CRYPTO_CIPHER_OP_ENCRYPT);
+
+	/* Some backends (e.g. Realtek BEE) explicitly reject 192-bit keys with -EINVAL
+	 * rather than -ENOTSUP.
+	 */
+	if (rc == -ENOTSUP || rc == -EINVAL) {
+		ztest_test_skip();
+		return;
+	}
+
+	rc = cipher_cbc_op(&ctx, &pkt, iv_copy);
+	if (rc != 0) {
+		cipher_free_session(crypto_dev, &ctx);
+		zassert_equal(rc, 0, "CBC AES-192 encrypt failed (rc=%d)", rc);
+		return;
+	}
+
+	/* CBC prepends the IV to the output, so verify it is written back */
+	rc = memcmp(encrypted, cbc_iv, sizeof(cbc_iv));
+	if (rc != 0) {
+		cipher_free_session(crypto_dev, &ctx);
+		zassert_equal(rc, 0, "CBC AES-192 encrypt IV prefix mismatch");
+		return;
+	}
+
+	/* Ciphertext follows the IV prefix, starting at offset 16 */
+	rc = memcmp(encrypted + 16, cbc_ciphertext_192, sizeof(cbc_ciphertext_192));
+	cipher_free_session(crypto_dev, &ctx);
+	zassert_equal(rc, 0, "CBC AES-192 encrypt output mismatch");
+}
+
+ZTEST(crypto_aes, test_cbc_decrypt_aes192)
+{
+	/* For decrypt, need to prepend IV to ciphertext input */
+	uint8_t input[BUFFER_PAD(32)] __aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t decrypted[BUFFER_PAD(16)] __aligned(IO_ALIGNMENT_BYTES) = {0};
+
+	/* Prepend IV to ciphertext */
+	memcpy(input, cbc_iv, sizeof(cbc_iv));
+	memcpy(input + 16, cbc_ciphertext_192, sizeof(cbc_ciphertext_192));
+
+	struct cipher_ctx ctx = {
+		.keylen = sizeof(cbc_key_192),
+		.key.bit_stream = cbc_key_192,
+		.flags = CAP_RAW_KEY | CAP_SYNC_OPS | CAP_SEPARATE_IO_BUFS,
+	};
+	struct cipher_pkt pkt = {
+		.in_buf = (uint8_t *)input,
+		.in_len = sizeof(cbc_iv) + sizeof(cbc_ciphertext_192),
+		.out_buf_max = sizeof(decrypted),
+		.out_buf = decrypted,
+	};
+
+	int rc = cipher_begin_session(crypto_dev, &ctx, CRYPTO_CIPHER_ALGO_AES,
+				      CRYPTO_CIPHER_MODE_CBC, CRYPTO_CIPHER_OP_DECRYPT);
+
+	/* Some backends (e.g. Realtek BEE) explicitly reject 192-bit keys with -EINVAL
+	 * rather than -ENOTSUP.
+	 */
+	if (rc == -ENOTSUP || rc == -EINVAL) {
+		ztest_test_skip();
+		return;
+	}
+
+	rc = cipher_cbc_op(&ctx, &pkt, input);
+	if (rc != 0) {
+		cipher_free_session(crypto_dev, &ctx);
+		zassert_equal(rc, 0, "CBC AES-192 decrypt failed (rc=%d)", rc);
+		return;
+	}
+
+	rc = memcmp(decrypted, cbc_plaintext, sizeof(cbc_plaintext));
+	cipher_free_session(crypto_dev, &ctx);
+	zassert_equal(rc, 0, "CBC AES-192 decrypt output mismatch");
+}
+
+/*
+ * AES-256 CBC Mode Tests: same as the AES-192 CBC tests above, with a
+ * 256-bit key.
+ */
+ZTEST(crypto_aes, test_cbc_encrypt_aes256)
+{
+	uint8_t encrypted[BUFFER_PAD(32)] __aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t plaintext_buf[BUFFER_PAD(sizeof(cbc_plaintext))]
+		__aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t iv_copy[16];
+
+	memcpy(iv_copy, cbc_iv, sizeof(cbc_iv));
+	memcpy(plaintext_buf, cbc_plaintext, sizeof(cbc_plaintext));
+
+	struct cipher_ctx ctx = {
+		.keylen = sizeof(cbc_key_256),
+		.key.bit_stream = cbc_key_256,
+		.flags = CAP_RAW_KEY | CAP_SYNC_OPS | CAP_SEPARATE_IO_BUFS,
+	};
+
+	struct cipher_pkt pkt = {
+		.in_buf = plaintext_buf,
+		.in_len = sizeof(cbc_plaintext),
+		.out_buf_max = sizeof(encrypted),
+		.out_buf = encrypted,
+	};
+
+	int rc = cipher_begin_session(crypto_dev, &ctx, CRYPTO_CIPHER_ALGO_AES,
+				      CRYPTO_CIPHER_MODE_CBC, CRYPTO_CIPHER_OP_ENCRYPT);
+
+	/* Some backends (e.g. Infineon CRYPTOLITE) reject key sizes they do not support with
+	 * -EINVAL rather than -ENOTSUP.
+	 */
+	if (rc == -ENOTSUP || rc == -EINVAL) {
+		ztest_test_skip();
+		return;
+	}
+
+	rc = cipher_cbc_op(&ctx, &pkt, iv_copy);
+	if (rc != 0) {
+		cipher_free_session(crypto_dev, &ctx);
+		zassert_equal(rc, 0, "CBC AES-256 encrypt failed (rc=%d)", rc);
+		return;
+	}
+
+	/* CBC prepends the IV to the output, so verify it is written back */
+	rc = memcmp(encrypted, cbc_iv, sizeof(cbc_iv));
+	if (rc != 0) {
+		cipher_free_session(crypto_dev, &ctx);
+		zassert_equal(rc, 0, "CBC AES-256 encrypt IV prefix mismatch");
+		return;
+	}
+
+	/* Ciphertext follows the IV prefix, starting at offset 16 */
+	rc = memcmp(encrypted + 16, cbc_ciphertext_256, sizeof(cbc_ciphertext_256));
+	cipher_free_session(crypto_dev, &ctx);
+	zassert_equal(rc, 0, "CBC AES-256 encrypt output mismatch");
+}
+
+ZTEST(crypto_aes, test_cbc_decrypt_aes256)
+{
+	/* For decrypt, need to prepend IV to ciphertext input */
+	uint8_t input[BUFFER_PAD(32)] __aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t decrypted[BUFFER_PAD(16)] __aligned(IO_ALIGNMENT_BYTES) = {0};
+
+	/* Prepend IV to ciphertext */
+	memcpy(input, cbc_iv, sizeof(cbc_iv));
+	memcpy(input + 16, cbc_ciphertext_256, sizeof(cbc_ciphertext_256));
+
+	struct cipher_ctx ctx = {
+		.keylen = sizeof(cbc_key_256),
+		.key.bit_stream = cbc_key_256,
+		.flags = CAP_RAW_KEY | CAP_SYNC_OPS | CAP_SEPARATE_IO_BUFS,
+	};
+	struct cipher_pkt pkt = {
+		.in_buf = (uint8_t *)input,
+		.in_len = sizeof(cbc_iv) + sizeof(cbc_ciphertext_256),
+		.out_buf_max = sizeof(decrypted),
+		.out_buf = decrypted,
+	};
+
+	int rc = cipher_begin_session(crypto_dev, &ctx, CRYPTO_CIPHER_ALGO_AES,
+				      CRYPTO_CIPHER_MODE_CBC, CRYPTO_CIPHER_OP_DECRYPT);
+
+	/* Some backends (e.g. Infineon CRYPTOLITE) reject key sizes they do not support with
+	 * -EINVAL rather than -ENOTSUP.
+	 */
+	if (rc == -ENOTSUP || rc == -EINVAL) {
+		ztest_test_skip();
+		return;
+	}
+
+	rc = cipher_cbc_op(&ctx, &pkt, input);
+	if (rc != 0) {
+		cipher_free_session(crypto_dev, &ctx);
+		zassert_equal(rc, 0, "CBC AES-256 decrypt failed (rc=%d)", rc);
+		return;
+	}
+
+	rc = memcmp(decrypted, cbc_plaintext, sizeof(cbc_plaintext));
+	cipher_free_session(crypto_dev, &ctx);
+	zassert_equal(rc, 0, "CBC AES-256 decrypt output mismatch");
 }
 
 /* CTR Mode Tests */
@@ -647,6 +886,66 @@ ZTEST(crypto_aes, test_gcm_encrypt)
 	rc = memcmp(encrypted, gcm_ciphertext, sizeof(gcm_ciphertext));
 	cipher_free_session(crypto_dev, &ctx);
 	zassert_equal(rc, 0, "GCM encrypt output mismatch");
+}
+
+ZTEST(crypto_aes, test_gcm_encrypt_ad_not_word_multiple)
+{
+	uint8_t encrypted[BUFFER_PAD(60)] __aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t plaintext_buf[BUFFER_PAD(sizeof(gcm_plaintext))]
+		__aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t hdr_buf[BUFFER_PAD(13)] __aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t nonce_copy[12];
+
+	memcpy(nonce_copy, gcm_nonce, sizeof(gcm_nonce));
+	memcpy(plaintext_buf, gcm_plaintext, sizeof(gcm_plaintext));
+	memcpy(hdr_buf, gcm_hdr, 13);
+
+	struct cipher_ctx ctx = {
+		.keylen = sizeof(gcm_key),
+		.key.bit_stream = gcm_key,
+		.mode_params.gcm_info = {
+			.nonce_len = sizeof(gcm_nonce),
+			.tag_len = 16,
+		},
+		.flags = CAP_RAW_KEY | CAP_SYNC_OPS | CAP_SEPARATE_IO_BUFS,
+	};
+
+	struct cipher_pkt pkt = {
+		.in_buf = plaintext_buf,
+		.in_len = sizeof(gcm_plaintext),
+		.out_buf_max = sizeof(encrypted),
+		.out_buf = encrypted,
+	};
+
+	struct cipher_aead_pkt aead_pkt = {
+		.ad = hdr_buf,
+		.ad_len = 13,
+		.pkt = &pkt,
+		.tag = encrypted + sizeof(gcm_plaintext),
+	};
+
+	int rc = cipher_begin_session(crypto_dev, &ctx, CRYPTO_CIPHER_ALGO_AES,
+				      CRYPTO_CIPHER_MODE_GCM, CRYPTO_CIPHER_OP_ENCRYPT);
+
+	if (rc == -ENOTSUP) {
+		ztest_test_skip();
+		return;
+	}
+
+	rc = cipher_gcm_op(&ctx, &aead_pkt, nonce_copy);
+	cipher_free_session(crypto_dev, &ctx);
+
+	/* Some backends only accept an AAD length that is a multiple of 4 bytes */
+	if (rc == -EINVAL || rc == -ENOTSUP) {
+		ztest_test_skip();
+		return;
+	}
+
+	zassert_equal(rc, 0, "GCM encrypt failed (rc=%d)", rc);
+	zassert_mem_equal(encrypted, gcm_ciphertext, sizeof(gcm_plaintext),
+			  "GCM encrypt output mismatch");
+	zassert_mem_equal(encrypted + sizeof(gcm_plaintext), gcm_tag_hdr13, sizeof(gcm_tag_hdr13),
+			  "GCM tag mismatch");
 }
 
 ZTEST(crypto_aes, test_gcm_decrypt)

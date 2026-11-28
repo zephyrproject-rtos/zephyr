@@ -8,6 +8,25 @@
 #ifndef ZEPHYR_DRIVERS_CRYPTO_CRYPTO_STM32_PRIV_H_
 #define ZEPHYR_DRIVERS_CRYPTO_CRYPTO_STM32_PRIV_H_
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_cryp)
+#define DT_DRV_COMPAT st_stm32_cryp
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_aes)
+#define DT_DRV_COMPAT st_stm32_aes
+#else
+#error No STM32 HW Crypto Accelerator in device tree
+#endif
+
+/*
+ * HAL2 has its own IT API (HAL_AES_{En,De}crypt_IT() on hal_aes_handle_t, with
+ * HAL_AES_OutCpltCallback()/HAL_AES_ErrorCallback()), incompatible with the
+ * HAL_CRYP_{En,De}crypt_IT()/HAL_CRYP_*Callback() on CRYP_HandleTypeDef used below.
+ * Not implemented here yet, so keep HAL2 on the polling do_aes() path.
+ */
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes) && !defined(CONFIG_STM32_HAL2) &&                   \
+	DT_INST_IRQ_HAS_IDX(0, 0)
+#define STM32_CRYP_USE_ISR
+#endif
+
 #ifdef CONFIG_STM32_HAL2
 typedef struct hal2_aes_config_data crypt_config_t;
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
@@ -34,6 +53,12 @@ struct crypto_stm32_data {
 	hal_crypt_handle_t hcryp;
 	struct k_sem device_sem;
 	struct k_sem session_sem;
+#if defined(STM32_CRYP_USE_ISR)
+	struct {
+		struct k_sem complete_sem;
+		int error;
+	} isr_session;
+#endif
 };
 
 #ifdef CONFIG_STM32_HAL2
