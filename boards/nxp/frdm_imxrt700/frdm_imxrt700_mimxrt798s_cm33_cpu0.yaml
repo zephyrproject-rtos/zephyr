@@ -16,5 +16,8 @@ toolchain:
 supported:
   - gpio
   - uart
+  - usb_device
+  - usbd
+  - usbh
   - serial
 vendor: nxp
