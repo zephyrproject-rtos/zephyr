@@ -1,0 +1,19 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * KIT_PSC3M5_EVK for the I2C fault injection suite.  The controller under test
+ * is SCB0 (i2c0) on P9[0] SCL and P9[2] SDA, at J3.10 and J3.9 (kit user
+ * guide 002-39385 Rev. *B, Table 3).  The kit pulls both lines up to VTARG_REF
+ * through 4.7 kOhm (R50, R51), so the bus needs no shield.
+ */
+
+/ {
+	aliases {
+		i2c-dut = &i2c0;
+	};
+};
