@@ -1,0 +1,42 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nordic external analog input (AIN) to GPIO pin mapping
+
+  Describes which GPIO pin is connected to each external analog input of the
+  SoC. The mapping is shared by all analog peripherals that use AIN inputs
+  (SAADC, COMP and LPCOMP).
+
+  Entry index is the AIN number, so the n-th entry describes AINn. AIN inputs
+  that do not exist on the SoC are described with an empty entry (<0>).
+  Internal inputs (for example VDD) are not listed.
+
+  Example for a SoC with only AIN2 (P0.04) and AIN3 (P0.05):
+
+    nrf_ain: analog-inputs {
+            compatible = "nordic,nrf-ain";
+            ain-gpios = <0>, <0>, <&gpio0 4 0>, <&gpio0 5 0>;
+    };
+
+  In SoC devicetree files the property is generated from the NRFX_AIN_TABLE
+  definition provided by nrfx, which is also used to build the nrfx analog
+  input tables:
+
+    #include <nrfx_analog/nrf54l_05_10_15_ain.h>
+    #include <zephyr/dt-bindings/misc/nordic-nrf-ain.h>
+
+    nrf_ain: analog-inputs {
+            compatible = "nordic,nrf-ain";
+            ain-gpios = <NRF_AIN_DT_GPIOS>;
+    };
+
+compatible: "nordic,nrf-ain"
+
+properties:
+  ain-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO pin connected to each external analog input, indexed by AIN number.
+      Use <0> for AIN inputs that are not available on the SoC.

@@ -19,25 +19,13 @@ LOG_MODULE_REGISTER(adc_nrfx_saadc, CONFIG_ADC_LOG_LEVEL);
 
 #define DT_DRV_COMPAT nordic_nrf_saadc
 
-BUILD_ASSERT((NRF_SAADC_AIN0 == NRFX_ANALOG_EXTERNAL_AIN0) &&
-	     (NRF_SAADC_AIN1 == NRFX_ANALOG_EXTERNAL_AIN1) &&
-	     (NRF_SAADC_AIN2 == NRFX_ANALOG_EXTERNAL_AIN2) &&
-	     (NRF_SAADC_AIN3 == NRFX_ANALOG_EXTERNAL_AIN3) &&
-	     (NRF_SAADC_AIN4 == NRFX_ANALOG_EXTERNAL_AIN4) &&
-	     (NRF_SAADC_AIN5 == NRFX_ANALOG_EXTERNAL_AIN5) &&
-	     (NRF_SAADC_AIN6 == NRFX_ANALOG_EXTERNAL_AIN6) &&
-	     (NRF_SAADC_AIN7 == NRFX_ANALOG_EXTERNAL_AIN7) &&
-#if NRF_SAADC_HAS_INPUT_VDDHDIV5
-	     (NRF_SAADC_VDDHDIV5 == NRFX_ANALOG_INTERNAL_VDDHDIV5) &&
-#endif
-#if NRF_SAADC_HAS_INPUT_VDD
-	     (NRF_SAADC_VDD == NRFX_ANALOG_INTERNAL_VDD) &&
-#endif
-#if NRF_SAADC_HAS_INPUT_AVSS
-		 (NRF_SAADC_AVSS == NRFX_ANALOG_TEST_AVSS) &&
-#endif
-	     1,
-	     "Definitions from nrf-saadc.h do not match those from nrfx_analog_common.h");
+#define SAADC_CHECK_CHANNEL_AIN(node_id)                                                           \
+	NRF_DT_CHECK_AIN(node_id, zephyr_input_positive, "zephyr,input-positive",                  \
+			 NRFX_ANALOG_AIN_TEST_OFFSET);                                             \
+	NRF_DT_CHECK_AIN(node_id, zephyr_input_negative, "zephyr,input-negative",                  \
+			 NRFX_ANALOG_AIN_TEST_OFFSET);
+
+DT_INST_FOREACH_CHILD_STATUS_OKAY(0, SAADC_CHECK_CHANNEL_AIN)
 
 struct driver_data {
 	struct adc_context ctx;

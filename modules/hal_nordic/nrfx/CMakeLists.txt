@@ -20,6 +20,7 @@ if(NOT CONFIG_NRF_DONT_USE_STABLE_BSP)
   set(MDK_DIR ${BSP_DIR}/mdk)
 
   zephyr_include_directories(${BSP_DIR})
+  zephyr_include_directories(${BSP_DIR}/include)
   zephyr_include_directories(${BSP_DIR}/templates)
 endif()
 
