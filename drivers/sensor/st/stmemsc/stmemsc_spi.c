@@ -17,9 +17,10 @@
 /*
  * SPI read
  */
-int stmemsc_spi_read(const struct spi_dt_spec *stmemsc,
-		     uint8_t reg_addr, uint8_t *value, uint8_t len)
+int32_t stmemsc_spi_read(void *ctx, uint8_t reg_addr,
+			 uint8_t *value, uint16_t len)
 {
+	const struct spi_dt_spec *stmemsc = ctx;
 	uint8_t buffer_tx[2] = { reg_addr | SPI_READ, 0 };
 
 	/*  write 1 byte with reg addr (msb at 1) + 1 dummy byte */
@@ -42,9 +43,10 @@ int stmemsc_spi_read(const struct spi_dt_spec *stmemsc,
 /*
  * SPI write
  */
-int stmemsc_spi_write(const struct spi_dt_spec *stmemsc,
-		      uint8_t reg_addr, uint8_t *value, uint8_t len)
+int32_t stmemsc_spi_write(void *ctx, uint8_t reg_addr,
+			  const uint8_t *value, uint16_t len)
 {
+	const struct spi_dt_spec *stmemsc = ctx;
 	uint8_t buffer_tx[1] = { reg_addr & ~SPI_READ };
 
 	/*
@@ -53,29 +55,29 @@ int stmemsc_spi_write(const struct spi_dt_spec *stmemsc,
 	 */
 	const struct spi_buf tx_buf[2] = {
 		{ .buf = buffer_tx, .len = 1, },
-		{ .buf = value, .len = len, }
+		{ .buf = (uint8_t *)value, .len = len, }
 	};
 	const struct spi_buf_set tx = { .buffers = tx_buf, .count = 2 };
 
 	return spi_write_dt(stmemsc, &tx);
 }
 
-int stmemsc_spi_read_incr(const struct spi_dt_spec *stmemsc,
-			  uint8_t reg_addr, uint8_t *value, uint8_t len)
+int32_t stmemsc_spi_read_incr(void *ctx, uint8_t reg_addr,
+			      uint8_t *value, uint16_t len)
 {
 	if (len > 1) {
 		reg_addr |= STMEMSC_SPI_ADDR_AUTO_INCR;
 	}
 
-	return stmemsc_spi_read(stmemsc, reg_addr, value, len);
+	return stmemsc_spi_read(ctx, reg_addr, value, len);
 }
 
-int stmemsc_spi_write_incr(const struct spi_dt_spec *stmemsc,
-			   uint8_t reg_addr, uint8_t *value, uint8_t len)
+int32_t stmemsc_spi_write_incr(void *ctx, uint8_t reg_addr,
+			       const uint8_t *value, uint16_t len)
 {
 	if (len > 1) {
 		reg_addr |= STMEMSC_SPI_ADDR_AUTO_INCR;
 	}
 
-	return stmemsc_spi_write(stmemsc, reg_addr, value, len);
+	return stmemsc_spi_write(ctx, reg_addr, value, len);
 }

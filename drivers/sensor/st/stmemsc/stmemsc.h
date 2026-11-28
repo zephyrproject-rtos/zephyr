@@ -24,16 +24,16 @@ void stmemsc_mdelay(uint32_t millisec);
  */
 #define STMEMSC_CTX_I2C(stmdev_ctx_ptr)					\
 	.ctx = {							\
-		.read_reg = (stmdev_read_ptr)stmemsc_i2c_read,		\
-		.write_reg = (stmdev_write_ptr)stmemsc_i2c_write,	\
-		.mdelay = (stmdev_mdelay_ptr)stmemsc_mdelay,		\
+		.read_reg = stmemsc_i2c_read,				\
+		.write_reg = stmemsc_i2c_write,				\
+		.mdelay = stmemsc_mdelay,				\
 		.handle = (void *)stmdev_ctx_ptr			\
 	}
 
-int stmemsc_i2c_read(const struct i2c_dt_spec *stmemsc,
-		     uint8_t reg_addr, uint8_t *value, uint8_t len);
-int stmemsc_i2c_write(const struct i2c_dt_spec *stmemsc,
-		      uint8_t reg_addr, uint8_t *value, uint8_t len);
+int32_t stmemsc_i2c_read(void *ctx, uint8_t reg_addr,
+			 uint8_t *value, uint16_t len);
+int32_t stmemsc_i2c_write(void *ctx, uint8_t reg_addr,
+			  const uint8_t *value, uint16_t len);
 
 /*
  * Populate the stmdev_ctx_t structure pointed by stmdev_ctx_ptr with
@@ -42,16 +42,16 @@ int stmemsc_i2c_write(const struct i2c_dt_spec *stmemsc,
  */
 #define STMEMSC_CTX_I2C_INCR(stmdev_ctx_ptr)				\
 	.ctx = {							\
-		.read_reg = (stmdev_read_ptr)stmemsc_i2c_read_incr,	\
-		.write_reg = (stmdev_write_ptr)stmemsc_i2c_write_incr,	\
-		.mdelay = (stmdev_mdelay_ptr)stmemsc_mdelay,		\
+		.read_reg = stmemsc_i2c_read_incr,			\
+		.write_reg = stmemsc_i2c_write_incr,			\
+		.mdelay = stmemsc_mdelay,				\
 		.handle = (void *)stmdev_ctx_ptr			\
 	}
 
-int stmemsc_i2c_read_incr(const struct i2c_dt_spec *stmemsc,
-			  uint8_t reg_addr, uint8_t *value, uint8_t len);
-int stmemsc_i2c_write_incr(const struct i2c_dt_spec *stmemsc,
-			   uint8_t reg_addr, uint8_t *value, uint8_t len);
+int32_t stmemsc_i2c_read_incr(void *ctx, uint8_t reg_addr,
+			      uint8_t *value, uint16_t len);
+int32_t stmemsc_i2c_write_incr(void *ctx, uint8_t reg_addr,
+			       const uint8_t *value, uint16_t len);
 
 /*
  * Populate the stmdev_ctx_t structure pointed by stmdev_ctx_ptr with
@@ -59,9 +59,9 @@ int stmemsc_i2c_write_incr(const struct i2c_dt_spec *stmemsc,
  */
 #define STMEMSC_CTX_I2C_CUSTOM(stmdev_ctx_ptr, i2c_rd_api, i2c_wr_api)	\
 	.ctx = {							\
-		.read_reg = (stmdev_read_ptr)i2c_rd_api,		\
-		.write_reg = (stmdev_write_ptr)i2c_wr_api,		\
-		.mdelay = (stmdev_mdelay_ptr)stmemsc_mdelay,		\
+		.read_reg = i2c_rd_api,					\
+		.write_reg = i2c_wr_api,				\
+		.mdelay = stmemsc_mdelay,				\
 		.handle = (void *)stmdev_ctx_ptr			\
 	}
 
@@ -74,16 +74,16 @@ int stmemsc_i2c_write_incr(const struct i2c_dt_spec *stmemsc,
  */
 #define STMEMSC_CTX_I3C(stmdev_ctx_ptr)					\
 	.ctx = {							\
-		.read_reg = (stmdev_read_ptr)stmemsc_i3c_read,		\
-		.write_reg = (stmdev_write_ptr)stmemsc_i3c_write,	\
-		.mdelay = (stmdev_mdelay_ptr)stmemsc_mdelay,		\
+		.read_reg = stmemsc_i3c_read,				\
+		.write_reg = stmemsc_i3c_write,				\
+		.mdelay = stmemsc_mdelay,				\
 		.handle = (void *)stmdev_ctx_ptr			\
 	}
 
-int stmemsc_i3c_read(void *stmemsc,
-		     uint8_t reg_addr, uint8_t *value, uint8_t len);
-int stmemsc_i3c_write(void *stmemsc,
-		      uint8_t reg_addr, uint8_t *value, uint8_t len);
+int32_t stmemsc_i3c_read(void *ctx, uint8_t reg_addr,
+			 uint8_t *value, uint16_t len);
+int32_t stmemsc_i3c_write(void *ctx, uint8_t reg_addr,
+			  const uint8_t *value, uint16_t len);
 #endif
 
 #ifdef CONFIG_SPI
@@ -93,16 +93,16 @@ int stmemsc_i3c_write(void *stmemsc,
  */
 #define STMEMSC_CTX_SPI(stmdev_ctx_ptr)					\
 	.ctx = {							\
-		.read_reg = (stmdev_read_ptr)stmemsc_spi_read,		\
-		.write_reg = (stmdev_write_ptr)stmemsc_spi_write,	\
-		.mdelay = (stmdev_mdelay_ptr)stmemsc_mdelay,		\
+		.read_reg = stmemsc_spi_read,				\
+		.write_reg = stmemsc_spi_write,				\
+		.mdelay = stmemsc_mdelay,				\
 		.handle = (void *)stmdev_ctx_ptr			\
 	}
 
-int stmemsc_spi_read(const struct spi_dt_spec *stmemsc,
-		     uint8_t reg_addr, uint8_t *value, uint8_t len);
-int stmemsc_spi_write(const struct spi_dt_spec *stmemsc,
-		      uint8_t reg_addr, uint8_t *value, uint8_t len);
+int32_t stmemsc_spi_read(void *ctx, uint8_t reg_addr,
+			 uint8_t *value, uint16_t len);
+int32_t stmemsc_spi_write(void *ctx, uint8_t reg_addr,
+			  const uint8_t *value, uint16_t len);
 
 /*
  * Populate the stmdev_ctx_t structure pointed by stmdev_ctx_ptr with
@@ -111,16 +111,16 @@ int stmemsc_spi_write(const struct spi_dt_spec *stmemsc,
  */
 #define STMEMSC_CTX_SPI_INCR(stmdev_ctx_ptr)				\
 	.ctx = {							\
-		.read_reg = (stmdev_read_ptr)stmemsc_spi_read_incr,	\
-		.write_reg = (stmdev_write_ptr)stmemsc_spi_write_incr,	\
-		.mdelay = (stmdev_mdelay_ptr)stmemsc_mdelay,		\
+		.read_reg = stmemsc_spi_read_incr,			\
+		.write_reg = stmemsc_spi_write_incr,			\
+		.mdelay = stmemsc_mdelay,				\
 		.handle = (void *)stmdev_ctx_ptr			\
 	}
 
-int stmemsc_spi_read_incr(const struct spi_dt_spec *stmemsc,
-			  uint8_t reg_addr, uint8_t *value, uint8_t len);
-int stmemsc_spi_write_incr(const struct spi_dt_spec *stmemsc,
-			   uint8_t reg_addr, uint8_t *value, uint8_t len);
+int32_t stmemsc_spi_read_incr(void *ctx, uint8_t reg_addr,
+			      uint8_t *value, uint16_t len);
+int32_t stmemsc_spi_write_incr(void *ctx, uint8_t reg_addr,
+			       const uint8_t *value, uint16_t len);
 
 /*
  * Populate the stmdev_ctx_t structure pointed by stmdev_ctx_ptr with
@@ -128,9 +128,9 @@ int stmemsc_spi_write_incr(const struct spi_dt_spec *stmemsc,
  */
 #define STMEMSC_CTX_SPI_CUSTOM(stmdev_ctx_ptr, spi_rd_api, spi_wr_api)	\
 	.ctx = {							\
-		.read_reg = (stmdev_read_ptr)spi_rd_api,		\
-		.write_reg = (stmdev_write_ptr)spi_wr_api,		\
-		.mdelay = (stmdev_mdelay_ptr)stmemsc_mdelay,		\
+		.read_reg = spi_rd_api,					\
+		.write_reg = spi_wr_api,				\
+		.mdelay = stmemsc_mdelay,				\
 		.handle = (void *)stmdev_ctx_ptr			\
 	}
 
