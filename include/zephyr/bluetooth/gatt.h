@@ -2183,6 +2183,12 @@ struct bt_gatt_write_params {
  *  @rstref{Callback execution contexts <bluetooth_callback_contexts>}.
  *  @p params must remain valid until start of callback.
  *
+ *  A long write that fails after the server has queued part of the value
+ *  has that part cancelled with an Execute Write Request before
+ *  @p params->func is called. If no ATT request is free for the cancel then,
+ *  the next long write on the connection sends it first, and returns -ENOMEM
+ *  when it still cannot: retry it as any other -ENOMEM.
+ *
  *  @param conn Connection object.
  *  @param params Write parameters.
  *

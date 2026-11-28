@@ -374,6 +374,170 @@ void test_procedure_1(void)
 	TEST_PASS("DUT done");
 }
 
+static atomic_t lw_done;
+static uint8_t lw_err[2];
+
+static void lw_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_write_params *params)
+{
+	atomic_val_t i = atomic_get(&lw_done);
+
+	TEST_ASSERT((size_t)i < ARRAY_SIZE(lw_err), "Unexpected write callback");
+	lw_err[i] = err;
+	(void)atomic_inc(&lw_done);
+}
+
+/* Give a long write of three Prepare Write Requests with the default ATT_MTU of 23 */
+static void lw_start(struct bt_gatt_write_params *params, uint8_t *value, size_t length)
+{
+	int err;
+
+	for (size_t i = 0U; i < length; i++) {
+		value[i] = (uint8_t)i;
+	}
+
+	*params = (struct bt_gatt_write_params){
+		.func = lw_cb, .handle = LONG_WRITE_HANDLE, .data = value, .length = length};
+
+	err = bt_gatt_write(dconn, params);
+	TEST_ASSERT(err == 0, "Failed to start a long write (err %d)", err);
+}
+
+static void lw_expect(const uint8_t *errs)
+{
+	WAIT_FOR_VAL(lw_done, ARRAY_SIZE(lw_err));
+
+	for (size_t i = 0U; i < ARRAY_SIZE(lw_err); i++) {
+		TEST_ASSERT(lw_err[i] == errs[i], "Long write %zu reported 0x%02x, want 0x%02x", i,
+			    lw_err[i], errs[i]);
+	}
+
+	TEST_ASSERT(IS_FLAG_SET(is_connected), "The connection was dropped");
+}
+
+/* Write Requests that hold every ATT request while a long write fails */
+static struct bt_gatt_write_params lw_writes[CONFIG_BT_ATT_TX_COUNT];
+static atomic_t lw_written;
+
+static void lw_write_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_write_params *params)
+{
+	TEST_ASSERT(err == 0, "A write request failed (err %u)", err);
+
+	(void)atomic_inc(&lw_written);
+}
+
+static void lw_send_writes(void)
+{
+	static uint8_t value[4] = {1, 2, 3, 4};
+	int err;
+
+	for (size_t i = 0U; i < ARRAY_SIZE(lw_writes); i++) {
+		lw_writes[i] = (struct bt_gatt_write_params){.func = lw_write_cb,
+							     .handle = LONG_WRITE_HANDLE,
+							     .data = value,
+							     .length = sizeof(value)};
+		err = bt_gatt_write(dconn, &lw_writes[i]);
+		TEST_ASSERT(err == 0, "Failed to send write request %zu (err %d)", i, err);
+	}
+}
+
+/* A long write the tester rejects a Prepare Write Request of, then one it accepts */
+static void long_write_rejected(void)
+{
+	static uint8_t va[40], vb[40];
+	static struct bt_gatt_write_params pa, pb;
+	static const uint8_t errs[] = {BT_ATT_ERR_PREPARE_QUEUE_FULL, 0};
+	int err;
+
+	err = bt_enable(NULL);
+	TEST_ASSERT(err == 0, "Can't enable Bluetooth (err %d)", err);
+	connect();
+
+	lw_start(&pa, va, sizeof(va));
+	WAIT_FOR_VAL(lw_done, 1);
+	lw_start(&pb, vb, sizeof(vb));
+
+	lw_expect(errs);
+
+	TEST_PASS("DUT done");
+}
+
+static void test_long_write_rejected(void)
+{
+	/* Test purpose:
+	 * Core v7.0 Vol 3 Part F 3.4.6.1 ATT_PREPARE_WRITE_REQ
+	 *
+	 * A server that rejects a Prepare Write Request keeps the values it
+	 * queued before it, and the next Execute Write Request writes them.
+	 *
+	 * Test procedure:
+	 * - dut: long write; tester: reject its second Prepare Write Request
+	 * - dut: long write; tester: accept it
+	 *
+	 * [verdict]
+	 * - the first write reports Prepare Queue Full, the second succeeds
+	 * - the tester gets the cancel of the first value before the second
+	 *   write
+	 */
+	long_write_rejected();
+}
+
+static void test_long_write_first_rejected(void)
+{
+	/* Test purpose:
+	 * A rejected Prepare Write Request is not queued (Core v7.0 Vol 3
+	 * Part F 3.4.6.1), so a long write whose first one is rejected leaves
+	 * nothing to cancel.
+	 *
+	 * Test procedure:
+	 * - dut: long write; tester: reject its first Prepare Write Request
+	 * - dut: long write; tester: accept it
+	 *
+	 * [verdict]
+	 * - the first write reports Prepare Queue Full, the second succeeds
+	 * - the tester gets no cancel
+	 */
+	long_write_rejected();
+}
+
+static void test_long_write_cancel_deferred(void)
+{
+	static uint8_t va[40], vb[40];
+	static struct bt_gatt_write_params pa, pb;
+	static const uint8_t errs[] = {BT_ATT_ERR_UNLIKELY, 0};
+	int err;
+
+	err = bt_enable(NULL);
+	TEST_ASSERT(err == 0, "Can't enable Bluetooth (err %d)", err);
+
+	/* Test purpose:
+	 * Write Requests given behind a long write hold every ATT request when
+	 * its first value is queued on the server, so the host can send
+	 * neither the next Prepare Write Request nor the cancel of that value.
+	 *
+	 * Test procedure:
+	 * - dut: long write, then CONFIG_BT_ATT_TX_COUNT Write Requests
+	 * - dut: long write once the first one failed and the tester has
+	 *   responded to the Write Requests
+	 *
+	 * [verdict]
+	 * - the first write fails, the second succeeds, and the connection
+	 *   stays up
+	 * - the tester gets the cancel of the first value before the second
+	 *   write
+	 */
+	connect();
+
+	lw_start(&pa, va, sizeof(va));
+	lw_send_writes();
+	WAIT_FOR_VAL(lw_done, 1);
+	WAIT_FOR_VAL(lw_written, ARRAY_SIZE(lw_writes));
+	lw_start(&pb, vb, sizeof(vb));
+
+	lw_expect(errs);
+
+	TEST_PASS("DUT done");
+}
+
 static const struct bst_test_instance test_to_add[] = {
 	{
 		.test_id = "dut",
@@ -382,6 +546,18 @@ static const struct bst_test_instance test_to_add[] = {
 	{
 		.test_id = "dut_long_write_echo",
 		.test_main_f = test_procedure_1,
+	},
+	{
+		.test_id = "dut_long_write_rejected",
+		.test_main_f = test_long_write_rejected,
+	},
+	{
+		.test_id = "dut_long_write_first_rejected",
+		.test_main_f = test_long_write_first_rejected,
+	},
+	{
+		.test_id = "dut_long_write_cancel_deferred",
+		.test_main_f = test_long_write_cancel_deferred,
 	},
 	BSTEST_END_MARKER,
 };
