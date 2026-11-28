@@ -878,6 +878,24 @@
 				status = "disabled";
 			};
 
+			dac0: dac@90000 {
+				compatible = "infineon,hppass-dac-v3";
+				reg = <0x00090000 0x400>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				#io-channel-cells = <1>;
+				status = "disabled";
+			};
+
+			dac1: dac@90400 {
+				compatible = "infineon,hppass-dac-v3";
+				reg = <0x00090400 0x400>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				#io-channel-cells = <1>;
+				status = "disabled";
+			};
+
 			csg0: csg@b0000 {
 				compatible = "infineon,hppass-csg-v3", "infineon,hppass-csg";
 				reg = <0x000b0000 0x10000>;

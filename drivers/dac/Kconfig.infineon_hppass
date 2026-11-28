@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config DAC_INFINEON_HPPASS
+	bool "Infineon HPPASS standalone DAC driver"
+	default y
+	depends on DT_HAS_INFINEON_HPPASS_DAC_V3_ENABLED
+	depends on DT_HAS_INFINEON_HPPASS_ANALOG_V3_ENABLED
+	depends on MFD_INFINEON_HPPASS
+	help
+	  Enable the standalone 12-bit DACs on MCPASS v3. Each device exposes
+	  channel 0 for direct writes to its buffered pin output. These DACs
+	  are independent of the 10-bit DACs in the HPPASS CSG block.

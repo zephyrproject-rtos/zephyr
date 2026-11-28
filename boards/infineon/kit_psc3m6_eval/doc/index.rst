@@ -99,6 +99,47 @@ Default Zephyr Peripheral Mapping
 | AN_B4     | SAR ADC ch 12   | Potentiometer              |
 +-----------+-----------------+----------------------------+
 
+Standalone DACs
+===============
+
+MCPASS v3 provides two independent 12-bit standalone DACs, represented by
+``dac0`` and ``dac1`` with compatible ``infineon,hppass-dac-v3``. Each uses
+channel 0 and supports buffered pin output.
+They are separate from the 10-bit DACs in the CSG block.
+Enable :kconfig:option:`CONFIG_MFD` and :kconfig:option:`CONFIG_DAC`; the
+HPPASS MFD parent must be enabled for the standalone DAC driver.
+The standalone driver requires ``buffered = true`` in the DAC channel
+configuration (or ``zephyr,buffered`` in a channel devicetree node).
+The ``power-mode`` property defaults to mode 3 for external pin loads.
+Modes 0 and 1 are intended for internal loads; mode 2 is not supported.
+Output is unavailable while the device is suspended; the driver restores
+the configuration and last written value on resume.
+After a power-domain or suspend-to-RAM power restoration, the DAC remains
+disabled and rejects setup and writes until resume. If resume fails, it
+remains suspended and preserves the saved output value for a later retry.
+
+Concurrent operations are serialized per DAC. Calls from a context that cannot
+block return ``-EBUSY`` if another operation holds the DAC lock.
+
+The :zephyr:code-sample:`dac` sample uses standalone DAC0 with its internal
+supply reference (VDDA). External reference selection is not supported.
+The driver loads factory trims from SFLASH on setup and resume, using the
+HPPASS parent's devicetree address for DAC register accesses.
+To use DAC1, change the sample overlay's ``dac`` phandle
+to ``&dac1`` and enable/configure ``&dac1`` instead of ``&dac0``; keep
+``dac-channel-id = <0>``.
+
+The dedicated ``drivers.dac.api.infineon_hppass`` API test scenario covers
+standalone DAC0 and selects this board in Twister integration runs:
+
+.. zephyr-app-commands::
+   :zephyr-app: tests/drivers/dac/dac_api
+   :board: kit_psc3m6_eval/psc3m6ges3ahq1
+   :goals: build
+
+The standalone DAC0 test profile disables SAR to exercise DAC startup
+independently. The API test checks setup and writes, not analog output voltage.
+
 System Clock
 ============
 

@@ -1237,11 +1237,18 @@ static int ifx_hppass_mfd_pm_action(const struct device *dev, enum pm_device_act
 
 DT_INST_FOREACH_STATUS_OKAY(IFX_HPPASS_MFD_INIT)
 
+#define IFX_HPPASS_DAC_CHILD(node) DT_NODE_HAS_COMPAT(node, infineon_hppass_dac_v3) &&
+#define IFX_HPPASS_DAC_ONLY(n)                                                                     \
+	(DT_INST_CHILD_NUM_STATUS_OKAY(n) > 0 &&                                                   \
+	 (DT_INST_FOREACH_CHILD_STATUS_OKAY(n, IFX_HPPASS_DAC_CHILD) 1))
+
 /*
  * APPLICATION-init hook for the AC one-shot unlock sweep.  Must run after
  * all POST_KERNEL device inits so child CFG writes happen
  * before the AC sees them.  Errors are logged; dependent drivers read
  * register reset values rather than failing to initialize.
+ * Standalone v3 DACs do not need the default AC sequence. Custom tables
+ * and configurations with other enabled children retain normal AC startup.
  */
 #define IFX_HPPASS_LATE_START(n)                                                                   \
 	{                                                                                          \
@@ -1250,11 +1257,14 @@ DT_INST_FOREACH_STATUS_OKAY(IFX_HPPASS_MFD_INIT)
                                                                                                    \
 		if (!device_is_ready(dev)) {                                                       \
 			LOG_ERR("HPPASS instance %d not ready; AC not started", (n));              \
-		} else {                                                                           \
+		} else if (!IS_ENABLED(CONFIG_MFD_INFINEON_HPPASS_V3) || HAS_AC_STATES(n) ||       \
+			   !IFX_HPPASS_DAC_ONLY(n)) {                                              \
 			ret = ifx_hppass_ac_start(dev, 0, IFX_HPPASS_ENSURE_RUNNING_TIMEOUT_US);   \
 			if (ret != 0 && ret != -EALREADY) {                                        \
 				LOG_ERR("ifx_hppass_ac_start(%s) -> %d", dev->name, ret);          \
 			}                                                                          \
+		} else {                                                                           \
+			/* Standalone v3 DACs do not require default AC startup. */                \
 		}                                                                                  \
 	}
 

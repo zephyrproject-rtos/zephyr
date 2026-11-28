@@ -1,0 +1,28 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		io-channels = <&dac0 0>;
+		io-channel-names = "dac1";
+	};
+};
+
+/* Exercise standalone DAC startup without SAR or CSG. */
+&adc0 {
+	status = "disabled";
+};
+
+&dac0 {
+	status = "okay";
+
+	channel@0 {
+		reg = <0>;
+		zephyr,resolution = <12>;
+		zephyr,buffered;
+	};
+};
