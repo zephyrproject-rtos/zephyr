@@ -974,6 +974,13 @@ config NXP_OVERRIDE_CALIBRATION_DATA
 	help
 	  This option is used to override default calibration data.
 
+config NXP_WIFI_FRDM_RW612_EXT_ANT_CALDATA
+	bool "Use external-antenna calibration data on FRDM-RW612"
+	depends on NXP_RW610 && BOARD_FRDM_RW612
+	select NXP_OVERRIDE_CALIBRATION_DATA
+	help
+	  Use external-antenna calibration data on the FRDM-RW612 board.
+
 if NXP_IW61X
 
 config WLAN_CALDATA_2ANT_HI_ISO
