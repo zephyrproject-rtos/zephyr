@@ -1,0 +1,24 @@
+tests:
+  bluetooth.classic.pbap_pse_b2b:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    tags:
+      - bluetooth
+      - pbap
+    harness: pytest
+    harness_config:
+      pytest_dut_scope: session
+      fixture: usb_hci
+    timeout: 1800
+  bluetooth.classic.pbap_pse_b2b.no_blobs:
+    platform_allow:
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+    tags:
+      - bluetooth
+      - pbap
+    extra_args:
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+    timeout: 1800
+    build_only: true
