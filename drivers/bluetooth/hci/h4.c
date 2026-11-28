@@ -72,11 +72,17 @@ struct h4_data {
 		uint8_t         hdr_len;
 
 		uint8_t         type;
+#if defined(CONFIG_BT_H4_STARTUP_SYNC)
+		bool            syncing;
+		bool            reset_written;
+		uint8_t         sync_len;
+		uint8_t         sync_buf[6];
+#endif
 		union {
 			struct bt_hci_evt_hdr evt;
 			struct bt_hci_acl_hdr acl;
 			struct bt_hci_iso_hdr iso;
-			uint8_t hdr[4];
+			uint8_t hdr[5];
 		};
 	} rx;
 
@@ -505,6 +511,13 @@ static inline void process_tx(const struct device *dev)
 		return;
 	}
 
+#if defined(CONFIG_BT_H4_STARTUP_SYNC)
+	/* In startup sync mode, the first outgoing packet is HCI Reset. */
+	if (h4->rx.syncing) {
+		h4->rx.reset_written = true;
+	}
+#endif
+
 	h4->tx.type = BT_HCI_H4_NONE;
 	net_buf_unref(h4->tx.buf);
 	h4->tx.buf = k_fifo_get(&h4->tx.fifo, K_NO_WAIT);
@@ -538,6 +551,47 @@ static inline void process_rx(const struct device *dev)
 		h4->rx.remaining, h4->rx.discard, h4->rx.have_hdr, h4->rx.buf,
 		h4->rx.buf ? h4->rx.buf->len : 0);
 
+#if defined(CONFIG_BT_H4_STARTUP_SYNC)
+	/* A single RX-ready notification can cover multiple bytes. */
+	while (h4->rx.syncing) {
+		uint8_t byte;
+
+		if (uart_fifo_read(cfg->uart, &byte, 1) != 1) {
+			return;
+		}
+
+		/* Discard input until the UART has accepted the full Reset command. */
+		if (!h4->rx.reset_written) {
+			continue;
+		}
+
+		/* Keep a sliding window so the response can start at any byte. */
+		if (h4->rx.sync_len == sizeof(h4->rx.sync_buf)) {
+			memmove(h4->rx.sync_buf, h4->rx.sync_buf + 1,
+				sizeof(h4->rx.sync_buf) - 1);
+			h4->rx.sync_len--;
+		}
+		h4->rx.sync_buf[h4->rx.sync_len] = byte;
+		h4->rx.sync_len++;
+
+		/* Match the Reset completion prefix, then let the normal RX path
+		 * read the status byte.
+		 */
+		if (h4->rx.sync_len == sizeof(h4->rx.sync_buf) &&
+		    h4->rx.sync_buf[0] == BT_HCI_H4_EVT &&
+		    h4->rx.sync_buf[1] == BT_HCI_EVT_CMD_COMPLETE &&
+		    h4->rx.sync_buf[2] == 4U &&
+		    sys_get_le16(&h4->rx.sync_buf[4]) == BT_HCI_OP_RESET) {
+			h4->rx.syncing = false;
+			h4->rx.type = BT_HCI_H4_EVT;
+			memcpy(h4->rx.hdr, h4->rx.sync_buf + 1, 5);
+			h4->rx.hdr_len = 5U;
+			h4->rx.remaining = 1U;
+			h4->rx.have_hdr = true;
+		}
+	}
+#endif
+
 	if (h4->rx.discard) {
 		h4->rx.discard -= h4_discard(cfg->uart, h4->rx.discard);
 		return;
@@ -560,6 +614,15 @@ static void bt_uart_isr(const struct device *uart, void *user_data)
 		if (uart_irq_is_pending(uart) <= 0) {
 			break;
 		}
+
+#if defined(CONFIG_BT_H4_STARTUP_SYNC)
+		struct h4_data *h4 = dev->data;
+
+		/* Drain pending RX before sending HCI Reset. */
+		if (h4->rx.syncing && !h4->rx.reset_written && uart_irq_rx_ready(uart)) {
+			process_rx(dev);
+		}
+#endif
 
 		if (uart_irq_tx_ready(uart)) {
 			process_tx(dev);
@@ -694,6 +757,12 @@ static int h4_open(const struct device *dev)
 	 * or sent before does not count, and any reset of it happened above.
 	 */
 	bt_hci_lockstep_reset(&h4->lockstep);
+#endif
+
+#if defined(CONFIG_BT_H4_STARTUP_SYNC)
+	h4->rx.syncing = (cfg->common.quirks & BT_HCI_QUIRK_NO_RESET) == 0U;
+	h4->rx.reset_written = false;
+	h4->rx.sync_len = 0U;
 #endif
 
 	tid = k_thread_create(cfg->rx_thread, cfg->rx_thread_stack,
