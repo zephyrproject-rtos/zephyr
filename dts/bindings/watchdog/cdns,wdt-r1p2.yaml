@@ -1,0 +1,17 @@
+# Copyright (c) 2026 David Paul-Beier
+# SPDX-License-Identifier: Apache-2.0
+
+description: Cadence watchdog timer (r1p2)
+
+compatible: "cdns,wdt-r1p2"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
+    description: Watchdog input clock frequency in Hz (CPU_1X on the Zynq-7000).
