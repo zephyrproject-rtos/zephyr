@@ -26,6 +26,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/kernel/thread_stack.h>
 
 #include <zephyr/net/net_pkt.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/devicetree/nvmem.h>
@@ -135,7 +136,9 @@ struct nxp_enet_mac_data {
 #ifdef CONFIG_PTP_CLOCK_NXP_ENET
 	struct nxp_enet_ptp_data ptp;
 #endif
+#ifndef CONFIG_ETH_NXP_ENET_TX_SEND_ZERO_COPY
 	uint8_t *tx_frame_buf;
+#endif
 #ifndef CONFIG_ETH_NXP_ENET_RX_RECV_ZERO_COPY
 	uint8_t *rx_frame_buf;
 #endif
@@ -420,6 +423,110 @@ static void eth_nxp_enet_clear_tx_chksum(uint8_t *frame, size_t len)
 	}
 }
 
+#ifdef CONFIG_ETH_NXP_ENET_TX_SEND_ZERO_COPY
+/* Headers may straddle net_buf fragments, so linearize the leading bytes (L2
+ * + worst-case IPv6), clear the checksums on the copy, and write it back.
+ */
+static void eth_nxp_enet_clear_tx_chksum_pkt(struct net_pkt *pkt)
+{
+	uint8_t hdrs[sizeof(struct net_eth_vlan_hdr) + sizeof(struct net_ipv6_hdr)];
+	size_t len = MIN(sizeof(hdrs), net_pkt_get_len(pkt));
+	struct net_pkt_cursor backup;
+
+	net_pkt_cursor_backup(pkt, &backup);
+	net_pkt_cursor_init(pkt);
+
+	if (net_pkt_read(pkt, hdrs, len) == 0) {
+		eth_nxp_enet_clear_tx_chksum(hdrs, len);
+		net_pkt_cursor_init(pkt);
+		(void)net_pkt_write(pkt, hdrs, len);
+	}
+
+	net_pkt_cursor_restore(pkt, &backup);
+}
+
+/* ENET_StartTxFrame() consumes one descriptor per non-empty fragment, so the
+ * ring must hold a whole worst-case frame or it stalls on
+ * kStatus_ENET_TxFrameBusy.
+ */
+#define NXP_ENET_TX_FRAME_BDS \
+	(DIV_ROUND_UP(ETH_NXP_ENET_MAX_FRAMELEN, CONFIG_NET_BUF_DATA_SIZE) + 1)
+
+BUILD_ASSERT(CONFIG_ETH_NXP_ENET_TX_BUFFERS >= NXP_ENET_TX_FRAME_BDS,
+	     "ETH_NXP_ENET_TX_BUFFERS has to hold one whole frame");
+
+/* Frames in flight at once, so a scattered frame cannot deadlock the ring. */
+#define NXP_ENET_TX_FRAMES (CONFIG_ETH_NXP_ENET_TX_BUFFERS / NXP_ENET_TX_FRAME_BDS)
+
+static int eth_nxp_enet_tx(const struct device *dev, struct net_pkt *pkt)
+{
+	struct nxp_enet_mac_data *data = dev->data;
+	enet_buffer_struct_t bufs[NXP_ENET_TX_FRAME_BDS];
+	enet_tx_frame_struct_t frame = {0};
+	unsigned int used = 0;
+	status_t ret;
+
+	NET_PKT_FRAG_FOR_EACH(pkt, frag) {
+		if (frag->len == 0U) {
+			continue;
+		}
+		if (used >= ARRAY_SIZE(bufs)) {
+			return -ENOMEM;
+		}
+		bufs[used].buffer = frag->data;
+		bufs[used].length = frag->len;
+		used++;
+	}
+
+	if (used == 0U) {
+		return -EINVAL;
+	}
+
+	if (IS_ENABLED(CONFIG_ETH_NXP_ENET_HW_ACCELERATION)) {
+		eth_nxp_enet_clear_tx_chksum_pkt(pkt);
+	}
+
+	k_sem_take(&data->tx_buf_sem, K_FOREVER);
+
+	/* The reclaim callback holds the packet until the DMA is done with it. */
+	net_pkt_ref(pkt);
+
+	frame.txBuffArray = bufs;
+	frame.txBuffNum = used;
+	frame.context = pkt;
+
+/* txConfig and ENET_PrepareTxDesc() exist only in enhanced-BD mode (set by PTP) */
+#ifdef ENET_ENHANCEDBUFFERDESCRIPTOR_MODE
+	/* ENET_PrepareTxDesc writes controlExtend1 whole, clearing the Tx-done
+	 * interrupt bit the SDK set at init; without it reclaim never runs.
+	 */
+	frame.txConfig.intEnable = true;
+
+	if (IS_ENABLED(CONFIG_ETH_NXP_ENET_HW_ACCELERATION)) {
+		frame.txConfig.autoProtocolChecksum = true;
+		frame.txConfig.autoIPChecksum = true;
+	}
+
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET)
+	/*
+	 * Without a running 1588 timer there is no timestamp, and reading the timer when the
+	 * frame is reclaimed would wait forever with interrupts locked
+	 */
+	frame.txConfig.tsEnable = net_pkt_is_tx_timestamping(pkt) && data->ptp.ptp_running;
+#endif
+#endif /* ENET_ENHANCEDBUFFERDESCRIPTOR_MODE */
+
+	ret = ENET_StartTxFrame(data->base, &data->enet_handle, &frame, RING_ID);
+	if (ret != kStatus_Success) {
+		LOG_ERR("ENET_StartTxFrame error: %d", ret);
+		net_pkt_unref(pkt);
+		k_sem_give(&data->tx_buf_sem);
+		return -EIO;
+	}
+
+	return 0;
+}
+#else /* CONFIG_ETH_NXP_ENET_TX_SEND_ZERO_COPY */
 static int eth_nxp_enet_tx(const struct device *dev, struct net_pkt *pkt)
 {
 	struct nxp_enet_mac_data *data = dev->data;
@@ -464,6 +571,7 @@ static int eth_nxp_enet_tx(const struct device *dev, struct net_pkt *pkt)
 
 	return 0;
 }
+#endif /* CONFIG_ETH_NXP_ENET_TX_SEND_ZERO_COPY */
 
 static enum ethernet_hw_caps eth_nxp_enet_get_capabilities(const struct device *dev,
 							   struct net_if *iface __unused)
@@ -847,7 +955,21 @@ static void eth_callback(ENET_Type *base, enet_handle_t *handle,
 		k_sem_give(&data->rx_thread_sem);
 		break;
 	case kENET_TxEvent:
+#ifdef CONFIG_ETH_NXP_ENET_TX_SEND_ZERO_COPY
+		/* Reclaim runs once per frame, and only a frame the driver sent
+		 * carries a packet; the SDK also reclaims on ENET_Down.
+		 */
+		if (frameinfo == NULL || frameinfo->context == NULL) {
+			break;
+		}
+		if (IS_ENABLED(CONFIG_PTP_CLOCK_NXP_ENET)) {
+			ts_register_tx_event(dev, frameinfo);
+		} else {
+			net_pkt_unref(frameinfo->context);
+		}
+#else
 		ts_register_tx_event(dev, frameinfo);
+#endif
 		k_sem_give(&data->tx_buf_sem);
 		break;
 	case kENET_TimeStampEvent:
@@ -991,8 +1113,12 @@ static int eth_nxp_enet_init(const struct device *dev)
 	k_mutex_init(&data->rx_frame_buf_mutex);
 #endif
 	k_sem_init(&data->rx_thread_sem, 0, CONFIG_ETH_NXP_ENET_RX_BUFFERS);
+#ifdef CONFIG_ETH_NXP_ENET_TX_SEND_ZERO_COPY
+	k_sem_init(&data->tx_buf_sem, NXP_ENET_TX_FRAMES, NXP_ENET_TX_FRAMES);
+#else
 	k_sem_init(&data->tx_buf_sem,
 		   CONFIG_ETH_NXP_ENET_TX_BUFFERS, CONFIG_ETH_NXP_ENET_TX_BUFFERS);
+#endif
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
 	k_sem_init(&data->ptp.ptp_ts_sem, 0, 1);
 #endif
@@ -1110,6 +1236,13 @@ static int eth_nxp_enet_init(const struct device *dev)
 	 */
 	data->base->GAUR = 0xFFFFFFFFU;
 	data->base->GALR = 0xFFFFFFFFU;
+#endif
+
+#if defined(CONFIG_ETH_NXP_ENET_TX_SEND_ZERO_COPY) && !defined(CONFIG_PTP_CLOCK_NXP_ENET)
+	/* The packet of a frame is released in the reclaim callback, which the
+	 * PTP path above already turns on.
+	 */
+	ENET_SetTxReclaim(&data->enet_handle, true, 0);
 #endif
 
 	ENET_ActiveRead(data->base);
@@ -1278,16 +1411,44 @@ BUILD_ASSERT(CONFIG_NET_BUF_RX_COUNT >=
 
 #ifdef CONFIG_PTP_CLOCK_NXP_ENET
 #define NXP_ENET_PTP_DEV(n) .ptp_clock = DEVICE_DT_GET(DT_INST_PHANDLE(n, ptp_clock)),
+#else
+#define NXP_ENET_PTP_DEV(n)
+#endif
+
+/*
+ * The SDK keeps the transmit reclaim ring in here, which the PTP timestamp
+ * path and zero copy both go through.
+ */
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET) || defined(CONFIG_ETH_NXP_ENET_TX_SEND_ZERO_COPY)
 #define NXP_ENET_FRAMEINFO_ARRAY(n)							\
 	static enet_frame_info_t							\
 		nxp_enet_##n##_tx_frameinfo_array[CONFIG_ETH_NXP_ENET_TX_BUFFERS];
 #define NXP_ENET_FRAMEINFO(n)	\
 	.txFrameInfo = nxp_enet_##n##_tx_frameinfo_array,
 #else
-#define NXP_ENET_PTP_DEV(n)
 #define NXP_ENET_FRAMEINFO_ARRAY(n)
 #define NXP_ENET_FRAMEINFO(n)	\
 	.txFrameInfo = NULL
+#endif
+
+/* Zero copy sends out of the net buffers, so neither transmit buffer is built. */
+#ifdef CONFIG_ETH_NXP_ENET_TX_SEND_ZERO_COPY
+#define NXP_ENET_TX_BUFFERS_DECL(n)
+#define NXP_ENET_TX_BUFFER_ALIGN(n) NULL
+#define NXP_ENET_TX_FRAME_BUF_DECL(n)
+#define NXP_ENET_TX_FRAME_BUF_INIT(n)
+#else
+#define NXP_ENET_TX_BUFFERS_DECL(n)						\
+	static uint8_t __aligned(ENET_BUFF_ALIGNMENT)				\
+		_nxp_enet_dma_buffer_section					\
+		nxp_enet_##n##_tx_buffer[CONFIG_ETH_NXP_ENET_TX_BUFFERS]	\
+					[ETH_NXP_ENET_BUFFER_SIZE];
+#define NXP_ENET_TX_BUFFER_ALIGN(n) nxp_enet_##n##_tx_buffer[0]
+#define NXP_ENET_TX_FRAME_BUF_DECL(n)						\
+	static _nxp_enet_driver_buffer_section uint8_t				\
+		nxp_enet_##n##_tx_frame_buf[NET_ETH_MAX_FRAME_SIZE];
+#define NXP_ENET_TX_FRAME_BUF_INIT(n)						\
+	.tx_frame_buf = nxp_enet_##n##_tx_frame_buf,
 #endif
 
 #define NXP_ENET_NODE_HAS_MAC_ADDR_CHECK(n)						\
@@ -1326,11 +1487,7 @@ BUILD_ASSERT(CONFIG_NET_BUF_RX_COUNT >=
 			nxp_enet_##n##_tx_buffer_desc[CONFIG_ETH_NXP_ENET_TX_BUFFERS];	\
 											\
 		NXP_ENET_RX_BUFFERS_DECL(n)						\
-											\
-		static uint8_t __aligned(ENET_BUFF_ALIGNMENT)				\
-			_nxp_enet_dma_buffer_section					\
-			nxp_enet_##n##_tx_buffer[CONFIG_ETH_NXP_ENET_TX_BUFFERS]	\
-						[ETH_NXP_ENET_BUFFER_SIZE];		\
+		NXP_ENET_TX_BUFFERS_DECL(n)						\
 											\
 		const struct nxp_enet_mac_config nxp_enet_##n##_config = {		\
 			.irq_config_func = nxp_enet_##n##_irq_config_func,		\
@@ -1346,7 +1503,7 @@ BUILD_ASSERT(CONFIG_NET_BUF_RX_COUNT >=
 				.rxBdStartAddrAlign = nxp_enet_##n##_rx_buffer_desc,	\
 				.txBdStartAddrAlign = nxp_enet_##n##_tx_buffer_desc,	\
 				.rxBufferAlign = NXP_ENET_RX_BUFFER_ALIGN(n),		\
-				.txBufferAlign = nxp_enet_##n##_tx_buffer[0],		\
+				.txBufferAlign = NXP_ENET_TX_BUFFER_ALIGN(n),		\
 				.rxMaintainEnable = NXP_ENET_CACHE_MAINTAIN(n),		\
 				.txMaintainEnable = NXP_ENET_CACHE_MAINTAIN(n),		\
 				NXP_ENET_FRAMEINFO(n)					\
@@ -1359,12 +1516,11 @@ BUILD_ASSERT(CONFIG_NET_BUF_RX_COUNT >=
 			.mac_addr_source = NXP_ENET_MAC_ADDR_SOURCE(n),			\
 		};									\
 											\
-		static _nxp_enet_driver_buffer_section uint8_t				\
-			nxp_enet_##n##_tx_frame_buf[NET_ETH_MAX_FRAME_SIZE];		\
+		NXP_ENET_TX_FRAME_BUF_DECL(n)						\
 		NXP_ENET_RX_FRAME_BUF_DECL(n)						\
 											\
 		struct nxp_enet_mac_data nxp_enet_##n##_data = {			\
-			.tx_frame_buf = nxp_enet_##n##_tx_frame_buf,			\
+			NXP_ENET_TX_FRAME_BUF_INIT(n)					\
 			NXP_ENET_RX_FRAME_BUF_INIT(n)					\
 			.dev = DEVICE_DT_INST_GET(n),					\
 		};									\
