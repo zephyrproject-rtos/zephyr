@@ -926,7 +926,7 @@ static int sl_802154_src_match_short_add(struct sl_802154_source_match_data *md,
 	uint16_t a = sys_get_le16(addr_le);
 	int ret = 0;
 
-	for (uint8_t i = 0; i < md->short_addr_count; i++) {
+	for (size_t i = 0; i < md->short_addr_count; i++) {
 		if (md->short_addrs[i] == a) {
 			goto exit; /* already present */
 		}
@@ -949,7 +949,7 @@ static int sl_802154_src_match_short_remove(struct sl_802154_source_match_data *
 	uint16_t a = sys_get_le16(addr_le);
 	int ret = 0;
 
-	for (uint8_t i = 0; i < md->short_addr_count; i++) {
+	for (size_t i = 0; i < md->short_addr_count; i++) {
 		if (md->short_addrs[i] == a) {
 			/* Remove short_addr without shifting the whole array by index.
 			 * If the removed address was not the last one, overwrite
@@ -983,7 +983,7 @@ static int sl_802154_src_match_ext_add(struct sl_802154_source_match_data *md, c
 	unsigned int key = irq_lock();
 	int ret = 0;
 
-	for (uint8_t i = 0; i < md->ext_addr_count; i++) {
+	for (size_t i = 0; i < md->ext_addr_count; i++) {
 		if (memcmp(md->ext_addrs[i], addr, IEEE802154_EXT_ADDR_LENGTH) == 0) {
 			goto exit;
 		}
@@ -1005,7 +1005,7 @@ static int sl_802154_src_match_ext_remove(struct sl_802154_source_match_data *md
 	unsigned int key = irq_lock();
 	int ret = 0;
 
-	for (uint8_t i = 0; i < md->ext_addr_count; i++) {
+	for (size_t i = 0; i < md->ext_addr_count; i++) {
 		if (memcmp(md->ext_addrs[i], addr, IEEE802154_EXT_ADDR_LENGTH) == 0) {
 			/* Remove ext_addr without shifting the whole array by index.
 			 * If the removed address was not the last one, overwrite
@@ -1042,7 +1042,7 @@ static bool sl_802154_src_match_short_contains(struct sl_802154_source_match_dat
 	unsigned int key = irq_lock();
 	bool found = false;
 
-	for (uint8_t i = 0; i < md->short_addr_count; i++) {
+	for (size_t i = 0; i < md->short_addr_count; i++) {
 		if (md->short_addrs[i] == short_addr) {
 			found = true;
 			break;
@@ -1058,7 +1058,7 @@ static bool sl_802154_src_match_ext_contains(struct sl_802154_source_match_data 
 	unsigned int key = irq_lock();
 	bool found = false;
 
-	for (uint8_t i = 0; i < md->ext_addr_count; i++) {
+	for (size_t i = 0; i < md->ext_addr_count; i++) {
 		if (memcmp(md->ext_addrs[i], addr, IEEE802154_EXT_ADDR_LENGTH) == 0) {
 			found = true;
 			break;

@@ -153,9 +153,9 @@ struct sl_802154_source_match_data {
 	uint8_t ext_addrs[CONFIG_IEEE802154_SILABS_EFR32_SRC_MATCH_EXT_MAX]
 			 [IEEE802154_EXT_ADDR_LENGTH];
 
-	uint8_t short_addr_count;
+	size_t short_addr_count;
 
-	uint8_t ext_addr_count;
+	size_t ext_addr_count;
 };
 
 struct sl_802154_config {
