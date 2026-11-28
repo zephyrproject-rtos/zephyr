@@ -10,6 +10,7 @@ target_sources(app PRIVATE src/main.c)
 target_include_directories(app PRIVATE "${ZEPHYR_BASE}/subsys/bluetooth")
 target_link_options(app PUBLIC
   -Wl,--wrap=bt_conn_add_sco
+  -Wl,--wrap=bt_conn_lookup_addr_br
   -Wl,--wrap=bt_conn_lookup_addr_sco
   -Wl,--wrap=bt_conn_set_state
   -Wl,--wrap=bt_conn_unref
