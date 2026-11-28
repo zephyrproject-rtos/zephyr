@@ -18,7 +18,10 @@ endif()
 zephyr_library()
 
 # For strtok_r() and strdup()
-zephyr_library_compile_options(-U_POSIX_C_SOURCE -D_POSIX_C_SOURCE=200809L)
+# Not used for RH850: the IAR C/C++ Compiler for RH850 does not support the -U option.
+# On RH850, _POSIX_C_SOURCE is not defined for ztest, and the prototypes come from the
+# C library headers.
+zephyr_library_compile_options_ifndef(CONFIG_RH850 -U_POSIX_C_SOURCE -D_POSIX_C_SOURCE=200809L)
 
 zephyr_library_sources(
   src/ztest.c
