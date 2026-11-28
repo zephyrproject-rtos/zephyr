@@ -1,8 +1,11 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
+
 # The contents of this file is based on include/zephyr/linker/common-noinit.ld
 # Please keep in sync
 
-zephyr_linker_section(NAME .noinit GROUP NOINIT_REGION TYPE NOLOAD NOINIT)
+zephyr_linker_section(NAME .noinit GROUP NOINIT_REGION LINK_IN NOLOAD TYPE NOLOAD NOINIT)
 
 if(CONFIG_USERSPACE)
   zephyr_linker_section_configure(

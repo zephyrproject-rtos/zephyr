@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright 2026 Arm Limited and/or its affiliates  <open-source-office@arm.com>
+# SPDX-License-Identifier: Apache-2.0
+
 find_package(Zephyr REQUIRED COMPONENTS extensions HINTS ${CMAKE_CURRENT_LIST_DIR}/../../)
 
 #
@@ -60,7 +64,7 @@ function(get_parent)
 endfunction()
 
 function(create_group)
-  cmake_parse_arguments(OBJECT "" "GROUP;LMA;NAME;OBJECT;SYMBOL;VMA" "" ${ARGN})
+  cmake_parse_arguments(OBJECT "" "GROUP;LINK_IN;LMA;NAME;OBJECT;SYMBOL;VMA" "" ${ARGN})
 
   set_property(GLOBAL PROPERTY GROUP_${OBJECT_NAME}          TRUE)
   set_property(GLOBAL PROPERTY GROUP_${OBJECT_NAME}_OBJ_TYPE GROUP)
@@ -69,6 +73,9 @@ function(create_group)
 
   if(DEFINED OBJECT_GROUP)
     find_object(OBJECT parent NAME ${OBJECT_GROUP})
+    if(NOT DEFINED OBJECT_LINK_IN)
+      get_property(OBJECT_LINK_IN GLOBAL PROPERTY ${parent}_LINK_IN)
+    endif()
   else()
     if(DEFINED OBJECT_VMA)
       find_object(OBJECT obj NAME ${OBJECT_VMA})
@@ -85,6 +92,10 @@ function(create_group)
       get_property(lma GLOBAL PROPERTY ${parent}_NAME)
       set_property(GLOBAL PROPERTY GROUP_${OBJECT_NAME}_LMA ${lma})
     endif()
+  endif()
+
+  if(DEFINED OBJECT_LINK_IN)
+    set_property(GLOBAL PROPERTY GROUP_${OBJECT_NAME}_LINK_IN "${OBJECT_LINK_IN}")
   endif()
 
   get_property(GROUP_FLAGS_INHERITED GLOBAL PROPERTY ${parent}_FLAGS)
@@ -116,7 +127,10 @@ function(is_active_in_pass ret_ptr current_pass pass_rules)
 endfunction()
 
 function(create_section)
-  set(single_args "NAME;ADDRESS;ALIGN_WITH_INPUT;TYPE;ALIGN;ENDALIGN;SUBALIGN;VMA;LMA;NOINPUT;NOINIT;NOSYMBOLS;GROUP;SYSTEM;MIN_SIZE;MAX_SIZE")
+  set(single_args
+    NAME ADDRESS ALIGN_WITH_INPUT TYPE ALIGN ENDALIGN SUBALIGN VMA LMA LINK_IN
+    NOINPUT NOINIT NOSYMBOLS GROUP SYSTEM MIN_SIZE MAX_SIZE
+  )
   set(multi_args  "PASS")
 
   cmake_parse_arguments(SECTION "" "${single_args}" "${multi_args}" ${ARGN})
@@ -142,6 +156,10 @@ function(create_section)
   set_property(GLOBAL PROPERTY SECTION_${SECTION_NAME}_NOSYMBOLS        ${SECTION_NOSYMBOLS})
   set_property(GLOBAL PROPERTY SECTION_${SECTION_NAME}_MIN_SIZE         ${SECTION_MIN_SIZE})
   set_property(GLOBAL PROPERTY SECTION_${SECTION_NAME}_MAX_SIZE         ${SECTION_MAX_SIZE})
+
+  if(DEFINED SECTION_LINK_IN)
+    set_property(GLOBAL PROPERTY SECTION_${SECTION_NAME}_LINK_IN "${SECTION_LINK_IN}")
+  endif()
 
   string(REGEX REPLACE "^[\.]" "" name_clean "${SECTION_NAME}")
   string(REPLACE "." "_" name_clean "${name_clean}")

@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 include_guard(GLOBAL)
@@ -6109,7 +6111,7 @@ function(zephyr_linker_dts_memory)
 endfunction()
 
 #[=======================================================================[.rst:
-.. cmake:signature:: zephyr_linker_group(NAME <name> [VMA <region|group>] [LMA <region|group>] [GROUP <group>] [SYMBOL <SECTION>])
+.. cmake:signature:: zephyr_linker_group(NAME <name> [VMA <region|group>] [LMA <region|group>] [GROUP <group>] [LINK_IN <PLAIN|ROM|DATA|NOLOAD>] [SYMBOL <SECTION>])
 
    Zephyr linker group.
    This function specifies a group inside a memory region or another group.
@@ -6141,6 +6143,17 @@ endfunction()
 
    ``GROUP <group>``
      Place the new group inside the existing group ``<group>``
+
+   ``LINK_IN <policy>``
+     Placement policy for the GNU ld linker script generator, corresponding to
+     the ``GROUP_*LINK_IN()`` macros. Nested groups inherit their parent's policy
+     unless overridden. Other linker backends ignore this setting.
+
+     * ``PLAIN``: Place in VMA only.
+     * ``ROM``: Place in the load region, retaining VMA for virtual-memory kernels.
+     * ``DATA``: Place in VMA, with a separate LMA for XIP or virtual-memory kernels.
+     * ``NOLOAD``: Place in VMA without a ROM load image, retaining the physical LMA
+       for virtual-memory kernels. This does not set the output section's ``TYPE``.
 
    ``SYMBOL <SECTION>``
      Specify that start symbol of the region should be identical
@@ -6201,7 +6214,8 @@ endfunction()
       +---------------------+
 #]=======================================================================]
 function(zephyr_linker_group)
-  set(single_args "NAME;GROUP;LMA;SYMBOL;VMA")
+  set(single_args "NAME;GROUP;LINK_IN;LMA;SYMBOL;VMA")
+  set(link_in_values PLAIN ROM DATA NOLOAD)
   set(symbol_values SECTION)
   cmake_parse_arguments(GROUP "" "${single_args}" "" ${ARGN})
 
@@ -6223,6 +6237,10 @@ function(zephyr_linker_group)
     endif()
   endif()
 
+  if(DEFINED GROUP_LINK_IN AND NOT "${GROUP_LINK_IN}" IN_LIST link_in_values)
+    message(FATAL_ERROR "zephyr_linker_group(LINK_IN ...) given unknown value")
+  endif()
+
   set(GROUP)
   zephyr_linker_arg_val_list(GROUP "${single_args}")
 
@@ -6233,7 +6251,7 @@ function(zephyr_linker_group)
 endfunction()
 
 #[=======================================================================[.rst:
-.. cmake:signature:: zephyr_linker_section(NAME <name> [GROUP <group>] [VMA <region|group>] [LMA <region|group>] [ADDRESS <address>] [ALIGN <alignment>] [SUBALIGN <alignment>] [FLAGS <flags>] [MIN_SIZE <size>] [MAX_SIZE <size>] [HIDDEN] [NOINPUT] [NOINIT] [PASS [NOT] <name>...])
+.. cmake:signature:: zephyr_linker_section(NAME <name> [GROUP <group>] [VMA <region|group>] [LMA <region|group>] [LINK_IN <PLAIN|ROM|DATA|NOLOAD>] [ADDRESS <address>] [ALIGN <alignment>] [SUBALIGN <alignment>] [FLAGS <flags>] [MIN_SIZE <size>] [MAX_SIZE <size>] [HIDDEN] [NOINPUT] [NOINIT] [PASS [NOT] <name>...])
 
    Zephyr linker output section. This function specifies an output section for the linker.
 
@@ -6275,6 +6293,11 @@ endfunction()
 
    ``GROUP <group>``
      Place this section inside the group ``<group>``
+
+   ``LINK_IN <policy>``
+     Placement policy for the GNU ld linker script generator, as described for
+     :cmake:command:`zephyr_linker_group`. When omitted, the section inherits its
+     group's policy. If neither specifies a policy, VMA and LMA are used unchanged.
 
    ``ADDRESS <address>``
      Specific address to use for this section.
@@ -6326,8 +6349,11 @@ endfunction()
 #]=======================================================================]
 function(zephyr_linker_section)
   set(options     "ALIGN_WITH_INPUT;HIDDEN;NOINIT;NOINPUT")
-  set(single_args "ADDRESS;ALIGN;ENDALIGN;GROUP;KVMA;LMA;NAME;SUBALIGN;TYPE;VMA;MIN_SIZE;MAX_SIZE")
+  set(single_args
+    ADDRESS ALIGN ENDALIGN GROUP KVMA LINK_IN LMA NAME SUBALIGN TYPE VMA MIN_SIZE MAX_SIZE
+  )
   set(multi_args  "PASS")
+  set(link_in_values PLAIN ROM DATA NOLOAD)
   cmake_parse_arguments(SECTION "${options}" "${single_args}" "${multi_args}" ${ARGN})
 
   if(SECTION_UNPARSED_ARGUMENTS)
@@ -6366,6 +6392,10 @@ function(zephyr_linker_section)
         set(SECTION_KVMA)
       endif()
     endif()
+  endif()
+
+  if(DEFINED SECTION_LINK_IN AND NOT "${SECTION_LINK_IN}" IN_LIST link_in_values)
+    message(FATAL_ERROR "zephyr_linker_section(LINK_IN ...) given unknown value")
   endif()
 
   zephyr_linker_check_pass_param("${SECTION_PASS}")
@@ -6816,8 +6846,28 @@ endfunction()
      File to be created
 #]=======================================================================]
 function(zephyr_linker_generate_linker_settings_file FILE)
+  # Resolve the physical SRAM address while devicetree is available. The linker
+  # generator runs separately in script mode, where only saved settings exist.
+  set(is_vm_kernel FALSE)
+  if(CONFIG_MMU)
+    if(CONFIG_SRAM_DEPRECATED_KCONFIG_SET)
+      set(ram_addr "${CONFIG_SRAM_BASE_ADDRESS}")
+    else()
+      dt_chosen(chosen_sram_path PROPERTY "zephyr,sram")
+      dt_reg_addr(ram_addr PATH "${chosen_sram_path}")
+    endif()
+    math(EXPR kernel_mem_vm_offset
+      "(${CONFIG_KERNEL_VM_BASE} + ${CONFIG_KERNEL_VM_OFFSET}) \
+       - (${ram_addr} + ${CONFIG_SRAM_OFFSET})"
+    )
+    if(NOT kernel_mem_vm_offset EQUAL 0)
+      set(is_vm_kernel TRUE)
+    endif()
+  endif()
+
   file(GENERATE OUTPUT ${FILE} CONTENT
          "set(FORMAT \"$<TARGET_PROPERTY:linker,FORMAT>\" CACHE INTERNAL \"\")\n
+          set(LINKER_IS_VM_KERNEL ${is_vm_kernel} CACHE INTERNAL \"\")\n
           set(ENTRY \"$<TARGET_PROPERTY:linker,ENTRY>\" CACHE INTERNAL \"\")\n
           set(MEMORY_REGIONS \"$<TARGET_PROPERTY:linker,MEMORY_REGIONS>\" CACHE INTERNAL \"\")\n
           set(GROUPS \"$<TARGET_PROPERTY:linker,GROUPS>\" CACHE INTERNAL \"\")\n
