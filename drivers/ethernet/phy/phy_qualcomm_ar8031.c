@@ -75,6 +75,8 @@ static int qc_ar8031_get_link_state(const struct device *dev, struct phy_link_st
 
 static int qc_ar8031_read(const struct device *dev, uint16_t reg_addr, uint32_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct qc_ar8031_config *config = dev->config;
 	int ret;
 
@@ -92,6 +94,8 @@ static int qc_ar8031_read(const struct device *dev, uint16_t reg_addr, uint32_t 
 
 static int qc_ar8031_write(const struct device *dev, uint16_t reg_addr, uint32_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct qc_ar8031_config *config = dev->config;
 	int ret;
 
@@ -237,6 +241,9 @@ static void monitor_work_handler(struct k_work *work)
 	struct qc_ar8031_data *const data =
 		CONTAINER_OF(dwork, struct qc_ar8031_data, monitor_work);
 	const struct device *dev = data->dev;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int rc;
 
 	k_sem_take(&data->sem, K_FOREVER);
@@ -257,6 +264,8 @@ static void monitor_work_handler(struct k_work *work)
 static int qc_ar8031_cfg_link(const struct device *dev, enum phy_link_speed speeds,
 			      enum phy_cfg_link_flag flags)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	uint32_t bmcr_reg;
 	int ret;
 
@@ -290,6 +299,8 @@ static int qc_ar8031_cfg_link(const struct device *dev, enum phy_link_speed spee
 
 static int qc_ar8031_get_link_state(const struct device *dev, struct phy_link_state *state)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct qc_ar8031_data *const data = dev->data;
 
 	k_sem_take(&data->sem, K_FOREVER);
@@ -303,6 +314,8 @@ static int qc_ar8031_get_link_state(const struct device *dev, struct phy_link_st
 
 static int qc_ar8031_link_cb_set(const struct device *dev, phy_callback_t cb, void *user_data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct qc_ar8031_data *const data = dev->data;
 
 	data->cb = cb;
@@ -319,6 +332,8 @@ static int qc_ar8031_link_cb_set(const struct device *dev, phy_callback_t cb, vo
 
 static int qc_ar8031_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct qc_ar8031_config *const cfg = dev->config;
 	struct qc_ar8031_data *const data = dev->data;
 	uint32_t counter = PHY_READID_TIMEOUT_COUNT;
