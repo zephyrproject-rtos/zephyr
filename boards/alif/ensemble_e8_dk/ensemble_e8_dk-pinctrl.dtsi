@@ -141,6 +141,12 @@
 			/* mikroBUS INT on P8_1 */
 			pinmux = <PIN_P8_1__GPIO>;
 			input-enable;
+			bias-pull-up;
+		};
+
+		group1 {
+			/* mikroBUS RST on P8_3 */
+			pinmux = <PIN_P8_3__GPIO>;
 		};
 	};
 

@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_SC18IS60X
+	bool "NXP SC18IS602/SC18IS606 GPIO Controller driver"
+	default y
+	select MFD
+	depends on DT_HAS_NXP_SC18IS60X_GPIO_ENABLED
+	help
+	  Enables NXP SC18IS60x gpio controller driver
+
+config GPIO_SC18IS60X_INIT_PRIORITY
+	int "SC18IS60x GPIO Init Priority"
+	default MFD_INIT_PRIORITY
+	depends on GPIO_SC18IS60X
+	help
+	  SC18IS60x GPIO controller init priority.
+
+	  The controller and the MFD parent both use POST_KERNEL. The same
+	  priority as MFD_INIT_PRIORITY is enough, because the parent is
+	  initialized first. A higher value delays devices that use these pins.
