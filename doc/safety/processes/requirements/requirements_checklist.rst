@@ -1,6 +1,6 @@
-.. _safety_requirements_checklist:
+.. _safety_process-requirements_checklist:
 
-Safety Requirements Checklist
+Requirements Checklist
 #############################
 
 Introduction
@@ -13,7 +13,7 @@ This checklist shall serve as the minimum that needs to be considered when doing
 Requirements Structure and Guidelines
 *************************************
 
-You can find the approach taken by the Zephyr Project in :ref:`safety_requirements`
+You can find the approach taken by the Zephyr Project in :ref:`safety_process-requirements`
 
 Review Instructions
 *******************
@@ -104,6 +104,7 @@ Each new or changed requirement needs to be analysed, to make sure it is suitabl
        Acceptance criteria must at least be derivable from how the requirement is written.
      - Make sure there is either a test available or that creating a test is planned. Evaluate if the test coverage is sufficient for this requirement.
        If it is not sufficient, contact the Safety Working Group or Testing Working group to get this addressed.
+       If verification cannot be achieved through testing, ensure that the verification method is objectively described (inspection, analysis).
 
    * - VerReq_1_8
      - Are all terms used in this requirement clear to the intended audience?
