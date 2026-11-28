@@ -1114,7 +1114,6 @@ static DEVICE_API(sdhc, sdhc_infineon_api) = {
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
 		.cd_gpio = GPIO_DT_SPEC_INST_GET_OR(n, cd_gpios, {0}),                             \
 		.reg_addr = (SDHC_Type *)DT_INST_REG_ADDR(n),                                      \
-		.irq_priority = DT_INST_IRQ(n, priority),                                          \
 		IRQ_INFO(n),                                                                       \
 		IF_ENABLED(CONFIG_SOC_FAMILY_INFINEON_EDGE,                                        \
 			   (.clk_dst = DT_INST_PROP(n, clk_dst),)) };                              \
