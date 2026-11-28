@@ -9,8 +9,7 @@
 /*
  * MCXN546 has 1 MiB of flash vs MCXN547's 2 MiB
  * (FSL_FEATURE_SYSCON_FLASH_SIZE_BYTES: 1048576 vs 2097152 in the vendor
- * feature headers). No peripheral differences are modeled in this
- * devicetree for the two parts.
+ * feature headers).
  */
 &flash {
 	reg = <0 DT_SIZE_M(1)>;
@@ -24,3 +23,6 @@
 &sram0 {
 	reg = <0x20000000 DT_SIZE_K(256)>;
 };
+
+/* MCXN546 does not implement QDC1. */
+/delete-node/ &qdc1;

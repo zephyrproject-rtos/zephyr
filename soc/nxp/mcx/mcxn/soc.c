@@ -69,7 +69,16 @@ void soc_reset_hook(void)
 DT_FOREACH_STATUS_OKAY(nxp_lpspi, FLEXCOMM_CHECK)
 
 #if defined(CONFIG_SECOND_CORE_MCUX) &&						\
-	(defined(CONFIG_SOC_MCXN947_CPU0) || defined(CONFIG_SOC_MCXN547_CPU0))
+	(defined(CONFIG_SOC_MCXN947_CPU0) || defined(CONFIG_SOC_MCXN947T_CPU0) || \
+	 defined(CONFIG_SOC_MCXN946_CPU0) || defined(CONFIG_SOC_MCXN946T_CPU0) || \
+	 defined(CONFIG_SOC_MCXN557S_CPU0) || defined(CONFIG_SOC_MCXN557T_CPU0) || \
+	 defined(CONFIG_SOC_MCXN556S_CPU0) || defined(CONFIG_SOC_MCXN556T_CPU0) || \
+	 defined(CONFIG_SOC_MCXN547_CPU0) || defined(CONFIG_SOC_MCXN547T_CPU0) || \
+	 defined(CONFIG_SOC_MCXN546_CPU0) || defined(CONFIG_SOC_MCXN546T_CPU0) || \
+	 defined(CONFIG_SOC_MCXN537_CPU0) || defined(CONFIG_SOC_MCXN537T_CPU0) || \
+	 defined(CONFIG_SOC_MCXN536_CPU0) || defined(CONFIG_SOC_MCXN536T_CPU0) || \
+	 defined(CONFIG_SOC_MCXN527_CPU0) || defined(CONFIG_SOC_MCXN527T_CPU0) || \
+	 defined(CONFIG_SOC_MCXN526_CPU0) || defined(CONFIG_SOC_MCXN526T_CPU0))
 void soc_late_init_hook(void)
 {
 	/* Configure CPU1 TrustZone access level before CPU1 is enabled */
@@ -90,7 +99,7 @@ void soc_late_init_hook(void)
 	SYSCON->CPUCTRL = temp | SYSCON_CPUCTRL_CPU1RSTEN_MASK | SYSCON_CPUCTRL_CPU1CLKEN_MASK;
 	SYSCON->CPUCTRL = (temp | SYSCON_CPUCTRL_CPU1CLKEN_MASK) & (~SYSCON_CPUCTRL_CPU1RSTEN_MASK);
 }
-#endif /* CONFIG_SECOND_CORE_MCUX && (CONFIG_SOC_MCXN947_CPU0 || CONFIG_SOC_MCXN547_CPU0) */
+#endif /* CONFIG_SECOND_CORE_MCUX */
 
 void enable_ecc(uint32_t mask)
 {

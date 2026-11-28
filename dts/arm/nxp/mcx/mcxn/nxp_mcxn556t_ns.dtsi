@@ -1,0 +1,25 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "nxp_mcxn947_ns.dtsi"
+
+&soc {
+	compatible = "nxp,mcx", "simple-bus";
+};
+
+/delete-node/ &flexcan1;
+/delete-node/ &lpcmp2;
+/delete-node/ &dac2;
+/delete-node/ &opamp0;
+/delete-node/ &opamp1;
+/delete-node/ &opamp2;
+/delete-node/ &flexpwm1;
+/delete-node/ &qdc1;
+
+&flash {
+	reg = <0 DT_SIZE_M(1)>;
+	ranges = <0x0 0x0 DT_SIZE_M(1)>;
+};
