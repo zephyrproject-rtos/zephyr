@@ -172,6 +172,12 @@ Libraries / Subsystems
     its public address with the Binding transaction, the blocking socket client
     or the ``net stun`` shell commands.
 
+  * New :ref:`multiprotocol HTTP client <http_client_multiprotocol_interface>`
+    (:kconfig:option:`CONFIG_HTTP_CLIENT_MULTIPROTOCOL`), a client API meant to
+    cover HTTP/1.1, HTTP/2 and HTTP/3 over pluggable transports, with any number
+    of requests per connection in a synchronous or an asynchronous mode. HTTP/2
+    over TCP and TLS is supported in this release.
+
   * OCPP: the charge point can authenticate to the central system with HTTP Basic
     authentication (:kconfig:option:`CONFIG_OCPP_BASIC_AUTH`), with the credentials set in the
     new :c:struct:`ocpp_basic_auth` member of :c:struct:`ocpp_cs_info`. This is the charge

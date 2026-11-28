@@ -883,6 +883,11 @@ Networking
   if it fails for all stored networks, instead of ``0`` (or ``-ENOEXEC`` for static credentials).
   Update applications that call this request to handle this error.
 
+* ``CONFIG_HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE`` is deprecated in favor of
+  :kconfig:option:`CONFIG_HTTP_HUFFMAN_DECODE_BUFFER_SIZE`, which is shared by the
+  HTTP server and the multiprotocol HTTP client. A non-zero value of the old
+  option is still used as the default of the new one.
+
 Ethernet
 ========
 
