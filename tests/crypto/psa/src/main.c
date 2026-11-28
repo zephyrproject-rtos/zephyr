@@ -33,6 +33,8 @@ ZTEST_USER(psa_crypto_test_suite, test_sha1)
 	size_t out_len;
 	psa_status_t status;
 
+	Z_TEST_SKIP_IFNDEF(PSA_WANT_ALG_SHA_1);
+
 	status = psa_hash_compute(PSA_ALG_SHA_1, in_buf, sizeof(in_buf),
 				  out_buf, sizeof(out_buf), &out_len);
 	zassert_equal(status, PSA_SUCCESS);
@@ -50,6 +52,8 @@ ZTEST_USER(psa_crypto_test_suite, test_sha224)
 	};
 	size_t out_len;
 	psa_status_t status;
+
+	Z_TEST_SKIP_IFNDEF(PSA_WANT_ALG_SHA_224);
 
 	status = psa_hash_compute(PSA_ALG_SHA_224, in_buf, sizeof(in_buf),
 				  out_buf, sizeof(out_buf), &out_len);
@@ -70,6 +74,8 @@ ZTEST_USER(psa_crypto_test_suite, test_sha256)
 	size_t out_len;
 	psa_status_t status;
 
+	Z_TEST_SKIP_IFNDEF(PSA_WANT_ALG_SHA_256);
+
 	status = psa_hash_compute(PSA_ALG_SHA_256, in_buf, sizeof(in_buf),
 				  out_buf, sizeof(out_buf), &out_len);
 	zassert_equal(status, PSA_SUCCESS);
@@ -89,6 +95,8 @@ ZTEST_USER(psa_crypto_test_suite, test_sha384)
 	};
 	size_t out_len;
 	psa_status_t status;
+
+	Z_TEST_SKIP_IFNDEF(PSA_WANT_ALG_SHA_384);
 
 	status = psa_hash_compute(PSA_ALG_SHA_384, in_buf, sizeof(in_buf),
 				  out_buf, sizeof(out_buf), &out_len);
@@ -112,6 +120,8 @@ ZTEST_USER(psa_crypto_test_suite, test_sha512)
 	size_t out_len;
 	psa_status_t status;
 
+	Z_TEST_SKIP_IFNDEF(PSA_WANT_ALG_SHA_512);
+
 	status = psa_hash_compute(PSA_ALG_SHA_512, in_buf, sizeof(in_buf),
 				  out_buf, sizeof(out_buf), &out_len);
 	zassert_equal(status, PSA_SUCCESS);
@@ -133,6 +143,10 @@ ZTEST_USER(psa_crypto_test_suite, test_hmac_sha256)
 	};
 	size_t out_len;
 	psa_status_t status;
+
+	Z_TEST_SKIP_IFNDEF(PSA_WANT_KEY_TYPE_HMAC);
+	Z_TEST_SKIP_IFNDEF(PSA_WANT_ALG_HMAC);
+	Z_TEST_SKIP_IFNDEF(PSA_WANT_ALG_SHA_256);
 
 	psa_set_key_type(&key_attr, PSA_KEY_TYPE_HMAC);
 	psa_set_key_algorithm(&key_attr, PSA_ALG_HMAC(PSA_ALG_SHA_256));
@@ -167,6 +181,9 @@ ZTEST_USER(psa_crypto_test_suite, test_aes_ecb)
 	};
 	size_t out_len;
 	psa_status_t status;
+
+	Z_TEST_SKIP_IFNDEF(PSA_WANT_KEY_TYPE_AES);
+	Z_TEST_SKIP_IFNDEF(PSA_WANT_ALG_ECB_NO_PADDING);
 
 	memset(in_buf, 0x5, sizeof(in_buf));
 
