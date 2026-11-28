@@ -1,0 +1,31 @@
+tests:
+  bluetooth.classic.smp.multi_conn:
+    platform_allow:
+    - native_sim
+    integration_platforms:
+    - native_sim
+    tags:
+    - bluetooth
+    - smp
+    harness: pytest
+    harness_config:
+      pytest_dut_scope: session
+      # Four BR/EDR boards are needed, so the suite is only built unless the
+      # fixture is supplied: twister -X bt_classic_multi_test
+      fixture: bt_classic_multi_test
+      required_devices:
+      # Three more boards, same platform and image, take the server roles
+      - {}
+      - {}
+      - {}
+    timeout: 180
+  bluetooth.classic.smp.multi_conn.no_blobs:
+    platform_allow:
+    - mimxrt1170_evk@B/mimxrt1176/cm7
+    tags:
+    - bluetooth
+    - smp
+    extra_args:
+    - CONFIG_BUILD_ONLY_NO_BLOBS=y
+    timeout: 180
+    build_only: true
