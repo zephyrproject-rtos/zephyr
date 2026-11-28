@@ -20,9 +20,9 @@
 
 LOG_MODULE_DECLARE(ISM330DHCX, CONFIG_SENSOR_LOG_LEVEL);
 
-static int ism330dhcx_spi_read(const struct device *dev, uint8_t reg_addr, uint8_t *value,
-			       uint8_t len)
+static int32_t ism330dhcx_spi_read(void *ctx, uint8_t reg_addr, uint8_t *value, uint16_t len)
 {
+	const struct device *dev = ctx;
 	const struct ism330dhcx_config *cfg = dev->config;
 	uint8_t buffer_tx[2] = { reg_addr | ISM330DHCX_SPI_READ, 0 };
 	const struct spi_buf tx_buf = {
@@ -60,9 +60,9 @@ static int ism330dhcx_spi_read(const struct device *dev, uint8_t reg_addr, uint8
 	return 0;
 }
 
-static int ism330dhcx_spi_write(const struct device *dev, uint8_t reg_addr, uint8_t *value,
-				uint8_t len)
+static int32_t ism330dhcx_spi_write(void *ctx, uint8_t reg_addr, const uint8_t *value, uint16_t len)
 {
+	const struct device *dev = ctx;
 	const struct ism330dhcx_config *cfg = dev->config;
 	uint8_t buffer_tx[1] = { reg_addr & ~ISM330DHCX_SPI_READ };
 	const struct spi_buf tx_buf[2] = {
@@ -71,7 +71,7 @@ static int ism330dhcx_spi_write(const struct device *dev, uint8_t reg_addr, uint
 			.len = 1,
 		},
 		{
-			.buf = value,
+			.buf = (uint8_t *)value,
 			.len = len,
 		}
 	};
@@ -102,9 +102,9 @@ int ism330dhcx_spi_init(const struct device *dev)
 		return -ENODEV;
 	};
 
-	data->ctx_spi.read_reg = (stmdev_read_ptr) ism330dhcx_spi_read;
-	data->ctx_spi.write_reg = (stmdev_write_ptr) ism330dhcx_spi_write;
-	data->ctx_spi.mdelay = (stmdev_mdelay_ptr) stmemsc_mdelay;
+	data->ctx_spi.read_reg = ism330dhcx_spi_read;
+	data->ctx_spi.write_reg = ism330dhcx_spi_write;
+	data->ctx_spi.mdelay = stmemsc_mdelay;
 
 	data->ctx = &data->ctx_spi;
 	data->ctx->handle = (void *)dev;
