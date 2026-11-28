@@ -146,3 +146,16 @@ tests:
       - CONFIG_PM_DEVICE=y
       - CONFIG_PM_DEVICE_RUNTIME=y
       - CONFIG_PM_POLICY_DEVICE_CONSTRAINTS=y
+  drivers.counter.basic_api.mchp_xec_pm_device:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    build_only: true
+    platform_allow:
+      - mec172xevb_assy6906
+      - mec15xxevb_assy6853
+      - mec_assy6941/mec1753_qsz
+    extra_configs:
+      - CONFIG_PM=y
+      - CONFIG_PM_DEVICE=y
