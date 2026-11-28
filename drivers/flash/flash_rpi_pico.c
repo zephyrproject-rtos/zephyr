@@ -23,6 +23,16 @@ LOG_MODULE_REGISTER(flash_rpi_pico, CONFIG_FLASH_LOG_LEVEL);
 
 #define DT_DRV_COMPAT raspberrypi_pico_flash_controller
 
+/*
+ * Writing or erasing flash takes the XIP interface away from every core, and
+ * the code below keeps the other core out only by locking interrupts on the
+ * calling one. With SMP the other core would keep executing from flash while
+ * the flash is being reprogrammed.
+ */
+BUILD_ASSERT(!IS_ENABLED(CONFIG_SMP) || (CONFIG_MP_MAX_NUM_CPUS == 1),
+	     "flash_rpi_pico is not safe with CONFIG_SMP on more than one CPU: the other core "
+	     "keeps running from XIP during write and erase");
+
 #define SOC_NV_FLASH_NODE SOC_NV_FLASH_CHILD_NODE(0)
 
 #define PAGE_SIZE   256

@@ -4,7 +4,7 @@
 
 config FLASH_RPI_PICO
 	bool "Raspberry Pi Pico flash driver"
-	default y
+	default y if !SMP || MP_MAX_NUM_CPUS = 1
 	depends on DT_HAS_RASPBERRYPI_PICO_FLASH_CONTROLLER_ENABLED
 	select FLASH_HAS_DRIVER_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
@@ -12,6 +12,11 @@ config FLASH_RPI_PICO
 	select PICOSDK_USE_FLASH
 	help
 	  Enable Raspberry Pi Pico flash driver.
+
+	  This driver is not safe with SMP on more than one CPU: write and erase
+	  only lock interrupts on the calling core, while the other core keeps
+	  executing from flash. It is therefore not enabled by default in that
+	  case, and the build fails if it is enabled anyway.
 
 config FLASH_RPI_PICO_READ_UNTRANSLATED
 	bool "Use untranslated window for flash reads"

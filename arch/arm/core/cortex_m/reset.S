@@ -38,6 +38,11 @@ GTEXT(arch_pm_s2ram_resume)
 #if defined(CONFIG_SOC_EARLY_RESET_HOOK)
 GTEXT(soc_early_reset_hook)
 #endif
+#if CONFIG_MP_MAX_NUM_CPUS > 1
+GTEXT(soc_cpu_index)
+GTEXT(z_arm_secondary_start)
+GDATA(arm_m_cpu_boot_params)
+#endif
 
 
 /*
@@ -108,6 +113,13 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
     /* Call custom code that executes before any stack is set up or RAM memory is accessed */
     bl soc_early_reset_hook
 #endif
+
+#if CONFIG_MP_MAX_NUM_CPUS > 1
+    bl soc_cpu_index
+    cmp r0, #0
+    bne z_arm_secondary_reset
+#endif
+
 #if defined(CONFIG_PM_S2RAM)
     /*
      * Temporarily set MSP to interrupt stack so that arch_pm_s2ram_resume can
@@ -231,3 +243,19 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
      * (even though we do not intend to return).
      */
     bl z_prep_c
+
+#if CONFIG_MP_MAX_NUM_CPUS > 1
+z_arm_secondary_reset:
+    ldr r0, =arm_m_cpu_boot_params
+    ldr r0, [r0]
+    msr msp, r0
+    msr psp, r0
+    movs.n r0, #_EXC_IRQ_DEFAULT_PRIO
+    msr BASEPRI, r0
+    mrs r0, CONTROL
+    movs r1, #(2 | CONTROL_ARM_PAC_MASK | CONTROL_ARM_BTI_MASK)
+    orrs r0, r1 /* CONTROL_SPSEL_Msk */
+    msr CONTROL, r0
+    isb
+    bl z_arm_secondary_start
+#endif

@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2026 Seunghoon Park
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "rpi_pico2_rp2350a_m33_0.dts"
+
+/ {
+	model = "Raspberry Pi Pico 2 (Cortex-M33, SMP)";
+};
+
+/*
+ * SysTick is a per-core timer with no SMP timer hook. Use one of the TIMER
+ * blocks instead: it is shared by both cores and its count can be read from
+ * either of them.
+ */
+&systick {
+	status = "disabled";
+};
+
+&timer1 {
+	compatible = "raspberrypi,pico-system-timer";
+	status = "okay";
+};
