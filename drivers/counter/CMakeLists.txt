@@ -10,6 +10,7 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE counter_handlers.c)
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_ACE_V1X_ART_COUNTER counter_ace_v1x_art.c)
 zephyr_library_sources_ifdef(CONFIG_ACE_V1X_RTC_COUNTER counter_ace_v1x_rtc.c)
+zephyr_library_sources_ifdef(CONFIG_COUNTER_AESC_TIMER counter_aesc_timer.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_AMBIQ counter_ambiq_timer.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_ANDES_ATCPIT100 counter_andes_atcpit100.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_BEE_RTC counter_bee_rtc.c)

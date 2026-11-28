@@ -1,0 +1,45 @@
+#
+# SPDX-FileCopyrightText: 2026 Aesc Silicon
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: Aesc Silicon general-purpose timer
+
+description: |
+  The general-purpose timer IP core contains one or more up-counting timers,
+  each with a prescaler, a reload register and compare channels. Each timer
+  counts from 0 to the reload value and raises an overflow event on wrap-around
+  and a compare event when the counter matches a compare register.
+
+  The driver uses timer 0 of the IP core with compare channel 0 as alarm
+  channel.
+
+compatible: "aesc,timer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clock-frequency:
+    type: int
+    description: |
+      Input clock frequency in Hz. Only used when the node has no clocks
+      property.
+
+  resolution:
+    type: int
+    required: true
+    description: Counter width in bits.
+
+  prescaler:
+    type: int
+    default: 0
+    description: |
+      Prescaler register value. The counter advances once every
+      prescaler + 1 input clock cycles.
