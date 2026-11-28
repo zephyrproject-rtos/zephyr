@@ -238,6 +238,9 @@ static int uart_ra_sci_b_err_check(const struct device *dev)
 		errors |= UART_ERROR_FRAMING;
 	}
 
+	cfg->regs->CFCLR = status & (BIT(R_SCI_B0_CSR_ORER_Pos) | BIT(R_SCI_B0_CSR_PER_Pos) |
+				     BIT(R_SCI_B0_CSR_FER_Pos));
+
 	return errors;
 }
 
@@ -1194,6 +1197,7 @@ static void uart_ra_sci_b_eri_isr(const struct device *dev)
 #if defined(CONFIG_UART_ASYNC_API)
 	sci_b_uart_eri_isr();
 #else
+	(void)uart_ra_sci_b_err_check(dev);
 	R_BSP_IrqStatusClear(data->fsp_config.eri_irq);
 #endif
 }
