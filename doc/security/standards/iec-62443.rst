@@ -1,0 +1,204 @@
+.. _iec_62443:
+
+IEC 62443
+#########
+
+.. warning::
+   This document is for informational purposes only and does not constitute legal,
+   compliance, or certification advice. Attaining a given security level or certification
+   is the responsibility of the product supplier or system integrator and depends on how
+   Zephyr is configured and integrated. Consult the applicable parts of the standard and,
+   where relevant, an accredited certification body.
+
+Overview
+********
+
+The **ISA/IEC 62443** series is the leading set of standards for the security of
+**Industrial Automation and Control Systems (IACS)**, also referred to as Operational
+Technology (OT). Originally developed by the ISA99 committee and published jointly by the
+International Society of Automation (ISA) and the International Electrotechnical Commission
+(IEC), it defines security requirements and processes for the whole IACS ecosystem, from
+the overall control system down to the individual components it is built from.
+
+This page explains how the IEC 62443 series relates to the Zephyr Project. Zephyr is not an
+IACS or a finished product, and it is not itself certified against IEC 62443. Instead,
+Zephyr is a **component building block**: a product supplier integrating Zephyr into an
+industrial device uses Zephyr's features and development process as part of the evidence
+needed to meet the component-level requirements of the standard.
+
+Unlike freely available specifications such as :ref:`etsi_303645`, the IEC 62443 documents
+are copyrighted standards that must be purchased from ISA or IEC. This page therefore
+describes the publicly known structure of the series and maps Zephyr's capabilities to it,
+without reproducing normative requirement text.
+
+Structure of the series
+************************
+
+IEC 62443 is a multi-part series organized by audience. The parts most relevant to an
+embedded platform such as Zephyr are those addressing the **product supplier** role
+(62443-4-1 and 62443-4-2).
+
+.. list-table:: IEC 62443 series (selected parts)
+   :header-rows: 1
+   :widths: 20 30 50
+
+   * - Part
+     - Primary audience
+     - Scope
+   * - 62443-1-1
+     - All
+     - Terminology, concepts and models (zones, conduits, security levels).
+   * - 62443-2-1
+     - Asset owner
+     - Requirements for an IACS security management program.
+   * - 62443-2-4
+     - Service provider
+     - Security program requirements for IACS service providers / integrators.
+   * - 62443-3-2
+     - System integrator
+     - Security risk assessment and system design (zones and conduits).
+   * - 62443-3-3
+     - System integrator
+     - System security requirements (SR) and system security levels.
+   * - 62443-4-1
+     - **Product supplier**
+     - Secure product development lifecycle requirements.
+   * - 62443-4-2
+     - **Product supplier**
+     - Technical security requirements for IACS components (component requirements, CR).
+
+Roles and responsibilities
+**************************
+
+IEC 62443 assigns responsibilities across distinct roles. Understanding where Zephyr sits
+clarifies which parts of the standard apply to whom:
+
+**Asset owner**
+  Operates the IACS and owns the risk. Governed mainly by 62443-2-1 and 62443-3-2.
+
+**System integrator**
+  Designs and deploys the automation solution into zones and conduits. Governed mainly by
+  62443-2-4 and 62443-3-3.
+
+**Product supplier**
+  Develops the products and components used to build the IACS. Governed mainly by
+  62443-4-1 (process) and 62443-4-2 (technical component requirements).
+
+A developer building an industrial device on top of Zephyr acts as a **product supplier**,
+and Zephyr is a component within that product. Meeting the standard remains the product
+supplier's responsibility; Zephyr provides building blocks that make it achievable.
+
+Foundational requirements and security levels
+*********************************************
+
+IEC 62443 organizes its technical security requirements around **seven Foundational
+Requirements (FRs)**, which run consistently through both the system requirements
+(62443-3-3) and the component requirements (62443-4-2):
+
+* **FR 1 – Identification and Authentication Control (IAC)**
+* **FR 2 – Use Control (UC)**
+* **FR 3 – System Integrity (SI)**
+* **FR 4 – Data Confidentiality (DC)**
+* **FR 5 – Restricted Data Flow (RDF)**
+* **FR 6 – Timely Response to Events (TRE)**
+* **FR 7 – Resource Availability (RA)**
+
+Each requirement can be met to one of four **Security Levels (SL 1–4)**, reflecting
+increasing attacker capability, from protection against casual or coincidental violation
+(SL 1) up to protection against sophisticated attackers using extended resources (SL 4).
+SL 0 denotes no specific requirement. The target security level (SL-T) is determined by
+the system integrator's risk assessment; a component's capability security level (SL-C)
+expresses what the component can support.
+
+For component requirements (62443-4-2), Zephyr-based devices typically fall under the
+**embedded device** component type.
+
+How Zephyr supports IEC 62443
+*****************************
+
+The table below maps each Foundational Requirement to Zephyr features and documentation
+that a product supplier can use as building blocks. This is an indicative mapping, not a
+certification claim: whether a specific component requirement and security level is met
+depends on the product's configuration, hardware, and integration.
+
+.. list-table:: Foundational Requirements mapped to Zephyr building blocks
+   :header-rows: 1
+   :widths: 30 70
+
+   * - Foundational Requirement
+     - Relevant Zephyr building blocks
+   * - FR 1 – Identification and Authentication Control
+     - Cryptographic services (PSA Crypto API, TLS/DTLS) usable for entity authentication.
+       Credential and user management remain a product-level responsibility.
+       See :ref:`security-overview`.
+   * - FR 2 – Use Control
+     - Thread-level privilege separation via :ref:`user mode <memory_domain>`, hardware
+       memory protection, and :ref:`system call verification <syscall_verification>` for
+       enforcing least privilege.
+   * - FR 3 – System Integrity
+     - Verified/secure boot and image signing (MCUboot, :ref:`west sign <west-sign>`),
+       integrity-checked firmware updates (:ref:`dfu`), the :ref:`hardening tool <hardening>`,
+       and the :ref:`secure coding guidelines <coding_guidelines>`.
+   * - FR 4 – Data Confidentiality
+     - Cryptographic services and secure transport (TLS/DTLS) for protecting data in
+       transit. See :ref:`security-overview`.
+   * - FR 5 – Restricted Data Flow
+     - Configurable networking stack and the ability to disable unused interfaces and
+       services via :ref:`Kconfig <kconfig>` and the :ref:`hardening tool <hardening>` to
+       minimize attack surface.
+   * - FR 6 – Timely Response to Events
+     - Logging subsystem for capturing security-relevant events, complemented by the
+       project's :ref:`vulnerability handling and reporting process <reporting>`. Runtime
+       intrusion detection is a product-level responsibility.
+   * - FR 7 – Resource Availability
+     - Deterministic real-time scheduling, resource and memory management, and watchdog
+       support contributing to availability and resilience.
+
+Secure product development lifecycle (62443-4-1)
+================================================
+
+Beyond the technical component requirements, 62443-4-1 defines process requirements for how
+a product is developed and maintained. Zephyr supports this dimension through:
+
+* A documented security process and threat model: :ref:`security-overview`.
+* :ref:`Secure coding guidelines <coding_guidelines>` and :ref:`secure development
+  practices <secure code>`.
+* A coordinated vulnerability handling and disclosure process (PSIRT): :ref:`reporting`.
+* Software Bill of Materials (SBOM) generation for supply-chain transparency via
+  :ref:`west spdx <west-spdx>`.
+
+Certification and shared responsibility
+***************************************
+
+Zephyr is not certified against IEC 62443, and using Zephyr does not by itself make a
+product compliant. Certification is performed per product by the product supplier or system
+integrator against a defined target security level. Zephyr's role is to provide the
+technical building blocks (FR 1–7 capabilities) and process evidence (62443-4-1) that make
+reaching those requirements practical, under a shared-responsibility model where the final
+configuration and integration decisions rest with the product supplier.
+
+External resources
+******************
+
+Official standards
+==================
+
+* `ISA/IEC 62443 Series of Standards (ISA)
+  <https://www.isa.org/standards-and-publications/isa-standards/isa-iec-62443-series-of-standards>`_
+* `IEC 62443 at the IEC Webstore <https://webstore.iec.ch/>`_ (standards must be purchased)
+* `ISA Global Cybersecurity Alliance <https://gca.isa.org/>`_
+
+Related regulations and standards
+=================================
+
+* :ref:`cra_faq` – the EU Cyber Resilience Act, for which IEC 62443 is a relevant
+  reference for industrial products.
+* :ref:`etsi_303645` – baseline security requirements for consumer IoT.
+
+Zephyr-specific resources
+=========================
+
+* :ref:`security-overview`
+* :ref:`reporting`
+* :ref:`hardening`
+* :ref:`west-spdx`
