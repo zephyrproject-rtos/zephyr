@@ -4,7 +4,6 @@
 zephyr_library()
 
 # zephyr-keep-sorted-start
-zephyr_library_sources_ifdef(CONFIG_CDNS_SDHC sdhc_cdns_ll.c sdhc_cdns.c)
 zephyr_library_sources_ifdef(CONFIG_IMX_USDHC imx_usdhc.c)
 zephyr_library_sources_ifdef(CONFIG_INTEL_EMMC_HOST intel_emmc_host.c)
 zephyr_library_sources_ifdef(CONFIG_MCUX_SDIF mcux_sdif.c)
@@ -15,6 +14,7 @@ zephyr_library_sources_ifdef(CONFIG_SDHC_AMBIQ sdhc_ambiq.c)
 zephyr_library_sources_ifdef(CONFIG_SDHC_AMEBA sdhc_ameba.c)
 zephyr_library_sources_ifdef(CONFIG_SDHC_BCM2835_SDHOST sdhc_bcm2835_sdhost.c)
 zephyr_library_sources_ifdef(CONFIG_SDHC_BFLB sdhc_bflb.c)
+zephyr_library_sources_ifdef(CONFIG_SDHC_CDNS sdhc_cdns.c)
 zephyr_library_sources_ifdef(CONFIG_SDHC_COMMON sdhc_common.c)
 zephyr_library_sources_ifdef(CONFIG_SDHC_EMUL emul/sdhc_emul_core.c emul/sdhc_emul.c)
 zephyr_library_sources_ifdef(CONFIG_SDHC_EMUL_CARD emul/sdhc_emul_core.c emul/sdhc_emul_card.c)

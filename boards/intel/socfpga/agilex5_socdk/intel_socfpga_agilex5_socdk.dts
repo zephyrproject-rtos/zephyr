@@ -20,6 +20,7 @@
 
 	aliases {
 		led0 = &led0;
+		sdhc0 = &sdmmc;
 	};
 
 	leds {
@@ -28,6 +29,15 @@
 		led0: led0 {
 			gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
 		};
+	};
+
+	sd_vqmmc: regulator-sd-vqmmc {
+		compatible = "regulator-gpio";
+		regulator-name = "sd-bus-io";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <3300000>;
+		gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>;
+		states = <3300000 0>, <1800000 1>;
 	};
 };
 
@@ -40,6 +50,11 @@
 };
 
 &sdmmc {
+	bus-width = <4>;
+	vqmmc-supply = <&sd_vqmmc>;
+	cdns,phy-cfg-sd-ds = <0x00780000 0x81a40040 0x00a000fe 0x28000001 0x00800004>;
+	cdns,phy-cfg-sd-hs = <0x00780001 0x81a40040 0x00000000 0x10000001 0x00800004>;
+	cdns,ctrl-cfg-sd-hs = <0x0001800c 0x00030000 0x00000101 0x000a0001>;
 	status = "okay";
 
 	mmc {

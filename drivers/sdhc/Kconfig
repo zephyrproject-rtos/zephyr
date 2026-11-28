@@ -13,6 +13,7 @@ source "drivers/sdhc/Kconfig.ambiq"
 source "drivers/sdhc/Kconfig.ameba"
 source "drivers/sdhc/Kconfig.bcm2835_sdhost"
 source "drivers/sdhc/Kconfig.bflb"
+source "drivers/sdhc/Kconfig.cdns"
 source "drivers/sdhc/Kconfig.esp32"
 source "drivers/sdhc/Kconfig.imx"
 source "drivers/sdhc/Kconfig.infineon"
@@ -26,7 +27,6 @@ source "drivers/sdhc/Kconfig.rcar"
 source "drivers/sdhc/Kconfig.renesas_ra"
 source "drivers/sdhc/Kconfig.sam_hsmci"
 source "drivers/sdhc/Kconfig.sam_sdmmc"
-source "drivers/sdhc/Kconfig.sdhc_cdns"
 source "drivers/sdhc/Kconfig.spi"
 source "drivers/sdhc/Kconfig.stm32"
 source "drivers/sdhc/Kconfig.ti"
@@ -75,6 +75,16 @@ config SDHC_STANDARD_CORE_IO_ACCESSORS
 	depends on SDHC_STANDARD_CORE
 	help
 	  Selected by host controller driver if custom IO accessors are used.
+
+config SDHC_STANDARD_CORE_ADMA2_64BIT
+	bool
+	depends on SDHC_STANDARD_CORE
+	help
+	  Selected by host controller driver if the 128-bit ADMA2 descriptor
+	  of the SD Host Controller Specification version 4.00, with a 64-bit
+	  address, is used instead of the 64-bit descriptor with a 32-bit
+	  address. The controller must report 64-bit System Address Support
+	  for V4 (Capabilities bit 27).
 
 config SDHC_SUPPORTS_SCATTER_GATHER_TRANSFER
 	bool
