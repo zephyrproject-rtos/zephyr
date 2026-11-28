@@ -852,8 +852,8 @@ static inline bool dad_failed(struct net_if *iface, struct net_in6_addr *addr)
 #endif /* CONFIG_NET_IPV6_DAD */
 
 #if defined(CONFIG_NET_IPV6_NBR_CACHE)
-/* pref_iface, if not NULL, is the interface whose default router is tried
- * first, when no route matches.
+/* iface restricts the route and default router lookup. When iface is NULL,
+ * pref_iface selects the default router to try first.
  */
 static struct net_in6_addr *check_route(struct net_if *iface,
 				    struct net_if *pref_iface,
@@ -897,7 +897,7 @@ static struct net_in6_addr *check_route(struct net_if *iface,
 			router = net_if_ipv6_router_find_default(pref_iface, dst);
 		}
 
-		if (router == NULL) {
+		if (router == NULL && iface == NULL) {
 			router = net_if_ipv6_router_find_default(NULL, dst);
 		}
 
@@ -968,6 +968,11 @@ enum net_verdict net_ipv6_prepare_for_send(struct net_pkt *pkt)
 
 	NET_ASSERT(pkt && pkt->buffer);
 
+	pkt_iface = net_pkt_iface(pkt);
+	if (net_pkt_ipv6_iface_bound(pkt)) {
+		iface = pkt_iface;
+	}
+
 	ip_hdr = (struct net_ipv6_hdr *)net_pkt_get_data(pkt, &ipv6_access);
 	if (!ip_hdr) {
 		return NET_DROP;
@@ -989,7 +994,7 @@ enum net_verdict net_ipv6_prepare_for_send(struct net_pkt *pkt)
 	if ((net_pkt_lladdr_dst(pkt)->len > 0 &&
 	     ((IS_ENABLED(CONFIG_NET_IPV6_FORWARDING) &&
 	      (net_ipv6_is_ll_addr(&dst_ip) ||
-	       net_if_ipv6_addr_onlink(NULL, &dst_ip) ||
+	       net_if_ipv6_addr_onlink(iface != NULL ? &iface : NULL, &dst_ip) ||
 	       net_pkt_forwarding(pkt))) ||
 	      !IS_ENABLED(CONFIG_NET_IPV6_FORWARDING))) ||
 	    net_ipv6_is_addr_mcast(&dst_ip) ||
@@ -1005,9 +1010,9 @@ enum net_verdict net_ipv6_prepare_for_send(struct net_pkt *pkt)
 	 * on one subnet. The longest prefix decides, but on a tie, or with
 	 * SO_BINDTODEVICE, the packet keeps the interface it was given, which
 	 * may have been chosen for its source address. Off-link, its default
-	 * router and neighbours are tried first, for the same reason.
+	 * router and neighbours are tried first, for the same reason. An explicit
+	 * binding also restricts the off-link route and default router lookup.
 	 */
-	pkt_iface = net_pkt_iface(pkt);
 	if (net_if_ipv6_addr_onlink(&iface, &dst_ip)) {
 		if (keep_onlink_pkt_iface(pkt, iface, &dst_ip)) {
 			iface = pkt_iface;
@@ -1023,7 +1028,7 @@ enum net_verdict net_ipv6_prepare_for_send(struct net_pkt *pkt)
 		 */
 		bool try_route = false;
 
-		nexthop = check_route(NULL, pkt_iface, &dst_ip, &try_route);
+		nexthop = check_route(iface, pkt_iface, &dst_ip, &try_route);
 		if (!nexthop) {
 			return NET_DROP;
 		}

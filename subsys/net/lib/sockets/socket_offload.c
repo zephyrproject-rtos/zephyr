@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <string.h>
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_socket_offload, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
@@ -11,6 +13,7 @@ LOG_MODULE_REGISTER(net_socket_offload, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/net/net_log.h>
 #include <zephyr/net/socket_offload.h>
 #include <zephyr/net/socket.h>
+#include <zephyr/sys/math_extras.h>
 
 #include "sockets_internal.h"
 
@@ -69,6 +72,79 @@ void socket_offload_freeaddrinfo(struct zsock_addrinfo *res)
 
 	dns_offload->freeaddrinfo(res);
 }
+
+#ifdef CONFIG_TAILSCALE_DNS_RESOLVER
+int zsock_offload_getaddrinfo_copy(const char *host, const char *service,
+				  const struct zsock_addrinfo *hints,
+				  struct zsock_addrinfo **res)
+{
+	const struct socket_dns_offload *ops = dns_offload;
+	struct zsock_addrinfo *answers;
+	struct zsock_addrinfo *copy;
+	struct zsock_addrinfo *entry;
+	size_t bytes = 0U;
+	size_t count = 0U;
+	char *names;
+	int rc;
+
+	if (ops == NULL || !dns_offload_enabled) {
+		return DNS_EAI_AGAIN;
+	}
+	rc = ops->getaddrinfo(host, service, hints, &answers);
+	if (rc != 0) {
+		return rc;
+	}
+	if (answers == NULL) {
+		return DNS_EAI_NONAME;
+	}
+	for (entry = answers; entry != NULL; entry = entry->ai_next) {
+		if (entry->ai_addrlen > sizeof(entry->_ai_addr)) {
+			rc = DNS_EAI_OVERFLOW;
+			goto out;
+		}
+		size_t entry_size = sizeof(*entry);
+
+		if (entry->ai_canonname != NULL) {
+			entry_size += strlen(entry->ai_canonname) + 1U;
+		}
+		if (size_add_overflow(bytes, entry_size, &bytes)) {
+			rc = DNS_EAI_MEMORY;
+			goto out;
+		}
+		count++;
+	}
+
+	/* Normalize ownership before returning a result from either resolver. */
+	copy = k_malloc(bytes);
+	if (copy == NULL) {
+		rc = DNS_EAI_MEMORY;
+		goto out;
+	}
+	names = (char *)(copy + count);
+	entry = answers;
+	for (size_t i = 0; i < count; i++, entry = entry->ai_next) {
+		struct zsock_addrinfo *item = &copy[i];
+
+		*item = *entry;
+		item->ai_next = i + 1U < count ? &copy[i + 1U] : NULL;
+		if (entry->ai_addr != NULL) {
+			memcpy(&item->_ai_addr, entry->ai_addr, item->ai_addrlen);
+			item->ai_addr = net_sad(&item->_ai_addr);
+		}
+		if (entry->ai_canonname != NULL) {
+			size_t len = strlen(entry->ai_canonname) + 1U;
+
+			memcpy(names, entry->ai_canonname, len);
+			item->ai_canonname = names;
+			names += len;
+		}
+	}
+	*res = copy;
+out:
+	ops->freeaddrinfo(answers);
+	return rc;
+}
+#endif
 
 #if defined(CONFIG_NET_SOCKETS_OFFLOAD_PORT_TRACKING)
 /* Offloaded sockets bind their local port in the offload engine, outside the

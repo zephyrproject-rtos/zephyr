@@ -38,13 +38,11 @@ int wg_psa_aead_encrypt(uint8_t *dst, const uint8_t *src, size_t src_len,
 			const uint8_t *key);
 int wg_process_data_message(struct wg_iface_context *ctx, struct wg_peer *peer,
 			    struct msg_transport_data *data_hdr, struct net_pkt *pkt,
-			    size_t ip_udp_hdr_len, struct net_sockaddr *addr);
+			    size_t ip_udp_hdr_len, struct net_sockaddr *addr,
+			    struct wg_rx_result *result);
 int handle_transport_data(struct wg_peer *peer, struct net_sockaddr *peer_addr,
-			  struct net_pkt *pkt, size_t ip_udp_hdr_len, size_t data_len);
-
-/* Preallocated peer pool / active list, exported via ZTESTABLE_STATIC. */
-extern sys_slist_t peer_list;
-extern sys_slist_t active_peers;
+			  struct net_pkt *pkt, size_t ip_udp_hdr_len, size_t data_len,
+			  struct wg_rx_result *result);
 
 static void find_wg_iface(struct net_if *iface, void *user_data)
 {
@@ -66,12 +64,12 @@ static void find_wg_iface(struct net_if *iface, void *user_data)
 int wireguard_test_peer_add(struct net_if **iface_out)
 {
 	static const char *iface_privkey = "lmAIbJR8PQOpgJxmfOydBiDbexTMEKsjglZ1sj3kIjs=";
-	static int test_peer_id;
+	struct wireguard_peer_config config = {
+		.public_key = "CQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+	};
 	struct virtual_interface_req_params params = { 0 };
 	uint8_t private_key[WG_PRIVATE_KEY_LEN];
 	struct net_if *iface = NULL;
-	struct wg_peer *peer;
-	sys_snode_t *node;
 	size_t olen;
 	int ret;
 
@@ -96,39 +94,14 @@ int wireguard_test_peer_add(struct net_if **iface_out)
 		return ret;
 	}
 
-	/* Grab a peer from the preallocated pool and wire up only the fields the
-	 * transport receive path and the test getters touch. We deliberately do
-	 * not bring the interface up nor run the Noise handshake: the tests inject
-	 * transport-data messages straight into the receive path, decrypting with
-	 * the synthetic session keys installed by wireguard_test_install_session().
-	 */
-	node = sys_slist_get(&peer_list);
-	if (node == NULL) {
-		return -ENOMEM;
-	}
-
-	peer = CONTAINER_OF(node, struct wg_peer, node);
-
-	(void)memset(&peer->session, 0, sizeof(peer->session));
-
-	peer->ctx = net_if_get_device(iface)->data;
-	peer->iface = iface;
-	peer->id = ++test_peer_id;
-	peer->first_valid = false;
-	peer->last_rx = 0;
-
-	net_sin(net_sad(&peer->cfg_endpoint))->sin_family = NET_AF_INET;
-	net_sin(net_sad(&peer->cfg_endpoint))->sin_port = net_htons(51820);
-	net_sin(net_sad(&peer->cfg_endpoint))->sin_addr.s_addr = net_htonl(0xC0000201);
-	memcpy(&peer->endpoint, &peer->cfg_endpoint, sizeof(peer->endpoint));
-
-	sys_slist_prepend(&active_peers, node);
-
-	if (iface_out != NULL) {
+	net_sin(net_sad(&config.endpoint_ip))->sin_family = NET_AF_INET;
+	net_sin(net_sad(&config.endpoint_ip))->sin_port = net_htons(51820);
+	net_sin(net_sad(&config.endpoint_ip))->sin_addr.s_addr = net_htonl(0xc0000201U);
+	ret = wireguard_peer_add(&config, &iface);
+	if (ret > 0 && iface_out != NULL) {
 		*iface_out = iface;
 	}
-
-	return peer->id;
+	return ret;
 }
 
 int wireguard_test_install_session(int peer_id,
@@ -179,6 +152,24 @@ int wireguard_test_install_session(int peer_id,
 	return 0;
 }
 
+int wireguard_test_destroy_sending_key(int peer_id)
+{
+	struct wg_peer *peer = peer_lookup_by_id(peer_id);
+	struct wg_keypair *keypair;
+
+	if (peer == NULL) {
+		return -ENOENT;
+	}
+
+	keypair = &peer->session.keypair.current;
+	if (psa_destroy_key(keypair->sending_key_id) != PSA_SUCCESS) {
+		return -EIO;
+	}
+
+	keypair->sending_key_id = PSA_KEY_ID_NULL;
+	return 0;
+}
+
 int wireguard_test_encrypt(const uint8_t key[32], uint64_t counter,
 			   const uint8_t *plaintext, size_t plaintext_len,
 			   uint8_t *ciphertext, size_t ciphertext_size,
@@ -220,6 +211,7 @@ int wireguard_test_inject_transport(int peer_id,
 	struct msg_transport_data *msg;
 	struct msg_transport_data hdr;
 	struct net_pkt *pkt = NULL;
+	struct wg_rx_result result = { 0 };
 	struct wg_peer *peer;
 	size_t payload_len;
 	int ret;
@@ -272,7 +264,10 @@ int wireguard_test_inject_transport(int peer_id,
 	}
 
 	ret = wg_process_data_message(peer->ctx, peer, msg, pkt, 0,
-				      (struct net_sockaddr *)src);
+				      (struct net_sockaddr *)src, &result);
+	if (result.plaintext != NULL) {
+		net_pkt_unref(result.plaintext);
+	}
 
 out:
 	net_pkt_unref(pkt);
@@ -305,6 +300,7 @@ int wireguard_test_inject_stale_session(int peer_id, const struct net_sockaddr *
 {
 	struct msg_transport_data hdr;
 	struct net_pkt *pkt = NULL;
+	struct wg_rx_result result = { 0 };
 	struct wg_peer *peer;
 	int ret;
 
@@ -335,7 +331,7 @@ int wireguard_test_inject_stale_session(int peer_id, const struct net_sockaddr *
 
 	net_pkt_cursor_init(pkt);
 
-	ret = handle_transport_data(peer, (struct net_sockaddr *)src, pkt, 0, 0);
+	ret = handle_transport_data(peer, (struct net_sockaddr *)src, pkt, 0, 0, &result);
 
 out:
 	net_pkt_unref(pkt);

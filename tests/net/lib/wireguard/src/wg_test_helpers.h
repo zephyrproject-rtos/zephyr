@@ -77,6 +77,9 @@ int wireguard_test_peer_add(struct net_if **iface_out);
 int wireguard_test_install_session(int peer_id,
 				   const struct wireguard_test_session *session);
 
+/** @brief Remove the sending key while leaving the test session active. */
+int wireguard_test_destroy_sending_key(int peer_id);
+
 /**
  * @brief Encrypt transport plaintext with a raw session key.
  *

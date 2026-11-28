@@ -341,6 +341,27 @@ static inline enum net_verdict net_ipv6_prepare_for_send(struct net_pkt *pkt)
 }
 #endif
 
+static inline bool net_pkt_ipv6_iface_bound(struct net_pkt *pkt)
+{
+#if defined(CONFIG_NET_IPV6_NBR_CACHE)
+	return pkt->ipv6_iface_bound ||
+	       (pkt->context != NULL && net_context_is_bound_to_iface(pkt->context));
+#else
+	ARG_UNUSED(pkt);
+	return false;
+#endif
+}
+
+static inline void net_pkt_set_ipv6_iface_bound(struct net_pkt *pkt, bool bound)
+{
+#if defined(CONFIG_NET_IPV6_NBR_CACHE)
+	pkt->ipv6_iface_bound = bound;
+#else
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(bound);
+#endif
+}
+
 /**
  * @brief Lock IPv6 Neighbor table mutex
  *

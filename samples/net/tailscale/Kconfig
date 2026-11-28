@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: FoBE Studio
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Tailscale client sample"
+
+config SAMPLE_TAILSCALE_HOSTNAME
+	string "Node name"
+	default "zephyr-node"
+
+config SAMPLE_TAILSCALE_PEER
+	string "Optional tailnet echo server DNS name"
+	help
+	  After the policy is ready, connect TCP/9001 and UDP/9000 to this
+	  node through the managed network.
+
+config SAMPLE_TAILSCALE_PRIVATE_CONSOLE
+	bool "Display enrollment URL on a physically private console"
+	help
+	  Enable only when console access and recordings are restricted to
+	  the person provisioning this device.
+
+config SAMPLE_TAILSCALE_SNTP_BOOTSTRAP
+	bool "Bootstrap the sample clock with network-provided time"
+	help
+	  Use only on a network whose time source you trust. Otherwise the
+	  application expects platform provisioning or an RTC to set UTC.
+
+source "Kconfig.zephyr"

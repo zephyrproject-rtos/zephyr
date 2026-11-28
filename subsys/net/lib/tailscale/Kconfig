@@ -1,0 +1,195 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig TAILSCALE
+	bool "Native Tailscale client [EXPERIMENTAL]"
+	depends on WIREGUARD_MULTI_PEER && SETTINGS
+	depends on MBEDTLS_BUILTIN && TF_PSA_CRYPTO_BUILTIN
+	depends on POSIX_THREADS && POSIX_TIMERS && TF_PSA_CRYPTO_USER_CONFIG
+	depends on NET_NATIVE && NET_TCP && NET_UDP && NET_IPV4 && NET_IPV6
+	depends on NET_IPV4_ROUTE && NET_IPV6_ROUTE
+	depends on NET_SOCKETS_SOCKOPT_TLS && NET_INTERFACE_NAME
+	depends on HTTP_SERVER_VERSION_2 && DNS_RESOLVER && JSON_LIBRARY && UTF8
+	select EXPERIMENTAL
+	select TAILSCALE_CONTROL_STREAM
+	select TAILSCALE_CLIENT_INGRESS
+	select TAILSCALE_DNS_RESOLVER
+	select TAILSCALE_POLICY
+	select WIREGUARD_PEER_POLICY
+	select WIREGUARD_USE_REALTIME
+	help
+	  Join a Tailscale or Headscale network with one local node identity.
+	  The application supplies the physical interface, trusted UTC and TLS
+	  trust anchor. Applications use standard sockets.
+	  Enable the native IPv4 and IPv6 unicast route tables.
+	  Enable MBEDTLS_THREADING_C and MBEDTLS_THREADING_PTHREAD in the
+	  TF-PSA-Crypto user configuration header.
+
+if TAILSCALE
+
+config TAILSCALE_CONTROL_HOST
+	string "Control server hostname or IPv4 address"
+	default "controlplane.tailscale.com"
+	help
+	  Verify the TLS certificate against this server name and the trust
+	  anchor supplied by the application.
+
+config TAILSCALE_CONTROL_PORT
+	int "Control server TLS port"
+	range 1 65535
+	default 443
+
+config TAILSCALE_DISCO
+	bool "Discover and use direct UDP paths to Tailscale peers"
+	default y
+	help
+	  Exchange authenticated DISCO probes over UDP to establish direct
+	  paths. Direct paths can operate without DERP when peers can reach
+	  each other's UDP endpoints.
+
+config TAILSCALE_DERP
+	bool "Use authenticated DERP relay connections"
+	default y
+	select TAILSCALE_DERP_MAP
+	select NET_SOCKETS_TLS_CERT_VERIFY_CALLBACK
+	help
+	  Relay encrypted traffic when a direct path is unavailable. When
+	  direct discovery is enabled, DERP can also relay discovery messages.
+
+config TAILSCALE_TRANSPORT
+	def_bool TAILSCALE_DISCO || TAILSCALE_DERP
+
+if TAILSCALE_DISCO
+
+config TAILSCALE_DISCOVER_ENDPOINT
+	bool "Advertise the UDP mapping discovered by STUN"
+	default y if TAILSCALE_DERP
+	select CRC
+	select TAILSCALE_DERP_MAP
+	help
+	  Use the control server's relay map to find STUN servers. This
+	  does not require connections to DERP relay servers.
+
+config TAILSCALE_DERP_UDP_PORT
+	int "Direct transport UDP port"
+	range 1 65535
+	default 41641
+	help
+	  Use a port distinct from the native WireGuard listener.
+
+endif # TAILSCALE_DISCO
+
+# Keep the proxy selection visible so the build can reject a conflict with DERP.
+config TAILSCALE_REQUIRED_PROXY
+	bool "Require HTTP CONNECT for control and DERP"
+	select MBEDTLS_SSL_SERVER_NAME_INDICATION
+	help
+	  Verify origin TLS through the proxy. Direct UDP is disabled unless a
+	  SOCKS5 UDP association is also configured.
+	  The build requires TAILSCALE_DERP when this option is enabled.
+
+if TAILSCALE_REQUIRED_PROXY
+
+config TAILSCALE_PROXY_IPV4
+	string "Proxy server IPv4 address"
+
+config TAILSCALE_HTTP_PROXY_PORT
+	int "HTTP CONNECT port"
+	range 1 65535
+	default 3128
+
+config TAILSCALE_SOCKS_UDP_PORT
+	int "SOCKS5 UDP ASSOCIATE control port (zero disables direct UDP)"
+	range 0 65535
+	default 0
+
+endif # TAILSCALE_REQUIRED_PROXY
+
+endif # TAILSCALE
+
+config TAILSCALE_CLIENT_INGRESS
+	bool
+	select TAILSCALE_ROUTE_POLICY
+	select NET_CONTEXT_LINGER
+
+config TAILSCALE_DNS_RESOLVER
+	bool
+
+config TAILSCALE_MAP_STREAM
+	bool "Tailscale control map response framing" if ZTEST && !TAILSCALE
+	help
+	  Build the incremental decoder for an uncompressed Tailscale control
+	  map response body. The control client supplies the payload buffer and
+	  handles complete messages.
+
+config TAILSCALE_CONTROL_STREAM
+	bool "Persistent Tailscale control map session" if ZTEST && !TAILSCALE
+	select TAILSCALE_MAP_STREAM
+	help
+	  Run a map stream over an application-provided authenticated response
+	  transport and reconnect on recoverable session errors.
+
+config TAILSCALE_PEER_INVENTORY
+	bool "Tailscale control peer inventory" if ZTEST && !TAILSCALE
+	help
+	  Maintain a bounded snapshot of peers from Tailscale control maps.
+
+config TAILSCALE_PEER_INVENTORY_MAX_PEERS
+	int "Maximum peers in a control map"
+	depends on TAILSCALE_PEER_INVENTORY
+	range 1 256
+	default 16
+	help
+	  Each inventory reserves two snapshots of this many peers so a failed
+	  update cannot expose a partial map. Parsing a peer list also uses one
+	  64-bit identifier per configured peer on the control worker's stack.
+
+config TAILSCALE_POLICY
+	bool "Transactional Tailscale forwarding policy" if ZTEST && !TAILSCALE
+	depends on UTF8
+	select TAILSCALE_PEER_INVENTORY
+	help
+	  Stage bounded peer and packet filter snapshots together and publish
+	  them through an application-provided installer. The direct ingress
+	  filter supports explicit TCP and UDP rules.
+
+config TAILSCALE_PEER_STABLE_ID
+	string "Limit the client to one control-assigned peer ID"
+	depends on TAILSCALE_POLICY
+	default ""
+	help
+	  An empty selection admits all peers within the configured capacity.
+
+config TAILSCALE_POLICY_LEASE_SECONDS
+	int "Maximum age of the installed client policy in seconds"
+	depends on TAILSCALE_POLICY
+	range 1 3600
+	default 180
+	help
+	  Withdraw peers and owned addresses after this interval without a valid
+	  map or keepalive on the installed generation.
+
+config TAILSCALE_DERP_MAP
+	bool "Accept DERP relay maps in forwarding policy" if ZTEST && !TAILSCALE
+	depends on TAILSCALE_POLICY
+	help
+	  Publish relay definitions with the peer and packet filter snapshot.
+	  The DERP client selects and connects to regions from the installed map.
+
+config TAILSCALE_DERP_MAX_NODES
+	int "Maximum relay nodes in a map"
+	depends on TAILSCALE_DERP_MAP
+	range 1 256
+	default 128
+	help
+	  Bound relay storage in policy and transport snapshots. The default
+	  accommodates the hosted relay map. An oversized update leaves the
+	  previous map and forwarding policy intact.
+
+config TAILSCALE_ROUTE_POLICY
+	bool "Decode approved subnet and exit route policy" if ZTEST && !TAILSCALE
+	depends on TAILSCALE_POLICY
+	help
+	  Allow multiple routers to advertise a prefix and retain control's
+	  primary route designations and exit node suggestion capability.
+	  The installer must choose a single owner for each effective prefix.

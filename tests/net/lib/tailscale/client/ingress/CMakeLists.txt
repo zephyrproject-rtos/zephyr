@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: FoBE Studio
+# SPDX-License-Identifier: Apache-2.0
+
+cmake_minimum_required(VERSION 3.20.0)
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+project(tailscale_client_ingress)
+
+zephyr_include_directories(${ZEPHYR_BASE}/tests/crypto/psa/include)
+
+set(src_dir "${ZEPHYR_BASE}/subsys/net/lib/tailscale")
+target_include_directories(app PRIVATE
+  ${src_dir}
+  ${ZEPHYR_BASE}/subsys/net/lib/wireguard
+  ${ZEPHYR_BASE}/subsys/net/ip
+)
+target_sources(app PRIVATE
+  main.c
+  ${src_dir}/policy.c
+  ${src_dir}/ingress.c
+  ${src_dir}/socket.c
+  ${src_dir}/routes.c
+)
+zephyr_link_libraries(-Wl,--wrap=wireguard_replace_peers)

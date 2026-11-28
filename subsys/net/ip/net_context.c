@@ -1459,14 +1459,16 @@ static int get_zone_iface(struct net_context *context, const struct net_sockaddr
 	return 0;
 }
 
-/* A TCP context bound neither to an interface nor to a unicast address got its
+/* A context bound neither to an interface nor to a unicast address got its
  * interface at bind() time, from a peer that was not known yet. The source
  * address is selected on that interface, so it must be the one the peer is
  * reached through.
  */
-static bool tcp_iface_from_peer(struct net_context *context)
+static bool select_iface_from_peer(struct net_context *context)
 {
-	if (net_context_get_proto(context) != NET_IPPROTO_TCP ||
+	uint16_t proto = net_context_get_proto(context);
+
+	if ((proto != NET_IPPROTO_TCP && proto != NET_IPPROTO_UDP) ||
 	    net_context_is_bound_to_iface(context)) {
 		return false;
 	}
@@ -1638,7 +1640,7 @@ int net_context_connect(struct net_context *context,
 		 */
 		if (zone_iface != NULL) {
 			net_context_set_iface(context, zone_iface);
-		} else if (tcp_iface_from_peer(context)) {
+		} else if (select_iface_from_peer(context)) {
 			struct net_if *iface = net_if_ipv6_select_src_iface(&addr6->sin6_addr);
 
 			if (iface != NULL) {
@@ -1671,7 +1673,7 @@ int net_context_connect(struct net_context *context,
 			goto unlock;
 		}
 
-		iface_from_peer = tcp_iface_from_peer(context);
+		iface_from_peer = select_iface_from_peer(context);
 		if (iface_from_peer) {
 			iface = net_if_ipv4_select_src_iface(&net_sin(addr)->sin_addr);
 		}

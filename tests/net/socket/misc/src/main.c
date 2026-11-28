@@ -386,6 +386,89 @@ void test_ipv6_so_bindtodevice(void)
 			     (struct net_sockaddr *)&bind_addr, sizeof(bind_addr));
 }
 
+struct tcp_device_binding {
+	struct net_if *iface;
+	uint16_t port;
+	bool bound;
+	bool found;
+};
+
+static void check_tcp_device_binding(struct net_context *context, void *user_data)
+{
+	struct tcp_device_binding *expected = user_data;
+
+	if (net_context_get_family(context) != NET_AF_INET ||
+	    net_context_get_proto(context) != NET_IPPROTO_TCP ||
+	    net_context_get_state(context) != NET_CONTEXT_CONNECTED ||
+	    net_sin(&context->local)->sin_port != expected->port) {
+		return;
+	}
+
+	expected->found = true;
+	zexpect_equal(net_context_is_bound_to_iface(context), expected->bound);
+	zexpect_equal_ptr(net_context_get_iface(context), expected->iface);
+}
+
+static void check_accepted_tcp_device(const char *name, struct dummy_context *dummy, bool bound)
+{
+	struct net_sockaddr_in local = {
+		.sin_family = NET_AF_INET,
+		.sin_addr = *dummy->ipv4_addr,
+	};
+	struct net_ifreq dev = {0};
+	net_socklen_t len = sizeof(local);
+	char request = 'q';
+	char response = 'r';
+	char data;
+	int listener = zsock_socket(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TCP);
+	int client = zsock_socket(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TCP);
+
+	zassert_true(listener >= 0);
+	zassert_true(client >= 0);
+	if (bound) {
+		strcpy(dev.ifr_name, name);
+		zassert_ok(zsock_setsockopt(listener, ZSOCK_SOL_SOCKET, ZSOCK_SO_BINDTODEVICE,
+					     &dev, sizeof(dev)));
+	}
+	zassert_ok(zsock_bind(listener, (struct net_sockaddr *)&local, len));
+	zassert_ok(zsock_getsockname(listener, (struct net_sockaddr *)&local, &len));
+	zassert_ok(zsock_listen(listener, 1));
+	zassert_ok(zsock_connect(client, (struct net_sockaddr *)&local, len));
+
+	int accepted = zsock_accept(listener, NULL, NULL);
+	struct tcp_device_binding binding = {
+		.iface = dummy->iface, .port = local.sin_port, .bound = bound,
+	};
+	struct zsock_pollfd pfd = {.fd = accepted, .events = ZSOCK_POLLIN};
+
+	zassert_true(accepted >= 0);
+	net_context_foreach(check_tcp_device_binding, &binding);
+	zexpect_true(binding.found);
+	zassert_equal(zsock_send(client, &request, sizeof(request), 0), sizeof(request));
+	zassert_equal(zsock_poll(&pfd, 1, 1000), 1);
+	zassert_equal(zsock_recv(accepted, &data, sizeof(data), ZSOCK_MSG_DONTWAIT), sizeof(data));
+	zassert_equal(data, request);
+
+	pfd.fd = client;
+	zassert_equal(zsock_send(accepted, &response, sizeof(response), 0), sizeof(response));
+	zassert_equal(zsock_poll(&pfd, 1, 1000), 1);
+	zassert_equal(zsock_recv(client, &data, sizeof(data), ZSOCK_MSG_DONTWAIT), sizeof(data));
+	zassert_equal(data, response);
+	zassert_equal_ptr(current_dev, net_if_get_device(dummy->iface));
+
+	zassert_ok(zsock_close(accepted));
+	zassert_ok(zsock_close(client));
+	zassert_ok(zsock_close(listener));
+	k_sleep(K_MSEC(2 * CONFIG_NET_TCP_TIME_WAIT_DELAY));
+}
+
+ZTEST(socket_misc_test_suite, test_accepted_tcp_bindtodevice)
+{
+	check_accepted_tcp_device(DEV1_NAME, &dummy_data1, true);
+	check_accepted_tcp_device(DEV2_NAME, &dummy_data2, true);
+	check_accepted_tcp_device(DEV2_NAME, &dummy_data2, false);
+}
+
 /* A socket bound to a given interface can only be bound to an address that is
  * assigned to that interface.
  */
@@ -1527,6 +1610,62 @@ ZTEST(socket_misc_test_suite, test_ipv6_tcp_bound_any)
 	srv_addr.sin6_addr = my_ipv6_addr2;
 	check_tcp_bound_any(NET_AF_INET6, dummy_data2.iface, (struct net_sockaddr *)&srv_addr,
 			    sizeof(srv_addr));
+}
+
+static void check_udp_bound_any(net_sa_family_t family)
+{
+	struct dummy_context *const devices[] = {&dummy_data1, &dummy_data2};
+	struct net_sockaddr_storage destination = {.ss_family = family};
+	struct net_sockaddr_storage any = {.ss_family = family};
+	const net_socklen_t len = ADDR_SIZE(family);
+	char payload = 'x';
+	char received = 0;
+	int sender = zsock_socket(family, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	int receiver = zsock_socket(family, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	struct zsock_pollfd pfd = {.fd = receiver, .events = ZSOCK_POLLIN};
+
+	zassert_true(sender >= 0);
+	zassert_true(receiver >= 0);
+	zassert_ok(zsock_bind(sender, net_sad(&any), len));
+	if (family == NET_AF_INET) {
+		net_sin(net_sad(&destination))->sin_port = net_htons(ANY_PORT);
+	} else {
+		net_sin6(net_sad(&destination))->sin6_port = net_htons(ANY_PORT);
+	}
+	zassert_ok(zsock_bind(receiver, net_sad(&destination), len));
+
+	for (size_t i = 0; i < ARRAY_SIZE(devices); i++) {
+		if (family == NET_AF_INET) {
+			net_sin(net_sad(&destination))->sin_addr = *devices[i]->ipv4_addr;
+		} else {
+			net_sin6(net_sad(&destination))->sin6_addr = *devices[i]->ipv6_addr;
+		}
+
+		current_dev = NULL;
+		zassert_ok(zsock_connect(sender, net_sad(&destination), len));
+		zassert_equal(zsock_send(sender, &payload, sizeof(payload), 0), sizeof(payload));
+		int ready = zsock_poll(&pfd, 1, 1000);
+
+		zexpect_equal(ready, 1);
+		if (ready == 1) {
+			zexpect_equal(zsock_recv(receiver, &received, sizeof(received),
+						 ZSOCK_MSG_DONTWAIT), sizeof(received));
+			zexpect_equal(received, payload);
+		}
+		zexpect_equal_ptr(current_dev, net_if_get_device(devices[i]->iface));
+	}
+	zassert_ok(zsock_close(receiver));
+	zassert_ok(zsock_close(sender));
+}
+
+ZTEST(socket_misc_test_suite, test_ipv4_udp_bound_any_reconnect)
+{
+	check_udp_bound_any(NET_AF_INET);
+}
+
+ZTEST(socket_misc_test_suite, test_ipv6_udp_bound_any_reconnect)
+{
+	check_udp_bound_any(NET_AF_INET6);
 }
 
 /* A client bound to 0.0.0.0 gets the interface of its peer at connect() time,

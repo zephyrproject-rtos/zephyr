@@ -16,6 +16,16 @@
 #define SOCK_ERROR 4
 
 int zsock_close_ctx(struct net_context *ctx, int sock);
+
+#if defined(CONFIG_TAILSCALE_DNS_RESOLVER) && defined(CONFIG_NET_SOCKETS_OFFLOAD)
+int zsock_offload_getaddrinfo_copy(const char *host, const char *service,
+				  const struct zsock_addrinfo *hints,
+				  struct zsock_addrinfo **res);
+#endif
+
+/* Synchronous notification before the native socket context is torn down. */
+void zsock_native_pre_close(struct net_context *ctx);
+
 int zsock_poll_internal(struct zsock_pollfd *fds, int nfds, k_timeout_t timeout);
 
 int zsock_wait_data(struct net_context *ctx, k_timeout_t *timeout);

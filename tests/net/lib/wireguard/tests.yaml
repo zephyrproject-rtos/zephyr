@@ -13,3 +13,75 @@ tests:
     depends_on: netif
     extra_configs:
       - CONFIG_WIREGUARD_WORKQ_STACK_SIZE=2048
+  net.wireguard.multi_peer:
+    platform_allow: native_sim
+    tags:
+      - net
+      - wireguard
+    depends_on: netif
+    extra_configs:
+      - CONFIG_WIREGUARD_MULTI_PEER=y
+      - CONFIG_WIREGUARD_MAX_PEER=4
+      - CONFIG_NET_IF_MAX_IPV4_COUNT=5
+      - CONFIG_NET_TC_TX_COUNT=1
+      - CONFIG_MBEDTLS_PSA_KEY_SLOT_COUNT=48
+  net.wireguard.multi_peer.workq:
+    platform_allow: native_sim
+    tags:
+      - net
+      - wireguard
+    depends_on: netif
+    extra_configs:
+      - CONFIG_WIREGUARD_MULTI_PEER=y
+      - CONFIG_WIREGUARD_MAX_PEER=4
+      - CONFIG_NET_IF_MAX_IPV4_COUNT=5
+      - CONFIG_MBEDTLS_PSA_KEY_SLOT_COUNT=48
+      - CONFIG_WIREGUARD_WORKQ_STACK_SIZE=3072
+      - CONFIG_NET_TCP=y
+      - CONFIG_NET_TC_TX_COUNT=0
+      - CONFIG_NET_MGMT_EVENT_DIRECT=y
+  net.wireguard.multi_peer.traffic_classes:
+    platform_allow: native_sim
+    tags:
+      - net
+      - wireguard
+    depends_on: netif
+    extra_configs:
+      - CONFIG_WIREGUARD_MULTI_PEER=y
+      - CONFIG_WIREGUARD_MAX_PEER=4
+      - CONFIG_NET_IF_MAX_IPV4_COUNT=5
+      - CONFIG_NET_TC_TX_COUNT=2
+      - CONFIG_NET_PKT_TX_COUNT=12
+      - CONFIG_NET_STATISTICS_PER_INTERFACE=y
+      - CONFIG_MBEDTLS_PSA_KEY_SLOT_COUNT=48
+  net.wireguard.peer_policy:
+    platform_allow: native_sim
+    tags:
+      - net
+      - wireguard
+    depends_on: netif
+    extra_configs:
+      - CONFIG_WIREGUARD_MULTI_PEER=y
+      - CONFIG_WIREGUARD_PEER_POLICY=y
+      - CONFIG_WIREGUARD_POLICY_STAGING_PEERS=1
+      - CONFIG_WIREGUARD_MAX_PEER=4
+      - CONFIG_NET_IF_MAX_IPV4_COUNT=5
+      - CONFIG_MBEDTLS_PSA_KEY_SLOT_COUNT=48
+  net.wireguard.peer_policy.handshake_workq:
+    platform_allow: native_sim
+    tags:
+      - net
+      - wireguard
+    depends_on: netif
+    extra_configs:
+      - CONFIG_WIREGUARD_MULTI_PEER=y
+      - CONFIG_WIREGUARD_PEER_POLICY=y
+      - CONFIG_WIREGUARD_POLICY_STAGING_PEERS=1
+      - CONFIG_WIREGUARD_MAX_PEER=4
+      - CONFIG_NET_IF_MAX_IPV4_COUNT=5
+      - CONFIG_MBEDTLS_PSA_KEY_SLOT_COUNT=48
+      - CONFIG_POSIX_API=y
+      - CONFIG_MAX_PTHREAD_MUTEX_COUNT=32
+      - CONFIG_MAX_PTHREAD_COND_COUNT=8
+      - CONFIG_TF_PSA_CRYPTO_USER_CONFIG_FILE="tf_psa_pthread.h"
+      - CONFIG_WIREGUARD_HANDSHAKE_WORKQ_STACK_SIZE=4096

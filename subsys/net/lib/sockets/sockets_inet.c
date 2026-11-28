@@ -180,6 +180,11 @@ static int zsock_socket_internal(int family, int type, int proto)
 	return fd;
 }
 
+__weak void zsock_native_pre_close(struct net_context *ctx)
+{
+	ARG_UNUSED(ctx);
+}
+
 int zsock_close_ctx(struct net_context *ctx, int sock)
 {
 	int ret;
@@ -187,6 +192,8 @@ int zsock_close_ctx(struct net_context *ctx, int sock)
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(socket, close, sock);
 
 	NET_DBG("close: ctx=%p, fd=%d", ctx, sock);
+
+	zsock_native_pre_close(ctx);
 
 	/* Reset callbacks to avoid any race conditions while
 	 * flushing queues. No need to check return values here,

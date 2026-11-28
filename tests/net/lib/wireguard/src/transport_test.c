@@ -8,7 +8,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
-#include <zephyr/net/wireguard.h>
+#include "wg_private.h"
 #include <zephyr/net/socket.h>
 
 #include "wg_test_helpers.h"
@@ -185,6 +185,25 @@ ZTEST(wireguard_transport, test_valid_keepalive_accepted)
 	zassert_equal(stats_after.valid_rx, stats_before.valid_rx);
 }
 
+ZTEST(wireguard_transport, test_short_plaintext_rejected_before_ip_parsing)
+{
+	const uint8_t plaintext[16] = { 0x45 };
+	struct net_sockaddr_storage src = make_addr(net_htonl(0xC0000201U), 51820U);
+	struct net_stats_vpn before;
+	struct net_stats_vpn after;
+	uint8_t ciphertext[32];
+	size_t ciphertext_len;
+
+	zassert_ok(wireguard_test_encrypt(test_session.recv_key, 1U, plaintext, sizeof(plaintext),
+					 ciphertext, sizeof(ciphertext), &ciphertext_len));
+	zassert_ok(wireguard_test_get_stats(test_peer_id, &before));
+	zexpect_equal(wireguard_test_inject_transport(test_peer_id, net_sad(&src), 1U, ciphertext,
+						     ciphertext_len), -EMSGSIZE);
+	zassert_ok(wireguard_test_get_stats(test_peer_id, &after));
+	zexpect_equal(after.invalid_packet_len, before.invalid_packet_len + 1U);
+	zexpect_equal(after.valid_rx, before.valid_rx);
+}
+
 ZTEST(wireguard_transport, test_unknown_session_does_not_move_endpoint)
 {
 	struct net_sockaddr_storage endpoint_before;
@@ -221,4 +240,9 @@ ZTEST(wireguard_transport, test_unknown_session_does_not_move_endpoint)
 		     "handshake not triggered for stale session");
 }
 
-ZTEST_SUITE(wireguard_transport, NULL, transport_setup, transport_before, NULL, NULL);
+static void transport_teardown(void *data)
+{
+	zexpect_ok(wireguard_peer_remove(test_peer_id));
+}
+
+ZTEST_SUITE(wireguard_transport, NULL, transport_setup, transport_before, NULL, transport_teardown);

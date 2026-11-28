@@ -39,6 +39,7 @@ LOG_MODULE_REGISTER(net_pkt, CONFIG_NET_PKT_LOG_LEVEL);
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/udp.h>
 
+#include "ipv6.h"
 #include "net_private.h"
 #include "tcp_internal.h"
 
@@ -2281,6 +2282,7 @@ static void clone_pkt_attributes(struct net_pkt *pkt, struct net_pkt *clone_pkt)
 					  net_pkt_ipv4_opts_len(pkt));
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		   net_pkt_family(pkt) == NET_AF_INET6) {
+		net_pkt_set_ipv6_iface_bound(clone_pkt, net_pkt_ipv6_iface_bound(pkt));
 		net_pkt_set_ipv6_hop_limit(clone_pkt,
 					   net_pkt_ipv6_hop_limit(pkt));
 		net_pkt_set_ipv6_ext_len(clone_pkt, net_pkt_ipv6_ext_len(pkt));

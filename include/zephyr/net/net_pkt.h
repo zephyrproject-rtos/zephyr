@@ -240,6 +240,9 @@ struct net_pkt {
 				  * Used only if defined(CONFIG_NET_IPV6_ROUTE)
 				  */
 	uint8_t family : 3;	 /* Address family, see net_ip.h */
+#if defined(CONFIG_NET_IPV6_NBR_CACHE)
+	uint8_t ipv6_iface_bound : 1; /* Keep explicit IPv6 interface through resolution. */
+#endif
 
 	/* bitfield byte alignment boundary */
 

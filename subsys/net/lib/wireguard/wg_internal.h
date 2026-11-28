@@ -6,6 +6,8 @@
 
 #include <psa/crypto.h>
 
+#include "wg_private.h"
+
 /* tai64n contains 64-bit seconds and 32-bit nano offset (12 bytes) */
 #define WG_TAI64N_LEN 12U
 
@@ -48,7 +50,6 @@
 #define MAX_INITIATIONS_PER_SECOND 2U
 
 #define PKT_ALLOC_WAIT_TIME K_MSEC(100U)
-#define BUF_ALLOC_TIMEOUT PKT_ALLOC_WAIT_TIME
 
 #define WG_MTU 1420U
 
@@ -152,6 +153,11 @@ struct wg_allowed_ip {
 	bool is_valid : 1;
 };
 
+struct wg_rx_result {
+	struct net_pkt *plaintext;
+	bool connected;
+};
+
 struct wg_peer {
 	sys_snode_t node;
 
@@ -195,6 +201,13 @@ struct wg_peer {
 	struct wg_allowed_ip allowed_ip[CONFIG_WIREGUARD_MAX_SRC_IPS];
 	struct net_sockaddr_storage cfg_endpoint; /* Configured peer IP address */
 	struct net_sockaddr_storage endpoint; /* Latest received IP address */
+	struct wireguard_transport transport;
+	unsigned int deliveries;
+#if defined(CONFIG_WIREGUARD_PEER_POLICY)
+	uint64_t policy_identity;
+	struct net_if *underlay;
+	bool policy_endpoint_learned;
+#endif
 
 	/* Keeps track of the greatest timestamp received per peer */
 	uint8_t greatest_timestamp[WG_TAI64N_LEN];
@@ -296,7 +309,14 @@ typedef void (*wg_peer_cb_t)(struct wg_peer *peer, void *user_data);
 void wireguard_peer_foreach(wg_peer_cb_t cb, void *user_data);
 
 #if defined(WG_FUNCTION_PROTOTYPES)
-static void wg_start_session(struct wg_peer *peer, bool is_initiator);
+struct wg_rx_scope {
+	struct wg_iface_context *ctx;
+	struct wg_peer *expected_peer;
+	struct net_if *native_iface;
+	bool native_udp;
+};
+
+static int wg_start_session(struct wg_peer *peer, bool is_initiator);
 static struct wg_peer *peer_lookup_by_pubkey(struct wg_iface_context *ctx,
 					     const char *public_key);
 ZTESTABLE_STATIC struct wg_peer *peer_lookup_by_id(int id);
@@ -330,59 +350,47 @@ static bool wg_check_mac1(struct wg_iface_context *ctx,
 static int wg_generate_cookie_secret(struct wg_iface_context *ctx,
 				     uint32_t lifetime_in_ms);
 static void wg_tai64n_now(uint8_t *output);
-static bool wg_check_initiation_message(struct wg_iface_context *ctx,
-					struct msg_handshake_init *msg,
-					struct net_sockaddr *addr);
-static bool wg_check_response_message(struct wg_iface_context *ctx,
-				      struct msg_handshake_response *msg,
-				      struct net_sockaddr *addr);
+static bool wg_check_handshake_mac(struct wg_peer *peer, struct wireguard_datagram_path *path,
+				   uint8_t *msg, size_t len, uint32_t sender);
+static bool wg_check_handshake_cookie(struct wg_peer *peer, struct wireguard_datagram_path *path,
+				      uint8_t *msg, size_t len, uint32_t sender);
+static bool wg_process_handshake_response(struct wg_iface_context *ctx, struct wg_peer *peer,
+					  struct msg_handshake_response *msg);
 static struct wg_peer *wg_process_initiation_message(struct wg_iface_context *ctx,
+						     const struct wg_rx_scope *scope,
+						     struct wireguard_datagram_path *path,
 						     struct msg_handshake_init *msg);
 static bool wg_create_handshake_init(struct wg_iface_context *ctx,
 				     struct wg_peer *peer,
 				     struct msg_handshake_init *dst);
-static int wg_send_handshake_init(struct wg_iface_context *ctx,
-				  struct net_if *iface,
-				  struct wg_peer *peer,
-				  struct msg_handshake_init *packet);
 static bool wg_create_handshake_response(struct wg_iface_context *ctx,
 					 struct wg_peer *peer,
 					 struct msg_handshake_response *dst);
-static void wg_send_handshake_response(struct wg_iface_context *ctx,
-				       struct net_if *iface,
-				       struct wg_peer *peer,
-				       struct net_sockaddr *my_addr);
-static void wg_send_handshake_cookie(struct wg_iface_context *ctx,
-				     const uint8_t *mac1,
-				     uint32_t index,
-				     struct net_sockaddr *addr);
+static int wg_send_handshake_response(struct wg_peer *peer, struct wireguard_datagram_path *path);
 static bool wg_process_cookie_message(struct wg_iface_context *ctx,
 				      struct wg_peer *peer,
 				      struct msg_cookie_reply *src);
-static int wg_create_cookie_reply(struct wg_iface_context *ctx,
-				  struct msg_cookie_reply *dst,
-				  const uint8_t *mac1,
-				  uint32_t index,
-				  uint8_t *source_addr_port,
-				  size_t source_length);
-static void wg_process_response_message(struct wg_iface_context *ctx,
-					struct wg_peer *peer,
-					struct msg_handshake_response *response,
-					struct net_sockaddr *addr);
+ZTESTABLE_STATIC int wg_create_cookie_reply(struct wg_iface_context *ctx,
+					    struct msg_cookie_reply *dst,
+					    const uint8_t *mac1,
+					    uint32_t index,
+					    uint8_t *source_addr_port,
+					    size_t source_length);
 ZTESTABLE_STATIC int wg_process_data_message(struct wg_iface_context *ctx,
 					     struct wg_peer *peer,
 					     struct msg_transport_data *data_hdr,
 					     struct net_pkt *pkt,
 					     size_t ip_udp_hdr_len,
-					     struct net_sockaddr *addr);
+					     struct net_sockaddr *addr,
+					     struct wg_rx_result *result);
 ZTESTABLE_STATIC int handle_transport_data(struct wg_peer *peer,
 					   struct net_sockaddr *peer_addr,
 					   struct net_pkt *pkt,
 					   size_t ip_udp_hdr_len,
-					   size_t data_len);
+					   size_t data_len, struct wg_rx_result *result);
 ZTESTABLE_STATIC void keypair_destroy(struct wg_keypair *keypair);
-static void wg_encrypt_packet(uint8_t *dst, const uint8_t *src, size_t src_len,
-			      struct wg_keypair *keypair);
+static int wg_encrypt_packet(uint8_t *dst, const uint8_t *src, size_t src_len,
+			     struct wg_keypair *keypair);
 static int wg_set_interface_private_key(struct wg_iface_context *ctx,
 					const uint8_t *private_key_data);
 static void wg_cleanup_interface_keys(struct wg_iface_context *ctx);

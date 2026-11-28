@@ -34,6 +34,14 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 #include <zephyr/net/socket.h>
 #include <zephyr/sys/iterable_sections.h>
 
+#ifdef CONFIG_TAILSCALE_CLIENT_INGRESS
+#include "../lib/tailscale/net_stack.h"
+#endif
+
+#ifdef CONFIG_WIREGUARD_MULTI_PEER
+#include "../lib/wireguard/wg_private.h"
+#endif
+
 #include "net_private.h"
 #include "../l2/ethernet/arp.h"
 #include "ipv4.h"
@@ -270,6 +278,10 @@ static void net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 		if (net_linkaddr_set(&ll_dst,
 				     net_pkt_lladdr_dst(pkt)->addr,
 				     net_pkt_lladdr_dst(pkt)->len) < 0) {
+#ifdef CONFIG_TAILSCALE_CLIENT_INGRESS
+			tailscale_net_unqueue(pkt);
+#endif
+			net_pkt_unref(pkt);
 			return;
 		}
 	}
@@ -338,6 +350,9 @@ static void net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 	}
 
 	if (status < 0) {
+#ifdef CONFIG_TAILSCALE_CLIENT_INGRESS
+		tailscale_net_unqueue(pkt);
+#endif
 		net_pkt_unref(pkt);
 	} else {
 		net_stats_update_bytes_sent(iface, status);
@@ -386,6 +401,14 @@ void net_if_try_queue_tx(struct net_if *iface, struct net_pkt *pkt, k_timeout_t 
 	uint8_t prio = net_pkt_priority(pkt);
 	uint8_t tc = net_tx_priority2tc(prio);
 
+#if defined(CONFIG_WIREGUARD_MULTI_PEER)
+	struct net_if *tx_iface = net_pkt_iface(pkt);
+
+	if (net_if_l2(tx_iface) == &NET_L2_GET_NAME(VIRTUAL)) {
+		wireguard_prepare_tx(tx_iface, pkt);
+	}
+#endif
+
 #if NET_TC_TX_COUNT > 1
 	NET_DBG("TC %d with prio %d pkt %p", tc, prio, pkt);
 #endif
@@ -412,6 +435,9 @@ void net_if_try_queue_tx(struct net_if *iface, struct net_pkt *pkt, k_timeout_t 
 	return;
 
 drop:
+#ifdef CONFIG_TAILSCALE_CLIENT_INGRESS
+	tailscale_net_unqueue(pkt);
+#endif
 	net_pkt_unref(pkt);
 	net_stats_update_tc_sent_dropped(iface, tc);
 	return;
@@ -4036,6 +4062,13 @@ out:
 
 static struct net_if *net_if_ipv6_select_route_iface(const struct net_in6_addr *dst)
 {
+#ifdef CONFIG_TAILSCALE_CLIENT_INGRESS
+	struct net_if *managed = tailscale_net_route(NET_AF_INET6, dst);
+
+	if (managed != NULL) {
+		return managed;
+	}
+#endif
 #if defined(CONFIG_NET_IPV6_ROUTE)
 	struct net_route_entry *route;
 	struct net_in6_addr *nexthop;
@@ -4691,6 +4724,13 @@ bool net_if_ipv4_is_addr_bcast(struct net_if *iface,
 
 static struct net_if *net_if_ipv4_select_route_iface(const struct net_in_addr *dst)
 {
+#ifdef CONFIG_TAILSCALE_CLIENT_INGRESS
+	struct net_if *managed = tailscale_net_route(NET_AF_INET, dst);
+
+	if (managed != NULL) {
+		return managed;
+	}
+#endif
 #if defined(CONFIG_NET_IPV4_ROUTE)
 	struct net_route_entry *route;
 	struct net_in_addr *nexthop;

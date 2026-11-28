@@ -7,3 +7,7 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(mbedtls)
 
 target_sources(app PRIVATE src/main.c)
+if(CONFIG_TF_PSA_CRYPTO_USER_CONFIG_FILE STREQUAL "tf_psa_pthread.h")
+  zephyr_include_directories(include)
+  target_sources(app PRIVATE src/threading.c)
+endif()
