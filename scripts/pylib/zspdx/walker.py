@@ -7,6 +7,7 @@ import os
 import re
 import subprocess
 from dataclasses import dataclass
+from urllib.parse import urlsplit
 
 import yaml
 from west.util import WestNotFound, west_topdir
@@ -66,13 +67,6 @@ DEPS_COMMENT = (
 ZEPHYR_DEPS_COMMENT = (
     "Reference-only package for the Zephyr RTOS itself, the common dependency "
     "shared by every module dependency package; it carries no files."
-)
-
-# Matches a git repository URL of the form '<protocol><host>/<namespace>/<package>',
-# capturing the host type (e.g. "github"), the namespace and the package name.
-COMMON_GIT_URL_REGEX = (
-    r'((git@|http(s)?:\/\/)(?P<type>[\w\.@]+)(\.\w+)(\/|:))'
-    r'(?P<namespace>[\w,\-,\_\/]+)\/(?P<package>[\w,\-,\_]+)(.git){0,1}((\/){0,1})$'
 )
 
 
@@ -197,15 +191,45 @@ class Walker:
     def _parse_git_url(url):
         """Parse a git repository URL into (host_type, namespace, package).
 
-        Returns ``None`` when the URL does not match the common
-        '<protocol><host>/<namespace>/<package>' pattern.
+        Accept HTTP(S), SSH URLs and SCP-style ``git@host:namespace/package``
+        remotes. Return ``None`` when no repository identity can be derived.
         """
         if not url:
             return None
-        match = re.fullmatch(COMMON_GIT_URL_REGEX, url)
-        if not match:
+
+        # SCP-style remotes are not URLs; normalise them for URL parsing only.
+        if url.startswith("git@"):
+            authority, separator, path = url.partition(":")
+            if not separator:
+                return None
+            url = f"ssh://{authority}/{path}"
+
+        try:
+            parsed = urlsplit(url)
+            hostname = parsed.hostname
+            # Accessing port also checks its syntax and range.
+            _ = parsed.port
+        except ValueError:
             return None
-        return match.group("type"), match.group("namespace"), match.group("package")
+
+        if parsed.scheme not in ("http", "https", "ssh") or not hostname:
+            return None
+        if parsed.query or parsed.fragment:
+            return None
+
+        # Preserve the existing PURL type derivation: github.com -> github.
+        host_type, _, suffix = hostname.rpartition(".")
+        if not host_type or not suffix:
+            return None
+
+        path = parsed.path.removeprefix("/").removesuffix("/").removesuffix(".git")
+        # PURL components are interpolated without percent-encoding. Reject
+        # escaped paths and characters that would need encoding in a PURL.
+        if not re.fullmatch(r"[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)+", path):
+            return None
+
+        namespace, _, package = path.rpartition("/")
+        return host_type, namespace, package
 
     def _build_purl(self, url, version=None):
         parsed = self._parse_git_url(url)
