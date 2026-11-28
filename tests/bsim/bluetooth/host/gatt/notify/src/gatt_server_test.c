@@ -378,6 +378,46 @@ static void test_main_reserved_bit(void)
 	TEST_PASS("GATT server passed");
 }
 
+/* The client meets a new peer on every connection: the server takes a new identity address each
+ * time
+ */
+static void test_main_many_peers(void)
+{
+	const struct bt_data ad[] = {
+		BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
+	};
+	/* gatt_client_many_peers goes through SUB_PEER_COUNT peers twice */
+	const uint32_t conn_count = 2U * SUB_PEER_COUNT;
+	struct bt_le_adv_param param = *BT_LE_ADV_CONN_FAST_1;
+	int err;
+
+	err = bt_enable(NULL);
+	TEST_ASSERT(err == 0, "Bluetooth init failed (err %d)", err);
+
+	err = bt_id_create(NULL, NULL);
+	TEST_ASSERT(err > 0, "Failed to create an identity (err %d)", err);
+	param.id = (uint8_t)err;
+
+	for (uint32_t conn_idx = 0U; conn_idx < conn_count; conn_idx++) {
+		if (conn_idx > 0U) {
+			err = bt_id_reset(param.id, NULL, NULL);
+			TEST_ASSERT(err == param.id, "Failed to reset the identity (err %d)", err);
+		}
+
+		err = bt_le_adv_start(&param, ad, ARRAY_SIZE(ad), NULL, 0);
+		TEST_ASSERT(err == 0, "Advertising failed to start (err %d)", err);
+
+		WAIT_FOR_FLAG(flag_is_connected);
+
+		if (conn_idx < conn_count - 1U) {
+			WAIT_FOR_FLAG_UNSET(flag_is_connected);
+		}
+	}
+
+	/* The client ends the simulation once it is done with the last peer */
+	TEST_PASS("GATT server passed");
+}
+
 static const struct bst_test_instance test_gatt_server[] = {
 	{
 		.test_id = "gatt_server_none",
@@ -402,6 +442,10 @@ static const struct bst_test_instance test_gatt_server[] = {
 	{
 		.test_id = "gatt_server_reserved_bit",
 		.test_main_f = test_main_reserved_bit,
+	},
+	{
+		.test_id = "gatt_server_many_peers",
+		.test_main_f = test_main_many_peers,
 	},
 	BSTEST_END_MARKER,
 };
