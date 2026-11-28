@@ -804,7 +804,10 @@ static void airoc_event_task(void)
 
 		case WLC_E_DEAUTH_IND:
 		case WLC_E_DISASSOC_IND:
-			net_if_dormant_on(airoc_wifi_iface);
+			/* AP client disconnects shouldn't make the shared iface dormant. */
+			if (!airoc_event.is_ap_event) {
+				net_if_dormant_on(airoc_wifi_iface);
+			}
 			break;
 
 		default:
