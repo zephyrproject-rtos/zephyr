@@ -26,8 +26,7 @@
 	};
 
 	chosen {
-		zephyr,sram = &ocram1; /* TODO Merge with other OCRAM */
-		zephyr,sram1 = &ocram2; /* TODO Merge with other OCRAM */
+		zephyr,sram = &ocram1;
 		zephyr,dtcm = &dtcm;
 		zephyr,itcm = &itcm;
 		zephyr,console = &lpuart1;
@@ -130,6 +129,15 @@
 		compatible = "pwm-buzzer";
 		pwms = <&qtmr1 0 PWM_HZ(50) PWM_POLARITY_NORMAL>;
 	};
+};
+
+/* OCRAM2 directly follows OCRAM1 */
+&ocram1 {
+	reg = <0x20240000 DT_SIZE_K(1024)>;
+};
+
+&ocram2 {
+	status = "disabled";
 };
 
 &gpio1 {
