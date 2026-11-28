@@ -20,6 +20,11 @@ zephyr_sources_ifdef(
   shell_ssh.c
 )
 
+if(CONFIG_SHELL_BACKEND_SSH AND CONFIG_MBEDTLS_BUILTIN)
+  # shell_ssh.c is built into the "zephyr" library.
+  target_link_libraries(zephyr PUBLIC tfpsacrypto)
+endif()
+
 zephyr_sources_ifdef(
   CONFIG_SHELL_BACKEND_TELNET
   shell_telnet.c

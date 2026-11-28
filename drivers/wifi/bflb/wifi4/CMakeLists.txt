@@ -17,3 +17,5 @@ zephyr_library_sources(
   bflb_wifi_mgmt.c
   bflb_wifi_wpa_supp.c
 )
+
+zephyr_library_link_libraries(mbedtls)

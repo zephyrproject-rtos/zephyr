@@ -12,3 +12,8 @@ zephyr_sources_ifdef(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_CRYPT_CUSTOM
 
 zephyr_sources_ifdef(CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_CUSTOM
   src/custom_store.c)
+
+if(CONFIG_MBEDTLS_BUILTIN)
+  # The custom sources above are built into the "zephyr" library.
+  target_link_libraries(zephyr PUBLIC tfpsacrypto)
+endif()

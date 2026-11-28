@@ -26,7 +26,7 @@ endif()
 zephyr_library_sources_ifdef(CONFIG_HTTP_SERVER_COMPRESSION http_compression.c)
 if(CONFIG_HTTP_SERVER AND CONFIG_WEBSOCKET)
   zephyr_library_sources(http_server_ws.c)
-  zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedtls_iface)
+  zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN tfpsacrypto)
 endif()
 
 if(CONFIG_HTTP_SERVER AND CONFIG_FILE_SYSTEM)

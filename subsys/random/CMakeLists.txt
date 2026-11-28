@@ -29,6 +29,6 @@ if(CONFIG_ENTROPY_DEVICE_RANDOM_GENERATOR OR
 
   if(CONFIG_PSA_CSPRNG_GENERATOR)
     zephyr_library_sources(random_psa.c)
-    zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedtls_iface)
+    zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN tfpsacrypto)
   endif()
 endif()

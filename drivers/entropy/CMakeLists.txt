@@ -60,3 +60,7 @@ zephyr_library_sources_ifdef(CONFIG_ENTROPY_WCH_RNG entropy_wch.c)
 # zephyr-keep-sorted-stop
 
 zephyr_library_link_libraries_ifdef(CONFIG_BUILD_WITH_TFM tfm_api)
+
+if(CONFIG_ENTROPY_PSA_CRYPTO_RNG)
+  zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN tfpsacrypto)
+endif()

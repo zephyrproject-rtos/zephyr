@@ -3,6 +3,7 @@
 zephyr_library()
 
 zephyr_library_include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN tfpsacrypto)
 
 zephyr_library_sources(
   lorawan.c

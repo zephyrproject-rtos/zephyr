@@ -9,6 +9,8 @@ zephyr_library_sources(
   fido2_clientpin.c
 )
 
+zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN tfpsacrypto)
+
 add_subdirectory(attestation)
 add_subdirectory(storage)
 add_subdirectory(transport)
