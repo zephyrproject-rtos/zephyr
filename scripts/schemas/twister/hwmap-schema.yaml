@@ -1,4 +1,24 @@
 $schema: "https://json-schema.org/draft/2020-12/schema"
+$defs:
+  hook:
+    oneOf:
+      - type: string
+      - type: object
+        properties:
+          script:
+            type: string
+          args:
+            type: array
+            items:
+              oneOf:
+                - type: string
+                - type: number
+          timeout:
+            type: integer
+            minimum: 1
+        required:
+          - script
+        additionalProperties: false
 type: array
 items:
   type: object
@@ -61,6 +81,18 @@ items:
           type: integer
         post_flash_timeout:
           type: integer
+      additionalProperties: false
+    hooks:
+      type: object
+      properties:
+        pre:
+          $ref: "#/$defs/hook"
+        post:
+          $ref: "#/$defs/hook"
+        pre_flash:
+          $ref: "#/$defs/hook"
+        post_flash:
+          $ref: "#/$defs/hook"
       additionalProperties: false
     west_flash_cmd:
       type: string

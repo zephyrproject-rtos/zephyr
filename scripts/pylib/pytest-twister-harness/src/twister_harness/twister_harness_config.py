@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import csv
 import logging
+import warnings
 import pytest
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -28,6 +29,7 @@ class DeviceSerialConfig:
 class DeviceConfig:
     type: str
     build_dir: Path
+    dut: HardwareData = field(default_factory=HardwareData)
     current_build_dir: Path | None = None
     app_build_dir: Path | None = None
     base_timeout: float = 60.0  # [s]
@@ -43,9 +45,6 @@ class DeviceConfig:
     west_flash_extra_args: list[str] = field(default_factory=list, repr=False)
     flash_command: str = ''
     name: str = ''
-    pre_script: Path | None = None
-    post_script: Path | None = None
-    post_flash_script: Path | None = None
     fixtures: list[str] = None
     extra_test_args: str = ''
     west_flash_cmd: str = ''
@@ -128,7 +127,12 @@ class TwisterHarnessConfig:
                     dut.entries.append(core_dut)
             test_params.duts.append(dut)
 
+        hooks_from_cli = cls._hooks_from_deprecated_options(config)
+
         for dut_number, dut in enumerate(test_params.duts):
+            if hooks_from_cli and not dut.hooks:
+                dut.hooks = hooks_from_cli
+
             serial_configs: list[DeviceSerialConfig] = []
             for _dut in [dut] + dut.entries:
                 serial_configs.append(
@@ -138,6 +142,7 @@ class TwisterHarnessConfig:
                 )
 
             device = DeviceConfig(
+                dut=dut,
                 dut_number=dut_number,
                 type=device_type,
                 build_dir=build_dir,
@@ -155,15 +160,31 @@ class TwisterHarnessConfig:
                 west_flash_extra_args=west_flash_extra_args,
                 west_flash_cmd=config.option.west_flash_cmd or test_params.west_flash_cmd or dut.west_flash_cmd,
                 flash_command=flash_command,
-                pre_script=get_path(config.option.pre_script) or get_path(dut.pre_script),
-                post_script=get_path(config.option.post_script) or get_path(dut.post_script),
-                post_flash_script=get_path(config.option.post_flash_script) or get_path(dut.post_flash_script),
                 fixtures=config.option.fixtures or test_params.twister_fixtures or dut.fixtures,
                 extra_test_args=config.option.extra_test_args or test_params.extra_test_args,
             )
             devices.append(device)
 
         return cls(devices=devices, test_params=test_params)
+
+    @staticmethod
+    def _hooks_from_deprecated_options(config: pytest.Config) -> dict:
+        hooks = {}
+        for opt, hook_type in (
+            ('pre_script', 'pre'),
+            ('post_flash_script', 'post_flash'),
+            ('post_script', 'post'),
+        ):
+            value = getattr(config.option, opt, None)
+            if value:
+                warnings.warn(
+                    f"--{opt.replace('_', '-')} is deprecated, "
+                    f"use 'hooks' in the hardware map instead",
+                    DeprecationWarning,
+                    stacklevel=3,
+                )
+                hooks[hook_type] = {'script': str(value), 'args': [], 'timeout': 60}
+        return hooks
 
 
 def get_test_param_file(config: pytest.Config) -> Path | None:
