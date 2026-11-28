@@ -49,6 +49,7 @@ struct uhc_vrt_data {
 	struct uhc_transfer *last_xfer;
 	struct uhc_vrt_frame frame;
 	struct k_timer sof_timer;
+	k_timeout_t sof_period;
 	uint16_t frame_number;
 	uint8_t req;
 };
@@ -472,11 +473,11 @@ static void vrt_device_act(const struct device *dev,
 		break;
 	case UVB_DEVICE_ACT_FS:
 		type = UHC_EVT_DEV_CONNECTED_FS;
-		k_timer_start(&priv->sof_timer, K_MSEC(1), K_MSEC(1));
+		priv->sof_period = K_MSEC(1);
 		break;
 	case UVB_DEVICE_ACT_HS:
 		type = UHC_EVT_DEV_CONNECTED_HS;
-		k_timer_start(&priv->sof_timer, K_MSEC(1), K_USEC(125));
+		priv->sof_period = K_USEC(125);
 		break;
 	case UVB_DEVICE_ACT_REMOVED:
 		type = UHC_EVT_DEV_REMOVED;
@@ -507,7 +508,7 @@ static int uhc_vrt_sof_enable(const struct device *dev)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
 
-	k_timer_start(&priv->sof_timer, K_MSEC(1), K_MSEC(1));
+	k_timer_start(&priv->sof_timer, priv->sof_period, priv->sof_period);
 
 	return 0;
 }
@@ -529,9 +530,11 @@ static int uhc_vrt_bus_reset(const struct device *dev)
 
 	k_timer_stop(&priv->sof_timer);
 	ret = uvb_advert(priv->host_node, UVB_EVT_RESET, NULL);
-	/* TDRSTR */
-	k_msleep(50);
-	k_timer_start(&priv->sof_timer, K_MSEC(1), K_MSEC(1));
+	if (ret == 0) {
+		/* TDRSTR */
+		k_msleep(50);
+		k_timer_start(&priv->sof_timer, priv->sof_period, priv->sof_period);
+	}
 
 	return ret;
 }
@@ -539,10 +542,16 @@ static int uhc_vrt_bus_reset(const struct device *dev)
 static int uhc_vrt_bus_resume(const struct device *dev)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
+	int ret;
 
-	k_timer_start(&priv->sof_timer, K_MSEC(1), K_MSEC(1));
+	ret = uvb_advert(priv->host_node, UVB_EVT_RESUME, NULL);
+	if (ret == 0) {
+		/* TDRSMDN */
+		k_msleep(20);
+		k_timer_start(&priv->sof_timer, priv->sof_period, priv->sof_period);
+	}
 
-	return uvb_advert(priv->host_node, UVB_EVT_RESUME, NULL);
+	return ret;
 }
 
 static int uhc_vrt_enqueue(const struct device *dev,
@@ -583,6 +592,10 @@ static int uhc_vrt_dequeue(const struct device *dev,
 
 static int uhc_vrt_init(const struct device *dev)
 {
+	struct uhc_vrt_data *priv = uhc_get_private(dev);
+
+	priv->sof_period = K_MSEC(1);
+
 	return 0;
 }
 
