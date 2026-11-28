@@ -13,9 +13,11 @@ extern const struct _irq_parent_entry _lvl2_irq_list[];
 #define PARENT_IRQ_FN(i, _) CONFIG_2ND_LVL_INTR_0##i##_OFFSET
 #if DT_HAS_COMPAT_STATUS_OKAY(sifive_plic_1_0_0)
 #define PARENT_DEV_FN(i, _) DEVICE_DT_GET(DT_INST(i, sifive_plic_1_0_0))
+#define PARENT_DEV_IRQ_FN(i, _) DT_IRQN(DT_INST(i, sifive_plic_1_0_0))
 #define INTC_SUPPORTS_MULTI_INSTANCE 1
 #else
 #define PARENT_DEV_FN(i, _) (NULL)
+#define PARENT_DEV_IRQ_FN(i, _) 0
 #endif
 
 /**
@@ -65,7 +67,7 @@ ZTEST(interrupt_feature, test_sw_isr_irq_parent_table_dev)
 		LISTIFY(CONFIG_NUM_2ND_LEVEL_AGGREGATORS, PARENT_DEV_FN, (,)),
 	};
 	const unsigned int parent_irq[CONFIG_NUM_2ND_LEVEL_AGGREGATORS] = {
-		LISTIFY(CONFIG_NUM_2ND_LEVEL_AGGREGATORS, PARENT_IRQ_FN, (,)),
+		LISTIFY(CONFIG_NUM_2ND_LEVEL_AGGREGATORS, PARENT_DEV_IRQ_FN, (,)),
 	};
 
 	for (size_t i = 0; i < CONFIG_NUM_2ND_LEVEL_AGGREGATORS; i++) {
