@@ -1,0 +1,43 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Espressif ESP32 MIPI CSI-2 camera interface.
+
+  The CSI-2 host receives frames from the sensor, the image signal processor
+  converts them and the CSI bridge feeds the result to a DW-GDMA channel
+  that writes it to memory.
+
+  Example:
+
+    &csi {
+      status = "okay";
+
+      port {
+        csi_ep_in: endpoint {
+          remote-endpoint-label = "sensor_ep_out";
+          bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
+          data-lanes = <1 2>;
+        };
+      };
+    };
+
+compatible: "espressif,esp32-csi"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  dma-channel:
+    type: int
+    required: true
+    description: DW-GDMA channel that writes the frames to memory.
+
+child-binding:
+  child-binding:
+    include: video-interfaces.yaml
