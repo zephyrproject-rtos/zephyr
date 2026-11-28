@@ -1,0 +1,203 @@
+# Copyright (c) 2026 Nainaiu Rakhaine
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Maxim (Analog Devices) MAX30003 single-lead ECG analog front end with
+  R-to-R (heart beat) detection and a 32-sample FIFO, on SPI (mode 0,
+  up to 12 MHz).
+
+  The chip needs a 32.768 kHz clock on its FCLK pin. Either feed it from a
+  crystal oscillator, or let the driver generate it with a PWM channel
+  (pwms property).
+
+  If the application starts FCLK itself after boot, add
+  zephyr,deferred-init to the node and call device_init() once the clock
+  runs: the driver waits for the PLL to lock during init.
+
+  Example:
+
+    &spi1 {
+        cs-gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
+
+        ecg: max30003@0 {
+            compatible = "maxim,max30003";
+            reg = <0>;
+            spi-max-frequency = <4000000>;
+            int-gpios = <&gpio0 17 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+            sample-rate = <256>;
+            gain = <160>;
+            digital-high-pass;
+            rtor-enable;
+        };
+    };
+
+compatible: "maxim,max30003"
+
+include: [sensor-device.yaml, spi-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      INTB pin (active low; the driver enables the chip's internal pull-up).
+      Required for triggers.
+
+  pwms:
+    type: phandle-array
+    description: |
+      Optional PWM channel wired to FCLK. The driver starts it at
+      fclk-frequency with 50 % duty before talking to the chip.
+
+  fclk-frequency:
+    type: int
+    default: 32768
+    min: 1
+    description: |
+      Actual FCLK frequency in Hz. Used to scale R-to-R intervals and the
+      PWM period. If the PWM cannot hit 32768 Hz exactly, put the frequency
+      it really produces here.
+
+  sample-rate:
+    type: int
+    default: 256
+    enum: [125, 128, 200, 250, 256, 500, 512]
+    description: |
+      ECG samples per second (with a 32768 Hz FCLK). 128/256/512 use
+      FMSTR = 32768 Hz; 125/250/500 and 200 use the internal 32000 Hz
+      master clock.
+
+  gain:
+    type: int
+    default: 160
+    enum: [20, 40, 80, 160]
+    description: ECG channel gain in V/V. Input range is +/-1 V / gain.
+
+  digital-high-pass:
+    type: boolean
+    description: Enable the 0.5 Hz digital high-pass filter (removes baseline wander).
+
+  low-pass-filter:
+    type: string
+    default: "40hz"
+    enum: ["bypass", "40hz", "100hz", "150hz"]
+    description: |
+      Digital low-pass filter (DLPF). Corners are nominal for 512/256 sps;
+      see the CNFG_ECG table in the datasheet for the other rates.
+
+  input-bias:
+    type: string
+    default: "100mohm"
+    enum: ["none", "50mohm", "100mohm", "200mohm"]
+    description: |
+      Resistive bias of ECGP/ECGN to VMID. Needed unless the electrodes are
+      biased externally (for example by a right-leg drive).
+
+  input-bias-inputs:
+    type: string
+    default: "both"
+    enum: ["both", "positive", "negative"]
+    description: Which inputs input-bias is applied to (RBIASP, RBIASN).
+
+  dc-lead-off-current-na:
+    type: int
+    default: 0
+    enum: [0, 5, 10, 20, 50, 100]
+    description: |
+      DC lead-off detection current in nA. 0 disables lead-off detection.
+      Results are reported on SENSOR_CHAN_MAX30003_LEAD_OFF.
+
+  dc-lead-off-threshold-mv:
+    type: int
+    default: 300
+    enum: [300, 400, 450, 500]
+    description: Lead-off comparator threshold, VMID +/- this value.
+
+  dc-lead-off-reverse-polarity:
+    type: boolean
+    description: |
+      Reverse the lead-off current direction (DCLOFF_IPOL): ECGP pulled
+      down and ECGN pulled up. Default is ECGP up, ECGN down.
+
+  invert-polarity:
+    type: boolean
+    description: Swap ECGP and ECGN (inverts the waveform).
+
+  rtor-enable:
+    type: boolean
+    description: Enable the on-chip R-to-R (QRS) detector.
+
+  rtor-window:
+    type: int
+    default: 12
+    description: |
+      R-to-R averaging window (WNDW), in R-to-R periods of 256 master clock
+      cycles (about 7.8 ms): 6 to 28, even. Default 12 (about 94 ms).
+
+  rtor-gain:
+    type: int
+    default: 0
+    description: |
+      R-to-R detector gain (RTOR GAIN): 0 for automatic, or a power of two
+      from 1 to 16384.
+
+  rtor-peak-average:
+    type: int
+    default: 8
+    enum: [2, 4, 8, 16]
+    description: Number of beats in the peak average (PAVG).
+
+  rtor-peak-threshold:
+    type: int
+    default: 4
+    description: |
+      R-wave detection threshold as a fraction of the running peak
+      average, in sixteenths (1 to 16). Use 1 for small R waves.
+
+  rtor-holdoff:
+    type: int
+    default: 32
+    description: |
+      Minimum hold-off after a detected beat (HOFF), in R-to-R periods
+      (about 7.8 ms): 0 to 63. Default 32 (250 ms).
+
+  rtor-interval-average:
+    type: int
+    default: 8
+    enum: [2, 4, 8, 16]
+    description: Number of intervals averaged for the adaptive hold-off (RAVG).
+
+  rtor-holdoff-scale:
+    type: int
+    default: 4
+    description: |
+      Adaptive hold-off as eighths of the average interval (RHSF): 0 to 7.
+      0 uses only rtor-holdoff.
+
+  fast-recovery:
+    type: string
+    default: "off"
+    enum: ["off", "manual", "auto"]
+    description: |
+      Fast recovery after input saturation (MNGR_DYN FAST). "auto" starts
+      it when the output stays beyond fast-recovery-threshold; "manual"
+      keeps it on until changed. Samples taken during recovery carry
+      MAX30003_FLAG_FAST.
+
+  fast-recovery-threshold:
+    type: int
+    default: 63
+    description: Automatic fast recovery threshold, in units of 2048 ADC counts (0 to 63).
+
+  data-ready-interval:
+    type: int
+    default: 1
+    enum: [1, 2, 4, 16]
+    description: SENSOR_TRIG_DATA_READY fires every this many samples (SAMP_IT).
+
+  fifo-watermark:
+    type: int
+    default: 8
+    description: |
+      Unread samples (1 to 32) that raise SENSOR_TRIG_FIFO_WATERMARK.
+      The handler must read the FIFO (max30003_fifo_read()): INTB stays low
+      until the FIFO drops below the watermark.
