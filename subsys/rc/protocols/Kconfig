@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Protocols"
+
+config RC_PROTOCOL_NEC
+	bool "NEC protocol"
+	default y
+	help
+	  Decoder and encoder for NEC, extended NEC and 32 bit NEC.
+
+endmenu

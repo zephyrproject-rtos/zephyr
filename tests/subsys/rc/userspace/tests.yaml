@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - rc
+    - userspace
+  filter: CONFIG_ARCH_HAS_USERSPACE
+  integration_platforms:
+    - qemu_x86
+tests:
+  rc.userspace:
+    harness: ztest
+    ignore_faults: true
