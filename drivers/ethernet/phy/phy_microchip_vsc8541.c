@@ -290,6 +290,8 @@ static int phy_mc_vsc8541_get_speed(const struct device *dev, struct phy_link_st
 static int phy_mc_vsc8541_cfg_link(const struct device *dev, enum phy_link_speed adv_speeds,
 				   enum phy_cfg_link_flag flags)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
 	const struct mc_vsc8541_config *cfg = dev->config;
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
@@ -329,6 +331,8 @@ static int phy_mc_vsc8541_cfg_link(const struct device *dev, enum phy_link_speed
  */
 static int phy_mc_vsc8541_get_link(const struct device *dev, struct phy_link_state *state)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int ret;
 	uint16_t reg_sr;
 	uint16_t reg_cr;
@@ -375,6 +379,8 @@ static int phy_mc_vsc8541_get_link(const struct device *dev, struct phy_link_sta
  */
 static int phy_mc_vsc8541_link_cb_set(const struct device *dev, phy_callback_t cb, void *user_data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct mc_vsc8541_data *data = dev->data;
 
 	data->cb = cb;
@@ -433,6 +439,8 @@ read_end:
  */
 static int phy_mc_vsc8541_read_ext(const struct device *dev, uint16_t reg_addr, uint32_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	return phy_mc_vsc8541_read(dev, reg_addr, (uint16_t *)data);
 }
 
@@ -482,6 +490,8 @@ write_end:
  */
 static int phy_mc_vsc8541_write_ext(const struct device *dev, uint16_t reg_addr, uint32_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	return phy_mc_vsc8541_write(dev, reg_addr, (uint16_t)data);
 }
 
@@ -583,6 +593,9 @@ static void phy_mc_vsc8541_monitor_work_handler(struct k_work *work)
 	struct mc_vsc8541_data *data =
 		CONTAINER_OF(dwork, struct mc_vsc8541_data, phy_monitor_work);
 	const struct device *dev = data->dev;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
 	const struct mc_vsc8541_config *cfg = dev->config;
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
@@ -620,6 +633,8 @@ static void phy_mc_vsc8541_monitor_work_handler(struct k_work *work)
  */
 static int phy_mc_vsc8541_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct mc_vsc8541_data *data = dev->data;
 	const struct mc_vsc8541_config *cfg = dev->config;
 	int ret;

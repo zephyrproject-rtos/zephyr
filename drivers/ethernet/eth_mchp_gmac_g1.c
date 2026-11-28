@@ -671,6 +671,9 @@ static void gmac_rx_thread(void *arg1, void *unused1, void *unused2)
 {
 	int res;
 	struct device *dev = (struct device *)arg1;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct gmac_dev_data *dev_data = dev->data;
 	const struct gmac_dev_config *const cfg = dev->config;
 	gmac_registers_t *gmac_regs = cfg->regs;
@@ -687,6 +690,8 @@ static void gmac_rx_thread(void *arg1, void *unused1, void *unused2)
 
 static int eth_mchp_send(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct gmac_dev_config *const cfg = dev->config;
 	struct gmac_dev_data *const dev_data = dev->data;
 	gmac_registers_t *const gmac_regs = cfg->regs;
@@ -796,6 +801,8 @@ out:
 
 static void eth_mchp_queue0_isr(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct gmac_dev_config *const cfg = dev->config;
 	struct gmac_dev_data *const dev_data = dev->data;
 	gmac_registers_t *const gmac_regs = cfg->regs;
@@ -836,6 +843,8 @@ PINCTRL_DT_INST_DEFINE(0);
 
 static int eth_mchp_initialize(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct gmac_dev_config *const cfg = dev->config;
 	struct gmac_dev_data *const dev_data = dev->data;
 	gmac_registers_t *const gmac_regs = cfg->regs;
@@ -887,6 +896,9 @@ static void eth_mchp_phy_link_state_changed(const struct device *pdev, struct ph
 					    void *user_data)
 {
 	const struct device *dev = (const struct device *)user_data;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct gmac_dev_data *const dev_data = dev->data;
 	const struct gmac_dev_config *const cfg = dev->config;
 	gmac_registers_t *const gmac_regs = cfg->regs;
@@ -906,6 +918,8 @@ static void eth_mchp_phy_link_state_changed(const struct device *pdev, struct ph
 static const struct device *eth_mchp_get_phy(const struct device *dev,
 					     struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct gmac_dev_config *const cfg = dev->config;
 
 	return cfg->phy_dev;
@@ -914,6 +928,9 @@ static const struct device *eth_mchp_get_phy(const struct device *dev,
 static void eth_mchp_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct gmac_dev_data *const dev_data = dev->data;
 	const struct gmac_dev_config *const cfg = dev->config;
 	gmac_registers_t *const gmac_regs = cfg->regs;
@@ -972,6 +989,8 @@ static void eth_mchp_iface_init(struct net_if *iface)
 static struct net_stats_eth *eth_mchp_get_stats(const struct device *dev,
 						struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct gmac_dev_data *dev_data = dev->data;
 	const struct gmac_dev_config *const cfg = dev->config;
 	gmac_registers_t *const gmac_regs = cfg->regs;
@@ -1022,6 +1041,8 @@ static enum ethernet_hw_caps eth_mchp_get_capabilities(const struct device *dev 
 static int eth_mchp_set_config(const struct device *dev, struct net_if *iface __unused,
 			       enum ethernet_config_type type, const struct ethernet_config *config)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int result = 0;
 	const struct gmac_dev_config *const cfg = dev->config;
 	gmac_registers_t *const gmac_regs = cfg->regs;
@@ -1045,6 +1066,8 @@ static int eth_mchp_set_config(const struct device *dev, struct net_if *iface __
 static int eth_mchp_get_config(const struct device *dev, struct net_if *iface __unused,
 			       enum ethernet_config_type type, struct ethernet_config *config)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct gmac_dev_config *const cfg = dev->config;
 	gmac_registers_t *const gmac_regs = cfg->regs;
 	uint32_t val;

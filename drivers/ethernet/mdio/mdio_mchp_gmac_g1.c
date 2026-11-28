@@ -48,6 +48,8 @@ static inline int mdio_transfer(gmac_registers_t *regs, uint8_t prtad, uint8_t r
 static int mdio_mchp_read(const struct device *dev, uint8_t port_addr, uint8_t reg_addr,
 			  uint16_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int ret;
 	struct mdio_dev_data *const mdio_data = dev->data;
 	const struct mdio_dev_config *const cfg = dev->config;
@@ -63,6 +65,8 @@ static int mdio_mchp_read(const struct device *dev, uint8_t port_addr, uint8_t r
 static int mdio_mchp_write(const struct device *dev, uint8_t port_addr, uint8_t reg_addr,
 			   uint16_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int ret;
 	struct mdio_dev_data *const mdio_data = dev->data;
 	const struct mdio_dev_config *const cfg = dev->config;
@@ -80,6 +84,8 @@ static int mdio_mchp_write(const struct device *dev, uint8_t port_addr, uint8_t 
 static int mdio_mchp_read_c45(const struct device *dev, uint8_t port_addr, uint8_t devad,
 			      uint16_t reg_addr, uint16_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int err;
 	struct mdio_dev_data *const mdio_data = dev->data;
 	const struct mdio_dev_config *const cfg = dev->config;
@@ -101,6 +107,8 @@ static int mdio_mchp_read_c45(const struct device *dev, uint8_t port_addr, uint8
 static int mdio_mchp_write_c45(const struct device *dev, uint8_t port_addr, uint8_t devad,
 			       uint16_t reg_addr, uint16_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int err;
 	struct mdio_dev_data *const mdio_data = dev->data;
 	const struct mdio_dev_config *const cfg = dev->config;
@@ -126,6 +134,8 @@ PINCTRL_DT_INST_DEFINE(0);
 
 static int mdio_mchp_initialize(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct mdio_dev_config *const cfg = dev->config;
 	struct mdio_dev_data *const data = dev->data;
 	int retval;

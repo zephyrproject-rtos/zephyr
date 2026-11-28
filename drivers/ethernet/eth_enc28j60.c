@@ -472,6 +472,8 @@ static struct net_if *get_iface(struct eth_enc28j60_runtime *ctx)
 
 static int eth_enc28j60_tx(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_enc28j60_runtime *context = dev->data;
 	uint16_t tx_bufaddr = ENC28J60_TXSTART;
 	uint16_t len = net_pkt_get_len(pkt);
@@ -707,6 +709,9 @@ static void eth_enc28j60_rx_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 
 	const struct device *dev = p1;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_enc28j60_runtime *context = dev->data;
 	uint8_t int_stat;
 
@@ -756,6 +761,8 @@ static int eth_enc28j60_set_config(const struct device *dev,
 				   enum ethernet_config_type type,
 				   const struct ethernet_config *config)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_enc28j60_runtime *context = dev->data;
 
 	/* Compile time check that the memcpy below won't overflow */
@@ -782,6 +789,9 @@ static int eth_enc28j60_set_config(const struct device *dev,
 static void eth_enc28j60_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_enc28j60_runtime *context = dev->data;
 
 	net_if_set_link_addr(iface, context->mac_address,
@@ -812,6 +822,8 @@ static DEVICE_API(ethernet, api_funcs) = {
 
 static int eth_enc28j60_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_enc28j60_config *config = dev->config;
 	struct eth_enc28j60_runtime *context = dev->data;
 
