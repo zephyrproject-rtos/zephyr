@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Takayuki Goto
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_VERSATILE
+	bool
+	select SOC_FAMILY_ARM
+	help
+	  ARM Versatile platform baseboards
+
+config SOC_VERSATILEPB
+	bool
+	select SOC_SERIES_VERSATILE
+	help
+	  ARM Versatile/PB with an ARM926EJ-S core
+
+config SOC_SERIES
+	default "versatile" if SOC_SERIES_VERSATILE
+
+config SOC
+	default "versatilepb" if SOC_VERSATILEPB

@@ -92,6 +92,9 @@ void entry_cpu_exception(void *p1, void *p2, void *p3)
 #elif defined(CONFIG_TRICORE)
 	/* Null pointer call triggers PSE trap (Class 4) */
 	((void (*)(void))0xF0000000)();
+#elif defined(CONFIG_ARMV5)
+	/* ARMv5 has no execute-never and decodes a zero word as a no-op. */
+	__asm__ volatile(".word 0xe7f000f0");
 #else
 	/* Triggers usage fault on ARM, illegal instruction on
 	 * xtensa, TLB exception (instruction fetch) on MIPS.
@@ -114,6 +117,8 @@ void entry_cpu_exception_extend(void *p1, void *p2, void *p3)
 	__asm__ volatile ("udf #0");
 #elif defined(CONFIG_CPU_CORTEX_M)
 	__asm__ volatile ("udf #0");
+#elif defined(CONFIG_ARMV5)
+	__asm__ volatile(".word 0xe7f000f0");
 #elif defined(CONFIG_RX)
 	__asm__ volatile ("brk");
 #elif defined(CONFIG_SOC_FAMILY_MAX32_RV32)

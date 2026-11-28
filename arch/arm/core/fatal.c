@@ -160,7 +160,8 @@ void z_do_kernel_oops(const struct arch_esf *esf, _callee_saved_t *callee_regs, 
 
 #endif /* CONFIG_USERSPACE */
 
-#if !defined(CONFIG_EXTRA_EXCEPTION_INFO)
+#if !defined(CONFIG_EXTRA_EXCEPTION_INFO) || defined(CONFIG_CPU_AARCH32_ARM9)
+	/* The ARMv5 exception entry has already filled in esf->extra_info. */
 	z_arm_fatal_error(reason, esf);
 #else
 	struct arch_esf esf_copy;

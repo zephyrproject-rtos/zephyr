@@ -143,10 +143,10 @@ void *z_get_next_switch_handle(void *interrupted)
 
 		new_thread = next_up();
 
-		z_sched_usage_switch(new_thread);
-
 		if (old_thread != new_thread) {
 			uint8_t  cpu_id;
+
+			z_sched_usage_switch(new_thread);
 
 			z_sched_switch_spin(new_thread);
 			arch_cohere_stacks(old_thread, interrupted, new_thread);
@@ -181,6 +181,10 @@ void *z_get_next_switch_handle(void *interrupted)
 				}
 #endif
 				runq_add(old_thread);
+			}
+		} else {
+			if (IS_ENABLED(CONFIG_SCHED_THREAD_USAGE)) {
+				z_sched_usage_resume();
 			}
 		}
 		old_thread->switch_handle = interrupted;
