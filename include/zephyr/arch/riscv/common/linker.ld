@@ -294,6 +294,24 @@ SECTIONS
 
     SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
 	{
+#if	defined(CONFIG_RISCV_GP) && defined(CONFIG_LINKER_USE_RELAX) && !defined(CONFIG_XIP) &&    \
+	defined(CONFIG_SRAM_SW_ISR_TABLE) && defined(CONFIG_GEN_SW_ISR_TABLE)
+		/*
+		 * The linker decides which symbols can be accessed gp-relative (relaxed) before its
+		 * final layout is known, and it never reverts that decision. When the data follows
+		 * the code in the same address space (the image is not XIP), shrinking .text during
+		 * relaxation changes the amount of padding inserted by the ALIGN() statements
+		 * placed between gp and the symbols. A symbol that was close to the +-2 KiB limit
+		 * may then end up out of range, resulting in "relocation truncated to fit:
+		 * R_RISCV_GPREL_*" errors. If ISR vector table is placed in RAM then it is located
+		 * after .data and due to its 64 byte alignment shrinking code can increase the
+		 * distance between gp and variable.
+		 *
+		 * Starting the data region on the largest alignment used within the range
+		 * addressable by gp makes the offsets from gp independent of the .text size.
+		 */
+		 . = ALIGN(MAX(64, CONFIG_ARCH_SW_ISR_TABLE_ALIGN));
+#endif
 		 . = ALIGN(4);
 		/* _image_ram_start = .; */
 		 __kernel_ram_start = .;
