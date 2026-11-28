@@ -13,6 +13,15 @@ Overview
 This snippet redirects serial console output to a CDC ACM UART. The USB device
 which should be used is configured using :ref:`devicetree`.
 
+Logging
+*******
+
+Do not enable debug level logging for the CDC ACM class
+(:kconfig:option:`CONFIG_USBD_CDC_ACM_LOG_LEVEL_DBG`) while the console is on a
+CDC ACM UART. The class logs every transfer at that level, and with the UART
+log backend each message is written to the same UART and triggers the next
+one.
+
 Requirements
 ************
 

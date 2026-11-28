@@ -21,17 +21,11 @@
 #include <usbd_msg.h>
 
 #include <zephyr/logging/log.h>
-/* Prevent endless recursive logging loop and warn user about it */
-#if defined(CONFIG_USBD_CDC_ACM_LOG_LEVEL) && CONFIG_USBD_CDC_ACM_LOG_LEVEL != LOG_LEVEL_NONE
-#define CHOSEN_CONSOLE DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart)
-#define CHOSEN_SHELL   DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_shell_uart), zephyr_cdc_acm_uart)
-#if (CHOSEN_CONSOLE && defined(CONFIG_LOG_BACKEND_UART)) || \
-	(CHOSEN_SHELL && defined(CONFIG_SHELL_LOG_BACKEND))
-#warning "USBD_CDC_ACM_LOG_LEVEL forced to LOG_LEVEL_NONE"
-#undef CONFIG_USBD_CDC_ACM_LOG_LEVEL
-#define CONFIG_USBD_CDC_ACM_LOG_LEVEL LOG_LEVEL_NONE
-#endif
-#endif
+/*
+ * Messages on the transfer paths are logged at debug level, so that a CDC
+ * ACM UART carrying log or shell output does not feed its own messages back
+ * into itself at the default log level.
+ */
 LOG_MODULE_REGISTER(usbd_cdc_acm, CONFIG_USBD_CDC_ACM_LOG_LEVEL);
 
 #define CDC_ACM_DEFAULT_LINECODING	{sys_cpu_to_le32(115200), 0, 0, 8}
@@ -718,7 +712,7 @@ static void cdc_acm_tx_fifo_enqueue(const struct device *dev)
 	}
 
 	if (atomic_test_bit(&data->state, CDC_ACM_CLASS_SUSPENDED)) {
-		LOG_INF("USB support is suspended (FIXME: submit rwup)");
+		LOG_DBG("USB support is suspended (FIXME: submit rwup)");
 		return;
 	}
 
@@ -809,7 +803,7 @@ static void cdc_acm_rx_fifo_handler(struct k_work *work)
 
 	if (!atomic_test_bit(&data->state, CDC_ACM_CLASS_ENABLED) ||
 	    atomic_test_bit(&data->state, CDC_ACM_CLASS_SUSPENDED)) {
-		LOG_INF("USB configuration is not enabled or suspended");
+		LOG_DBG("USB configuration is not enabled or suspended");
 		return;
 	}
 
@@ -842,7 +836,7 @@ static void cdc_acm_irq_tx_enable(const struct device *dev)
 	atomic_set_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED);
 
 	if (cdc_acm_tx_fifo_space_get(data)) {
-		LOG_INF("tx_en: trigger irq_cb_work");
+		LOG_DBG("tx_en: trigger irq_cb_work");
 		cdc_acm_work_submit(&data->irq_cb_work);
 	}
 }
@@ -862,7 +856,7 @@ static void cdc_acm_irq_rx_enable(const struct device *dev)
 
 	/* Permit buffer to be drained regardless of USB state */
 	if (!k_fifo_is_empty(data->rx_fifo.bufs)) {
-		LOG_INF("rx_en: trigger irq_cb_work");
+		LOG_DBG("rx_en: trigger irq_cb_work");
 		cdc_acm_work_submit(&data->irq_cb_work);
 	}
 
@@ -922,7 +916,7 @@ static int cdc_acm_fifo_fill(const struct device *dev,
 		data->tx_fifo.altered = true;
 	}
 
-	LOG_INF("UART dev %p, len %d, remaining space %u", dev, len,
+	LOG_DBG("UART dev %p, len %d, remaining space %u", dev, len,
 		cdc_acm_tx_fifo_space_get(data));
 
 	return done;
@@ -937,7 +931,7 @@ static int cdc_acm_fifo_read(const struct device *dev,
 	int offset = 0;
 	int len;
 
-	LOG_INF("UART dev %p size %d", dev, size);
+	LOG_DBG("UART dev %p size %d", dev, size);
 
 	if (!check_wq_ctx(dev)) {
 		LOG_WRN("Invoked by inappropriate context");
