@@ -2575,11 +2575,13 @@ struct aar_job_ptr {
 
 /* AAR HAL global memory referenced by the h/w peripheral and its DMA */
 static struct {
-	/* Index of the IRK match in the AAR job list, on successful resolution */
-	uint32_t status;
+	/* Index of the IRK match in the AAR job list, on successful resolution. The AAR writes
+	 * one 16-bit index per resolved IRK.
+	 */
+	uint16_t status[AAR_JOB_OUT_MAX_RESOLVED];
 
 	/* Input AAR job list; list of Hash, Prand, IRKs and a terminating empty job entry */
-	struct aar_job_ptr in[CONFIG_BT_CTLR_RL_SIZE + 3];
+	struct aar_job_ptr in[CONFIG_BT_CTLR_RL_SIZE + 3] __aligned(4);
 
 	/* Output AAR job list of one entry */
 	struct aar_job_ptr out[AAR_JOB_OUT_MAX_RESOLVED];
@@ -2660,10 +2662,10 @@ void radio_ar_configure(uint32_t nirk, void *irk, uint8_t flags)
 	aar_job.in[2U + nirk].attribute = 0U;
 
 	/* Reset match index to invalid value ( >= CONFIG_BT_CTLR_RL_SIZE ) */
-	aar_job.status = UINT32_MAX;
+	aar_job.status[0] = UINT16_MAX;
 
 	/* Output, single job entry that populates the `status` value with match index */
-	aar_job.out[0].ptr = &aar_job.status;
+	aar_job.out[0].ptr = &aar_job.status[0];
 	aar_job.out[0].length = sizeof(aar_job.status);
 	aar_job.out[0].attribute = AAR_JOB_PTR_ATTRIBUTE_INDEX;
 
@@ -2692,7 +2694,7 @@ void radio_ar_configure(uint32_t nirk, void *irk, uint8_t flags)
 uint32_t radio_ar_match_get(void)
 {
 #if defined(EASYVDMA_PRESENT)
-	return aar_job.status;
+	return aar_job.status[0];
 #else /* EASYVDMA_PRESENT */
 	return NRF_AAR->STATUS;
 #endif /* EASYVDMA_PRESENT */
@@ -2766,7 +2768,7 @@ uint8_t radio_ar_resolve(const uint8_t *addr)
 	aar_job.in[1].ptr = (void *)&addr[BDADDR_PRND_OFFSET];
 
 	/* Reset match index to invalid value ( >= CONFIG_BT_CTLR_RL_SIZE ) */
-	aar_job.status = UINT32_MAX;
+	aar_job.status[0] = UINT16_MAX;
 
 	/* NOTE: Other `aar_job` structure members are initialized in `radio_ar_configure()` */
 
