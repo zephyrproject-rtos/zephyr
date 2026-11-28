@@ -25,48 +25,45 @@ benefits:
   Draft PRs have no review expectation and PRs created as drafts from the start
   do not notify anyone by default.
 
-
 Defining Smaller PRs
 ********************
 
-- Smaller PRs should encompass one self-contained logical change.
+A PR should address one coherent change: a single bug fix, improvement, or
+useful increment of a larger feature. Reviewers should be able to understand
+its purpose and evaluate it without having to review unrelated work.
 
-- When adding a new large feature or API, the PR should address only one part of
-  the feature. In this case create an :ref:`RFC proposal <rfcs>` to describe the
-  additional parts of the feature for reviewers.
+A smaller PR does not necessarily mean fewer lines of code. The important
+thing is a clear scope. For example, a large feature might be introduced
+through a series of PRs: one for a core interface and an initial working
+implementation, followed by separate PRs for additional drivers or
+capabilities. Each PR should leave the codebase in a working state.
 
-- PRs should include tests or samples under the following conditions:
-
-  - Adding new features or functionality.
-
-  - Modifying a feature, especially for API behavior contract changes.
-
-  - Fixing a hardware agnostic bug. The test should fail without the bug fixed
-    and pass with the fix applied.
-
-- PRs must update any documentation affected by a functional code change.
-
-- If introducing a new API, the PR must include an example usage of the API.
-  This provides context to the reviewer and prevents submitting PRs with unused
-  APIs.
-
+Avoid splitting changes into tightly coupled PRs solely to make them smaller.
+If several parts must be reviewed and merged together to make sense, keeping
+them in one PR may be easier. For changes that need an overall design proposal,
+see the "Large Changes" section below. Testing and documentation obligations
+are covered under :ref:`pr_requirements`.
 
 Multiple Commits on a Single PR
 *******************************
 
-Contributors are further encouraged to break up PRs into multiple commits.  Keep
-in mind each commit in the PR must still build cleanly and pass all the CI
-tests.
+A PR can contain one commit or several. Use multiple commits when they make a
+cohesive change easier to understand, not simply to preserve the order in
+which the work was developed. Each commit should represent a meaningful step
+in the final implementation.
 
-For example, when introducing an extension to an API, contributors can break up
-the PR into multiple commits targeting these specific changes:
+For example, a PR extending a driver API might contain:
 
-#. Introduce the new APIs, including shared devicetree bindings
-#. Update driver implementation X, with driver specific devicetree bindings
-#. Update driver implementation Y
-#. Add tests for the new API
-#. Add a sample using the API
-#. Update the documentation
+#. Introduce the API and an initial implementation, with relevant tests.
+#. Extend support to another driver, with its corresponding tests.
+#. Add a usage sample and update the user documentation.
+
+This is only an example, not a required structure. A small fix may need just
+one commit. If parts of a larger change can be reviewed and merged
+independently, separate PRs may be a better choice.
+
+Requirements for commit history, buildability, testing, and documentation are
+listed under :ref:`pr_requirements`.
 
 Large Changes
 *************
@@ -92,165 +89,161 @@ PRs that are too large or complicated.
 PR Requirements
 ***************
 
+Before requesting a review, self-review your PR and make sure it meets the
+requirements below. A reviewer should be able to understand the change, follow
+the commit history, and see how the change was validated.
+
 .. important::
 
-   Pull requests that do not meet the quality expectations outlined below are less likely to receive
-   reviewer engagement, and reviewers may request changes on such pull requests without detailed
-   feedback.
+   PRs that do not meet these expectations may receive less reviewer attention,
+   and reviewers may request changes without providing detailed feedback.
 
-   Contributors are expected to self-review their changes and ensure all requirements are met before
-   requesting a review.
+   Draft PRs can still be used to request early feedback, even when CI is
+   failing.
 
-- Each commit in the PR must provide a commit message following the
-  :ref:`commit-guidelines`.
+Explain the change
+==================
 
-- No fixup or merge commits are allowed, see :ref:`Contribution workflow` for
-  more information.
+**Describe what changed and why.** The PR description must summarize the change
+and explain its rationale. Give reviewers enough context to understand the
+problem being solved and the approach you chose.
 
-- The PR description must include a summary of the changes and their rationales.
+Follow project standards
+========================
 
-- All files in the PR must comply with :ref:`Licensing
-  Requirements<licensing_requirements>`.
+**Use the required project conventions.** Each commit must follow the
+:ref:`commit-guidelines`. All files must comply with the
+:ref:`licensing_requirements`, and code must follow the :ref:`coding_style` and
+:ref:`coding_guidelines`.
 
-- The code must follow the Zephyr :ref:`coding_style` and :ref:`coding_guidelines`.
+**Keep the commit history useful.** Each commit should represent one logical,
+self-contained step. Do not combine unrelated work in the same commit. Every
+commit must build and pass the relevant tests so that the history remains
+useful for ``git bisect``.
 
-- The PR must pass all CI checks, as described in :ref:`merge_criteria`.
-  Contributors may mark a PR as draft and explicitly request reviewers to
-  provide early feedback, even with failing CI checks.
+Before requesting review, clean up temporary development history. Squash
+intermediate commits, remove debugging artifacts, and avoid repeated renames or
+rewrites that do not help explain the final change. Fixup and merge commits are
+not allowed in the final PR history. If necessary, use ``git rebase -i`` to
+reorganize the commits, while preserving correct authorship attribution. See
+:ref:`Contribution workflow` for more information.
 
-- Commits in a pull request should represent clear, logical units of change that are easy to review
-  and maintain bisectability. The following guidelines expand on this principle:
+Test the change
+===============
 
-  1. Distinct, Logical Units of Change
+**Include tests and examples for changes in behavior.** Major new
+functionality must be covered by automated tests. Other new features and
+changes to existing behavior should include appropriate tests or samples,
+especially when an API's behavior contract changes. Hardware-independent bug
+fixes should include a regression test that fails without the fix and passes
+with it. Any new API must include an example showing how it is used. API
+tests should check individual functions and their behavior contracts, not
+just whether the code builds. Maintainers and reviewers determine whether
+this coverage is sufficient.
 
-     Each commit should correspond to a self-contained, meaningful change. For example, adding a
-     feature, fixing a bug, or refactoring existing code should be separate commits. Avoid mixing
-     different types of changes (e.g., feature implementation and unrelated refactoring) in the same
-     commit.
+For examples, see the :zephyr_file:`kernel timer tests <tests/kernel/timer/timer_behavior>`
+and the :zephyr_file:`fuel gauge tests <tests/drivers/fuel_gauge/sbs_gauge>`,
+which use a :zephyr_file:`smart battery emulator <drivers/fuel_gauge/sbs_gauge/emul_sbs_gauge.c>`
+to test driver behavior. Project-wide coverage reports are available on
+`Codecov <https://app.codecov.io/gh/zephyrproject-rtos/zephyr>`_.
 
-  2. Retain Bisectability
+**Check CI results.** The PR must pass all required CI checks as described in
+the :ref:`merge_criteria`. If you need feedback before CI passes, use a draft PR
+and explicitly request early review.
 
-     Every commit in the pull request must build successfully and pass all relevant tests. This
-     ensures that git bisect can be used effectively to identify the specific commit that introduced
-     a bug or issue.
+Update documentation for users
+==============================
 
-  3. Squash Intermediary or Non-Final Development History
+**Keep documentation in sync with the code.** Add or update documentation for
+any behavior or functionality changed by the PR. Use terminology consistent
+with existing documentation, write in American English, and follow the
+:ref:`doc_guidelines`, including the :ref:`doc_images` rules for images.
 
-     During development, commits may include intermediary changes (e.g., partial implementations,
-     temporary files, or debugging code). These should be squashed or rewritten before submitting the
-     pull request. Remove non-final artifacts, such as:
+**Explain changes that affect existing applications.** Changes that require
+users to adapt their applications must be described in the migration guide for
+the next release. New capabilities with a user-visible impact belong in the
+release notes, following :ref:`release_documentation`. Experimental APIs are
+excluded from these release documentation requirements. Do not manually add
+lists of new, deprecated, or removed APIs and options; these are generated
+automatically.
 
-     * Temporary renaming of files that are later renamed again.
-     * Code that was rewritten or significantly changed in later commits.
+**Account for API versioning.** Changes to APIs must increment the API version
+number according to the API version rules.
 
-  4. Ensure Clean History Before Submission
-
-     Use interactive rebasing (git rebase -i) to clean up the commit history before submitting the
-     pull request. This helps in:
-
-     * Squashing small, incomplete commits into a single cohesive commit.
-     * Ensuring that each commit remains bisectable.
-     * Maintaining proper attribution of authorship while improving clarity.
-
-  5. Renaming and Code Rewrites
-
-     If files or code are renamed or rewritten in later commits during development, squash or rewrite
-     earlier commits to reflect the final structure. This ensures that:
-
-     * The history remains clean and easy to follow.
-     * Bisectability is preserved by eliminating redundant renaming or partial rewrites.
-
-  6. Attribution of Authorship
-
-     While cleaning up the commit history, ensure that authorship attribution remains accurate.
-
-  7. Readable and Reviewable History
-
-     The final commit history should be easy to understand for future maintainers. Logical units of
-     change should be grouped into commits that tell a clear, coherent story of the work done.
-
-- When major new functionality is added, tests for the new functionality shall
-  be added to the automated test suite. All API functions should have test cases
-  and there should be tests for the behavior contracts of the API. Maintainers
-  and reviewers have the discretion to determine if the provided tests are
-  sufficient. The examples below demonstrate best practices on how to test APIs
-  effectively.
-
-    - :zephyr_file:`Kernel timer tests <tests/kernel/timer/timer_behavior>`
-      provide around 85% test coverage for the
-      :zephyr_file:`kernel timer <kernel/timer.c>`, measured by lines of code.
-    - Emulators for off-chip peripherals are an effective way to test driver
-      APIs. The :zephyr_file:`fuel gauge tests <tests/drivers/fuel_gauge/sbs_gauge>`
-      use the :zephyr_file:`smart battery emulator <drivers/fuel_gauge/sbs_gauge/emul_sbs_gauge.c>`,
-      providing test coverage for the
-      :zephyr_file:`fuel gauge API <include/zephyr/drivers/fuel_gauge.h>`
-      and the :zephyr_file:`smart battery driver <drivers/fuel_gauge/sbs_gauge/sbs_gauge.c>`.
-    - Code coverage reports for the Zephyr project are available on `Codecov`_.
-
-- Changes that require users to adapt their application must be described in
-  the migration guide for the next release, and new capabilities with a
-  user-visible impact in the release notes, following
-  :ref:`release_documentation`. APIs marked as experimental are excluded
-  from this requirement.
-  Bare lists of new, deprecated or removed APIs and options should not be
-  added by hand: they are part of the auto-generated change inventory.
-
-- Changes to APIs must increment the API version number according to the API
-  version rules.
-
-- Documentation must be added and/or updated to reflect the changes in the code
-  introduced by the PR. The documentation changes must use the proper
-  terminology as present in the existing pages, and must be written in American
-  English. If you include images as part of the documentation, those must follow
-  the rules in :ref:`doc_images`. Please refer to :ref:`doc_guidelines` for
-  additional information.
-
-- PRs must also satisfy all :ref:`merge_criteria` before a member of the release
-  engineering team merges the PR into the zephyr tree.
-
-Maintainers may request that contributors break up a PR into smaller PRs and may
-request that they create an :ref:`RFC proposal <rfcs>`.
+Every PR must satisfy all :ref:`merge_criteria` before merging. Maintainers
+may also ask for a large PR to be divided into smaller changes or supported
+by an :ref:`RFC proposal <rfcs>`.
 
 .. _`Codecov`: https://app.codecov.io/gh/zephyrproject-rtos/zephyr
 
 Workflow Suggestions That Help Reviewers
 ========================================
 
-- Describe in the PR what you tested and how: which boards or emulators, which twister scenarios
-  or samples, and what was not tested (for example, hardware you do not have). Reviewers cannot
-  tell the difference between "tested on hardware" and "compiles", so say which it is. For a bug
-  fix, say how the bug was reproduced and that the added test fails without the fix.
+A reviewer should be able to tell what changed, how it was tested, and what has
+changed since the previous review. Making this information easy to find saves
+reviewers time and helps your PR move forward without unnecessary back-and-forth.
 
-- Push follow-up changes as amendments to the commits they belong to (see the
-  :ref:`Contribution workflow`), not as extra "fix review comments" commits.
+Before requesting a review
+--------------------------
 
-- Make dependencies between PRs explicit. If a PR carries commits from another open PR, say
-  so at the top of the description ("Depends on #N; the first two commits belong to #N, review
-  them there") so reviewers do not review the same code twice or comment in the wrong PR. Where
-  possible, keep such a dependent PR as a draft until the PR it depends on has merged, or put
-  both changes in one PR.
+**Explain what you tested.** In the PR description, say how you verified your
+change. Distinguish between building the code, running automated tests, and
+testing on real hardware. Name the boards or emulators, Twister scenarios, or
+samples you used. Also mention anything you could not test, such as hardware
+you do not have access to. For a bug fix, explain how you reproduced the problem
+and, when adding a regression test, confirm that it fails without the fix.
 
-- Do not rebase the PR onto ``main`` while a review is in progress unless there is a merge
-  conflict or CI needs a change that is only on ``main``. GitHub does not implement
-  |git range-diff|_, so after a rebase the reviewer can no longer see what changed since the
-  last round and has to re-read the whole PR, and existing approvals are dismissed. Rebasing
-  after the PR has been approved is fine. If a rebase is unavoidable, push it as a separate
-  update with no other changes and add a comment saying so.
+**Identify dependencies between PRs.** If your PR depends on another open PR,
+make that clear at the beginning of its description. This is particularly
+important when the dependent PR includes commits from the other PR: reviewers
+need to know which changes to review here and which to review elsewhere. For
+example::
 
-- Reply to every review comment, either with the change you made or with why you did not make
-  it. Do not resolve and hide a comment yourself unless you applied the reviewer's
-  recommendation exactly; leave that to the reviewer who raised it. The Zephyr project does not
-  require all comments to be resolved before merge. Leaving some completed discussions open can
-  sometimes be useful to understand the greater picture.
+   Depends on #1234. The first two commits belong to that PR;
+   please review them there.
 
-- Respond to comments using the "Start Review" and "Add Review" green buttons in the "Files
-  changed" view. This allows responding to multiple comments and publishing the responses in
-  bulk. This reduces the number of emails sent to reviewers.
+When possible, keep the dependent PR in draft until its dependency is merged.
+Alternatively, consider combining the changes into one PR if that makes them
+easier to review.
 
-- After pushing changes that address review comments, click "Re-request review" next to each
-  reviewer who requested changes, so the PR shows up in their review queue again. If the push
-  also contains changes that no review comment asked for, such as a rebase or an unrelated fix,
-  say so in a PR comment.
+While a review is in progress
+-----------------------------
+
+**Keep changes focused and the history clean.** When addressing review feedback,
+amend the commits to which the changes belong rather than adding new commits
+such as "fix review comments". See :ref:`Contribution workflow` for guidance
+on updating commits.
+
+**Avoid rebasing onto ``main`` during review.** A rebase makes it harder for
+reviewers to identify what changed since the last round of feedback. GitHub
+does not provide an equivalent of |git range-diff|_ in its review interface,
+so reviewers may have to inspect the entire PR again, and existing approvals
+may be dismissed. Rebase during an active review only when necessary, such as
+to resolve a merge conflict or to pick up a change on ``main`` required by CI.
+If you must rebase, push the rebase separately from other changes and leave a
+comment explaining what you did. Rebasing after the PR has been approved is
+fine, subject to any resulting changes in approval status.
+
+After receiving review feedback
+-------------------------------
+
+**Respond to every comment.** Tell the reviewer what you changed, or explain
+why you chose a different approach. Do not resolve a discussion yourself unless
+you followed the reviewer's recommendation exactly; otherwise, let the
+reviewer who raised the concern decide when it is resolved. Zephyr does not
+require every discussion to be marked resolved before merging. Some completed
+discussions are useful to leave visible for future context.
+
+**Group your replies when practical.** In GitHub's **Files changed** view, use
+**Start a review** and **Add review comment** to prepare several responses,
+then submit them together. This lets reviewers read one coherent response
+instead of receiving a separate notification for every comment.
+
+**Let reviewers know when you're ready for another look.** After pushing
+changes that address their feedback, use **Re-request review** for each reviewer
+who requested changes. If your update includes anything beyond the requested
+fixes, such as unrelated changes or a rebase, call that out in a PR comment so
+reviewers know what else has changed.
 
 .. |git range-diff| replace:: ``git range-diff``
 .. _`git range-diff`: https://git-scm.com/docs/git-range-diff
