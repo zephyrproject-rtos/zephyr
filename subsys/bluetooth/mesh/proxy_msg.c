@@ -74,6 +74,15 @@ static struct bt_mesh_adv *proxy_queue_get(struct bt_mesh_proxy_role *role)
 			    gatt_bearer[bt_conn_index(role->conn)]);
 }
 
+static void proxy_queue_clear(struct bt_mesh_proxy_role *role)
+{
+	struct bt_mesh_adv *adv;
+
+	while ((adv = proxy_queue_get(role))) {
+		bt_mesh_adv_unref(adv);
+	}
+}
+
 static void proxy_sar_timeout(struct k_work *work)
 {
 	struct bt_mesh_proxy_role *role;
@@ -83,13 +92,7 @@ static void proxy_sar_timeout(struct k_work *work)
 
 	role = CONTAINER_OF(dwork, struct bt_mesh_proxy_role, sar_timer);
 
-	while (!k_fifo_is_empty(&role->pending)) {
-		struct bt_mesh_adv *adv = proxy_queue_get(role);
-
-		__ASSERT_NO_MSG(adv);
-
-		bt_mesh_adv_unref(adv);
-	}
+	proxy_queue_clear(role);
 
 	if (role->conn) {
 		bt_conn_disconnect(role->conn,
@@ -344,6 +347,7 @@ void bt_mesh_proxy_role_cleanup(struct bt_mesh_proxy_role *role)
 	 * there's no active connection.
 	 */
 	(void)k_work_cancel_delayable(&role->sar_timer);
+	proxy_queue_clear(role);
 	bt_conn_drop(&role->conn);
 
 	conn_count--;
