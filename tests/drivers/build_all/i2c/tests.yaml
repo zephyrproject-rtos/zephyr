@@ -18,3 +18,12 @@ tests:
     integration_platforms:
       - qemu_cortex_a53
     extra_args: DTC_OVERLAY_FILE="virtio.overlay"
+  drivers.i2c.build.gmsl_gate:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+    extra_args: DTC_OVERLAY_FILE="gmsl_gate.overlay"
+    extra_configs:
+      - CONFIG_VIDEO=y

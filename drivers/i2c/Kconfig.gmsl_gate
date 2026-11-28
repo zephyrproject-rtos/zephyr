@@ -1,0 +1,40 @@
+# Copyright (c) 2026 Charles Dias
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_GMSL_GATE
+	bool "ADI GMSL2 I2C gates"
+	default y
+	depends on DT_HAS_ADI_MAX96724_I2C_GATE_ENABLED || DT_HAS_ADI_MAX96717_I2C_GATE_ENABLED
+	depends on VIDEO_MAX96724 || VIDEO_MAX96717
+	help
+	  I2C controllers that model the I2C path behind a GMSL2 link. The
+	  deserializer's gate carries the serializer; the serializer's gate
+	  carries the camera-side bus.
+
+if I2C_GMSL_GATE
+
+config I2C_GMSL_GATE_RETRY_NUM
+	int "Retries of a transfer the deserializer refused"
+	default 0
+	help
+	  On some board paths the deserializer refuses a transfer to the far
+	  side that starts right after the previous one ended. The
+	  deserializer's gate then retries the transfer this many times; a
+	  board sets the count that matches its path.
+
+config I2C_GMSL_GATE_MAX96724_INIT_PRIORITY
+	int "MAX96724 I2C gate init priority"
+	default 57
+	help
+	  Must run after the MAX96724 deserializer (default 56) and before the
+	  MAX96717 serializer (default 58), which is reached through this gate.
+
+config I2C_GMSL_GATE_MAX96717_INIT_PRIORITY
+	int "MAX96717 I2C gate init priority"
+	default 59
+	help
+	  Must run after the MAX96717 serializer (default 58) and before the
+	  camera sensors (VIDEO_INIT_PRIORITY, default 60), which are reached
+	  through this gate.
+
+endif # I2C_GMSL_GATE
