@@ -136,7 +136,7 @@ extern uint32_t arm_m_switch_stack_buffer;
  * registers.  Set in arm_m_must_switch(), and used by the fixup
  * assembly in arm_m_exc_exit.
  */
-struct arm_m_cs_ptrs {
+struct arm_m_cs_frame_ptrs {
 	/** Pointer to the callee-saved block being written by the outgoing thread */
 	void *out, *in, *lr_save, *lr_fixup;
 #ifdef CONFIG_FPU
@@ -150,7 +150,7 @@ struct arm_m_cs_ptrs {
 /** @endcond */
 
 /** Global instance with current callee-saved frame pointers. */
-extern struct arm_m_cs_ptrs arm_m_cs_ptrs;
+extern struct arm_m_cs_frame_ptrs arm_m_cs_ptrs;
 
 /**
  * @brief ISR-tail helper that patches the stacked LR for deferred switch fixup.
