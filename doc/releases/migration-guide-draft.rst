@@ -554,6 +554,15 @@ PTP Clock
   addend register from its nominal value. All in-tree drivers have been converted.
   (:github:`120828`)
 
+Sensor
+======
+
+* The ``CONFIG_IIS328DQ_THRESHOLD`` Kconfig option has been removed. Threshold detection support
+  in the :dtcompatible:`st,iis328dq` driver is now built when
+  :kconfig:option:`CONFIG_IIS328DQ_TRIGGER` is enabled and at least one enabled instance has the
+  ``threshold-int-pad`` property. Remove ``CONFIG_IIS328DQ_THRESHOLD`` from application
+  configurations.
+
 Serial
 ======
 
