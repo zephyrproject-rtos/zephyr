@@ -19,6 +19,20 @@ properties:
       interrupt instead of slave-mode controller. This option can also
       be used as alternative for timers that does not support slave mode.
 
+  dmas:
+    description: |
+      Optional DMA specifiers used by the DMA-based batch capture backend
+      (CONFIG_PWM_CAPTURE_WITH_DMA). One specifier per timer capture/compare
+      channel that participates in capture, streaming the CCRx register into a
+      RAM ring buffer. For period/pulse capture on channel N, provide both the
+      direct channel (CCRn) and its complementary channel used for the pulse.
+      Each specifier follows the SoC DMA binding.
+
+  dma-names:
+    description: |
+      Names matching the "dmas" specifiers. Use "cc1".."cc4" to associate each
+      DMA specifier with the corresponding timer capture/compare channel.
+
   "#pwm-cells":
     const: 3
     description: |
@@ -39,3 +53,13 @@ pwm-cells:
   - channel
   - period
   - flags
+
+examples: |
+    &pwm1 {
+      status = "okay";
+      pinctrl-0 = <&pwm1_ch1_pa8>, <&pwm1_ch2_pa9>;
+      pinctrl-names = "default";
+      dmas = <&gpdma1 0 SLOT_TIMx_CH1 0>,
+             <&gpdma1 1 SLOT_TIMx_CH2 0>;
+      dma-names = "cc1", "cc2";
+    };
