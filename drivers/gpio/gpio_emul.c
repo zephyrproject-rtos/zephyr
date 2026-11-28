@@ -807,29 +807,27 @@ static uint32_t gpio_emul_get_pending_int(const struct device *dev)
 static int gpio_emul_port_get_direction(const struct device *port, gpio_port_pins_t map,
 					gpio_port_pins_t *inputs, gpio_port_pins_t *outputs)
 {
-	int i;
-	gpio_port_pins_t ip = 0;
-	gpio_port_pins_t op = 0;
+	gpio_port_pins_t ip = 0U;
+	gpio_port_pins_t op = 0U;
 	struct gpio_emul_data *const drv_data = (struct gpio_emul_data *)port->data;
 	const struct gpio_emul_config *config = (const struct gpio_emul_config *)port->config;
+	k_spinlock_key_t key;
 
 	map &= config->common.port_pin_mask;
 
+	key = k_spin_lock(&drv_data->lock);
 	if (inputs != NULL) {
-		for (i = find_lsb_set(map) - 1; map;
-		     map &= ~BIT(i), i = find_lsb_set(map) - 1) {
-			ip |= !!(drv_data->flags[i] & GPIO_INPUT) * BIT(i);
-		}
+		ip = get_input_pins(port) & map;
+	}
+	if (outputs != NULL) {
+		op = get_output_pins(port) & map;
+	}
+	k_spin_unlock(&drv_data->lock, key);
 
+	if (inputs != NULL) {
 		*inputs = ip;
 	}
-
 	if (outputs != NULL) {
-		for (i = find_lsb_set(map) - 1; map;
-		     map &= ~BIT(i), i = find_lsb_set(map) - 1) {
-			op |= !!(drv_data->flags[i] & GPIO_OUTPUT) * BIT(i);
-		}
-
 		*outputs = op;
 	}
 

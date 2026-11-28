@@ -270,28 +270,34 @@ static int gpio_cc13xx_cc26xx_port_get_direction(const struct device *port, gpio
 						 gpio_port_pins_t *inputs,
 						 gpio_port_pins_t *outputs)
 {
-	uint32_t pin;
-	gpio_port_pins_t ip = 0;
-	gpio_port_pins_t op = 0;
+	gpio_port_pins_t ip = 0U;
+	gpio_port_pins_t op = 0U;
 	const struct gpio_driver_config *cfg = port->config;
+
+	if ((inputs == NULL) && (outputs == NULL)) {
+		return 0;
+	}
 
 	map &= cfg->port_pin_mask;
 
-	if (inputs != NULL) {
-		for (pin = find_lsb_set(map) - 1; map;
-		     map &= ~BIT(pin), pin = find_lsb_set(map) - 1) {
-			ip |= !!(IOCPortConfigureGet(pin) & IOC_INPUT_ENABLE) * BIT(pin);
+	while (map != 0U) {
+		uint32_t pin = (uint32_t)(find_lsb_set(map) - 1);
+
+		if ((inputs != NULL) && ((IOCPortConfigureGet(pin) & IOC_INPUT_ENABLE) != 0U)) {
+			ip |= (gpio_port_pins_t)BIT(pin);
+		}
+		if ((outputs != NULL) && (GPIO_getOutputEnableDio(pin) != 0U)) {
+			op |= (gpio_port_pins_t)BIT(pin);
 		}
 
+		map &= ~(gpio_port_pins_t)BIT(pin);
+	}
+
+	if (inputs != NULL) {
 		*inputs = ip;
 	}
 
 	if (outputs != NULL) {
-		for (pin = find_lsb_set(map) - 1; map;
-		     map &= ~BIT(pin), pin = find_lsb_set(map) - 1) {
-			op |= GPIO_getOutputEnableDio(pin) * BIT(pin);
-		}
-
 		*outputs = op;
 	}
 

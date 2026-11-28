@@ -432,29 +432,34 @@ static int nxp_siul2_gpio_port_get_direction(const struct device *dev,
 					   gpio_port_pins_t *outputs)
 {
 	const struct gpio_nxp_siul2_config *config = dev->config;
-	gpio_port_pins_t ip = 0;
-	gpio_port_pins_t op = 0;
-	uint32_t pin;
+	gpio_port_pins_t ip = 0U;
+	gpio_port_pins_t op = 0U;
+
+	if ((inputs == NULL) && (outputs == NULL)) {
+		return 0;
+	}
 
 	map &= config->common.port_pin_mask;
 
-	if (inputs != NULL) {
-		while (map) {
-			pin = find_lsb_set(map) - 1;
-			ip |= (!!(PORT_READ(pin) & SIUL2_MSCR_IBE_MASK)) * BIT(pin);
-			map &= ~BIT(pin);
+	while (map != 0U) {
+		uint32_t pin = (uint32_t)(find_lsb_set(map) - 1);
+		uint32_t mscr_val = PORT_READ(pin);
+
+		if ((inputs != NULL) && ((mscr_val & SIUL2_MSCR_IBE_MASK) != 0U)) {
+			ip |= (gpio_port_pins_t)BIT(pin);
+		}
+		if ((outputs != NULL) && ((mscr_val & SIUL2_MSCR_OBE_MASK) != 0U)) {
+			op |= (gpio_port_pins_t)BIT(pin);
 		}
 
+		map &= ~(gpio_port_pins_t)BIT(pin);
+	}
+
+	if (inputs != NULL) {
 		*inputs = ip;
 	}
 
 	if (outputs != NULL) {
-		while (map) {
-			pin = find_lsb_set(map) - 1;
-			op |= (!!(PORT_READ(pin) & SIUL2_MSCR_OBE_MASK)) * BIT(pin);
-			map &= ~BIT(pin);
-		}
-
 		*outputs = op;
 	}
 
