@@ -1,0 +1,32 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c2 {
+	status = "disabled";
+
+	veml6030@10 {
+		status = "disabled";
+	};
+
+	iis2mdc@1e {
+		status = "disabled";
+	};
+
+	eeprom@56 {
+		status = "disabled";
+	};
+
+	lps22hh@5d {
+		status = "disabled";
+	};
+
+	hts221@5f {
+		status = "disabled";
+	};
+
+	ism330dhcx@6b {
+		status = "disabled";
+	};
+};
