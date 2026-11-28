@@ -61,6 +61,9 @@ static void phy_link_state_changed(const struct device *pdev,
 				   void *user_data)
 {
 	const struct device *dev = (struct device *)user_data;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct nxp_s32_eth_config *cfg = dev->config;
 	const struct nxp_s32_eth_data *ctx = dev->data;
 
@@ -77,6 +80,8 @@ static void phy_link_state_changed(const struct device *pdev,
 static const struct device *nxp_s32_eth_get_phy(const struct device *dev,
 						struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct nxp_s32_eth_config *cfg = dev->config;
 
 	return cfg->phy_dev;
@@ -139,6 +144,8 @@ static int nxp_s32_eth_configure_cgm(uint8_t port_idx)
 
 static int nxp_s32_eth_initialize(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct nxp_s32_eth_config *cfg = dev->config;
 	int err;
 
@@ -159,6 +166,9 @@ static int nxp_s32_eth_initialize(const struct device *dev)
 static void nxp_s32_eth_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct nxp_s32_eth_data *ctx = dev->data;
 	const struct nxp_s32_eth_config *cfg = dev->config;
 	const struct nxp_s32_eth_msix *msix;

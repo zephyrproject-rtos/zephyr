@@ -25,6 +25,8 @@ LOG_MODULE_REGISTER(eth_w6100, CONFIG_ETHERNET_LOG_LEVEL);
 
 static int w6100_spi_read(const struct device *dev, uint32_t addr, uint8_t *data, size_t len)
 {
+	DEVICE_DT_ASSUME_ANY(dev, wiznet_w6100);
+
 	const struct wiznet_config *cfg = dev->config;
 	uint8_t cmd[3] = {addr >> 8, addr, W6100_SPI_READ_CONTROL(addr)};
 	const struct spi_buf tx_buf = {
@@ -50,6 +52,8 @@ static int w6100_spi_read(const struct device *dev, uint32_t addr, uint8_t *data
 
 static int w6100_spi_write(const struct device *dev, uint32_t addr, uint8_t *data, size_t len)
 {
+	DEVICE_DT_ASSUME_ANY(dev, wiznet_w6100);
+
 	const struct wiznet_config *cfg = dev->config;
 	uint8_t cmd[3] = {addr >> 8, addr, W6100_SPI_WRITE_CONTROL(addr)};
 	const struct spi_buf tx_buf[2] = {
@@ -66,6 +70,8 @@ static int w6100_spi_write(const struct device *dev, uint32_t addr, uint8_t *dat
 
 static int w6100_soft_reset(const struct device *dev)
 {
+	DEVICE_DT_ASSUME_ANY(dev, wiznet_w6100);
+
 	uint8_t cmd = CHPLCKR_UNLOCK;
 	uint8_t mask = 0;
 	int ret;
@@ -88,6 +94,8 @@ static int w6100_soft_reset(const struct device *dev)
 
 static void w6100_set_macaddr(const struct device *dev)
 {
+	DEVICE_DT_ASSUME_ANY(dev, wiznet_w6100);
+
 	struct wiznet_runtime *ctx = dev->data;
 	uint8_t lock = NETLCKR_UNLOCK;
 
@@ -99,6 +107,8 @@ static void w6100_set_macaddr(const struct device *dev)
 
 static void w6100_update_link_status(const struct device *dev)
 {
+	DEVICE_DT_ASSUME_ANY(dev, wiznet_w6100);
+
 	struct wiznet_runtime *ctx = dev->data;
 	enum phy_link_speed speed;
 	uint8_t physr;
@@ -140,6 +150,8 @@ static void w6100_update_link_status(const struct device *dev)
 
 static void w6100_memory_configure(const struct device *dev)
 {
+	DEVICE_DT_ASSUME_ANY(dev, wiznet_w6100);
+
 	uint8_t mem = 0x10;
 
 	/* Configure RX & TX memory to 16K */
@@ -155,6 +167,8 @@ static void w6100_memory_configure(const struct device *dev)
 
 static void w6100_clear_pending(const struct device *dev)
 {
+	DEVICE_DT_ASSUME_ANY(dev, wiznet_w6100);
+
 	uint8_t slir;
 
 	if (w6100_spi_read(dev, W6100_SLIR, &slir, 1) < 0) {
@@ -201,6 +215,8 @@ static DEVICE_API(ethphy, w6100_phy_driver_api) = {
 
 static int w6100_init(const struct device *dev)
 {
+	DEVICE_DT_ASSUME_ANY(dev, wiznet_w6100);
+
 	uint8_t rtr[2];
 	int err;
 

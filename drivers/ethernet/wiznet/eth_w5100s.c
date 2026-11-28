@@ -28,6 +28,8 @@ LOG_MODULE_REGISTER(eth_w5100s, CONFIG_ETHERNET_LOG_LEVEL);
  */
 static int w5100s_spi_read(const struct device *dev, uint32_t addr, uint8_t *data, size_t len)
 {
+	DEVICE_DT_ASSUME_ANY(dev, wiznet_w5100s);
+
 	const struct wiznet_config *cfg = dev->config;
 	uint8_t cmd[3] = {
 		W5100S_SPI_READ_OPCODE,
@@ -57,6 +59,8 @@ static int w5100s_spi_read(const struct device *dev, uint32_t addr, uint8_t *dat
 
 static int w5100s_spi_write(const struct device *dev, uint32_t addr, uint8_t *data, size_t len)
 {
+	DEVICE_DT_ASSUME_ANY(dev, wiznet_w5100s);
+
 	const struct wiznet_config *cfg = dev->config;
 	uint8_t cmd[3] = {
 		W5100S_SPI_WRITE_OPCODE,
@@ -77,6 +81,8 @@ static int w5100s_spi_write(const struct device *dev, uint32_t addr, uint8_t *da
 
 static int w5100s_soft_reset(const struct device *dev)
 {
+	DEVICE_DT_ASSUME_ANY(dev, wiznet_w5100s);
+
 	uint8_t mask = 0;
 	uint8_t tmp = MR_RST;
 	int ret;
@@ -94,6 +100,8 @@ static int w5100s_soft_reset(const struct device *dev)
 
 static void w5100s_set_macaddr(const struct device *dev)
 {
+	DEVICE_DT_ASSUME_ANY(dev, wiznet_w5100s);
+
 	struct wiznet_runtime *ctx = dev->data;
 	uint8_t lock = NETLCKR_UNLOCK;
 
@@ -107,6 +115,8 @@ static void w5100s_set_macaddr(const struct device *dev)
 
 static void w5100s_update_link_status(const struct device *dev)
 {
+	DEVICE_DT_ASSUME_ANY(dev, wiznet_w5100s);
+
 	struct wiznet_runtime *ctx = dev->data;
 	enum phy_link_speed speed;
 	uint8_t physr0;
@@ -152,6 +162,8 @@ static void w5100s_update_link_status(const struct device *dev)
 
 static void w5100s_memory_configure(const struct device *dev)
 {
+	DEVICE_DT_ASSUME_ANY(dev, wiznet_w5100s);
+
 	uint8_t mem = W5100S_RX_MEM_SIZE / 1024;
 
 	/* Assign the whole 8 KB RX/TX memory to socket 0 */
@@ -198,6 +210,8 @@ static DEVICE_API(ethphy, w5100s_phy_driver_api) = {
 
 static int w5100s_init(const struct device *dev)
 {
+	DEVICE_DT_ASSUME_ANY(dev, wiznet_w5100s);
+
 	uint8_t verr;
 	int err;
 

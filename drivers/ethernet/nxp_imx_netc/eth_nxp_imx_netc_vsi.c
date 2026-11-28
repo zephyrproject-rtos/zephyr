@@ -39,6 +39,9 @@ static void netc_eth_vsi_thread(void *arg1, void *unused1, void *unused2);
 static void netc_eth_vsi_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct netc_eth_data *data = dev->data;
 	const struct netc_eth_config *cfg = dev->config;
 
@@ -73,6 +76,8 @@ static int netc_eth_vsi_set_config(const struct device *dev, struct net_if *ifac
 				   enum ethernet_config_type type,
 				   const struct ethernet_config *config)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct netc_eth_data *data = dev->data;
 
 	switch (type) {
@@ -264,6 +269,8 @@ static uint8_t netc_eth_vsi_vlan_hash_idx(uint16_t tag)
 static int netc_eth_vsi_vlan_setup(const struct device *dev, struct net_if *iface __unused,
 				   uint16_t tag, bool enable)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct netc_eth_data *data = dev->data;
 	uint8_t idx = netc_eth_vsi_vlan_hash_idx(tag);
 	int ret = 0;
@@ -316,6 +323,8 @@ static void netc_eth_vsi_program_mac(const struct device *dev)
 /* Handle link-status messages from the PSI and update the carrier state. */
 void netc_eth_vsi_msg_isr(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct netc_eth_data *data = dev->data;
 
 	if (data->iface == NULL) {
@@ -444,6 +453,9 @@ static void netc_eth_vsi_bring_up(const struct device *dev)
 static void netc_eth_vsi_thread(void *arg1, void *unused1, void *unused2)
 {
 	const struct device *dev = (const struct device *)arg1;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct netc_eth_config *config = dev->config;
 	struct netc_eth_data *data = dev->data;
 	bool up = true;
@@ -509,6 +521,8 @@ static void netc_eth_vsi_thread(void *arg1, void *unused1, void *unused2)
 /* Boot-time init: software handle setup only (no MMIO), then spawn the threads. */
 static int netc_eth_vsi_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct netc_eth_config *config = dev->config;
 	struct netc_eth_data *data = dev->data;
 	ep_handle_t *handle = &data->handle;
@@ -550,6 +564,8 @@ static int netc_eth_vsi_init(const struct device *dev)
 
 static int netc_eth_vsi_tx(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct netc_eth_data *data = dev->data;
 	const struct netc_eth_config *config = dev->config;
 

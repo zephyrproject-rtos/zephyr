@@ -458,6 +458,8 @@ static int eth_esp32_set_config(const struct device *dev,
 				enum ethernet_config_type type,
 				const struct ethernet_config *config)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_esp32_dev_data *const dev_data = dev->data;
 
 	switch (type) {
@@ -474,6 +476,8 @@ static int eth_esp32_set_config(const struct device *dev,
 
 static int eth_esp32_send(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_esp32_dev_data *dev_data = dev->data;
 	size_t len = net_pkt_get_len(pkt);
 
@@ -537,6 +541,9 @@ static struct net_pkt *eth_esp32_rx(
 FUNC_NORETURN static void eth_esp32_rx_thread(void *arg1, void *arg2, void *arg3)
 {
 	const struct device *dev = arg1;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_esp32_dev_data *const dev_data = dev->data;
 
 	ARG_UNUSED(arg2);
@@ -572,6 +579,9 @@ FUNC_NORETURN static void eth_esp32_rx_thread(void *arg1, void *arg2, void *arg3
 IRAM_ATTR static void eth_esp32_isr(void *arg)
 {
 	const struct device *dev = arg;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_esp32_dev_data *const dev_data = dev->data;
 	uint32_t intr_stat = emac_ll_get_intr_status(dev_data->hal.dma_regs);
 
@@ -620,6 +630,8 @@ static void phy_link_state_changed(const struct device *phy_dev __unused,
 
 int eth_esp32_initialize(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_esp32_dev_data *const dev_data = dev->data;
 	const struct eth_esp32_config *const cfg = dev->config;
 	int res;
@@ -795,6 +807,9 @@ static const struct device *eth_esp32_phy_get(const struct device *dev __unused,
 static void eth_esp32_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_esp32_dev_data *dev_data = dev->data;
 
 	dev_data->iface = iface;
@@ -820,6 +835,8 @@ static void eth_esp32_iface_init(struct net_if *iface)
 static const struct device *eth_esp32_get_ptp_clock(const struct device *dev,
 						   struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_esp32_dev_data *const dev_data = dev->data;
 
 	return dev_data->ptp_clock;

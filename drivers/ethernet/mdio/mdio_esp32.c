@@ -80,6 +80,8 @@ static int mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t regad,
 static int mdio_esp32_read(const struct device *dev, uint8_t prtad, uint8_t regad,
 			 uint16_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	return mdio_transfer(dev, prtad, regad, false, 0, data);
 
 }
@@ -87,11 +89,15 @@ static int mdio_esp32_read(const struct device *dev, uint8_t prtad, uint8_t rega
 static int mdio_esp32_write(const struct device *dev, uint8_t prtad,
 			  uint8_t regad, uint16_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	return mdio_transfer(dev, prtad, regad, true, data, NULL);
 }
 
 static int mdio_esp32_initialize(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct mdio_esp32_dev_config *const cfg = dev->config;
 	struct mdio_esp32_dev_data *const dev_data = dev->data;
 	int res;

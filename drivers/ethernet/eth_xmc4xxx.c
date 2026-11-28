@@ -235,6 +235,8 @@ static inline void eth_xmc4xxx_trigger_dma_rx(ETH_GLOBAL_TypeDef *regs)
 
 static int eth_xmc4xxx_send(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_xmc4xxx_data *dev_data = dev->data;
 	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
 	struct net_buf *frag;
@@ -639,6 +641,8 @@ static void eth_xmc4xxx_handle_tx(const struct device *dev)
 
 static void eth_xmc4xxx_isr(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	uint32_t lock;
 	uint32_t status;
 	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
@@ -701,6 +705,9 @@ static void phy_link_state_changed(const struct device *phy_dev, struct phy_link
 				   void *user_data)
 {
 	struct device *dev = user_data;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_xmc4xxx_data *dev_data = dev->data;
 	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
 	bool is_up = state->is_up;
@@ -718,6 +725,8 @@ static void phy_link_state_changed(const struct device *phy_dev, struct phy_link
 static const struct device *eth_xmc4xxx_get_phy(const struct device *dev,
 						struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
 
 	return dev_cfg->phy_dev;
@@ -726,6 +735,9 @@ static const struct device *eth_xmc4xxx_get_phy(const struct device *dev,
 static void eth_xmc4xxx_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_xmc4xxx_data *dev_data = dev->data;
 	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
 
@@ -753,6 +765,8 @@ static void eth_xmc4xxx_iface_init(struct net_if *iface)
 static struct net_stats_eth *eth_xmc4xxx_stats(const struct device *dev,
 					       struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_xmc4xxx_data *dev_data = dev->data;
 
 	return &dev_data->stats;
@@ -882,6 +896,8 @@ static inline int eth_xmc4xxx_init_timestamp_control_reg(ETH_GLOBAL_TypeDef *reg
 
 static int eth_xmc4xxx_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_xmc4xxx_data *dev_data = dev->data;
 	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
 	int ret;
@@ -981,6 +997,8 @@ static int eth_xmc4xxx_set_config(const struct device *dev,
 				  enum ethernet_config_type type,
 				  const struct ethernet_config *config)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_xmc4xxx_data *dev_data = dev->data;
 	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
 
@@ -1025,6 +1043,8 @@ static void eth_xmc4xxx_irq_config(void)
 static const struct device *eth_xmc4xxx_get_ptp_clock(const struct device *dev,
 						      struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
 
 	return dev_cfg->ptp_clock;
@@ -1035,6 +1055,8 @@ static const struct device *eth_xmc4xxx_get_ptp_clock(const struct device *dev,
 int eth_xmc4xxx_vlan_setup(const struct device *dev, struct net_if *iface, uint16_t tag,
 			   bool enable)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	ARG_UNUSED(iface);
 	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
 
@@ -1108,6 +1130,8 @@ ETH_NET_DEVICE_DT_INST_DEFINE(0, eth_xmc4xxx_init, NULL, &eth_xmc4xxx_data, &eth
 
 static int eth_xmc4xxx_ptp_clock_set(const struct device *dev, struct net_ptp_time *tm)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
 
 	dev_cfg->regs->SYSTEM_TIME_NANOSECONDS_UPDATE = tm->nanosecond;
@@ -1124,6 +1148,8 @@ static int eth_xmc4xxx_ptp_clock_set(const struct device *dev, struct net_ptp_ti
 
 static int eth_xmc4xxx_ptp_clock_get(const struct device *dev, struct net_ptp_time *tm)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
 
 	uint32_t nanosecond_0 = dev_cfg->regs->SYSTEM_TIME_NANOSECONDS;
@@ -1147,6 +1173,8 @@ static int eth_xmc4xxx_ptp_clock_get(const struct device *dev, struct net_ptp_ti
 
 static int eth_xmc4xxx_ptp_clock_adjust(const struct device *dev, int increment)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
 	uint32_t increment_tmp;
 
@@ -1175,6 +1203,8 @@ static int eth_xmc4xxx_ptp_clock_adjust(const struct device *dev, int increment)
 
 static int eth_xmc4xxx_ptp_clock_adjust_rate(const struct device *dev, int64_t scaled_ppm)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
 	struct eth_xmc4xxx_data *dev_data = dev->data;
 	uint32_t K;

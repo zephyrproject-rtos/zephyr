@@ -47,6 +47,8 @@ static void dwmac_ptp_wait_for_clear(mm_reg_t base, uint32_t reg, uint32_t mask)
 
 static int dwmac_ptp_set(const struct device *dev, struct net_ptp_time *tm)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct dwmac_ptp_config *cfg = dev->config;
 	const struct device *eth_dev = cfg->eth_dev;
 	struct dwmac_priv *p = eth_dev->data;
@@ -68,6 +70,8 @@ static int dwmac_ptp_set(const struct device *dev, struct net_ptp_time *tm)
 
 static int dwmac_ptp_get(const struct device *dev, struct net_ptp_time *tm)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct dwmac_ptp_config *cfg = dev->config;
 	const struct device *eth_dev = cfg->eth_dev;
 	struct dwmac_priv *p = eth_dev->data;
@@ -90,6 +94,8 @@ static int dwmac_ptp_get(const struct device *dev, struct net_ptp_time *tm)
 
 static int dwmac_ptp_adjust(const struct device *dev, int increment)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct dwmac_ptp_config *cfg = dev->config;
 	const struct device *eth_dev = cfg->eth_dev;
 	struct dwmac_priv *p = eth_dev->data;
@@ -126,6 +132,8 @@ static int dwmac_ptp_adjust(const struct device *dev, int increment)
 
 static int dwmac_ptp_adjust_rate(const struct device *dev, int64_t scaled_ppm)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct dwmac_ptp_config *cfg = dev->config;
 	const struct device *eth_dev = cfg->eth_dev;
 	struct dwmac_priv *p = eth_dev->data;
@@ -151,6 +159,8 @@ static int dwmac_ptp_adjust_rate(const struct device *dev, int64_t scaled_ppm)
 
 static int dwmac_ptp_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct dwmac_ptp_config *cfg = dev->config;
 	const struct device *eth_dev = cfg->eth_dev;
 	const struct dwmac_config *eth_cfg = eth_dev->config;
@@ -278,6 +288,8 @@ static DEVICE_API(ptp_clock, dwmac_ptp_api) = {
 
 const struct device *dwmac_get_ptp_clock(const struct device *dev, struct net_if *iface __unused)
 {
+	DEVICE_DT_ASSUME_ANY(dev, snps_dwmac);
+
 	const struct dwmac_config *config = dev->config;
 
 	return config->ptp_clock;

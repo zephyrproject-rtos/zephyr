@@ -68,6 +68,8 @@ static inline int phy_adin1140_c22_write(const struct device *dev, uint16_t reg,
 static int phy_adin1140_c45_read(const struct device *dev, uint8_t devad, uint16_t reg,
 				 uint16_t *val)
 {
+	DEVICE_DT_ASSUME_ANY(dev, adi_adin1140_phy);
+
 	const struct phy_adin1140_config *cfg = dev->config;
 
 	return mdio_read_c45(cfg->mdio, cfg->phy_addr, devad, reg, val);
@@ -77,6 +79,8 @@ static int phy_adin1140_c45_read(const struct device *dev, uint8_t devad, uint16
 static int phy_adin1140_c45_write(const struct device *dev, uint8_t devad, uint16_t reg,
 				  uint16_t val)
 {
+	DEVICE_DT_ASSUME_ANY(dev, adi_adin1140_phy);
+
 	const struct phy_adin1140_config *cfg = dev->config;
 
 	return mdio_write_c45(cfg->mdio, cfg->phy_addr, devad, reg, val);
@@ -85,6 +89,8 @@ static int phy_adin1140_c45_write(const struct device *dev, uint8_t devad, uint1
 /** PHY API: read a register (Clause 22 wrapper). */
 static int phy_adin1140_reg_read(const struct device *dev, uint16_t reg_addr, uint32_t *data)
 {
+	DEVICE_DT_ASSUME_ANY(dev, adi_adin1140_phy);
+
 	uint16_t val;
 	int ret = phy_adin1140_c22_read(dev, reg_addr, &val);
 
@@ -99,6 +105,8 @@ static int phy_adin1140_reg_read(const struct device *dev, uint16_t reg_addr, ui
 /** PHY API: write a register (Clause 22 wrapper). */
 static int phy_adin1140_reg_write(const struct device *dev, uint16_t reg_addr, uint32_t data)
 {
+	DEVICE_DT_ASSUME_ANY(dev, adi_adin1140_phy);
+
 	return phy_adin1140_c22_write(dev, reg_addr, (uint16_t)data);
 }
 
@@ -142,6 +150,8 @@ static int phy_adin1140_get_link_state(const struct device *dev, struct phy_link
  */
 static int phy_adin1140_init(const struct device *dev)
 {
+	DEVICE_DT_ASSUME_ANY(dev, adi_adin1140_phy);
+
 	const struct phy_adin1140_config *const cfg = dev->config;
 	struct phy_plca_cfg plca_cfg;
 	uint32_t phy_id;
@@ -176,6 +186,8 @@ static int phy_adin1140_init(const struct device *dev)
  */
 static int phy_adin1140_set_plca_cfg(const struct device *dev, struct phy_plca_cfg *plca_cfg)
 {
+	DEVICE_DT_ASSUME_ANY(dev, adi_adin1140_phy);
+
 	int ret;
 
 	if (!plca_cfg->enable) {
@@ -235,6 +247,8 @@ static int phy_adin1140_set_plca_cfg(const struct device *dev, struct phy_plca_c
  */
 static int phy_adin1140_get_plca_cfg(const struct device *dev, struct phy_plca_cfg *plca_cfg)
 {
+	DEVICE_DT_ASSUME_ANY(dev, adi_adin1140_phy);
+
 	int ret;
 	uint16_t val;
 
@@ -275,6 +289,8 @@ static int phy_adin1140_get_plca_cfg(const struct device *dev, struct phy_plca_c
  */
 static int phy_adin1140_get_plca_sts(const struct device *dev, bool *plca_sts)
 {
+	DEVICE_DT_ASSUME_ANY(dev, adi_adin1140_phy);
+
 	int ret;
 	uint16_t val;
 

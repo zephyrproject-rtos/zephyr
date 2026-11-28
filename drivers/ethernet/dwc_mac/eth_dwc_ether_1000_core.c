@@ -115,6 +115,8 @@ static uint32_t tdes0_cic(struct net_pkt *pkt)
 
 static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_ASSUME_ANY(dev, snps_dwmac);
+
 	struct dwmac_priv *p = dev->data;
 	unsigned int d_idx, first_d_idx;
 	struct dwmac_dma_desc *d;
@@ -410,6 +412,9 @@ static void dwmac_rx_refill(const struct device *dev)
 static void dwmac_rx_refill_thread(void *arg1, void *unused1, void *unused2)
 {
 	const struct device *dev = arg1;
+
+	DEVICE_DT_ASSUME_ANY(dev, snps_dwmac);
+
 	struct dwmac_priv *p = dev->data;
 
 	ARG_UNUSED(unused1);
@@ -424,6 +429,8 @@ static void dwmac_rx_refill_thread(void *arg1, void *unused1, void *unused2)
 
 void dwmac_isr(const struct device *dev)
 {
+	DEVICE_DT_ASSUME_ANY(dev, snps_dwmac);
+
 	uint32_t status;
 
 	status = DWMAC_REG_READ(DWMAC_DMASR);
@@ -453,6 +460,8 @@ static void dwmac_set_mac_addr(const struct device *dev, const uint8_t *addr)
 static int dwmac_set_config(const struct device *dev, struct net_if *iface __unused,
 			    enum ethernet_config_type type, const struct ethernet_config *config)
 {
+	DEVICE_DT_ASSUME_ANY(dev, snps_dwmac);
+
 	uint32_t reg __maybe_unused;
 
 	switch (type) {
@@ -486,6 +495,9 @@ static void phy_link_state_changed(const struct device *phy_dev __unused,
 				   struct phy_link_state *state, void *user_data)
 {
 	const struct device *dev = user_data;
+
+	DEVICE_DT_ASSUME_ANY(dev, snps_dwmac);
+
 	struct dwmac_priv *p = dev->data;
 	uint32_t reg;
 
@@ -514,6 +526,8 @@ static void phy_link_state_changed(const struct device *phy_dev __unused,
 
 static const struct device *dwmac_get_phy(const struct device *dev, struct net_if *iface __unused)
 {
+	DEVICE_DT_ASSUME_ANY(dev, snps_dwmac);
+
 	const struct dwmac_config *cfg = dev->config;
 
 	return cfg->phy_dev;
@@ -522,6 +536,9 @@ static const struct device *dwmac_get_phy(const struct device *dev, struct net_i
 static void dwmac_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_ASSUME_ANY(dev, snps_dwmac);
+
 	struct dwmac_priv *p = dev->data;
 	const struct dwmac_config *cfg = dev->config;
 
@@ -614,6 +631,8 @@ static void dwmac_stats_update(const struct device *dev)
 static struct net_stats_eth *dwmac_stats(const struct device *dev, struct net_if *iface,
 					 uint32_t type)
 {
+	DEVICE_DT_ASSUME_ANY(dev, snps_dwmac);
+
 	struct dwmac_priv *p = dev->data;
 
 	ARG_UNUSED(iface);
@@ -632,6 +651,8 @@ static struct net_stats_eth *dwmac_stats(const struct device *dev, struct net_if
 
 int dwmac_probe(const struct device *dev)
 {
+	DEVICE_DT_ASSUME_ANY(dev, snps_dwmac);
+
 	struct dwmac_priv *p = dev->data;
 	int ret;
 	k_timepoint_t timeout;

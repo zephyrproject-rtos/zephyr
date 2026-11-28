@@ -134,17 +134,23 @@ static int mdio_litex_transfer(const struct device *dev, uint8_t prtad, uint8_t 
 static int mdio_litex_read_mmi(const struct device *dev, uint8_t prtad, uint8_t devad,
 			       uint16_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	return mdio_litex_transfer(dev, prtad, devad, LITEX_MDIO_READ_OP, 0, data);
 }
 
 static int mdio_litex_write_mmi(const struct device *dev, uint8_t prtad, uint8_t devad,
 				uint16_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	return mdio_litex_transfer(dev, prtad, devad, LITEX_MDIO_WRITE_OP, data, NULL);
 }
 
 static int mdio_litex_initialize(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct mdio_litex_data *const dev_data = dev->data;
 
 	k_sem_init(&dev_data->sem, 1, 1);

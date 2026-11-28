@@ -40,6 +40,9 @@ LOG_MODULE_REGISTER(eth_stm32_hal, CONFIG_ETHERNET_LOG_LEVEL);
 static void rx_thread(void *arg1, void *unused1, void *unused2)
 {
 	const struct device *dev = (const struct device *)arg1;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	struct net_if *iface;
 	struct net_pkt *pkt;
@@ -68,6 +71,8 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 
 static void eth_isr(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
 
@@ -88,6 +93,8 @@ void HAL_ETH_RxCpltCallback(ETH_HandleTypeDef *heth_handle)
 
 static int eth_initialize(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	const struct eth_stm32_hal_dev_cfg *cfg = dev->config;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
@@ -133,6 +140,8 @@ static int eth_initialize(const struct device *dev)
 #if defined(CONFIG_ETH_STM32_MULTICAST_FILTER)
 void eth_stm32_mcast_filter(const struct device *dev, const struct ethernet_filter *filter)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_stm32_hal_dev_data *dev_data = (struct eth_stm32_hal_dev_data *)dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
 	uint32_t crc;
@@ -182,6 +191,9 @@ static void phy_link_state_changed(const struct device *phy_dev, struct phy_link
 				   void *user_data)
 {
 	const struct device *dev = (const struct device *)user_data;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 
 	ARG_UNUSED(phy_dev);
@@ -201,6 +213,9 @@ static void phy_link_state_changed(const struct device *phy_dev, struct phy_link
 static void eth_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	const struct eth_stm32_hal_dev_cfg *cfg = dev->config;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
@@ -261,6 +276,8 @@ static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device 
 static const struct device *eth_stm32_hal_get_phy(const struct device *dev,
 						  struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_stm32_hal_dev_cfg *cfg = dev->config;
 
 	return cfg->phy_dev;
@@ -270,6 +287,8 @@ static const struct device *eth_stm32_hal_get_phy(const struct device *dev,
 static struct net_stats_eth *eth_stm32_hal_get_stats(const struct device *dev,
 						     struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 
 	return &dev_data->stats;

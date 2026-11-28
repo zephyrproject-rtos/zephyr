@@ -35,6 +35,8 @@ struct intel_eth_plat_data {
 
 uint32_t eth_intel_get_pcie_bdf(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct intel_eth_plat_cfg *cfg = dev->config;
 
 	return cfg->pcie->bdf;
@@ -63,6 +65,8 @@ static int eth_intel_validate_sku(const struct device *dev)
 
 static int intel_eth_plat_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct intel_eth_plat_cfg *cfg = dev->config;
 	struct pcie_bar mbar;
 	int ret;

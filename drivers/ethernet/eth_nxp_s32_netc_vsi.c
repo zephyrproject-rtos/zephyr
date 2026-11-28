@@ -34,6 +34,9 @@ LOG_MODULE_REGISTER(nxp_s32_eth_vsi);
 static void nxp_s32_eth_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct nxp_s32_eth_data *ctx = dev->data;
 	const struct nxp_s32_eth_config *cfg = dev->config;
 	const struct nxp_s32_eth_msix *msix;

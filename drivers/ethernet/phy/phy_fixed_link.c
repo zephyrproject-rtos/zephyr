@@ -28,6 +28,8 @@ struct phy_mii_fixed_dev_config {
 
 static int phy_mii_fixed_get_link_state(const struct device *dev, struct phy_link_state *state)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct phy_mii_fixed_dev_config *const cfg = dev->config;
 
 	state->speed = cfg->fixed_speed;
@@ -38,6 +40,8 @@ static int phy_mii_fixed_get_link_state(const struct device *dev, struct phy_lin
 
 static int phy_mii_fixed_link_cb_set(const struct device *dev, phy_callback_t cb, void *user_data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct phy_mii_fixed_dev_config *const cfg = dev->config;
 	struct phy_link_state state;
 
@@ -56,6 +60,8 @@ static int phy_mii_fixed_link_cb_set(const struct device *dev, phy_callback_t cb
 #if ANY_RESET_GPIO
 static int phy_mii_fixed_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct phy_mii_fixed_dev_config *const cfg = dev->config;
 	int ret;
 

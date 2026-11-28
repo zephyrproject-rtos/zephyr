@@ -135,6 +135,8 @@ static enum ethernet_hw_caps virtnet_get_capabilities(const struct device *dev _
 
 static int virtnet_send(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct virtnet_config *config = dev->config;
 	struct virtnet_data *data = dev->data;
 	size_t len = net_pkt_get_len(pkt);
@@ -204,6 +206,9 @@ static void virtnet_if_init(struct net_if *iface)
 {
 	ethernet_init(iface);
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct virtnet_data *data = dev->data;
 	const struct virtnet_config *config = dev->config;
 
@@ -226,6 +231,8 @@ static void virtnet_if_init(struct net_if *iface)
 
 static int virtnet_dev_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct virtnet_config *config = dev->config;
 	struct virtnet_data *data = dev->data;
 

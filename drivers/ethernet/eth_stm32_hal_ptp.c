@@ -42,6 +42,8 @@ void HAL_ETH_TxPtpCallback(uint32_t *buff, ETH_TimeStampTypeDef *timestamp)
 const struct device *eth_stm32_get_ptp_clock(const struct device *dev,
 					     struct net_if *iface __unused)
 {
+	DEVICE_DT_ASSUME_ANY(dev, st_stm32_ethernet);
+
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 
 	return dev_data->ptp_clock;
@@ -50,6 +52,8 @@ const struct device *eth_stm32_get_ptp_clock(const struct device *dev,
 static int ptp_clock_stm32_set(const struct device *dev,
 			      struct net_ptp_time *tm)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct device *eth_dev = dev->config;
 	struct eth_stm32_hal_dev_data *eth_dev_data = eth_dev->data;
 	ETH_HandleTypeDef *heth = &eth_dev_data->heth;
@@ -81,6 +85,8 @@ static int ptp_clock_stm32_set(const struct device *dev,
 static int ptp_clock_stm32_get(const struct device *dev,
 			      struct net_ptp_time *tm)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct device *eth_dev = dev->config;
 	struct eth_stm32_hal_dev_data *eth_dev_data = eth_dev->data;
 	ETH_HandleTypeDef *heth = &eth_dev_data->heth;
@@ -114,6 +120,8 @@ static int ptp_clock_stm32_get(const struct device *dev,
 
 static int ptp_clock_stm32_adjust(const struct device *dev, int increment)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct device *eth_dev = dev->config;
 	struct eth_stm32_hal_dev_data *eth_dev_data = eth_dev->data;
 	ETH_HandleTypeDef *heth = &eth_dev_data->heth;
@@ -164,6 +172,8 @@ static int ptp_clock_stm32_adjust(const struct device *dev, int increment)
 
 static int ptp_clock_stm32_adjust_rate(const struct device *dev, int64_t scaled_ppm)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct device *eth_dev = dev->config;
 	struct eth_stm32_hal_dev_data *eth_dev_data = eth_dev->data;
 	ETH_HandleTypeDef *heth = &eth_dev_data->heth;
@@ -290,6 +300,8 @@ BUILD_ASSERT(NSEC_PER_SEC / CONFIG_ETH_STM32_HAL_PTP_CLOCK_SRC_HZ <= UINT8_MAX,
 
 static int ptp_stm32_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct device *const eth_dev = dev->config;
 	struct eth_stm32_hal_dev_data *eth_dev_data = eth_dev->data;
 	const struct eth_stm32_hal_dev_cfg *eth_cfg = eth_dev->config;

@@ -121,6 +121,8 @@ static int ksz9131_write(const struct device *dev, uint16_t reg_addr, uint16_t v
 
 static int phy_mchp_ksz9131_read(const struct device *dev, uint16_t reg_addr, uint32_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	/* Make sure excessive bits 16-31 are reset */
 	*data = 0;
 
@@ -129,6 +131,8 @@ static int phy_mchp_ksz9131_read(const struct device *dev, uint16_t reg_addr, ui
 
 static int phy_mchp_ksz9131_write(const struct device *dev, uint16_t reg_addr, uint32_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	return ksz9131_write(dev, reg_addr, (uint16_t)data);
 }
 
@@ -337,6 +341,8 @@ static int phy_mchp_ksz9131_autonegotiate(const struct device *dev)
 static int phy_mchp_ksz9131_cfg_link(const struct device *dev, enum phy_link_speed adv_speeds,
 				     enum phy_cfg_link_flag flags)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	__maybe_unused const struct mchp_ksz9131_config *const cfg = dev->config;
 	struct mchp_ksz9131_data *const data = dev->data;
 	int ret;
@@ -440,6 +446,8 @@ static int phy_mchp_ksz9131_gigabit(const struct device *dev, enum phy_link_spee
 
 static int phy_mchp_ksz9131_get_link(const struct device *dev, struct phy_link_state *state)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct mchp_ksz9131_data *const data = dev->data;
 	struct phy_link_state *link_state = &data->state;
 
@@ -498,6 +506,8 @@ done:
 static int phy_mchp_ksz9131_link_cb_set(const struct device *dev, phy_callback_t cb,
 					void *user_data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct mchp_ksz9131_data *const data = dev->data;
 
 	data->cb = cb;
@@ -516,6 +526,9 @@ static void phy_mchp_ksz9131_monitor_work_handler(struct k_work *work)
 	struct mchp_ksz9131_data *const data =
 		CONTAINER_OF(dwork, struct mchp_ksz9131_data, monitor_work);
 	const struct device *dev = data->dev;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	__maybe_unused const struct mchp_ksz9131_config *cfg = dev->config;
 	struct phy_link_state state = data->state;
 	int ret;
@@ -688,6 +701,8 @@ static int ksz9131_enable_dll_delays(const struct device *dev)
 
 static int phy_mchp_ksz9131_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct mchp_ksz9131_config *const cfg = dev->config;
 	struct mchp_ksz9131_data *const data = dev->data;
 	int ret;

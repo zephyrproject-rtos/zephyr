@@ -272,6 +272,9 @@ static void eth_intel_igc_queue_isr(void *arg)
 {
 	const struct eth_intel_igc_intr_info *info = (struct eth_intel_igc_intr_info *)arg;
 	const struct device *dev = info->mac;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_intel_igc_mac_data *data = dev->data;
 	uint8_t msix = info->id;
 
@@ -444,6 +447,9 @@ static void eth_intel_igc_intr_enable(const struct device *dev)
 static void eth_intel_igc_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_intel_igc_mac_cfg *cfg = dev->config;
 	struct eth_intel_igc_mac_data *data = dev->data;
 
@@ -487,6 +493,8 @@ static int eth_intel_igc_set_config(const struct device *dev,
 				    enum ethernet_config_type type,
 				    const struct ethernet_config *eth_cfg)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_intel_igc_mac_data *data = dev->data;
 
 	if (type == ETHERNET_CONFIG_TYPE_MAC_ADDRESS) {
@@ -501,6 +509,8 @@ static int eth_intel_igc_set_config(const struct device *dev,
 static const struct device *eth_intel_igc_get_phy(const struct device *dev,
 						 struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_intel_igc_mac_cfg *cfg = dev->config;
 
 	return cfg->phy;
@@ -510,6 +520,8 @@ static const struct device *eth_intel_igc_get_phy(const struct device *dev,
 static struct net_stats_eth *eth_intel_igc_get_stats(const struct device *dev,
 						     struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_intel_igc_mac_data *data = dev->data;
 	struct net_stats_eth *stats = &data->stats;
 
@@ -610,6 +622,8 @@ static int eth_intel_igc_tx_frag(const struct device *dev, struct net_pkt *pkt,
  */
 static int eth_intel_igc_tx_data(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_intel_igc_mac_data *data = dev->data;
 	uint8_t queue = 0;
 	int ret = 0;
@@ -1158,6 +1172,8 @@ static int eth_intel_igc_init_mac_hw(const struct device *dev)
 
 static int eth_intel_igc_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_intel_igc_mac_cfg *cfg = dev->config;
 	struct eth_intel_igc_mac_data *data = dev->data;
 	int ret = 0;

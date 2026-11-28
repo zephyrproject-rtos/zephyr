@@ -177,6 +177,8 @@ static int xlnx_gem_mdio_transfer(const struct device *dev, uint8_t prtad, uint8
 static int xlnx_gem_mdio_read(const struct device *dev, uint8_t prtad, uint8_t regad,
 			      uint16_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	return xlnx_gem_mdio_transfer(dev, prtad, regad, MDIO_OP_C22_READ, false,
 				      0, data);
 }
@@ -195,6 +197,8 @@ static int xlnx_gem_mdio_read(const struct device *dev, uint8_t prtad, uint8_t r
 static int xlnx_gem_mdio_read_c45(const struct device *dev, uint8_t prtad,
 				  uint8_t devad, uint16_t regad, uint16_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int ret;
 
 	ret = xlnx_gem_mdio_transfer(dev, prtad, devad, MDIO_OP_C45_ADDRESS, true,
@@ -220,6 +224,8 @@ static int xlnx_gem_mdio_read_c45(const struct device *dev, uint8_t prtad,
 static int xlnx_gem_mdio_write(const struct device *dev, uint8_t prtad, uint8_t regad,
 			       uint16_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	return xlnx_gem_mdio_transfer(dev, prtad, regad, MDIO_OP_C22_WRITE, false,
 				      data, NULL);
 }
@@ -238,6 +244,8 @@ static int xlnx_gem_mdio_write(const struct device *dev, uint8_t prtad, uint8_t 
 static int xlnx_gem_mdio_write_c45(const struct device *dev, uint8_t prtad,
 				   uint8_t devad, uint16_t regad, uint16_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int ret;
 
 	ret = xlnx_gem_mdio_transfer(dev, prtad, devad, MDIO_OP_C45_ADDRESS, true,
@@ -261,6 +269,8 @@ static int xlnx_gem_mdio_write_c45(const struct device *dev, uint8_t prtad,
  */
 static int xlnx_gem_mdio_initialize(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct device *mac_dev = (const struct device *)dev->config;
 
 	uint32_t reg_val;

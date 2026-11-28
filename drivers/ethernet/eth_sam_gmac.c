@@ -1353,6 +1353,8 @@ static int priority2queue(enum net_priority priority)
 
 static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_sam_dev_data *const dev_data = dev->data;
 	Gmac *gmac = (Gmac *)DEVICE_MMIO_GET(dev);
 	struct gmac_queue *queue;
@@ -1529,6 +1531,8 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 
 static void queue0_isr(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_sam_dev_data *const dev_data = dev->data;
 	Gmac *gmac = (Gmac *)DEVICE_MMIO_GET(dev);
 	struct gmac_queue *queue;
@@ -1579,6 +1583,8 @@ static void queue0_isr(const struct device *dev)
 static inline void priority_queue_isr(const struct device *dev,
 				      unsigned int queue_idx)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_sam_dev_cfg *const cfg = dev->config;
 	struct eth_sam_dev_data *const dev_data = dev->data;
 	Gmac *gmac = (Gmac *)DEVICE_MMIO_GET(dev);
@@ -1663,6 +1669,8 @@ static void queue5_isr(const struct device *dev)
 
 static int eth_initialize(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_sam_dev_cfg *const cfg = dev->config;
 	struct eth_sam_dev_data *const dev_data = dev->data;
 	int retval;
@@ -1707,6 +1715,9 @@ static void phy_link_state_changed(const struct device *pdev,
 				   void *user_data)
 {
 	const struct device *dev = (const struct device *) user_data;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_sam_dev_data *const dev_data = dev->data;
 	bool is_up;
 
@@ -1729,6 +1740,8 @@ static void phy_link_state_changed(const struct device *pdev,
 static const struct device *eth_sam_gmac_get_phy(const struct device *dev,
 						 struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_sam_dev_cfg *const cfg = dev->config;
 
 	return cfg->phy_dev;
@@ -1737,6 +1750,9 @@ static const struct device *eth_sam_gmac_get_phy(const struct device *dev,
 static void eth_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_sam_dev_data *const dev_data = dev->data;
 	const struct eth_sam_dev_cfg *const cfg = dev->config;
 	Gmac *gmac = (Gmac *)DEVICE_MMIO_GET(dev);
@@ -1909,6 +1925,8 @@ static int eth_sam_gmac_set_config(const struct device *dev,
 				   enum ethernet_config_type type,
 				   const struct ethernet_config *config)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int result = 0;
 
 	switch (type) {
@@ -1998,6 +2016,8 @@ static int eth_sam_gmac_get_config(const struct device *dev,
 				   enum ethernet_config_type type,
 				   struct ethernet_config *config)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_PRIORITY_QUEUES_NUM:
 		config->priority_queues_num = GMAC_ACTIVE_PRIORITY_QUEUE_NUM;
@@ -2017,6 +2037,8 @@ static int eth_sam_gmac_get_config(const struct device *dev,
 static const struct device *eth_sam_gmac_get_ptp_clock(const struct device *dev,
 						      struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_sam_dev_cfg *const cfg = dev->config;
 
 	return cfg->ptp_clock;

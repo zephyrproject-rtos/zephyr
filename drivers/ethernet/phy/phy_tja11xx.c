@@ -58,11 +58,15 @@ static inline int phy_tja11xx_c22_write(const struct device *dev, uint16_t reg, 
 
 static int phy_tja11xx_reg_read(const struct device *dev, uint16_t reg_addr, uint32_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	return phy_tja11xx_c22_read(dev, reg_addr, (uint16_t *)data);
 }
 
 static int phy_tja11xx_reg_write(const struct device *dev, uint16_t reg_addr, uint32_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	return phy_tja11xx_c22_write(dev, reg_addr, (uint16_t)data);
 }
 
@@ -92,6 +96,8 @@ static int update_link_state(const struct device *dev)
 
 static int phy_tja11xx_get_link_state(const struct device *dev, struct phy_link_state *state)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct phy_tja11xx_data *const data = dev->data;
 
 	k_sem_take(&data->sem, K_FOREVER);
@@ -124,6 +130,9 @@ static void monitor_work_handler(struct k_work *work)
 	struct phy_tja11xx_data *const data =
 		CONTAINER_OF(dwork, struct phy_tja11xx_data, monitor_work);
 	const struct device *dev = data->dev;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int rc;
 
 	k_sem_take(&data->sem, K_FOREVER);
@@ -152,6 +161,8 @@ static void phy_tja11xx_cfg_irq_poll(const struct device *dev)
 
 static int phy_tja11xx_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct phy_tja11xx_data *const data = dev->data;
 	int ret;
 
@@ -186,6 +197,8 @@ static int phy_tja11xx_init(const struct device *dev)
 
 static int phy_tja11xx_link_cb_set(const struct device *dev, phy_callback_t cb, void *user_data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct phy_tja11xx_data *const data = dev->data;
 
 	data->cb = cb;

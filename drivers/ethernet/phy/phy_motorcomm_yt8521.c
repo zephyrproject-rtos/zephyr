@@ -92,6 +92,8 @@ struct mc_ytphy_data {
 
 static int mc_ytphy_read(const struct device *dev, uint16_t reg, uint32_t *data)
 {
+	DEVICE_DT_ASSUME_ANY(dev, motorcomm_yt8521, motorcomm_yt8531);
+
 	const struct mc_ytphy_config *config = dev->config;
 
 	/* Make sure excessive bits 16-31 are reset */
@@ -103,6 +105,8 @@ static int mc_ytphy_read(const struct device *dev, uint16_t reg, uint32_t *data)
 
 static int mc_ytphy_write(const struct device *dev, uint16_t reg, uint32_t data)
 {
+	DEVICE_DT_ASSUME_ANY(dev, motorcomm_yt8521, motorcomm_yt8531);
+
 	const struct mc_ytphy_config *config = dev->config;
 
 	return mdio_write(config->mdio, config->phy_addr, reg, (uint16_t)data);
@@ -396,6 +400,9 @@ static void monitor_work_handler(struct k_work *work)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct mc_ytphy_data *const data = CONTAINER_OF(dwork, struct mc_ytphy_data, monitor_work);
 	const struct device *dev = data->dev;
+
+	DEVICE_DT_ASSUME_ANY(dev, motorcomm_yt8521, motorcomm_yt8531);
+
 	int rc;
 
 	if (k_sem_take(&data->sem, K_NO_WAIT) == 0) {
@@ -424,6 +431,8 @@ static void monitor_work_handler(struct k_work *work)
 static int mc_ytphy_cfg_link(const struct device *dev, enum phy_link_speed adv_speeds,
 			     enum phy_cfg_link_flag flags)
 {
+	DEVICE_DT_ASSUME_ANY(dev, motorcomm_yt8521, motorcomm_yt8531);
+
 	struct mc_ytphy_data *const data = dev->data;
 	const struct mc_ytphy_config *const cfg = dev->config;
 	int ret = 0;
@@ -460,6 +469,8 @@ static int mc_ytphy_cfg_link(const struct device *dev, enum phy_link_speed adv_s
 
 static int mc_ytphy_get_link_state(const struct device *dev, struct phy_link_state *state)
 {
+	DEVICE_DT_ASSUME_ANY(dev, motorcomm_yt8521, motorcomm_yt8531);
+
 	struct mc_ytphy_data *const data = dev->data;
 
 	k_sem_take(&data->sem, K_FOREVER);
@@ -480,6 +491,8 @@ static int mc_ytphy_get_link_state(const struct device *dev, struct phy_link_sta
 
 static int mc_ytphy_link_cb_set(const struct device *dev, phy_callback_t cb, void *user_data)
 {
+	DEVICE_DT_ASSUME_ANY(dev, motorcomm_yt8521, motorcomm_yt8531);
+
 	struct mc_ytphy_data *const data = dev->data;
 
 	data->cb = cb;
@@ -562,6 +575,8 @@ static int mc_ytphy_init(const struct device *dev)
 
 static int mc_ytphy_initialize_dynamic_link(const struct device *dev)
 {
+	DEVICE_DT_ASSUME_ANY(dev, motorcomm_yt8521, motorcomm_yt8531);
+
 	const struct mc_ytphy_config *const config = dev->config;
 	struct mc_ytphy_data *const data = dev->data;
 	int ret = 0;

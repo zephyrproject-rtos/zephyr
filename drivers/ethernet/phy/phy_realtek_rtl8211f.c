@@ -114,6 +114,8 @@ struct rt_rtl8211f_data {
 static int phy_rt_rtl8211f_read(const struct device *dev,
 				uint16_t reg_addr, uint32_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct rt_rtl8211f_config *config = dev->config;
 	int ret;
 
@@ -132,6 +134,8 @@ static int phy_rt_rtl8211f_read(const struct device *dev,
 static int phy_rt_rtl8211f_write(const struct device *dev,
 				uint16_t reg_addr, uint32_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct rt_rtl8211f_config *config = dev->config;
 	int ret;
 
@@ -293,6 +297,8 @@ static int phy_rt_rtl8211f_restart_autonegotiation(const struct device *dev)
 static int phy_rt_rtl8211f_get_link(const struct device *dev,
 					struct phy_link_state *state)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct rt_rtl8211f_config *config = dev->config;
 	struct rt_rtl8211f_data *data = dev->data;
 	int ret;
@@ -370,6 +376,8 @@ result:
 static int phy_rt_rtl8211f_cfg_link(const struct device *dev, enum phy_link_speed speeds,
 				    enum phy_cfg_link_flag flags)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct rt_rtl8211f_config *config = dev->config;
 	struct rt_rtl8211f_data *data = dev->data;
 	int ret;
@@ -476,6 +484,8 @@ done:
 static int phy_rt_rtl8211f_link_cb_set(const struct device *dev,
 					phy_callback_t cb, void *user_data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct rt_rtl8211f_data *data = dev->data;
 
 	data->cb = cb;
@@ -535,6 +545,9 @@ static void phy_rt_rtl8211f_monitor_work_handler(struct k_work *work)
 	struct rt_rtl8211f_data *data =
 		CONTAINER_OF(dwork, struct rt_rtl8211f_data, phy_monitor_work);
 	const struct device *dev = data->dev;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
 	const struct rt_rtl8211f_config *config = dev->config;
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
@@ -570,6 +583,8 @@ static void phy_rt_rtl8211f_monitor_work_handler(struct k_work *work)
 
 static int phy_rt_rtl8211f_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct rt_rtl8211f_config *config = dev->config;
 	struct rt_rtl8211f_data *data = dev->data;
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)

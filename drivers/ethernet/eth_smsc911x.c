@@ -421,6 +421,8 @@ static enum ethernet_hw_caps eth_smsc911x_get_capabilities(const struct device *
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 static struct net_stats_eth *get_stats(const struct device *dev, struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_context *context = dev->data;
 
 	return &context->stats;
@@ -430,6 +432,9 @@ static struct net_stats_eth *get_stats(const struct device *dev, struct net_if *
 static void eth_initialize(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_context *context = dev->data;
 
 	LOG_DBG("eth_initialize");
@@ -603,6 +608,8 @@ static struct net_pkt *smsc_recv_pkt(const struct device *dev,
 
 static void eth_smsc911x_isr(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	uint32_t int_status = SMSC9220->INT_STS;
 	struct eth_context *context = dev->data;
 

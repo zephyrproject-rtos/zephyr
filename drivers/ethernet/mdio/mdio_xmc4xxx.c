@@ -93,12 +93,16 @@ finish:
 static int mdio_xmc4xxx_read(const struct device *dev, uint8_t phy_addr, uint8_t reg_addr,
 			 uint16_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	return mdio_xmc4xxx_transfer(dev, phy_addr, reg_addr, 0, 0, data);
 }
 
 static int mdio_xmc4xxx_write(const struct device *dev, uint8_t phy_addr,
 			  uint8_t reg_addr, uint16_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	return mdio_xmc4xxx_transfer(dev, phy_addr, reg_addr, 1, data, NULL);
 }
 
@@ -126,6 +130,8 @@ static int mdio_xmc4xxx_set_clock_divider(const struct device *dev)
 
 static int mdio_xmc4xxx_initialize(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct mdio_xmc4xxx_dev_config *dev_cfg = dev->config;
 	struct mdio_xmc4xxx_dev_data *dev_data = dev->data;
 	int ret;

@@ -45,6 +45,8 @@ struct mdio_renesas_ra_data {
 static int mdio_renesas_ra_read(const struct device *dev, uint8_t prtad, uint8_t regad,
 				uint16_t *regval)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct mdio_renesas_ra_data *data = dev->data;
 	const struct mdio_renesas_ra_config *config = dev->config;
 	uint32_t mpsm = 0;
@@ -83,6 +85,8 @@ static int mdio_renesas_ra_read(const struct device *dev, uint8_t prtad, uint8_t
 static int mdio_renesas_ra_write(const struct device *dev, uint8_t prtad, uint8_t regad,
 				 uint16_t regval)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct mdio_renesas_ra_data *data = dev->data;
 	const struct mdio_renesas_ra_config *config = dev->config;
 	uint32_t mpsm = 0;
@@ -120,6 +124,8 @@ static int mdio_renesas_ra_write(const struct device *dev, uint8_t prtad, uint8_
 
 static int mdio_renesas_ra_initialize(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct mdio_renesas_ra_data *data = dev->data;
 	const struct mdio_renesas_ra_config *config = dev->config;
 	uint32_t eswclk;

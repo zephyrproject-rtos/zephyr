@@ -519,6 +519,8 @@ static int eth_adin2111_reg_write_generic(const struct device *dev,
 int eth_adin2111_reg_read(const struct device *dev, const uint16_t reg,
 			  uint32_t *val)
 {
+	DEVICE_DT_ASSUME_ANY(dev, adi_adin2111, adi_adin1110);
+
 	struct adin2111_data *ctx = dev->data;
 	int rval;
 
@@ -534,6 +536,8 @@ int eth_adin2111_reg_read(const struct device *dev, const uint16_t reg,
 int eth_adin2111_reg_write(const struct device *dev, const uint16_t reg,
 			   const uint32_t val)
 {
+	DEVICE_DT_ASSUME_ANY(dev, adi_adin2111, adi_adin1110);
+
 	struct adin2111_data *ctx = dev->data;
 	int rval;
 
@@ -670,6 +674,9 @@ static void adin2111_offload_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 
 	const struct device *dev = p1;
+
+	DEVICE_DT_ASSUME_ANY(dev, adi_adin2111, adi_adin1110);
+
 	struct adin2111_data *ctx = dev->data;
 	const struct adin2111_config *adin_cfg = dev->config;
 	const bool is_adin2111 = (adin_cfg->id == ADIN2111_MAC);
@@ -1369,6 +1376,8 @@ int eth_adin2111_sw_reset(const struct device *dev, uint16_t delay)
 
 static int adin2111_init(const struct device *dev)
 {
+	DEVICE_DT_ASSUME_ANY(dev, adi_adin2111, adi_adin1110);
+
 	const struct adin2111_config *cfg = dev->config;
 	const bool is_adin2111 = (cfg->id == ADIN2111_MAC);
 	struct adin2111_data *ctx = dev->data;

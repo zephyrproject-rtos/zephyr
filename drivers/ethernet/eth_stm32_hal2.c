@@ -216,6 +216,9 @@ static void phy_link_state_changed(const struct device *phy_dev, struct phy_link
 				   void *user_data)
 {
 	const struct device *dev = (const struct device *)user_data;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 
 	ARG_UNUSED(phy_dev);
@@ -230,6 +233,9 @@ static void phy_link_state_changed(const struct device *phy_dev, struct phy_link
 static void rx_thread(void *arg1, void *unused1, void *unused2)
 {
 	const struct device *dev = (const struct device *)arg1;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	uint32_t channels_mask;
 	uint32_t return_mask;
@@ -249,6 +255,8 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 
 static int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	hal_eth_handle_t *heth = &dev_data->heth;
 	hal_eth_buffer_t eth_buffer[CONFIG_ETH_STM32_HAL_TX_MAX_BUF];
@@ -328,6 +336,9 @@ static int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 static void eth_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	const struct eth_stm32_hal_dev_cfg *cfg = dev->config;
 
@@ -494,6 +505,8 @@ static int eth_stm32_hal_channel_config(const struct device *dev)
 
 static int eth_initialize(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	const struct eth_stm32_hal_dev_cfg *cfg = dev->config;
 	hal_eth_handle_t *heth = &dev_data->heth;
@@ -557,6 +570,8 @@ static int eth_initialize(const struct device *dev)
 
 static void eth_isr(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	hal_eth_handle_t *heth = &dev_data->heth;
 
@@ -568,6 +583,8 @@ static int eth_stm32_hal_set_config(const struct device *dev,
 				    enum ethernet_config_type type,
 				    const struct ethernet_config *config)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	hal_eth_handle_t *heth = &dev_data->heth;
 	hal_eth_config_t eth_cfg = {0};

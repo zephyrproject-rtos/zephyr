@@ -466,6 +466,8 @@ static int dsa_netc_connect_tag_protocol(struct dsa_switch_context *dsa_switch_c
 
 static int dsa_netc_switch_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	DEVICE_MMIO_NAMED_MAP(dev, base, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
 	DEVICE_MMIO_NAMED_MAP(dev, pfconfig, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
 

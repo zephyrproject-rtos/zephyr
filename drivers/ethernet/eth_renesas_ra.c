@@ -192,6 +192,9 @@ static void phy_link_state_changed(const struct device *pdev, struct phy_link_st
 				   void *user_data)
 {
 	const struct device *dev = (struct device *)user_data;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct renesas_ra_eth_context *ctx = dev->data;
 	R_ETHERC0_Type *p_reg_etherc;
 
@@ -258,6 +261,9 @@ static void renesas_ra_eth_initialize(struct net_if *iface)
 {
 	fsp_err_t err;
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct renesas_ra_eth_context *ctx = dev->data;
 	const struct renesas_ra_eth_config *cfg = dev->config;
 
@@ -289,6 +295,8 @@ static void renesas_ra_eth_initialize(struct net_if *iface)
 
 static int renesas_ra_eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct renesas_ra_eth_context *ctx = dev->data;
 	uint16_t len = net_pkt_get_len(pkt);
 	uint8_t *tx_buf;
@@ -332,6 +340,8 @@ static int renesas_ra_eth_tx(const struct device *dev, struct net_pkt *pkt)
 static const struct device *renesas_ra_eth_get_phy(const struct device *dev,
 						   struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct renesas_ra_eth_config *config = dev->config;
 
 	return config->phy_dev;
@@ -398,6 +408,9 @@ static void renesas_ra_eth_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 
 	const struct device *dev = p1;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct net_if *iface;
 	int res;
 	struct net_pkt *pkt = NULL;
@@ -422,6 +435,8 @@ static void renesas_ra_eth_thread(void *p1, void *p2, void *p3)
 /* Bindings to the platform */
 int renesas_ra_eth_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct renesas_ra_eth_context *ctx = dev->data;
 	const struct renesas_ra_eth_config *cfg = dev->config;
 	int ret;

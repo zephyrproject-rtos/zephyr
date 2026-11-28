@@ -278,6 +278,9 @@ static void eth_nxp_enet_qos_phy_cb(const struct device *phy,
 		struct phy_link_state *state, void *eth_dev)
 {
 	const struct device *dev = eth_dev;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct nxp_enet_qos_mac_config *config = dev->config;
 	struct nxp_enet_qos_mac_data *data = dev->data;
 	enet_qos_t *base = config->module.base;
@@ -343,6 +346,9 @@ static void eth_nxp_enet_qos_phy_cb(const struct device *phy,
 static void eth_nxp_enet_qos_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct nxp_enet_qos_mac_data *data = dev->data;
 	const struct nxp_enet_qos_mac_config *config = dev->config;
 
@@ -365,6 +371,8 @@ static void eth_nxp_enet_qos_iface_init(struct net_if *iface)
 
 static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct nxp_enet_qos_mac_config *config = dev->config;
 	struct nxp_enet_qos_mac_data *data = dev->data;
 	struct nxp_enet_qos_tx_data *tx = &data->tx;
@@ -653,6 +661,9 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 	struct nxp_enet_qos_mac_data *data =
 		CONTAINER_OF(rx_data, struct nxp_enet_qos_mac_data, rx);
 	const struct device *dev = net_if_get_device(data->iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	volatile union nxp_enet_qos_rx_desc *desc_arr = data->rx.descriptors;
 	uint32_t desc_idx = rx_data->next_desc_idx;
 	volatile union nxp_enet_qos_rx_desc *desc = &desc_arr[desc_idx];
@@ -851,6 +862,8 @@ next:
 
 static void eth_nxp_enet_qos_isr(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct nxp_enet_qos_mac_config *config = dev->config;
 	struct nxp_enet_qos_mac_data *data = dev->data;
 	struct nxp_enet_qos_rx_data *rx_data = &data->rx;
@@ -1166,6 +1179,8 @@ static inline void nxp_enet_unique_mac(uint8_t *mac_addr)
 
 static int eth_nxp_enet_qos_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct nxp_enet_qos_mac_config *config = dev->config;
 	struct nxp_enet_qos_mac_data *data = dev->data;
 	enet_qos_t *base = config->module.base;
@@ -1262,6 +1277,8 @@ static int eth_nxp_enet_qos_init(const struct device *dev)
 static const struct device *eth_nxp_enet_qos_get_phy(const struct device *dev,
 						     struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct nxp_enet_qos_mac_config *config = dev->config;
 
 	return config->phy_dev;
@@ -1271,6 +1288,8 @@ static const struct device *eth_nxp_enet_qos_get_phy(const struct device *dev,
 static const struct device *eth_nxp_enet_qos_get_ptp_clock(const struct device *dev,
 							   struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct nxp_enet_qos_mac_config *config = dev->config;
 
 	return config->ptp_clock;
@@ -1282,6 +1301,8 @@ static int eth_nxp_enet_qos_set_config(const struct device *dev,
 			       enum ethernet_config_type type,
 			       const struct ethernet_config *cfg)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct nxp_enet_qos_mac_config *config = dev->config;
 	struct nxp_enet_qos_mac_data *data = dev->data;
 	enet_qos_t *base = config->module.base;

@@ -99,6 +99,8 @@ static inline uint32_t phys_lo32(void *addr)
 
 static enum ethernet_hw_caps dwmac_caps(const struct device *dev, struct net_if *iface __unused)
 {
+	DEVICE_DT_ASSUME_ANY(dev, snps_dwmac);
+
 	struct dwmac_priv *p = dev->data;
 	enum ethernet_hw_caps caps = 0;
 
@@ -144,6 +146,8 @@ static __maybe_unused unsigned int net_pkt_get_nbfrags(struct net_pkt *pkt)
 
 static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_ASSUME_ANY(dev, snps_dwmac);
+
 	struct dwmac_priv *p = dev->data;
 	unsigned int pkt_len = net_pkt_get_len(pkt);
 	unsigned int d_idx;
@@ -476,6 +480,9 @@ static void dwmac_rx_refill(const struct device *dev)
 static void dwmac_rx_refill_thread(void *arg1, void *unused1, void *unused2)
 {
 	const struct device *dev = arg1;
+
+	DEVICE_DT_ASSUME_ANY(dev, snps_dwmac);
+
 	struct dwmac_priv *p = dev->data;
 
 	ARG_UNUSED(unused1);
@@ -536,6 +543,8 @@ static void dwmac_mtl_irq(const struct device *dev)
 
 void dwmac_isr(const struct device *dev)
 {
+	DEVICE_DT_ASSUME_ANY(dev, snps_dwmac);
+
 	uint32_t irq_status;
 	unsigned int ch;
 
@@ -572,6 +581,8 @@ static int dwmac_set_config(const struct device *dev,
 			    enum ethernet_config_type type,
 			    const struct ethernet_config *config)
 {
+	DEVICE_DT_ASSUME_ANY(dev, snps_dwmac);
+
 	uint32_t reg_val;
 	int ret = 0;
 
@@ -700,6 +711,9 @@ static void phy_link_state_changed(const struct device *phy_dev,
 	uint32_t reg_val;
 	uint32_t cur_val;
 	const struct device *dev = (const struct device *)user_data;
+
+	DEVICE_DT_ASSUME_ANY(dev, snps_dwmac);
+
 	struct dwmac_priv *p = dev->data;
 
 	ARG_UNUSED(phy_dev);
@@ -762,6 +776,8 @@ static void phy_link_state_changed(const struct device *phy_dev,
 
 static const struct device *dwmac_get_phy(const struct device *dev, struct net_if *iface __unused)
 {
+	DEVICE_DT_ASSUME_ANY(dev, snps_dwmac);
+
 	const struct dwmac_config *cfg = dev->config;
 
 	return cfg->phy_dev;
@@ -770,6 +786,9 @@ static const struct device *dwmac_get_phy(const struct device *dev, struct net_i
 static void dwmac_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_ASSUME_ANY(dev, snps_dwmac);
+
 	struct dwmac_priv *p = dev->data;
 	const struct dwmac_config *cfg = dev->config;
 	uint32_t reg_val;
@@ -890,6 +909,8 @@ static void dwmac_stats_update(const struct device *dev)
 static struct net_stats_eth *dwmac_stats(const struct device *dev, struct net_if *iface,
 					 uint32_t type)
 {
+	DEVICE_DT_ASSUME_ANY(dev, snps_dwmac);
+
 	struct dwmac_priv *p = dev->data;
 
 	ARG_UNUSED(iface);
@@ -908,6 +929,8 @@ static struct net_stats_eth *dwmac_stats(const struct device *dev, struct net_if
 
 int dwmac_probe(const struct device *dev)
 {
+	DEVICE_DT_ASSUME_ANY(dev, snps_dwmac);
+
 	struct dwmac_priv *p = dev->data;
 	int ret;
 	uint32_t reg_val;

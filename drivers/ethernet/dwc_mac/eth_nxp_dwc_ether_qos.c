@@ -196,6 +196,8 @@ static const clock_control_subsys_t eth0_clocks[] = {
 
 int dwmac_bus_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct dwmac_config *cfg = dev->config;
 	int ret;
 
@@ -349,6 +351,8 @@ static int nxp_load_mac_addr(const struct net_eth_mac_config *cfg, uint8_t *mac_
 
 int dwmac_platform_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct net_eth_mac_config mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(0);
 	struct dwmac_priv *p = dev->data;
 

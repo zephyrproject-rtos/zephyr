@@ -36,6 +36,8 @@ struct nxp_imx_netc_mdio_data {
 static int nxp_imx_netc_mdio_read(const struct device *dev, uint8_t prtad, uint8_t regad,
 				  uint16_t *regval)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct nxp_imx_netc_mdio_data *data = dev->data;
 	status_t result;
 
@@ -49,6 +51,8 @@ static int nxp_imx_netc_mdio_read(const struct device *dev, uint8_t prtad, uint8
 static int nxp_imx_netc_mdio_write(const struct device *dev, uint8_t prtad, uint8_t regad,
 				   uint16_t regval)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct nxp_imx_netc_mdio_data *data = dev->data;
 	status_t result;
 
@@ -61,6 +65,8 @@ static int nxp_imx_netc_mdio_write(const struct device *dev, uint8_t prtad, uint
 
 static int nxp_imx_netc_mdio_initialize(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct nxp_imx_netc_mdio_data *data = dev->data;
 	const struct nxp_imx_netc_mdio_config *cfg = dev->config;
 	netc_mdio_config_t mdio_config = {0};

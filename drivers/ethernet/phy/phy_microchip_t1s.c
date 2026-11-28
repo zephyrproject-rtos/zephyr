@@ -137,6 +137,8 @@ struct mc_t1s_data {
 
 static int phy_mc_t1s_read(const struct device *dev, uint16_t reg, uint32_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct mc_t1s_config *cfg = dev->config;
 
 	/* Make sure excessive bits 16-31 are reset */
@@ -147,6 +149,8 @@ static int phy_mc_t1s_read(const struct device *dev, uint16_t reg, uint32_t *dat
 
 static int phy_mc_t1s_write(const struct device *dev, uint16_t reg, uint32_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct mc_t1s_config *cfg = dev->config;
 
 	return mdio_write(cfg->mdio, cfg->phy_addr, reg, (uint16_t)data);
@@ -212,6 +216,8 @@ static int phy_mc_t1s_c45_write(const struct device *dev, uint8_t devad, uint16_
 
 static int phy_mc_t1s_get_link(const struct device *dev, struct phy_link_state *state)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct mc_t1s_data *data = dev->data;
 
 	/* Microchip’s 10BASE-T1S half-duplex PHYs are only supported here */
@@ -275,6 +281,8 @@ static void phy_mc_t1s_update_link_state(const struct device *dev)
 
 static int phy_mc_t1s_link_cb_set(const struct device *dev, phy_callback_t cb, void *user_data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct mc_t1s_data *data = dev->data;
 
 	data->cb = cb;
@@ -290,6 +298,8 @@ static void phy_monitor_work_handler(struct k_work *work)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct mc_t1s_data *const data = CONTAINER_OF(dwork, struct mc_t1s_data, phy_monitor_work);
 	const struct device *dev = data->dev;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
 
 	phy_mc_t1s_update_link_state(dev);
 
@@ -549,6 +559,8 @@ static int phy_mc_t1s_id(const struct device *dev, uint32_t *phy_id)
 
 static int phy_mc_t1s_set_plca_cfg(const struct device *dev, struct phy_plca_cfg *plca_cfg)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct mc_t1s_data *data = dev->data;
 	int ret;
 
@@ -589,6 +601,8 @@ static int phy_mc_t1s_set_dt_plca(const struct device *dev)
 
 static int phy_mc_t1s_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct mc_t1s_data *data = dev->data;
 	int ret;
 

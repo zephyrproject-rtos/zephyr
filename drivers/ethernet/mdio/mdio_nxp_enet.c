@@ -122,18 +122,24 @@ static int mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t regad,
 static int nxp_enet_mdio_read(const struct device *dev, uint8_t prtad, uint8_t regad,
 			      uint16_t *read_data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	return mdio_transfer(dev, prtad, regad, MDIO_OP_C22_READ, false, 0, read_data);
 }
 
 static int nxp_enet_mdio_write(const struct device *dev, uint8_t prtad, uint8_t regad,
 			       uint16_t write_data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	return mdio_transfer(dev, prtad, regad, MDIO_OP_C22_WRITE, false, write_data, NULL);
 }
 
 static int nxp_enet_mdio_read_c45(const struct device *dev, uint8_t prtad, uint8_t devad,
 				  uint16_t regad, uint16_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int err;
 
 	err = mdio_transfer(dev, prtad, devad, MDIO_OP_C45_ADDRESS, true, regad, NULL);
@@ -147,6 +153,8 @@ static int nxp_enet_mdio_read_c45(const struct device *dev, uint8_t prtad, uint8
 int nxp_enet_mdio_write_c45(const struct device *dev, uint8_t prtad, uint8_t devad, uint16_t regad,
 			    uint16_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int err;
 
 	err = mdio_transfer(dev, prtad, devad, MDIO_OP_C45_ADDRESS, true, regad, NULL);
@@ -194,6 +202,8 @@ static void nxp_enet_mdio_post_module_reset_init(const struct device *dev)
 void nxp_enet_mdio_callback(const struct device *dev,
 				enum nxp_enet_callback_reason event, void *cb_data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct nxp_enet_mdio_data *data = dev->data;
 
 	ARG_UNUSED(cb_data);
@@ -217,6 +227,8 @@ void nxp_enet_mdio_callback(const struct device *dev,
 
 static int nxp_enet_mdio_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct nxp_enet_mdio_config *config = dev->config;
 	struct nxp_enet_mdio_data *data = dev->data;
 	int ret = 0;

@@ -666,6 +666,8 @@ static int smsc_init(struct smsc_data *sc)
 
 static const struct device *eth_get_phy(const struct device *dev, struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_config *cfg = dev->config;
 
 	return cfg->phy_dev;
@@ -693,6 +695,8 @@ static enum ethernet_hw_caps eth_smsc_get_caps(const struct device *dev __unused
 
 static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_context *data = dev->data;
 	struct smsc_data *sc = &data->sc;
 	uint16_t len;
@@ -711,6 +715,8 @@ static int eth_smsc_set_config(const struct device *dev,
 			       enum ethernet_config_type type,
 			       const struct ethernet_config *config)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int ret = 0;
 
 	switch (type) {
@@ -745,6 +751,9 @@ static int eth_smsc_set_config(const struct device *dev,
 static void eth_initialize(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_context *data = dev->data;
 	const struct eth_config *cfg = dev->config;
 	const struct device *phy_dev = cfg->phy_dev;
@@ -780,6 +789,8 @@ static DEVICE_API(ethernet, api_funcs) = {
 
 static void eth_smsc_isr(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_context *data = dev->data;
 	struct smsc_data *sc = &data->sc;
 	uint32_t curbank;
@@ -798,6 +809,8 @@ static void eth_smsc_isr(const struct device *dev)
 
 int eth_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_context *data = (struct eth_context *)dev->data;
 	struct smsc_data *sc = &data->sc;
 	int ret;
@@ -844,6 +857,8 @@ struct mdio_smsc_config {
 
 static int mdio_smsc_read(const struct device *dev, uint8_t prtad, uint8_t devad, uint16_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct mdio_smsc_config *cfg = dev->config;
 	const struct device *eth_dev = cfg->eth_dev;
 	struct eth_context *eth_data = eth_dev->data;
@@ -856,6 +871,8 @@ static int mdio_smsc_read(const struct device *dev, uint8_t prtad, uint8_t devad
 
 static int mdio_smsc_write(const struct device *dev, uint8_t prtad, uint8_t devad, uint16_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct mdio_smsc_config *cfg = dev->config;
 	const struct device *eth_dev = cfg->eth_dev;
 	struct eth_context *eth_data = eth_dev->data;

@@ -61,6 +61,8 @@ static void netc_eth_pkt_get_timestamp(struct net_pkt *pkt, const struct device 
 
 const struct device *netc_eth_get_ptp_clock(const struct device *dev, struct net_if *iface __unused)
 {
+	DEVICE_DT_ASSUME_ANY(dev, nxp_imx_netc_psi, nxp_imx_netc_vsi);
+
 	const struct netc_eth_config *cfg = dev->config;
 
 	return cfg->ptp_clock;
@@ -118,6 +120,8 @@ static status_t netc_eth_get_tx_response(const struct device *dev, swt_tsr_resp_
 
 int netc_eth_rx(const struct device *dev)
 {
+	DEVICE_DT_ASSUME_ANY(dev, nxp_imx_netc_psi, nxp_imx_netc_vsi);
+
 	struct netc_eth_data *data = dev->data;
 	struct net_if *iface_dst = data->iface;
 #if defined(NETC_SWITCH_NO_TAG_DRIVER_SUPPORT)
@@ -211,6 +215,9 @@ int netc_eth_rx(const struct device *dev)
 static void netc_eth_rx_thread(void *arg1, void *unused1, void *unused2)
 {
 	const struct device *dev = (const struct device *)arg1;
+
+	DEVICE_DT_ASSUME_ANY(dev, nxp_imx_netc_psi, nxp_imx_netc_vsi);
+
 	struct netc_eth_data *data = dev->data;
 	int ret;
 	int work;
@@ -249,6 +256,9 @@ void netc_eth_tx_coalesce_init(struct netc_eth_data *data)
 static void netc_tx_isr_handler(const void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
+
+	DEVICE_DT_ASSUME_ANY(dev, nxp_imx_netc_psi, nxp_imx_netc_vsi);
+
 	struct netc_eth_data *data = dev->data;
 
 	/* Clear both Tx flags (per-frame and threshold). */
@@ -259,6 +269,9 @@ static void netc_tx_isr_handler(const void *arg)
 static void netc_rx_isr_handler(const void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
+
+	DEVICE_DT_ASSUME_ANY(dev, nxp_imx_netc_psi, nxp_imx_netc_vsi);
+
 	struct netc_eth_data *data = dev->data;
 
 	EP_CleanRxIntrFlags(&data->handle, 1);
@@ -312,6 +325,8 @@ static void msgintr_isr(void)
  */
 void netc_eth_msgintr_arm(const struct device *dev)
 {
+	DEVICE_DT_ASSUME_ANY(dev, nxp_imx_netc_psi, nxp_imx_netc_vsi);
+
 	const struct netc_eth_config *config = dev->config;
 	struct netc_eth_data *data = dev->data;
 	uint32_t msg_addr = MSGINTR_GetIntrSelectAddr(NETC_MSGINTR, NETC_MSGINTR_CHANNEL);
@@ -351,6 +366,8 @@ void netc_eth_msgintr_arm(const struct device *dev)
 
 int netc_eth_init_common(const struct device *dev)
 {
+	DEVICE_DT_ASSUME_ANY(dev, nxp_imx_netc_psi, nxp_imx_netc_vsi);
+
 	const struct netc_eth_config *config = dev->config;
 	struct netc_eth_data *data = dev->data;
 	netc_msix_entry_t msix_entry[config->msix_entry_num];
@@ -522,6 +539,8 @@ static status_t netc_eth_tx_submit(struct netc_eth_data *data, netc_frame_struct
 
 int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_ASSUME_ANY(dev, nxp_imx_netc_psi, nxp_imx_netc_vsi);
+
 	struct netc_eth_data *data = dev->data;
 	netc_buffer_struct_t buff;
 	netc_frame_struct_t frame = {.buffArray = &buff, .length = 1};
@@ -690,6 +709,8 @@ enum ethernet_hw_caps netc_eth_get_capabilities(const struct device *dev __maybe
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 struct net_stats_eth *netc_eth_get_stats(const struct device *dev, struct net_if *iface __unused)
 {
+	DEVICE_DT_ASSUME_ANY(dev, nxp_imx_netc_psi, nxp_imx_netc_vsi);
+
 	struct netc_eth_data *data = dev->data;
 	const struct netc_eth_config *cfg = dev->config;
 
@@ -714,6 +735,8 @@ struct net_stats_eth *netc_eth_get_stats(const struct device *dev, struct net_if
 int netc_eth_set_config(const struct device *dev, struct net_if *iface __unused,
 			enum ethernet_config_type type, const struct ethernet_config *config)
 {
+	DEVICE_DT_ASSUME_ANY(dev, nxp_imx_netc_psi, nxp_imx_netc_vsi);
+
 	struct netc_eth_data *data = dev->data;
 	const struct netc_eth_config *cfg = dev->config;
 	status_t result;

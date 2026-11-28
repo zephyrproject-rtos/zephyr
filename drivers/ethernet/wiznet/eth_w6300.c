@@ -223,6 +223,8 @@ static int w6300_set_buffer_sizes(const struct device *dev)
 
 static int w6300_tx(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct w6300_runtime *ctx = dev->data;
 	uint16_t len = (uint16_t)net_pkt_get_len(pkt);
 	uint16_t offset;
@@ -452,6 +454,9 @@ static void w6300_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 
 	const struct device *dev = p1;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int res;
 	struct w6300_runtime *ctx = dev->data;
 	const struct w6300_config *config = dev->config;
@@ -473,6 +478,9 @@ static void w6300_thread(void *p1, void *p2, void *p3)
 static void w6300_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct w6300_runtime *ctx = dev->data;
 
 	net_if_set_link_addr(iface, ctx->mac_addr, sizeof(ctx->mac_addr),
@@ -513,6 +521,8 @@ static int w6300_set_config(const struct device *dev,
 			    enum ethernet_config_type type,
 			    const struct ethernet_config *config)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct w6300_runtime *ctx = dev->data;
 	uint8_t mode;
 	int ret;
@@ -555,6 +565,8 @@ static int w6300_set_config(const struct device *dev,
 
 static int w6300_hw_start(const struct device *dev, struct net_if *iface)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	uint8_t mode = W6300_Sn_MR_MACRAW | W6300_Sn_MR_MF;
 	uint8_t imr = W6300_Sn_IR_SENDOK | W6300_Sn_IR_RECV;
 	uint8_t simr = BIT(0);
@@ -583,6 +595,8 @@ static int w6300_hw_start(const struct device *dev, struct net_if *iface)
 
 static int w6300_hw_stop(const struct device *dev, struct net_if *iface)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	uint8_t mask = 0;
 
 	ARG_UNUSED(iface);
@@ -597,6 +611,8 @@ static int w6300_hw_stop(const struct device *dev, struct net_if *iface)
 static const struct device *w6300_get_phy(const struct device *dev,
 					  struct net_if *iface)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct w6300_config *config = dev->config;
 
 	ARG_UNUSED(iface);
@@ -677,6 +693,8 @@ static int w6300_configure_defaults(const struct device *dev)
 
 static int w6300_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int err;
 	uint8_t cidr[2];
 	uint8_t cidr2;

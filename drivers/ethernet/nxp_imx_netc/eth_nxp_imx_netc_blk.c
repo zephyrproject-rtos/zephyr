@@ -224,6 +224,8 @@ static int netcmix_init(const struct device *dev)
 
 static int eth_nxp_imx_netc_blk_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int ret;
 
 	DEVICE_MMIO_NAMED_MAP(dev, ierb, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);

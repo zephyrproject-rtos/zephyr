@@ -128,6 +128,8 @@ DT_INST_FOREACH_STATUS_OKAY(ETH_XLNX_GEM_BUFFER_SIZE_CHECK)
  */
 static int eth_xlnx_gem_dev_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_xlnx_gem_dev_cfg *dev_conf __maybe_unused = DEV_CFG(dev);
 
 	/* Precondition checks using assertions */
@@ -203,6 +205,9 @@ static int eth_xlnx_gem_dev_init(const struct device *dev)
 static void eth_xlnx_gem_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
 	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
 	int ret;
@@ -246,6 +251,8 @@ static void eth_xlnx_gem_iface_init(struct net_if *iface)
  */
 static void eth_xlnx_gem_isr(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
 	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
 	uint32_t reg_val;
@@ -326,6 +333,8 @@ static void eth_xlnx_gem_isr(const struct device *dev)
  */
 static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
 	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
 
@@ -502,6 +511,8 @@ static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
 static int eth_xlnx_gem_start_device(const struct device *dev,
 				     struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
 	uint32_t reg_val;
 
@@ -546,6 +557,8 @@ static int eth_xlnx_gem_start_device(const struct device *dev,
 static int eth_xlnx_gem_stop_device(const struct device *dev,
 				    struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
 	uint32_t reg_val;
 
@@ -586,6 +599,8 @@ static enum ethernet_hw_caps eth_xlnx_gem_get_capabilities(
 	const struct device *dev,
 	struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
 	enum ethernet_hw_caps caps = (enum ethernet_hw_caps)0;
 
@@ -614,6 +629,8 @@ static enum ethernet_hw_caps eth_xlnx_gem_get_capabilities(
 static const struct device *eth_xlnx_gem_get_phy(const struct device *dev,
 						 struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
 
 	return dev_conf->phy_dev;
@@ -644,6 +661,8 @@ static int eth_xlnx_gem_get_config(const struct device *dev,
 				   enum ethernet_config_type type,
 				   struct ethernet_config *config)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
 
 	switch (type) {
@@ -695,6 +714,8 @@ static int eth_xlnx_gem_set_config(const struct device *dev,
 				   enum ethernet_config_type type,
 				   const struct ethernet_config *config)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
 
 	switch (type) {
@@ -733,6 +754,8 @@ static int eth_xlnx_gem_set_config(const struct device *dev,
 static struct net_stats_eth *eth_xlnx_gem_get_stats(const struct device *dev,
 						    struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
 
 	return &dev_data->stats;
@@ -1285,6 +1308,8 @@ static void eth_xlnx_gem_rx_pending_work(struct k_work *item)
 		struct eth_xlnx_gem_dev_data, rx_pend_work);
 	const struct device *dev = net_if_get_device(dev_data->iface);
 
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	eth_xlnx_gem_handle_rx_pending(dev);
 }
 
@@ -1463,6 +1488,8 @@ static void eth_xlnx_gem_tx_done_work(struct k_work *item)
 	struct eth_xlnx_gem_dev_data *dev_data = CONTAINER_OF(item,
 		struct eth_xlnx_gem_dev_data, tx_done_work);
 	const struct device *dev = net_if_get_device(dev_data->iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
 
 	eth_xlnx_gem_handle_tx_done(dev);
 }

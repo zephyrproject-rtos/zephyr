@@ -59,6 +59,8 @@ struct eth_litex_config {
 
 static int eth_initialize(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_litex_config *config = dev->config;
 	struct eth_litex_dev_data *context = dev->data;
 
@@ -71,6 +73,8 @@ static int eth_initialize(const struct device *dev)
 
 static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	uint16_t len;
 	struct eth_litex_dev_data *context = dev->data;
 	const struct eth_litex_config *config = dev->config;
@@ -146,6 +150,8 @@ static void eth_rx(const struct device *port)
 
 static void eth_irq_handler(const struct device *port)
 {
+	DEVICE_DT_INST_ASSUME_ANY(port);
+
 	struct eth_litex_dev_data *context = port->data;
 	const struct eth_litex_config *config = port->config;
 	/* check sram reader events (tx) */
@@ -186,6 +192,8 @@ static int eth_set_config(const struct device *dev __unused,
 
 static int eth_start(const struct device *dev, struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_litex_dev_data *context = dev->data;
 	const struct eth_litex_config *config = dev->config;
 
@@ -204,6 +212,8 @@ static int eth_start(const struct device *dev, struct net_if *iface __unused)
 
 static int eth_stop(const struct device *dev, struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_litex_config *config = dev->config;
 
 	litex_write8(0, config->tx_ev_enable_addr);
@@ -214,6 +224,8 @@ static int eth_stop(const struct device *dev, struct net_if *iface __unused)
 
 static const struct device *eth_get_phy(const struct device *dev, struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_litex_config *config = dev->config;
 
 	return config->phy_dev;
@@ -231,6 +243,9 @@ static void phy_link_state_changed(const struct device *phy_dev __unused,
 static void eth_iface_init(struct net_if *iface)
 {
 	const struct device *port = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(port);
+
 	const struct eth_litex_config *config = port->config;
 	uint8_t mac_addr[NET_ETH_ADDR_LEN] = {0};
 

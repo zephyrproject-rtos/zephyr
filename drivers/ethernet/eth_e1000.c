@@ -92,6 +92,8 @@ static enum ethernet_hw_caps e1000_caps(const struct device *dev, struct net_if 
 static const struct device *e1000_get_ptp_clock(const struct device *dev,
 						struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct e1000_dev *ctx = dev->data;
 
 	return ctx->ptp_clock;
@@ -123,6 +125,8 @@ static int e1000_tx(struct e1000_dev *dev, void *buf, size_t len)
 
 static int e1000_send(const struct device *ddev, struct net_pkt *pkt)
 {
+	DEVICE_DT_INST_ASSUME_ANY(ddev);
+
 	struct e1000_dev *dev = ddev->data;
 	size_t len = net_pkt_get_len(pkt);
 
@@ -186,6 +190,8 @@ out:
 
 static void e1000_isr(const struct device *ddev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(ddev);
+
 	struct e1000_dev *dev = ddev->data;
 	uint32_t icr = ior32(dev, ICR); /* Cleared upon read */
 
@@ -209,6 +215,8 @@ static void e1000_isr(const struct device *ddev)
 
 int e1000_probe(const struct device *ddev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(ddev);
+
 	/* PCI ID is decoded into REG_SIZE */
 	struct e1000_dev *dev = ddev->data;
 	uint32_t ral, rah;
@@ -268,8 +276,12 @@ BUILD_ASSERT(DT_INST_IRQN(0) != PCIE_IRQ_DETECT,
 
 static void e1000_iface_init(struct net_if *iface)
 {
-	struct e1000_dev *dev = net_if_get_device(iface)->data;
-	const struct e1000_config *config = net_if_get_device(iface)->config;
+	const struct device *ddev = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(ddev);
+
+	struct e1000_dev *dev = ddev->data;
+	const struct e1000_config *config = ddev->config;
 
 	dev->iface = iface;
 
@@ -287,6 +299,8 @@ static void e1000_iface_init(struct net_if *iface)
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 static struct net_stats_eth *get_stats(const struct device *dev, struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct e1000_dev *ctx = dev->data;
 
 	return &ctx->stats;

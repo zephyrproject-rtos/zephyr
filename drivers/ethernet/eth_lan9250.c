@@ -671,6 +671,8 @@ static int lan9250_rx(const struct device *dev)
 
 static int lan9250_tx(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct lan9250_runtime *ctx = dev->data;
 	size_t len = net_pkt_get_len(pkt);
 	uint32_t regval;
@@ -739,6 +741,9 @@ static void lan9250_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 
 	const struct device *dev = p1;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct lan9250_runtime *context = dev->data;
 	uint32_t int_sts;
 	uint16_t tmp = 0;
@@ -793,6 +798,9 @@ static enum ethernet_hw_caps lan9250_get_capabilities(const struct device *dev _
 static void lan9250_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct lan9250_runtime *context = dev->data;
 
 	net_if_set_link_addr(iface, context->mac_address, sizeof(context->mac_address),
@@ -813,6 +821,8 @@ static int lan9250_set_config(const struct device *dev,
 			      enum ethernet_config_type type,
 			      const struct ethernet_config *config)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct lan9250_runtime *ctx = dev->data;
 	int ret;
 
@@ -881,6 +891,8 @@ static DEVICE_API(ethernet, api_funcs) = {
 
 static int lan9250_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int ret;
 	const struct lan9250_config *config = dev->config;
 	struct lan9250_runtime *context = dev->data;

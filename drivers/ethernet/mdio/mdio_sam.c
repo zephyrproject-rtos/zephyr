@@ -82,6 +82,8 @@ static int mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t regad,
 static int mdio_sam_read(const struct device *dev, uint8_t prtad, uint8_t regad,
 			 uint16_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	return mdio_transfer(dev, prtad, regad, MDIO_OP_C22_READ, false,
 			     0, data);
 }
@@ -89,6 +91,8 @@ static int mdio_sam_read(const struct device *dev, uint8_t prtad, uint8_t regad,
 static int mdio_sam_write(const struct device *dev, uint8_t prtad,
 			  uint8_t regad, uint16_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	return mdio_transfer(dev, prtad, regad, MDIO_OP_C22_WRITE, false,
 			     data, NULL);
 }
@@ -96,6 +100,8 @@ static int mdio_sam_write(const struct device *dev, uint8_t prtad,
 static int mdio_sam_read_c45(const struct device *dev, uint8_t prtad,
 			     uint8_t devad, uint16_t regad, uint16_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int err;
 
 	err = mdio_transfer(dev, prtad, devad, MDIO_OP_C45_ADDRESS, true,
@@ -111,6 +117,8 @@ static int mdio_sam_read_c45(const struct device *dev, uint8_t prtad,
 static int mdio_sam_write_c45(const struct device *dev, uint8_t prtad,
 			      uint8_t devad, uint16_t regad, uint16_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int err;
 
 	err = mdio_transfer(dev, prtad, devad, MDIO_OP_C45_ADDRESS, true,
@@ -125,6 +133,8 @@ static int mdio_sam_write_c45(const struct device *dev, uint8_t prtad,
 
 static int mdio_sam_initialize(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct mdio_sam_dev_config *const cfg = dev->config;
 	struct mdio_sam_dev_data *const data = dev->data;
 	int retval;

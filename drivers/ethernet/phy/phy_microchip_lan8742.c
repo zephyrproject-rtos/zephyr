@@ -235,6 +235,9 @@ static void phy_lan8742_monitor_work(struct k_work *work)
 	struct phy_lan8742_dev_data *const data =
 		CONTAINER_OF(dwork, struct phy_lan8742_dev_data, monitor_work);
 	const struct device *dev = data->dev;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int rc;
 
 	if (k_sem_take(&data->sem, K_NO_WAIT) == 0) {
@@ -262,6 +265,8 @@ static void phy_lan8742_monitor_work(struct k_work *work)
 
 static int phy_lan8742_read(const struct device *dev, uint16_t reg_addr, uint32_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct phy_lan8742_dev_config *const cfg = dev->config;
 
 	return mdio_read(cfg->mdio, cfg->phy_addr, reg_addr, (uint16_t *)data);
@@ -269,6 +274,8 @@ static int phy_lan8742_read(const struct device *dev, uint16_t reg_addr, uint32_
 
 static int phy_lan8742_write(const struct device *dev, uint16_t reg_addr, uint32_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct phy_lan8742_dev_config *const cfg = dev->config;
 
 	return mdio_write(cfg->mdio, cfg->phy_addr, reg_addr, (uint16_t)data);
@@ -277,6 +284,8 @@ static int phy_lan8742_write(const struct device *dev, uint16_t reg_addr, uint32
 static int phy_lan8742_cfg_link(const struct device *dev, enum phy_link_speed adv_speeds,
 				enum phy_cfg_link_flag flags)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct phy_lan8742_dev_config *const cfg = dev->config;
 	struct phy_lan8742_dev_data *const data = dev->data;
 	int ret = 0;
@@ -320,6 +329,8 @@ static int phy_lan8742_cfg_link(const struct device *dev, enum phy_link_speed ad
 
 static int phy_lan8742_get_link_state(const struct device *dev, struct phy_link_state *state)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct phy_lan8742_dev_data *const data = dev->data;
 
 	k_sem_take(&data->sem, K_FOREVER);
@@ -354,6 +365,8 @@ static void phy_lan8742_invoke_link_cb(const struct device *dev)
 
 static int phy_lan8742_link_cb_set(const struct device *dev, phy_callback_t cb, void *user_data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct phy_lan8742_dev_data *const data = dev->data;
 
 	data->cb = cb;
@@ -378,6 +391,8 @@ static DEVICE_API(ethphy, phy_lan8742_driver_api) = {
 
 static int phy_lan8742_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct phy_lan8742_dev_config *const cfg = dev->config;
 	struct phy_lan8742_dev_data *const data = dev->data;
 	uint32_t phy_id;

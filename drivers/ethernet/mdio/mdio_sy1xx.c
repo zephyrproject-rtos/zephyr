@@ -53,6 +53,7 @@ static int sy1xx_mdio_wait_for_ready(const struct device *dev);
 
 static int sy1xx_mdio_initialize(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
 
 	const struct sy1xx_mdio_dev_config *const cfg = dev->config;
 	int ret;
@@ -114,6 +115,8 @@ static int sy1xx_mdio_wait_for_ready(const struct device *dev)
 
 static int sy1xx_mdio_read(const struct device *dev, uint8_t prtad, uint8_t regad, uint16_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct sy1xx_mdio_dev_config *const cfg = dev->config;
 	int ret;
 	uint32_t v;
@@ -146,6 +149,8 @@ static int sy1xx_mdio_read(const struct device *dev, uint8_t prtad, uint8_t rega
 
 static int sy1xx_mdio_write(const struct device *dev, uint8_t prtad, uint8_t regad, uint16_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct sy1xx_mdio_dev_config *const cfg = dev->config;
 	int ret;
 	uint32_t v;

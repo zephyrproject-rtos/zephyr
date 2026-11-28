@@ -308,6 +308,8 @@ static void enc424j600_setup_mac(const struct device *dev)
 
 static int enc424j600_tx(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct enc424j600_runtime *context = dev->data;
 	uint16_t len = net_pkt_get_len(pkt);
 	struct net_buf *frag;
@@ -506,6 +508,8 @@ static int enc424j600_set_config(const struct device *dev,
 				 enum ethernet_config_type type,
 				 const struct ethernet_config *config)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct enc424j600_runtime *ctx = dev->data;
 	uint16_t tmp;
 
@@ -539,6 +543,9 @@ static int enc424j600_set_config(const struct device *dev,
 static void enc424j600_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct enc424j600_runtime *context = dev->data;
 
 	net_if_set_link_addr(iface, context->mac_address,
@@ -560,6 +567,8 @@ static void enc424j600_iface_init(struct net_if *iface)
 
 static int enc424j600_start_device(const struct device *dev, struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct enc424j600_runtime *context = dev->data;
 	uint16_t tmp;
 
@@ -590,6 +599,8 @@ static int enc424j600_start_device(const struct device *dev, struct net_if *ifac
 
 static int enc424j600_stop_device(const struct device *dev, struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct enc424j600_runtime *context = dev->data;
 	uint16_t tmp;
 
@@ -639,6 +650,8 @@ static DEVICE_API(ethernet, api_funcs) = {
 
 static int enc424j600_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct enc424j600_config *config = dev->config;
 	struct enc424j600_runtime *context = dev->data;
 	uint8_t retries = ENC424J600_DEFAULT_NUMOF_RETRIES;

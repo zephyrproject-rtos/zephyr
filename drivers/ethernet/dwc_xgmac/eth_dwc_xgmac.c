@@ -830,6 +830,9 @@ static void eth_dwc_xgmac_irq_work(struct k_work *item)
 	struct xgmac_irq_cntxt_data *cntxt_data =
 		(struct xgmac_irq_cntxt_data *)&data->irq_cntxt_data;
 	const struct device *dev = cntxt_data->dev;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_dwc_xgmac_config *const config =
 		(struct eth_dwc_xgmac_config *)dev->config;
 	uint32_t dma_chnl_interrupt_sts = 0u;
@@ -854,6 +857,8 @@ static void eth_dwc_xgmac_irq_work(struct k_work *item)
  */
 static void eth_dwc_xgmac_isr(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_dwc_xgmac_config *const config =
 		(struct eth_dwc_xgmac_config *)dev->config;
 	struct eth_dwc_xgmac_dev_data *const data = (struct eth_dwc_xgmac_dev_data *)dev->data;
@@ -967,6 +972,8 @@ static void eth_dwc_xgmac_irq_poll(struct k_timer *timer)
  */
 static int eth_dwc_xgmac_dev_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_dwc_xgmac_config *const config =
 		(struct eth_dwc_xgmac_config *)dev->config;
 	struct eth_dwc_xgmac_dev_data *const data = (struct eth_dwc_xgmac_dev_data *)dev->data;
@@ -1008,6 +1015,9 @@ static void phy_link_state_change_callback(const struct device *phy_dev,
 {
 	ARG_UNUSED(phy_dev);
 	const struct device *mac_dev = (const struct device *)user_data;
+
+	DEVICE_DT_INST_ASSUME_ANY(mac_dev);
+
 	struct eth_dwc_xgmac_dev_data *dev_data = (struct eth_dwc_xgmac_dev_data *)mac_dev->data;
 	bool is_up = state->is_up;
 
@@ -1129,6 +1139,9 @@ void eth_dwc_xgmac_prefill_rx_desc(const struct device *dev)
 static void eth_dwc_xgmac_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_dwc_xgmac_config *const dev_conf =
 		(struct eth_dwc_xgmac_config *)dev->config;
 	struct eth_dwc_xgmac_dev_data *const dev_data = (struct eth_dwc_xgmac_dev_data *)dev->data;
@@ -1172,6 +1185,8 @@ static void eth_dwc_xgmac_iface_init(struct net_if *iface)
  */
 static int eth_dwc_xgmac_start_device(const struct device *dev, struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_dwc_xgmac_config *dev_conf = (struct eth_dwc_xgmac_config *)dev->config;
 	struct eth_dwc_xgmac_dev_data *dev_data = (struct eth_dwc_xgmac_dev_data *)dev->data;
 	mem_addr_t ioaddr;
@@ -1250,6 +1265,8 @@ static int eth_dwc_xgmac_start_device(const struct device *dev, struct net_if *i
  */
 static int eth_dwc_xgmac_stop_device(const struct device *dev, struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_dwc_xgmac_config *dev_conf = (struct eth_dwc_xgmac_config *)dev->config;
 	struct eth_dwc_xgmac_dev_data *dev_data = (struct eth_dwc_xgmac_dev_data *)dev->data;
 	mem_addr_t ioaddr;
@@ -1339,6 +1356,8 @@ static inline void update_desc_tail_ptr(const struct device *dev, uint8_t dma_ch
  */
 static int eth_dwc_xgmac_send(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int ret;
 	struct xgmac_tx_cntxt context;
 	const struct eth_dwc_xgmac_config *dev_conf = (struct eth_dwc_xgmac_config *)dev->config;
@@ -1511,6 +1530,8 @@ static int eth_dwc_xgmac_set_config(const struct device *dev,
 				    enum ethernet_config_type type,
 				    const struct ethernet_config *config)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_dwc_xgmac_dev_data *dev_data = (struct eth_dwc_xgmac_dev_data *)dev->data;
 
 	int retval = 0;
@@ -1616,6 +1637,8 @@ static enum ethernet_hw_caps eth_dwc_xgmac_get_capabilities(const struct device 
 static struct net_stats_eth *eth_dwc_xgmac_stats(const struct device *dev,
 						 struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_dwc_xgmac_dev_data *dev_data = (struct eth_dwc_xgmac_dev_data *)dev->data;
 
 	return &dev_data->stats;

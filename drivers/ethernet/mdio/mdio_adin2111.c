@@ -60,6 +60,8 @@ static int mdio_adin2111_read_c45(const struct device *dev, uint8_t prtad,
 				  uint8_t devad, uint16_t regad,
 				  uint16_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct mdio_adin2111_config *const cfg = dev->config;
 	uint32_t rdy;
 	uint32_t cmd;
@@ -100,6 +102,8 @@ static int mdio_adin2111_write_c45(const struct device *dev, uint8_t prtad,
 				   uint8_t devad, uint16_t regad,
 				   uint16_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct mdio_adin2111_config *const cfg = dev->config;
 
 	uint32_t rdy;
@@ -133,6 +137,8 @@ static int mdio_adin2111_write_c45(const struct device *dev, uint8_t prtad,
 static int mdio_adin2111_read(const struct device *dev, uint8_t prtad,
 			      uint8_t regad, uint16_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct mdio_adin2111_config *const cfg = dev->config;
 	uint32_t read;
 	uint32_t cmd;
@@ -155,6 +161,8 @@ static int mdio_adin2111_read(const struct device *dev, uint8_t prtad,
 static int mdio_adin2111_write(const struct device *dev, uint8_t prtad,
 			       uint8_t regad, uint16_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct mdio_adin2111_config *const cfg = dev->config;
 	uint32_t cmd;
 	uint32_t rdy;

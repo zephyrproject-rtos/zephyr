@@ -24,6 +24,8 @@ struct mdio_lan865x_config {
 static int lan865x_mdio_c22_read(const struct device *dev, uint8_t prtad, uint8_t regad,
 				 uint16_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct mdio_lan865x_config *const cfg = dev->config;
 
 	return eth_lan865x_mdio_c22_read(cfg->dev, prtad, regad, data);
@@ -32,6 +34,8 @@ static int lan865x_mdio_c22_read(const struct device *dev, uint8_t prtad, uint8_
 static int lan865x_mdio_c22_write(const struct device *dev, uint8_t prtad, uint8_t regad,
 				  uint16_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct mdio_lan865x_config *const cfg = dev->config;
 
 	return eth_lan865x_mdio_c22_write(cfg->dev, prtad, regad, data);
@@ -40,6 +44,8 @@ static int lan865x_mdio_c22_write(const struct device *dev, uint8_t prtad, uint8
 static int lan865x_mdio_c45_read(const struct device *dev, uint8_t prtad, uint8_t devad,
 				 uint16_t regad, uint16_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct mdio_lan865x_config *const cfg = dev->config;
 
 	return eth_lan865x_mdio_c45_read(cfg->dev, prtad, devad, regad, data);
@@ -48,6 +54,8 @@ static int lan865x_mdio_c45_read(const struct device *dev, uint8_t prtad, uint8_
 static int lan865x_mdio_c45_write(const struct device *dev, uint8_t prtad, uint8_t devad,
 				  uint16_t regad, uint16_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct mdio_lan865x_config *const cfg = dev->config;
 
 	return eth_lan865x_mdio_c45_write(cfg->dev, prtad, devad, regad, data);

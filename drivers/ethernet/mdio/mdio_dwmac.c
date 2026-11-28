@@ -261,11 +261,15 @@ end:
 
 static int dwmac_mdio_read(const struct device *dev, uint8_t prtad, uint8_t regad, uint16_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	return dwmac_mdio_transfer(dev, prtad, regad, DWMAC_MDIO_OP_READ, 0U, data, false);
 }
 
 static int dwmac_mdio_write(const struct device *dev, uint8_t prtad, uint8_t regad, uint16_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	return dwmac_mdio_transfer(dev, prtad, regad, DWMAC_MDIO_OP_WRITE,
 				   FIELD_PREP(MAC_MDIO_DATA_GD, data), NULL, false);
 }
@@ -274,6 +278,8 @@ static int dwmac_mdio_write(const struct device *dev, uint8_t prtad, uint8_t reg
 static int dwmac_mdio_read_c45(const struct device *dev, uint8_t prtad, uint8_t devad,
 			       uint16_t regad, uint16_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int ret;
 
 	ret = dwmac_mdio_transfer(dev, prtad, devad, DWMAC_MDIO_OP_READ,
@@ -288,6 +294,8 @@ static int dwmac_mdio_read_c45(const struct device *dev, uint8_t prtad, uint8_t 
 static int dwmac_mdio_write_c45(const struct device *dev, uint8_t prtad, uint8_t devad,
 				uint16_t regad, uint16_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int ret;
 
 	ret = dwmac_mdio_transfer(dev, prtad, devad, DWMAC_MDIO_OP_WRITE,
@@ -322,6 +330,8 @@ static bool dwmac_mdio_irq_enable(const struct dwmac_mdio_config *cfg)
 
 static int dwmac_mdio_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct dwmac_mdio_config *cfg = dev->config;
 	struct dwmac_mdio_data *data = dev->data;
 	int ret;

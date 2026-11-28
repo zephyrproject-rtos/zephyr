@@ -404,6 +404,8 @@ int phy_dm8806_init_interrupt(const struct device *dev)
 
 static int phy_dm8806_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int ret;
 	uint16_t val;
 	const struct phy_dm8806_config *cfg = dev->config;
@@ -481,6 +483,8 @@ static int phy_dm8806_init(const struct device *dev)
 
 static int phy_dm8806_get_link_state(const struct device *dev, struct phy_link_state *state)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int ret;
 	uint16_t status;
 	uint16_t data;
@@ -533,6 +537,8 @@ static int phy_dm8806_get_link_state(const struct device *dev, struct phy_link_s
 static int phy_dm8806_cfg_link(const struct device *dev, enum phy_link_speed adv_speeds,
 			       enum phy_cfg_link_flag flags)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int ret;
 	uint16_t data;
 	uint16_t req_speed;
@@ -628,6 +634,8 @@ static int phy_dm8806_cfg_link(const struct device *dev, enum phy_link_speed adv
 
 static int phy_dm8806_reg_read(const struct device *dev, uint16_t reg_addr, uint32_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int res;
 	const struct phy_dm8806_config *cfg = dev->config;
 
@@ -641,6 +649,8 @@ static int phy_dm8806_reg_read(const struct device *dev, uint16_t reg_addr, uint
 
 static int phy_dm8806_reg_write(const struct device *dev, uint16_t reg_addr, uint32_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int res;
 	const struct phy_dm8806_config *cfg = dev->config;
 
@@ -654,6 +664,8 @@ static int phy_dm8806_reg_write(const struct device *dev, uint16_t reg_addr, uin
 
 static int phy_dm8806_link_cb_set(const struct device *dev, phy_callback_t cb, void *user_data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int res = 0;
 	struct phy_dm8806_data *data = dev->data;
 	const struct phy_dm8806_config *cfg = dev->config;

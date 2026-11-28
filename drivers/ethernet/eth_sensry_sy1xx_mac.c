@@ -113,6 +113,8 @@ static void sy1xx_mac_rx_thread_entry(void *p1, void *p2, void *p3);
 
 static int sy1xx_mac_initialize(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct sy1xx_mac_dev_config *cfg = (struct sy1xx_mac_dev_config *)dev->config;
 	struct sy1xx_mac_dev_data *data = (struct sy1xx_mac_dev_data *)dev->data;
 	int ret;
@@ -174,6 +176,8 @@ static void sy1xx_mac_set_mac_addr(const struct device *dev)
 
 static int sy1xx_mac_start(const struct device *dev, struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct sy1xx_mac_dev_config *cfg = (struct sy1xx_mac_dev_config *)dev->config;
 	struct sy1xx_mac_dev_data *data = (struct sy1xx_mac_dev_data *)dev->data;
 
@@ -199,6 +203,8 @@ static int sy1xx_mac_start(const struct device *dev, struct net_if *iface __unus
 
 static int sy1xx_mac_stop(const struct device *dev, struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct sy1xx_mac_dev_data *data = (struct sy1xx_mac_dev_data *)dev->data;
 
 	k_thread_suspend(&data->rx_data_thread);
@@ -209,6 +215,9 @@ static void phy_link_state_changed(const struct device *pdev, struct phy_link_st
 				   void *user_data)
 {
 	const struct device *dev = (const struct device *)user_data;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct sy1xx_mac_dev_data *const data = dev->data;
 	const struct sy1xx_mac_dev_config *const cfg = dev->config;
 	bool is_up;
@@ -282,6 +291,9 @@ static void phy_link_state_changed(const struct device *pdev, struct phy_link_st
 static void sy1xx_mac_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct sy1xx_mac_dev_config *cfg = (struct sy1xx_mac_dev_config *)dev->config;
 	struct sy1xx_mac_dev_data *const data = dev->data;
 
@@ -323,6 +335,8 @@ static int sy1xx_mac_set_config(const struct device *dev,
 				enum ethernet_config_type type,
 				const struct ethernet_config *config)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct sy1xx_mac_dev_data *data = (struct sy1xx_mac_dev_data *)dev->data;
 	int ret = 0;
 
@@ -345,6 +359,8 @@ static int sy1xx_mac_set_config(const struct device *dev,
 static const struct device *sy1xx_mac_get_phy(const struct device *dev,
 					      struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct sy1xx_mac_dev_config *const cfg = dev->config;
 
 	return cfg->phy_dev;
@@ -437,6 +453,8 @@ static int sy1xx_mac_low_level_receive(const struct device *dev, uint8_t *rx, ui
 
 static int sy1xx_mac_send(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct sy1xx_mac_dev_data *const data = dev->data;
 	int ret;
 	uint32_t retries_left;
@@ -507,6 +525,9 @@ static int sy1xx_mac_receive_data(const struct device *dev, uint8_t *rx, uint16_
 static void sy1xx_mac_rx_thread_entry(void *p1, void *p2, void *p3)
 {
 	const struct device *dev = p1;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct sy1xx_mac_dev_data *const data = dev->data;
 	int ret;
 

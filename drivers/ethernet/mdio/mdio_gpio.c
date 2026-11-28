@@ -116,6 +116,8 @@ static int mdio_gpio_transfer(const struct device *dev, uint8_t prtad, uint8_t d
 static int mdio_gpio_read_mmi(const struct device *dev, uint8_t prtad, uint8_t devad,
 			      uint16_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int rc;
 	struct mdio_gpio_data *const dev_data = dev->data;
 
@@ -131,6 +133,8 @@ static int mdio_gpio_read_mmi(const struct device *dev, uint8_t prtad, uint8_t d
 static int mdio_gpio_write_mmi(const struct device *dev, uint8_t prtad, uint8_t devad,
 			       uint16_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int rc;
 	struct mdio_gpio_data *const dev_data = dev->data;
 
@@ -146,6 +150,8 @@ static int mdio_gpio_write_mmi(const struct device *dev, uint8_t prtad, uint8_t 
 static int mdio_gpio_read_c45_mmi(const struct device *dev, uint8_t prtad, uint8_t devad,
 				  uint16_t regad, uint16_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int rc;
 	struct mdio_gpio_data *const dev_data = dev->data;
 
@@ -164,6 +170,8 @@ static int mdio_gpio_read_c45_mmi(const struct device *dev, uint8_t prtad, uint8
 static int mdio_gpio_write_c45_mmi(const struct device *dev, uint8_t prtad, uint8_t devad,
 				   uint16_t regad, uint16_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int rc;
 	struct mdio_gpio_data *const dev_data = dev->data;
 
@@ -181,6 +189,8 @@ static int mdio_gpio_write_c45_mmi(const struct device *dev, uint8_t prtad, uint
 
 static int mdio_gpio_initialize(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct mdio_gpio_config *const dev_cfg = dev->config;
 	struct mdio_gpio_data *const dev_data = dev->data;
 	int rc;

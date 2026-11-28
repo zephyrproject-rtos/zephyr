@@ -222,6 +222,8 @@ static inline bool update_gptp(struct net_if *iface, struct net_pkt *pkt,
 
 static int eth_send(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_context *ctx = dev->data;
 	int count = net_pkt_get_len(pkt);
 	int ret;
@@ -439,6 +441,8 @@ static enum ethernet_hw_caps eth_native_tap_get_capabilities(const struct device
 static const struct device *eth_get_ptp_clock(const struct device *dev,
 					      struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_context *context = dev->data;
 
 	return context->ptp_clock;
@@ -448,6 +452,8 @@ static const struct device *eth_get_ptp_clock(const struct device *dev,
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 static struct net_stats_eth *get_stats(const struct device *dev, struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_context *context = dev->data;
 
 	return &(context->stats);
@@ -459,6 +465,8 @@ static int set_config(const struct device *dev,
 		      enum ethernet_config_type type,
 		      const struct ethernet_config *config)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int ret = 0;
 
 	if (IS_ENABLED(CONFIG_NET_PROMISCUOUS_MODE) &&

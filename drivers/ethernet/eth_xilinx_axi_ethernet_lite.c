@@ -159,6 +159,9 @@ static inline void axi_eth_lite_program_mac_address(const struct axi_eth_lite_co
 static const struct device *axi_eth_lite_get_phy(const struct device *dev,
 						 struct net_if *iface __unused)
 {
+	DEVICE_DT_ASSUME_ANY(dev, xlnx_xps_ethernetlite_3_00_a_mac,
+			     xlnx_xps_ethernetlite_1_00_a_mac);
+
 	const struct axi_eth_lite_config *config = dev->config;
 
 	return config->phy;
@@ -180,8 +183,13 @@ static void axi_eth_lite_phy_link_state_changed(const struct device *phydev __un
 
 static void axi_eth_lite_iface_init(struct net_if *iface)
 {
-	struct axi_eth_lite_data *data = net_if_get_device(iface)->data;
-	const struct axi_eth_lite_config *config = net_if_get_device(iface)->config;
+	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_ASSUME_ANY(dev, xlnx_xps_ethernetlite_3_00_a_mac,
+			     xlnx_xps_ethernetlite_1_00_a_mac);
+
+	struct axi_eth_lite_data *data = dev->data;
+	const struct axi_eth_lite_config *config = dev->config;
 	int err;
 
 	data->iface = iface;
@@ -228,6 +236,9 @@ static int axi_eth_lite_set_config(const struct device *dev,
 				   enum ethernet_config_type type,
 				   const struct ethernet_config *config)
 {
+	DEVICE_DT_ASSUME_ANY(dev, xlnx_xps_ethernetlite_3_00_a_mac,
+			     xlnx_xps_ethernetlite_1_00_a_mac);
+
 	struct axi_eth_lite_data *data = dev->data;
 	const struct axi_eth_lite_config *dev_config = dev->config;
 
@@ -256,6 +267,9 @@ static inline bool axi_eth_lite_cursor_advance(struct net_pkt_cursor *cursor)
 
 static int axi_eth_lite_send(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_ASSUME_ANY(dev, xlnx_xps_ethernetlite_3_00_a_mac,
+			     xlnx_xps_ethernetlite_1_00_a_mac);
+
 	const size_t mtu = NET_ETH_MTU + sizeof(struct net_eth_hdr);
 	mem_addr_t buffer_addr, length_addr, control_addr;
 	struct net_pkt_cursor *cursor = &pkt->cursor;
@@ -472,6 +486,9 @@ static void axi_eth_lite_process_rx_packets(struct k_work *item)
 /* the interrupt on this device is a bit limited: it cannot tell us which event triggered the IRQ */
 static void axi_eth_lite_isr(const struct device *dev)
 {
+	DEVICE_DT_ASSUME_ANY(dev, xlnx_xps_ethernetlite_3_00_a_mac,
+			     xlnx_xps_ethernetlite_1_00_a_mac);
+
 	int tx_opportunities = 0;
 	struct axi_eth_lite_data *data = dev->data;
 	const struct axi_eth_lite_config *config = dev->config;
@@ -511,6 +528,9 @@ void axi_eth_lite_timer_fn(struct k_timer *timer)
 
 static int axi_eth_lite_init(const struct device *dev)
 {
+	DEVICE_DT_ASSUME_ANY(dev, xlnx_xps_ethernetlite_3_00_a_mac,
+			     xlnx_xps_ethernetlite_1_00_a_mac);
+
 	const struct axi_eth_lite_config *config = dev->config;
 	struct axi_eth_lite_data *data = dev->data;
 

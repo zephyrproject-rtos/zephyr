@@ -26,6 +26,8 @@ LOG_MODULE_REGISTER(eth_w5500, CONFIG_ETHERNET_LOG_LEVEL);
 
 static int w5500_spi_read(const struct device *dev, uint32_t addr, uint8_t *data, size_t len)
 {
+	DEVICE_DT_ASSUME_ANY(dev, wiznet_w5500);
+
 	const struct wiznet_config *cfg = dev->config;
 	uint8_t cmd[3] = {addr >> 8, addr, W5500_SPI_READ_CONTROL(addr)};
 	const struct spi_buf tx_buf = {
@@ -51,6 +53,8 @@ static int w5500_spi_read(const struct device *dev, uint32_t addr, uint8_t *data
 
 static int w5500_spi_write(const struct device *dev, uint32_t addr, uint8_t *data, size_t len)
 {
+	DEVICE_DT_ASSUME_ANY(dev, wiznet_w5500);
+
 	const struct wiznet_config *cfg = dev->config;
 	uint8_t cmd[3] = {addr >> 8, addr, W5500_SPI_WRITE_CONTROL(addr)};
 	const struct spi_buf tx_buf[2] = {
@@ -67,6 +71,8 @@ static int w5500_spi_write(const struct device *dev, uint32_t addr, uint8_t *dat
 
 static int w5500_soft_reset(const struct device *dev)
 {
+	DEVICE_DT_ASSUME_ANY(dev, wiznet_w5500);
+
 	uint8_t mask = 0;
 	uint8_t tmp = MR_RST;
 	int ret;
@@ -85,6 +91,8 @@ static int w5500_soft_reset(const struct device *dev)
 
 static void w5500_set_macaddr(const struct device *dev)
 {
+	DEVICE_DT_ASSUME_ANY(dev, wiznet_w5500);
+
 	struct wiznet_runtime *ctx = dev->data;
 
 	w5500_spi_write(dev, W5500_SHAR, ctx->mac_addr, sizeof(ctx->mac_addr));
@@ -92,6 +100,8 @@ static void w5500_set_macaddr(const struct device *dev)
 
 static void w5500_update_link_status(const struct device *dev)
 {
+	DEVICE_DT_ASSUME_ANY(dev, wiznet_w5500);
+
 	struct wiznet_runtime *ctx = dev->data;
 	enum phy_link_speed speed;
 	uint8_t phycfgr;
@@ -133,6 +143,8 @@ static void w5500_update_link_status(const struct device *dev)
 
 static void w5500_memory_configure(const struct device *dev)
 {
+	DEVICE_DT_ASSUME_ANY(dev, wiznet_w5500);
+
 	uint8_t mem = 0x10;
 	int i;
 
@@ -180,6 +192,8 @@ static DEVICE_API(ethphy, w5500_phy_driver_api) = {
 
 static int w5500_init(const struct device *dev)
 {
+	DEVICE_DT_ASSUME_ANY(dev, wiznet_w5500);
+
 	uint8_t rtr[2];
 	int err;
 

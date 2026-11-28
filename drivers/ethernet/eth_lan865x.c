@@ -86,6 +86,9 @@ static int lan865x_enable_sync(const struct device *dev)
 static void lan865x_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct lan865x_data *ctx = dev->data;
 	int ret;
 
@@ -132,6 +135,8 @@ static int lan865x_set_config(const struct device *dev,
 			      enum ethernet_config_type type,
 			      const struct ethernet_config *config)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct lan865x_data *ctx = dev->data;
 
 	if (type == ETHERNET_CONFIG_TYPE_PROMISC_MODE) {
@@ -317,6 +322,8 @@ static void lan865x_read_chunks(const struct device *dev)
 
 static void lan865x_int_thread(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct lan865x_data *ctx = dev->data;
 	struct oa_tc6 *tc6 = ctx->tc6;
 	uint32_t sts, ftr;
@@ -361,6 +368,8 @@ static void lan865x_int_thread(const struct device *dev)
 
 static int lan865x_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct lan865x_config *cfg = dev->config;
 	struct lan865x_data *ctx = dev->data;
 	int ret;
@@ -439,6 +448,8 @@ static int lan865x_init(const struct device *dev)
 
 static int lan865x_port_send(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct lan865x_data *ctx = dev->data;
 	struct oa_tc6 *tc6 = ctx->tc6;
 	int ret;
@@ -462,6 +473,8 @@ static int lan865x_port_send(const struct device *dev, struct net_pkt *pkt)
 
 const struct device *lan865x_get_phy(const struct device *dev, struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct lan865x_config *cfg = dev->config;
 
 	return cfg->phy;
