@@ -28,8 +28,27 @@ static uint32_t sdl_display_zoom_pct;
 
 enum sdl_display_op {
 	SDL_WRITE,
+	SDL_COMMIT,
 	SDL_BLANKING_OFF,
 	SDL_BLANKING_ON,
+};
+
+/* Formats a plane accepts: the device formats, except the palette one, which needs the dither */
+#define SDL_DISPLAY_PLANE_PIXEL_FORMATS                                                            \
+	(PIXEL_FORMAT_ARGB_8888 | PIXEL_FORMAT_XRGB_8888 | PIXEL_FORMAT_RGB_888 |                  \
+	 PIXEL_FORMAT_BGR_888 | PIXEL_FORMAT_ABGR_8888 | PIXEL_FORMAT_RGBA_8888 |                  \
+	 PIXEL_FORMAT_BGRA_8888 | PIXEL_FORMAT_MONO01 | PIXEL_FORMAT_MONO10 |                      \
+	 PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_RGB_565X | PIXEL_FORMAT_L_8 | PIXEL_FORMAT_AL_88)
+
+#define SDL_DISPLAY_BLEND_MODES                                                                    \
+	(DISPLAY_BLEND_NONE | DISPLAY_BLEND_COVERAGE | DISPLAY_BLEND_PREMULTIPLIED)
+
+/* A plane: its staged configuration and the packed BGRA32 pixels converted from it */
+struct sdl_display_plane {
+	struct display_plane_config cfg;
+	bool dirty;
+	bool enabled;
+	uint8_t *buf;
 };
 
 struct sdl_display_write {
@@ -62,11 +81,16 @@ struct sdl_display_data {
 	void *texture;
 	void *read_texture;
 	void *background_texture;
+	void *compose_texture;
+	void *plane_textures[CONFIG_SDL_DISPLAY_PLANES];
 	void *round_disp_mask;
 	bool display_on;
 	enum display_pixel_format current_pixel_format;
 	uint8_t *buf;
 	uint8_t *read_buf;
+	/* Staging buffers of the planes above 0, each 4 * width * height bytes */
+	uint8_t *plane_bufs;
+	struct sdl_display_plane planes[CONFIG_SDL_DISPLAY_PLANES];
 	double angle;
 	struct k_thread sdl_thread;
 
@@ -85,9 +109,50 @@ static inline uint32_t mono_pixel_order(uint32_t order)
 	}
 }
 
+/* Describe every plane to the renderer; a dirty plane with pixels is uploaded first */
+static void sdl_display_render_params(const struct device *dev,
+				      struct sdl_display_render_params *render,
+				      struct sdl_display_plane_params *planes)
+{
+	struct sdl_display_data *disp_data = dev->data;
+
+	for (uint8_t i = 0; i < CONFIG_SDL_DISPLAY_PLANES; i++) {
+		const struct sdl_display_plane *plane = &disp_data->planes[i];
+
+		planes[i] = (struct sdl_display_plane_params){
+			.texture = disp_data->plane_textures[i],
+			.buf = plane->buf,
+			.update = plane->dirty && plane->cfg.buf != NULL,
+			.enabled = plane->dirty ? plane->cfg.buf != NULL : plane->enabled,
+			.x = plane->cfg.x,
+			.y = plane->cfg.y,
+			.width = plane->cfg.desc.width,
+			.height = plane->cfg.desc.height,
+			.blend = plane->cfg.blend_mode != DISPLAY_BLEND_NONE,
+			.alpha = plane->cfg.alpha,
+		};
+	}
+
+	*render = (struct sdl_display_render_params){
+		.renderer = disp_data->renderer,
+		.mutex = disp_data->mutex,
+		.background_texture = disp_data->background_texture,
+		.compose_texture = disp_data->compose_texture,
+		.planes = planes,
+		.num_planes = CONFIG_SDL_DISPLAY_PLANES,
+		.color_tint = CONFIG_SDL_DISPLAY_COLOR_TINT,
+		.round_disp_mask = disp_data->round_disp_mask,
+		.angle = disp_data->angle,
+	};
+}
+
 static void exec_sdl_task(const struct device *dev, const struct sdl_display_task *task)
 {
 	struct sdl_display_data *disp_data = dev->data;
+	struct sdl_display_plane_params planes[CONFIG_SDL_DISPLAY_PLANES];
+	struct sdl_display_render_params render;
+
+	sdl_display_render_params(dev, &render, planes);
 
 	switch (task->op) {
 	case SDL_WRITE: {
@@ -96,32 +161,27 @@ static void exec_sdl_task(const struct device *dev, const struct sdl_display_tas
 			.width = task->write.desc->width,
 			.x = task->write.x,
 			.y = task->write.y,
-			.renderer = disp_data->renderer,
-			.mutex = disp_data->mutex,
 			.texture = disp_data->texture,
-			.background_texture = disp_data->background_texture,
 			.buf = disp_data->buf,
 			.display_on = disp_data->display_on,
 			.frame_incomplete = task->write.desc->frame_incomplete,
-			.color_tint = CONFIG_SDL_DISPLAY_COLOR_TINT,
-			.round_disp_mask = disp_data->round_disp_mask,
-			.angle = disp_data->angle,
+			.render = &render,
 		};
 		sdl_display_write_bottom(&write_params);
 		break;
 	}
-	case SDL_BLANKING_OFF: {
-		struct sdl_display_blanking_off_params blanking_off_params = {
-			.renderer = disp_data->renderer,
-			.texture = disp_data->texture,
-			.background_texture = disp_data->background_texture,
-			.color_tint = CONFIG_SDL_DISPLAY_COLOR_TINT,
-			.round_disp_mask = disp_data->round_disp_mask,
-			.angle = disp_data->angle,
-		};
-		sdl_display_blanking_off_bottom(&blanking_off_params);
+	case SDL_COMMIT:
+		sdl_display_commit_bottom(&render, disp_data->display_on);
+		for (uint8_t i = 0; i < CONFIG_SDL_DISPLAY_PLANES; i++) {
+			if (disp_data->planes[i].dirty) {
+				disp_data->planes[i].enabled = disp_data->planes[i].cfg.buf != NULL;
+				disp_data->planes[i].dirty = false;
+			}
+		}
 		break;
-	}
+	case SDL_BLANKING_OFF:
+		sdl_display_blanking_off_bottom(&render);
+		break;
 	case SDL_BLANKING_ON:
 		sdl_display_blanking_on_bottom(disp_data->renderer);
 		break;
@@ -157,6 +217,9 @@ static void sdl_task_thread(void *p1, void *p2, void *p3)
 		.texture = &disp_data->texture,
 		.read_texture = &disp_data->read_texture,
 		.background_texture = &disp_data->background_texture,
+		.compose_texture = &disp_data->compose_texture,
+		.plane_textures = disp_data->plane_textures,
+		.num_planes = CONFIG_SDL_DISPLAY_PLANES,
 		.transparency_grid_color1 = CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_1,
 		.transparency_grid_color2 = CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_2,
 		.transparency_grid_cell_size = CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_SIZE,
@@ -186,9 +249,16 @@ static void sdl_task_thread(void *p1, void *p2, void *p3)
 
 static int sdl_display_init(const struct device *dev)
 {
+	const struct sdl_display_config *config = dev->config;
 	struct sdl_display_data *disp_data = dev->data;
 
 	LOG_DBG("Initializing display driver");
+
+	disp_data->planes[0].buf = disp_data->buf;
+	for (uint8_t i = 1; i < CONFIG_SDL_DISPLAY_PLANES; i++) {
+		disp_data->planes[i].buf = disp_data->plane_bufs +
+					   (size_t)(i - 1) * 4U * config->width * config->height;
+	}
 
 	k_sem_init(&disp_data->task_sem, 0, 1);
 	k_mutex_init(&disp_data->task_mutex);
@@ -598,6 +668,57 @@ static void sdl_display_write_i4(const struct device *dev,
 #endif /* CONFIG_DISPLAY_COLOR_PALETTE */
 }
 
+/* Convert a frame of any format but the palette one into packed BGRA32 */
+static int sdl_display_convert(enum display_pixel_format fmt, uint8_t *dst,
+			       const struct display_buffer_descriptor *desc, const void *buf)
+{
+	switch (fmt) {
+	case PIXEL_FORMAT_ARGB_8888:
+		sdl_display_write_argb8888(dst, desc, buf);
+		break;
+	case PIXEL_FORMAT_XRGB_8888:
+		sdl_display_write_xrgb8888(dst, desc, buf);
+		break;
+	case PIXEL_FORMAT_RGB_888:
+		sdl_display_write_rgb888(dst, desc, buf);
+		break;
+	case PIXEL_FORMAT_BGR_888:
+		sdl_display_write_bgr888(dst, desc, buf);
+		break;
+	case PIXEL_FORMAT_ABGR_8888:
+		sdl_display_write_abgr8888(dst, desc, buf);
+		break;
+	case PIXEL_FORMAT_RGBA_8888:
+		sdl_display_write_rgba8888(dst, desc, buf);
+		break;
+	case PIXEL_FORMAT_BGRA_8888:
+		sdl_display_write_bgra8888(dst, desc, buf);
+		break;
+	case PIXEL_FORMAT_MONO10:
+		sdl_display_write_mono(dst, desc, buf, true);
+		break;
+	case PIXEL_FORMAT_MONO01:
+		sdl_display_write_mono(dst, desc, buf, false);
+		break;
+	case PIXEL_FORMAT_RGB_565:
+		sdl_display_write_rgb565(dst, desc, buf);
+		break;
+	case PIXEL_FORMAT_RGB_565X:
+		sdl_display_write_rgb565x(dst, desc, buf);
+		break;
+	case PIXEL_FORMAT_L_8:
+		sdl_display_write_l8(dst, desc, buf);
+		break;
+	case PIXEL_FORMAT_AL_88:
+		sdl_display_write_al88(dst, desc, buf);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 static int sdl_display_write(const struct device *dev, const uint16_t x,
 			     const uint16_t y,
 			     const struct display_buffer_descriptor *desc,
@@ -641,37 +762,23 @@ static int sdl_display_write(const struct device *dev, const uint16_t x,
 	}
 
 	k_mutex_lock(&disp_data->task_mutex, K_FOREVER);
-	if (desc == &scratch) {
+	if (desc == &scratch || disp_data->current_pixel_format == PIXEL_FORMAT_I_4) {
 		sdl_display_write_i4(dev, desc, buf);
-	} else if (disp_data->current_pixel_format == PIXEL_FORMAT_ARGB_8888) {
-		sdl_display_write_argb8888(disp_data->buf, desc, buf);
-	} else if (disp_data->current_pixel_format == PIXEL_FORMAT_XRGB_8888) {
-		sdl_display_write_xrgb8888(disp_data->buf, desc, buf);
-	} else if (disp_data->current_pixel_format == PIXEL_FORMAT_RGB_888) {
-		sdl_display_write_rgb888(disp_data->buf, desc, buf);
-	} else if (disp_data->current_pixel_format == PIXEL_FORMAT_BGR_888) {
-		sdl_display_write_bgr888(disp_data->buf, desc, buf);
-	} else if (disp_data->current_pixel_format == PIXEL_FORMAT_ABGR_8888) {
-		sdl_display_write_abgr8888(disp_data->buf, desc, buf);
-	} else if (disp_data->current_pixel_format == PIXEL_FORMAT_RGBA_8888) {
-		sdl_display_write_rgba8888(disp_data->buf, desc, buf);
-	} else if (disp_data->current_pixel_format == PIXEL_FORMAT_BGRA_8888) {
-		sdl_display_write_bgra8888(disp_data->buf, desc, buf);
-	} else if (disp_data->current_pixel_format == PIXEL_FORMAT_MONO10) {
-		sdl_display_write_mono(disp_data->buf, desc, buf, true);
-	} else if (disp_data->current_pixel_format == PIXEL_FORMAT_MONO01) {
-		sdl_display_write_mono(disp_data->buf, desc, buf, false);
-	} else if (disp_data->current_pixel_format == PIXEL_FORMAT_RGB_565) {
-		sdl_display_write_rgb565(disp_data->buf, desc, buf);
-	} else if (disp_data->current_pixel_format == PIXEL_FORMAT_RGB_565X) {
-		sdl_display_write_rgb565x(disp_data->buf, desc, buf);
-	} else if (disp_data->current_pixel_format == PIXEL_FORMAT_L_8) {
-		sdl_display_write_l8(disp_data->buf, desc, buf);
-	} else if (disp_data->current_pixel_format == PIXEL_FORMAT_AL_88) {
-		sdl_display_write_al88(disp_data->buf, desc, buf);
-	} else if (disp_data->current_pixel_format == PIXEL_FORMAT_I_4) {
-		sdl_display_write_i4(dev, desc, buf);
+	} else {
+		(void)sdl_display_convert(disp_data->current_pixel_format, disp_data->buf, desc,
+					  buf);
 	}
+
+	/* A write shows the whole panel through plane 0, blending with the pixel alpha */
+	disp_data->planes[0].cfg = (struct display_plane_config){
+		.buf = disp_data->buf,
+		.desc = {.width = config->width, .height = config->height, .pitch = config->width},
+		.pixel_format = disp_data->current_pixel_format,
+		.alpha = 255,
+		.blend_mode = DISPLAY_BLEND_COVERAGE,
+	};
+	disp_data->planes[0].dirty = false;
+	disp_data->planes[0].enabled = true;
 
 	if (k_current_get() == &disp_data->sdl_thread) {
 		exec_sdl_task(dev, &task);
@@ -1281,8 +1388,123 @@ static void sdl_display_get_capabilities(
 	capabilities->screen_info =
 		(IS_ENABLED(CONFIG_SDL_DISPLAY_MONO_VTILED) ? SCREEN_INFO_MONO_VTILED : 0) |
 		(IS_ENABLED(CONFIG_SDL_DISPLAY_MONO_MSB_FIRST) ? SCREEN_INFO_MONO_MSB_FIRST : 0);
+	capabilities->num_planes = CONFIG_SDL_DISPLAY_PLANES;
 
 	display_color_dither_patch_caps(&disp_data->color_dither, capabilities);
+}
+
+static int sdl_display_get_plane_capabilities(const struct device *dev, uint8_t plane,
+					      struct display_plane_capabilities *caps)
+{
+	const struct sdl_display_config *config = dev->config;
+
+	if (plane >= CONFIG_SDL_DISPLAY_PLANES) {
+		return -EINVAL;
+	}
+
+	caps->supported_pixel_formats = SDL_DISPLAY_PLANE_PIXEL_FORMATS;
+	caps->supported_blend_modes = (plane == 0U) ? 0U : SDL_DISPLAY_BLEND_MODES;
+	caps->max_width = config->width;
+	caps->max_height = config->height;
+	caps->width_align = 1U;
+
+	return 0;
+}
+
+/*
+ * The renderer blends straight alpha only: an opaque plane gets its alpha
+ * bytes forced, a premultiplied one is divided back by its alpha.
+ */
+static void sdl_display_plane_alpha(uint8_t *px, uint32_t count, enum display_blend_mode mode)
+{
+	for (uint32_t i = 0; i < count; i++, px += 4) {
+		uint8_t a = px[3];
+
+		if (mode == DISPLAY_BLEND_NONE) {
+			px[3] = 0xFFU;
+		} else if (mode == DISPLAY_BLEND_PREMULTIPLIED && a != 0xFFU) {
+			for (uint8_t c = 0; c < 3; c++) {
+				px[c] = (a == 0U) ? 0U : (uint8_t)MIN(255U, (px[c] * 255U) / a);
+			}
+		}
+	}
+}
+
+static int sdl_display_set_plane(const struct device *dev, uint8_t plane,
+				 const struct display_plane_config *cfg)
+{
+	const struct sdl_display_config *config = dev->config;
+	struct sdl_display_data *disp_data = dev->data;
+	const struct display_buffer_descriptor *desc = &cfg->desc;
+	enum display_blend_mode mode = DISPLAY_BLEND_NONE;
+	int ret = 0;
+
+	if (plane >= CONFIG_SDL_DISPLAY_PLANES) {
+		return -EINVAL;
+	}
+
+	if (cfg->buf != NULL) {
+		uint32_t row_bytes = (uint32_t)desc->pitch *
+				     DISPLAY_BITS_PER_PIXEL(cfg->pixel_format) / BITS_PER_BYTE;
+
+		if ((cfg->pixel_format & SDL_DISPLAY_PLANE_PIXEL_FORMATS) == 0U) {
+			return -ENOTSUP;
+		}
+		if (plane != 0U) {
+			if (cfg->blend_mode != DISPLAY_BLEND_NONE &&
+			    cfg->blend_mode != DISPLAY_BLEND_COVERAGE &&
+			    cfg->blend_mode != DISPLAY_BLEND_PREMULTIPLIED) {
+				return -ENOTSUP;
+			}
+			mode = cfg->blend_mode;
+		}
+		if (desc->width == 0U || desc->height == 0U || desc->pitch < desc->width ||
+		    cfg->x + desc->width > config->width ||
+		    cfg->y + desc->height > config->height ||
+		    desc->buf_size < row_bytes * desc->height) {
+			return -EINVAL;
+		}
+	}
+
+	k_mutex_lock(&disp_data->task_mutex, K_FOREVER);
+	if (cfg->buf != NULL) {
+		ret = sdl_display_convert(cfg->pixel_format, disp_data->planes[plane].buf, desc,
+					  cfg->buf);
+		if (ret == 0) {
+			sdl_display_plane_alpha(disp_data->planes[plane].buf,
+						(uint32_t)desc->width * desc->height, mode);
+		}
+	}
+	if (ret == 0) {
+		disp_data->planes[plane].cfg = *cfg;
+		disp_data->planes[plane].cfg.alpha = (plane == 0U) ? 255U : cfg->alpha;
+		disp_data->planes[plane].cfg.blend_mode = mode;
+		disp_data->planes[plane].dirty = true;
+	}
+	k_mutex_unlock(&disp_data->task_mutex);
+
+	return ret;
+}
+
+static int sdl_display_commit(const struct device *dev)
+{
+	struct sdl_display_data *disp_data = dev->data;
+	struct sdl_display_task task = {
+		.op = SDL_COMMIT,
+	};
+
+	k_mutex_lock(&disp_data->task_mutex, K_FOREVER);
+
+	if (k_current_get() == &disp_data->sdl_thread) {
+		exec_sdl_task(dev, &task);
+	} else {
+		k_msgq_put(disp_data->task_msgq, &task, K_FOREVER);
+		k_sem_take(&disp_data->task_sem, K_FOREVER);
+	}
+
+	k_mutex_unlock(&disp_data->task_mutex);
+
+	return 0;
 }
 
 static int sdl_display_set_pixel_format(const struct device *dev,
@@ -1360,6 +1582,9 @@ static void sdl_display_cleanup(struct sdl_display_data *disp_data)
 		.texture = &disp_data->texture,
 		.read_texture = &disp_data->read_texture,
 		.background_texture = &disp_data->background_texture,
+		.compose_texture = &disp_data->compose_texture,
+		.plane_textures = disp_data->plane_textures,
+		.num_planes = CONFIG_SDL_DISPLAY_PLANES,
 		.round_disp_mask = &disp_data->round_disp_mask,
 	};
 	sdl_display_cleanup_bottom(&cleanup_params);
@@ -1374,6 +1599,9 @@ static DEVICE_API(display, sdl_display_api) = {
 	.get_capabilities = sdl_display_get_capabilities,
 	.set_pixel_format = sdl_display_set_pixel_format,
 	.set_orientation = sdl_display_set_orientation,
+	.get_plane_capabilities = sdl_display_get_plane_capabilities,
+	.set_plane = sdl_display_set_plane,
+	.commit = sdl_display_commit,
 };
 
 #define HAS_COLOR_PALETTE(n) DT_NODE_EXISTS(DT_INST_CHILD(n, color_palette))
@@ -1393,6 +1621,8 @@ static DEVICE_API(display, sdl_display_api) = {
                                                                                                    \
 	static uint8_t sdl_buf_##n[4 * DT_INST_PROP(n, height) * DT_INST_PROP(n, width)];          \
 	static uint8_t sdl_read_buf_##n[4 * DT_INST_PROP(n, height) * DT_INST_PROP(n, width)];     \
+	static uint8_t sdl_plane_bufs_##n[MAX(CONFIG_SDL_DISPLAY_PLANES - 1, 1) * 4 *              \
+					  DT_INST_PROP(n, height) * DT_INST_PROP(n, width)];       \
 	K_MSGQ_DEFINE_STATIC_TYPE(sdl_task_msgq_##n, struct sdl_display_task, 1);                  \
 	static struct sdl_display_data sdl_data_##n = {                                            \
 		COND_CODE_1(HAS_COLOR_PALETTE(n),                                                  \
@@ -1400,6 +1630,7 @@ static DEVICE_API(display, sdl_display_api) = {
 		.current_pixel_format = DT_INST_PROP(n, pixel_format),                             \
 		.buf = sdl_buf_##n,                                                                \
 		.read_buf = sdl_read_buf_##n,                                                      \
+		.plane_bufs = sdl_plane_bufs_##n,                                                  \
 		.task_msgq = &sdl_task_msgq_##n,                                                   \
 	};                                                                                         \
                                                                                                    \

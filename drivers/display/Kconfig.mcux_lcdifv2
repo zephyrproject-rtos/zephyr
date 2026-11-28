@@ -34,4 +34,14 @@ config MCUX_LCDIFV2_FB_SIZE
 	  4-bytes pixel format, e.g. ARGB8888. Applications should change this value
 	  according to the actual used resolution and format to optimize the heap size.
 
+config MCUX_LCDIFV2_START_ON_INIT
+	bool "Start the LCDIFV2 display driver during initialization"
+	default y
+	help
+	  Start the display at initialization instead of at the first
+	  display_write(). Panel controllers that need the pixel stream before
+	  they accept commands, such as MIPI DSI panels in video mode, require
+	  it. The first driver framebuffer is shown when there is one; without
+	  one the display shows its background color until the first write.
+
 endif # DISPLAY_MCUX_LCDIFV2

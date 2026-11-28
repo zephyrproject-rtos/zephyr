@@ -392,6 +392,11 @@ struct display_capabilities {
 	enum display_orientation current_orientation;
 	/** Supported callback events mask, 0 when event callback unsupported */
 	uint32_t supported_events;
+	/**
+	 * Number of planes reachable through display_set_plane(), 0 when
+	 * the display has none. Plane 0 is the one display_write() drives.
+	 */
+	uint8_t num_planes;
 #if defined(CONFIG_DISPLAY_COLOR_PALETTE) || defined(__DOXYGEN__)
 	/** Color palette supported by the display, indexed by pixel value */
 	struct display_palette_color color_palette[CONFIG_DISPLAY_COLOR_PALETTE_MAX_SIZE];
@@ -438,6 +443,80 @@ struct display_buffer_descriptor {
 	uint16_t pitch;
 	/** Indicates that this is not the last write buffer of the frame */
 	bool frame_incomplete;
+};
+
+/**
+ * @brief How a plane is blended over the planes below it
+ *
+ * With @c a the plane alpha of @ref display_plane_config scaled to 0..1 and
+ * @c pa the alpha of a pixel scaled the same way, the blended output is:
+ *
+ * - @ref DISPLAY_BLEND_NONE: `out = src * a + dst * (1 - a)`, the pixel alpha
+ *   is ignored.
+ * - @ref DISPLAY_BLEND_COVERAGE: `out = src * pa * a + dst * (1 - pa * a)`,
+ *   the color channels are not premultiplied by the pixel alpha.
+ * - @ref DISPLAY_BLEND_PREMULTIPLIED: `out = src * a + dst * (1 - pa * a)`,
+ *   the color channels are already multiplied by the pixel alpha.
+ *
+ * The values are bits so that a plane can advertise the modes it supports as
+ * a mask in @ref display_plane_capabilities.
+ */
+enum display_blend_mode {
+	/** Opaque pixels, the plane alpha alone applies */
+	DISPLAY_BLEND_NONE = BIT(0),
+	/** Straight (non-premultiplied) pixel alpha, scaled by the plane alpha */
+	DISPLAY_BLEND_COVERAGE = BIT(1),
+	/** Premultiplied pixel alpha, scaled by the plane alpha */
+	DISPLAY_BLEND_PREMULTIPLIED = BIT(2),
+};
+
+/** @brief Capabilities of one plane */
+struct display_plane_capabilities {
+	/** Bitwise or of the pixel formats the plane scans out */
+	uint32_t supported_pixel_formats;
+	/**
+	 * Bitwise or of the @ref display_blend_mode values the plane supports,
+	 * 0 when it is always opaque. Plane 0 is the background and reports 0.
+	 */
+	uint32_t supported_blend_modes;
+	/** Largest plane width in pixels */
+	uint16_t max_width;
+	/** Largest plane height in pixels */
+	uint16_t max_height;
+	/**
+	 * The plane width must be a multiple of this many pixels. It is the
+	 * worst case over the supported formats; display_set_plane() checks the
+	 * exact requirement of the format in use.
+	 */
+	uint8_t width_align;
+};
+
+/**
+ * @brief Configuration of one plane
+ *
+ * A plane shows `desc.width x desc.height` pixels of @p buf, read with
+ * `desc.pitch`, at (@p x, @p y) on the panel. There is no scaling and no
+ * source cropping: a caller that wants a window of a larger buffer offsets
+ * @p buf and sets the pitch accordingly.
+ */
+struct display_plane_config {
+	/**
+	 * Pixels to scan out, NULL to disable the plane. The driver may require an
+	 * aligned address; 64 bytes satisfies every supported controller.
+	 */
+	const void *buf;
+	/** Layout of @p buf; it describes the whole plane */
+	struct display_buffer_descriptor desc;
+	/** Pixel format of @p buf */
+	enum display_pixel_format pixel_format;
+	/** x coordinate of the upper left corner of the plane on the panel */
+	uint16_t x;
+	/** y coordinate of the upper left corner of the plane on the panel */
+	uint16_t y;
+	/** Plane alpha, 255 for opaque; ignored on plane 0 */
+	uint8_t alpha;
+	/** How the plane blends over the planes below it; ignored on plane 0 */
+	enum display_blend_mode blend_mode;
 };
 
 /** @brief Display event payload */
@@ -614,6 +693,26 @@ typedef int (*display_register_event_cb_api)(const struct device *dev,
 typedef int (*display_unregister_event_cb_api)(const struct device *dev, uint32_t reg_handle);
 
 /**
+ * @brief Callback API to get the capabilities of a plane.
+ * See display_get_plane_capabilities() for argument description
+ */
+typedef int (*display_get_plane_capabilities_api)(const struct device *dev, uint8_t plane,
+						  struct display_plane_capabilities *caps);
+
+/**
+ * @brief Callback API to stage the configuration of a plane.
+ * See display_set_plane() for argument description
+ */
+typedef int (*display_set_plane_api)(const struct device *dev, uint8_t plane,
+				     const struct display_plane_config *cfg);
+
+/**
+ * @brief Callback API to apply the staged plane configurations.
+ * See display_commit() for argument description
+ */
+typedef int (*display_commit_api)(const struct device *dev);
+
+/**
  * @driver_ops{Display}
  */
 __subsystem struct display_driver_api {
@@ -677,6 +776,18 @@ __subsystem struct display_driver_api {
 	 * @driver_ops_optional @copybrief display_unregister_event_cb
 	 */
 	display_unregister_event_cb_api unregister_event_cb;
+	/**
+	 * @driver_ops_optional @copybrief display_get_plane_capabilities
+	 */
+	display_get_plane_capabilities_api get_plane_capabilities;
+	/**
+	 * @driver_ops_optional @copybrief display_set_plane
+	 */
+	display_set_plane_api set_plane;
+	/**
+	 * @driver_ops_optional @copybrief display_commit
+	 */
+	display_commit_api commit;
 };
 /**
  * @}
@@ -1069,6 +1180,104 @@ static inline int display_unregister_event_cb(const struct device *dev, uint32_t
 	}
 
 	return api->unregister_event_cb(dev, reg_handle);
+}
+
+/**
+ * @brief Get the capabilities of a plane
+ *
+ * A plane is a layer the display controller reads from memory and
+ * blends with the other planes in its datapath, with no copy. Planes are
+ * stacked in index order: plane 0 is at the back and is the one
+ * display_write() drives, plane `num_planes - 1` is on top.
+ *
+ * @param dev Pointer to device structure
+ * @param plane Plane index, below @ref display_capabilities.num_planes
+ * @param caps Capabilities of the plane
+ *
+ * @return 0 on success else negative errno code.
+ * @retval -ENOSYS The display has no planes.
+ * @retval -EINVAL Invalid plane index or NULL capabilities pointer.
+ */
+static inline int display_get_plane_capabilities(const struct device *dev, uint8_t plane,
+						 struct display_plane_capabilities *caps)
+{
+	const struct display_driver_api *api = DEVICE_API_GET(display, dev);
+
+	if (api->get_plane_capabilities == NULL) {
+		return -ENOSYS;
+	}
+
+	if (caps == NULL) {
+		return -EINVAL;
+	}
+
+	return api->get_plane_capabilities(dev, plane, caps);
+}
+
+/**
+ * @brief Stage the configuration of a plane
+ *
+ * The configuration is validated and recorded; nothing changes on the panel
+ * until display_commit() applies it. A NULL buffer disables the plane.
+ *
+ * The buffer stays in use by the display until a later display_commit()
+ * that replaces or disables the plane returns: it must not be modified or
+ * released before that.
+ *
+ * @param dev Pointer to device structure
+ * @param plane Plane index, below @ref display_capabilities.num_planes
+ * @param cfg Configuration to stage
+ *
+ * @return 0 on success else negative errno code.
+ * @retval -ENOSYS The display has no planes.
+ * @retval -EINVAL Invalid plane index, NULL configuration, plane outside the
+ *         panel, zero size, pitch below the width, buffer too small, width
+ *         not a multiple of the alignment the format needs, or unaligned
+ *         buffer address.
+ * @retval -ENOTSUP The plane does not scan out this pixel format or does not
+ *         blend with this mode and alpha.
+ */
+static inline int display_set_plane(const struct device *dev, uint8_t plane,
+				    const struct display_plane_config *cfg)
+{
+	const struct display_driver_api *api = DEVICE_API_GET(display, dev);
+
+	if (api->set_plane == NULL) {
+		return -ENOSYS;
+	}
+
+	if (cfg == NULL) {
+		return -EINVAL;
+	}
+
+	return api->set_plane(dev, plane, cfg);
+}
+
+/**
+ * @brief Apply the staged plane configurations
+ *
+ * Every plane staged with display_set_plane() since the last commit is
+ * applied at once, at the next vertical synchronization, and the call returns
+ * once the new configuration is being scanned out, which releases the
+ * buffers it replaced. A commit with nothing staged succeeds and changes
+ * nothing. The call may be made from any thread; the driver serializes
+ * concurrent commits.
+ *
+ * @param dev Pointer to device structure
+ *
+ * @return 0 on success else negative errno code.
+ * @retval -ENOSYS The display has no planes.
+ * @retval -EIO The display did not reach the next vertical synchronization.
+ */
+static inline int display_commit(const struct device *dev)
+{
+	const struct display_driver_api *api = DEVICE_API_GET(display, dev);
+
+	if (api->commit == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->commit(dev);
 }
 
 #ifdef __cplusplus

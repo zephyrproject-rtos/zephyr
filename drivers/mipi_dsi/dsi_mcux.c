@@ -17,6 +17,14 @@ LOG_MODULE_REGISTER(dsi_mcux, CONFIG_MIPI_DSI_LOG_LEVEL);
 
 #define MIPI_DPHY_REF_CLK DT_INST_PROP(0, dphy_ref_frequency)
 
+/* The DPI clock is the root clock of the display controller feeding the DSI host */
+#if DT_INST_NODE_HAS_PROP(0, nxp_lcdif) &&                                                         \
+	DT_NODE_HAS_COMPAT(DT_INST_PHANDLE(0, nxp_lcdif), nxp_imx_lcdifv2)
+#define MIPI_DPI_CLOCK_ROOT kCLOCK_Root_Lcdifv2
+#else
+#define MIPI_DPI_CLOCK_ROOT kCLOCK_Root_Lcdif
+#endif
+
 /* Max output frequency of DPHY bit clock */
 #define MIPI_DPHY_MAX_FREQ MHZ(800)
 
@@ -179,7 +187,7 @@ static int dsi_mcux_attach(const struct device *dev,
 	 *
 	 *         (Pixel clock * bit per output pixel) / number of MIPI data lane
 	 */
-	uint32_t mipi_dsi_dpi_clk_hz = CLOCK_GetRootClockFreq(kCLOCK_Root_Lcdif);
+	uint32_t mipi_dsi_dpi_clk_hz = CLOCK_GetRootClockFreq(MIPI_DPI_CLOCK_ROOT);
 	/* Find the best realizable clock value for the MIPI DSI */
 	uint32_t mipi_dsi_dphy_bit_clk_hz =
 		dsi_mcux_best_clock(mipi_dsi_dphy_ref_clk_hz, config->phy_clock);
