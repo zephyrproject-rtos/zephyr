@@ -37,4 +37,15 @@
 			drive-strength = "normal";
 		};
 	};
+
+	/* LPADC0 channel 0A/0B on J24-1/J24-2 (Arduino A0/A1) */
+	pinmux_lpadc0: pinmux_lpadc0 {
+		group0 {
+			pinmux = <ADC0_CH0_PIO10_0>,
+				 <ADC0_CH18_PIO10_1>;
+			slew-rate = "normal";
+			drive-strength = "normal";
+			nxp,analog-mode;
+		};
+	};
 };
