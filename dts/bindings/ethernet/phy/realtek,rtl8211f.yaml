@@ -32,6 +32,11 @@ properties:
       - "rxid"
       - "txid"
     default: "id"
+  eee-disable:
+    type: boolean
+    description: |
+      Do not advertise IEEE 802.3az Energy Efficient Ethernet (EEE) to the link
+      partner. When absent, the PHY keeps its power-on EEE advertisement.
   default-speeds:
     default: ["10BASE Half-Duplex", "10BASE Full-Duplex", "100BASE Half-Duplex",
               "100BASE Full-Duplex", "1000BASE Half-Duplex", "1000BASE Full-Duplex"]
