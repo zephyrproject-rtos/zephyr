@@ -1087,6 +1087,7 @@ static int read_write_in_indirect_mode(const struct device *dev,
 		case MSPI_ACCESS_ASYNC:
 			hal_ret = HAL_XSPI_Receive_IT(&dev_data->hmspi.xspi, packet->data_buf);
 			break;
+#ifdef CONFIG_MSPI_DMA
 		case MSPI_ACCESS_DMA:
 			uint8_t *dma_buf = k_aligned_alloc(CONFIG_MSPI_STM32_BUFFER_ALIGNMENT,
 							   packet->num_bytes);
@@ -1108,6 +1109,7 @@ static int read_write_in_indirect_mode(const struct device *dev,
 
 			k_free(dma_buf);
 			goto end;
+#endif
 		default:
 			/* Not correct */
 			hal_ret = HAL_BUSY;
@@ -1123,9 +1125,11 @@ static int read_write_in_indirect_mode(const struct device *dev,
 		case MSPI_ACCESS_ASYNC:
 			hal_ret = HAL_XSPI_Transmit_IT(&dev_data->hmspi.xspi, packet->data_buf);
 			break;
+#ifdef CONFIG_MSPI_DMA
 		case MSPI_ACCESS_DMA:
 			hal_ret = HAL_XSPI_Transmit_DMA(&dev_data->hmspi.xspi, packet->data_buf);
 			break;
+#endif
 		default:
 			/* Not correct */
 			hal_ret = HAL_BUSY;
