@@ -7,7 +7,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
-	can_phy_gpio: can-phy-gpio {
+	test_can_phy_gpio: test_can-phy-gpio {
 		compatible = "can-transceiver-gpio";
 		enable-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
 		standby-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
@@ -15,8 +15,34 @@
 		max-bitrate = <8000000>;
 	};
 
-	vndcan0: vndcan0 {
+	test_can0 {
 		compatible = "vnd,can-controller";
-		phys = <&can_phy_gpio>;
+		phys = <&test_can_phy_gpio>;
+	};
+
+	test_can1 {
+		compatible = "vnd,can-controller";
+		phys = <&test_can_phy_tle927x>;
+	};
+
+	spi@deadbeef {
+		compatible = "vnd,spi";
+		reg = <0xdeadbeef 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		clock-frequency = <2000000>;
+		cs-gpios = <&gpio0 0 0>;
+
+		test_tle927x@1 {
+			compatible = "infineon,tle927x";
+			reg = <0x1>;
+			spi-max-frequency = <0>;
+
+			test_can_phy_tle927x: test-can-phy-tle927x {
+				compatible = "infineon,tle927x-can";
+				max-bitrate = <5000000>;
+				#phy-cells = <0>;
+			};
+		};
 	};
 };

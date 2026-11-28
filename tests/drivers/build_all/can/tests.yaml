@@ -121,6 +121,9 @@ tests:
       - xmc47_relax_kit
   # Test definition for CAN transceiver drivers.
   drivers.can.build_all.transceivers:
+    extra_configs:
+      - CONFIG_MFD=y
+      - CONFIG_SPI=y
     extra_dtc_overlay_files:
       - transceivers.overlay
     platform_allow:
