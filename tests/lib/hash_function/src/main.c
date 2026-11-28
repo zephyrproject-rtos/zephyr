@@ -5,6 +5,7 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 
 #include <zephyr/random/random.h>
 #include <zephyr/sys/hash_function.h>
@@ -136,6 +137,43 @@ ZTEST(hash_function, test_sys_hash32)
 	print_buckets("histogram", buckets, ARRAY_SIZE(buckets));
 
 	zassert_ok(kolmogorov_smirnov_test(buckets, ARRAY_SIZE(buckets)));
+}
+
+ZTEST(hash_function, test_murmur3_tail)
+{
+	static const struct {
+		size_t len;
+		uint8_t data[7];
+		uint32_t hash;
+	} vectors[] = {
+		{0, {0}, 0x00000000U},
+		{1, {0x80}, 0x0feb9e1dU},
+		{1, {0xff}, 0xfd6cf10dU},
+		{2, {'a', 'b'}, 0x9bbfd75fU},
+		{2, {'a', 0xff}, 0x6e8a3f6aU},
+		{2, {'b', 0xff}, 0x54fe116eU},
+		{3, {'a', 'b', 'c'}, 0xb3dd93faU},
+		{3, {'f', 'o', 'o'}, 0xf6a5c420U},
+		{4, {0, 0, 0, 0}, 0x2362f9deU},
+		{5, {0, 0, 0, 0, 0x80}, 0xd8d025dfU},
+		{6, {0, 0, 0, 0, 0, 0xff}, 0xfdb05f75U},
+		{7, {0, 0, 0, 0, 1, 0x80, 0xff}, 0xc92a2d52U},
+	};
+	uint8_t buffer[sizeof(vectors[0].data) + sizeof(uint32_t)] __aligned(sizeof(uint32_t));
+
+	if (!IS_ENABLED(CONFIG_SYS_HASH_FUNC32_MURMUR3)) {
+		ztest_test_skip();
+		return;
+	}
+
+	/* MurmurHash3_x86_32 reference vectors with seed zero. */
+	for (size_t i = 0; i < ARRAY_SIZE(vectors); ++i) {
+		for (size_t offset = 0; offset < sizeof(uint32_t); ++offset) {
+			memcpy(buffer + offset, vectors[i].data, vectors[i].len);
+			zassert_equal(sys_hash32_murmur3(buffer + offset, vectors[i].len),
+				      vectors[i].hash, "Vector %zu at offset %zu", i, offset);
+		}
+	}
 }
 
 ZTEST_SUITE(hash_function, NULL, NULL, NULL, NULL, NULL);

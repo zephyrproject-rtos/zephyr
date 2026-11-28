@@ -15,3 +15,6 @@ tests:
     extra_configs:
       - CONFIG_SYS_HASH_FUNC32_DJB2=y
       - CONFIG_SYS_HASH_FUNC32_CHOICE_DJB2=y
+  libraries.hash_function.murmur3:
+    extra_configs:
+      - CONFIG_SYS_HASH_FUNC32_CHOICE_MURMUR3=y
