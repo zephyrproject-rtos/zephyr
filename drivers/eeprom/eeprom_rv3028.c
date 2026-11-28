@@ -29,6 +29,7 @@ static int rv3028_eeprom_write(const struct device *dev, off_t offset, const voi
 	const struct rv3028_config *config = dev->config;
 	const uint8_t *data = buf;
 	int ret = 0;
+	int err_end;
 
 	if ((offset < 0) || ((offset + len) > RV3028_EEPROM_SIZE)) {
 		LOG_WRN("EEPROM write out of range");
@@ -40,44 +41,26 @@ static int rv3028_eeprom_write(const struct device *dev, off_t offset, const voi
 	}
 
 	mfd_rv3028_lock_sem(config->mfd);
-	ret = mfd_rv3028_enter_eerd(config->mfd);
+	ret = mfd_rv3028_eeprom_begin(config->mfd);
 	if (ret) {
 		mfd_rv3028_unlock_sem(config->mfd);
 		return ret;
 	}
 
 	for (size_t i = 0; i < len; i++) {
-		ret = mfd_rv3028_write_reg8(config->mfd, RV3028_REG_EEPROM_ADDRESS, offset + i);
+		ret = mfd_rv3028_eeprom_write(config->mfd, offset + i, data[i]);
 		if (ret) {
-			LOG_WRN("Cannot set EEPROM address");
+			LOG_WRN("EEPROM write failed");
 			ret = -EIO;
-			goto unlock;
-		}
-
-		ret = mfd_rv3028_write_reg8(config->mfd, RV3028_REG_EEPROM_DATA, data[i]);
-		if (ret) {
-			LOG_WRN("Cannot set EEPROM data");
-			ret = -EIO;
-			goto unlock;
-		}
-
-		ret = mfd_rv3028_eeprom_command(config->mfd, RV3028_EEPROM_CMD_WRITE);
-		if (ret) {
-			LOG_WRN("Cannot set EEPROM write command");
-			ret = -EIO;
-			goto unlock;
-		}
-
-		ret = mfd_rv3028_eeprom_wait_busy(config->mfd, RV3028_EEBUSY_WRITE_POLL_MS);
-		if (ret) {
-			LOG_WRN("EEPROM write command timed out");
-			ret = -EIO;
-			goto unlock;
+			break;
 		}
 	}
 
-unlock:
-	mfd_rv3028_exit_eerd(config->mfd);
+	err_end = mfd_rv3028_eeprom_end(config->mfd);
+	if (ret == 0) {
+		ret = err_end;
+	}
+
 	mfd_rv3028_unlock_sem(config->mfd);
 	return ret;
 }
@@ -87,6 +70,7 @@ static int rv3028_eeprom_read(const struct device *dev, off_t offset, void *buf,
 	const struct rv3028_config *config = dev->config;
 	uint8_t *data = buf;
 	int ret = 0;
+	int err_end;
 
 	if ((offset < 0) || ((offset + len) > RV3028_EEPROM_SIZE)) {
 		LOG_WRN("EEPROM read out of range");
@@ -98,44 +82,26 @@ static int rv3028_eeprom_read(const struct device *dev, off_t offset, void *buf,
 	}
 
 	mfd_rv3028_lock_sem(config->mfd);
-	ret = mfd_rv3028_enter_eerd(config->mfd);
+	ret = mfd_rv3028_eeprom_begin(config->mfd);
 	if (ret) {
 		mfd_rv3028_unlock_sem(config->mfd);
 		return ret;
 	}
 
 	for (size_t i = 0; i < len; i++) {
-		ret = mfd_rv3028_write_reg8(config->mfd, RV3028_REG_EEPROM_ADDRESS, offset + i);
+		ret = mfd_rv3028_eeprom_read(config->mfd, offset + i, &data[i]);
 		if (ret) {
-			LOG_WRN("Cannot set EEPROM address");
+			LOG_WRN("EEPROM read failed");
 			ret = -EIO;
-			goto unlock;
-		}
-
-		ret = mfd_rv3028_eeprom_command(config->mfd, RV3028_EEPROM_CMD_READ);
-		if (ret) {
-			LOG_WRN("Cannot set EEPROM read command");
-			ret = -EIO;
-			goto unlock;
-		}
-
-		ret = mfd_rv3028_eeprom_wait_busy(config->mfd, RV3028_EEBUSY_READ_POLL_MS);
-		if (ret) {
-			LOG_WRN("EEPROM read command timed out");
-			ret = -EIO;
-			goto unlock;
-		}
-
-		ret = mfd_rv3028_read_reg8(config->mfd, RV3028_REG_EEPROM_DATA, &data[i]);
-		if (ret) {
-			LOG_WRN("Cannot read EEPROM data");
-			ret = -EIO;
-			goto unlock;
+			break;
 		}
 	}
 
-unlock:
-	mfd_rv3028_exit_eerd(config->mfd);
+	err_end = mfd_rv3028_eeprom_end(config->mfd);
+	if (ret == 0) {
+		ret = err_end;
+	}
+
 	mfd_rv3028_unlock_sem(config->mfd);
 	return ret;
 }

@@ -204,6 +204,8 @@ extern "C" {
  */
 /** Trickle Charger Enable bit */
 #define RV3028_BACKUP_TCE BIT(5)
+/** Fast Edge Detection Enable bit, to be always set */
+#define RV3028_BACKUP_FEDE BIT(4)
 /** Trickle Charger Series Resistance */
 #define RV3028_BACKUP_TCR GENMASK(1, 0)
 /** Backup Switchover Mode */
@@ -486,107 +488,82 @@ int mfd_rv3028_write_reg8(const struct device *dev, uint8_t addr, uint8_t val);
 int mfd_rv3028_update_reg8(const struct device *dev, uint8_t addr, uint8_t mask, uint8_t val);
 
 /**
- * @brief Wait until the EEPROM busy flag is cleared.
+ * @brief Prepare the RV3028 EEPROM for access.
  *
- * Polls the RV3028 EEBUSY status bit until the current EEPROM operation
- * completes or the operation times out.
+ * Disables the automatic refresh (EERD), waits until the EEPROM is idle and
+ * disables the backup switchover in RAM, as the EEPROM must not be read or
+ * written while the switchover is enabled. Every successful call must be
+ * paired with @ref mfd_rv3028_eeprom_end().
  *
  * @param dev Pointer to the RV3028 MFD device.
- * @param poll_ms Polling interval in milliseconds.
- *
- * @retval 0 If the EEPROM is ready.
- * @retval -ETIME If the operation timed out.
- * @retval Negative errno code on I2C or communication failure.
+ * @retval 0 If the EEPROM is ready for access.
+ * @retval -ETIME If the EEPROM stayed busy.
+ * @retval -errno Negative errno code on I2C failure.
  */
-int mfd_rv3028_eeprom_wait_busy(const struct device *dev, int poll_ms);
+int mfd_rv3028_eeprom_begin(const struct device *dev);
 
 /**
- * @brief Exit the EEPROM refresh mode.
+ * @brief Finish an RV3028 EEPROM access.
  *
- * Disables the EEPROM refresh mode (EERD) on the RV3028 device.
+ * Waits until the EEPROM is idle, restores the backup switchover mode
+ * configured in devicetree and enables the automatic refresh (EERD) again.
+ * The switchover is left disabled if the EEPROM does not become idle; the
+ * automatic refresh is enabled in any case.
  *
  * @param dev Pointer to the RV3028 MFD device.
- *
- * @retval 0 If the EEPROM refresh mode was disabled successfully.
- * @retval Negative errno code on failure.
+ * @retval 0 If the EEPROM access was finished.
+ * @retval -ETIME If the EEPROM stayed busy.
+ * @retval -errno Negative errno code on I2C failure.
  */
-int mfd_rv3028_exit_eerd(const struct device *dev);
+int mfd_rv3028_eeprom_end(const struct device *dev);
 
 /**
- * @brief Enter the EEPROM refresh mode.
+ * @brief Read one byte from the RV3028 EEPROM.
  *
- * Enables the EEPROM refresh mode (EERD) on the RV3028 device.
- * If the mode is already enabled, no operation is performed.
- *
- * The function waits until the EEPROM operation has completed before
- * returning.
+ * Must be called between @ref mfd_rv3028_eeprom_begin() and
+ * @ref mfd_rv3028_eeprom_end().
  *
  * @param dev Pointer to the RV3028 MFD device.
- *
- * @retval 0 If the EEPROM refresh mode was enabled successfully.
- * @retval Negative errno code on failure.
+ * @param addr EEPROM address to read.
+ * @param val Pointer where the byte will be stored.
+ * @retval 0 If successful.
+ * @retval -ETIME If the EEPROM stayed busy.
+ * @retval -errno Negative errno code on I2C failure.
  */
-int mfd_rv3028_enter_eerd(const struct device *dev);
+int mfd_rv3028_eeprom_read(const struct device *dev, uint8_t addr, uint8_t *val);
 
 /**
- * @brief Execute an EEPROM command on the RV3028 device.
+ * @brief Write one byte to the RV3028 EEPROM.
  *
- * Sends an EEPROM command sequence to the RV3028 EEPROM command
- * register. The command sequence consists of an initialization command
- * followed by the requested command.
+ * Must be called between @ref mfd_rv3028_eeprom_begin() and
+ * @ref mfd_rv3028_eeprom_end().
  *
  * @param dev Pointer to the RV3028 MFD device.
- * @param command EEPROM command to execute.
- *
- * @retval 0 If the command was sent successfully.
- * @retval Negative errno code on failure.
+ * @param addr EEPROM address to write.
+ * @param val Byte to write.
+ * @retval 0 If successful.
+ * @retval -ETIME If the EEPROM stayed busy.
+ * @retval -errno Negative errno code on I2C failure.
  */
-int mfd_rv3028_eeprom_command(const struct device *dev, uint8_t command);
+int mfd_rv3028_eeprom_write(const struct device *dev, uint8_t addr, uint8_t val);
 
 /**
- * @brief Update the RV3028 EEPROM contents.
+ * @brief Store selected bits of an RV3028 configuration register.
  *
- * Starts an EEPROM update operation and waits until the operation
- * completes. The EEPROM refresh mode is exited before returning.
- *
- * @param dev Pointer to the RV3028 MFD device.
- *
- * @retval 0 If the EEPROM update completed successfully.
- * @retval Negative errno code on failure.
- */
-int mfd_rv3028_update(const struct device *dev);
-
-/**
- * @brief Refresh the RV3028 registers from EEPROM.
- *
- * Starts an EEPROM refresh operation, which restores the register
- * values from the EEPROM. The function waits until the EEPROM operation
- * completes and exits the EEPROM refresh mode before returning.
+ * Compares the selected bits of the configuration EEPROM byte at @p addr
+ * with @p val and writes that byte if they differ. The configuration RAM
+ * is then refreshed from EEPROM and checked against @p val. The EEPROM is
+ * accessed between @ref mfd_rv3028_eeprom_begin() and
+ * @ref mfd_rv3028_eeprom_end(), with the device locked.
  *
  * @param dev Pointer to the RV3028 MFD device.
- *
- * @retval 0 If the EEPROM refresh completed successfully.
- * @retval Negative errno code on failure.
- */
-int mfd_rv3028_refresh(const struct device *dev);
-
-/**
- * @brief Update an RV3028 configuration register and store the change.
- *
- * Updates selected bits in an RV3028 configuration register and stores
- * the modified value in EEPROM. If the selected bits already contain the
- * requested value, no EEPROM operation is performed.
- *
- * The function enters EEPROM refresh mode before modifying the register
- * and performs the required EEPROM update operation afterwards.
- *
- * @param dev Pointer to the RV3028 MFD device.
- * @param addr Register address to update.
+ * @param addr Configuration register address (0x35 to 0x37).
  * @param mask Bit mask selecting the bits to modify.
  * @param val New value for the selected bits.
- *
- * @retval 0 If the configuration was updated successfully.
- * @retval Negative errno code on failure.
+ * @retval 0 If the configuration was stored successfully.
+ * @retval -EIO If the register does not hold @p val after the refresh.
+ * @retval -ETIME If the EEPROM stayed busy.
+ * @retval -errno Negative errno code on I2C failure.
  */
 int mfd_rv3028_update_cfg(const struct device *dev, uint8_t addr, uint8_t mask, uint8_t val);
 
