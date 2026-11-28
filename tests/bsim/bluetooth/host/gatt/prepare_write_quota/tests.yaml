@@ -1,0 +1,23 @@
+common:
+  tags:
+    - bluetooth
+  depends_on: bsim
+  platform_allow:
+    - nrf52_bsim/native
+  harness: bsim
+
+tests:
+  bluetooth.host.gatt.prepare_write_quota:
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_host_gatt_prepare_write_quota_prj_conf
+      tests_scripts:
+        - tests_scripts/prepare_write_quota.sh
+  bluetooth.host.gatt.prepare_write_quota_oversubscribed:
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_host_gatt_prepare_write_quota_overlay-oversubscribed_conf
+      tests_scripts:
+        - tests_scripts/prepare_write_quota_oversubscribed.sh
+    extra_args:
+      EXTRA_CONF_FILE=overlay-oversubscribed.conf
