@@ -856,6 +856,17 @@ void bmi270_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev
 		return;
 	}
 
+	/*
+	 * If the FIFO reached the watermark again before the edge interrupt was
+	 * re-armed, the latched INT pin is already active and no new edge will
+	 * arrive. Check the pin state after arming and kick off a FIFO job if
+	 * it is already asserted.
+	 */
+	if (gpio_pin_get_dt(fifo_pin_submit) > 0) {
+		gpio_pin_interrupt_configure_dt(fifo_pin_submit, GPIO_INT_DISABLE);
+		bmi270_stream_submit_fifo_job(dev);
+	}
+
 #if defined(CONFIG_BMI270_FIFO_POLL_FALLBACK)
 	if (!poll_work_inited) {
 		k_work_init_delayable(&poll_work, poll_work_fn);
