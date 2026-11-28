@@ -186,6 +186,42 @@
 				#size-cells = <0>;
 				status = "disabled";
 			};
+
+			enetc_psi3_vsi0: ethernet@4ce50000 {
+				compatible = "nxp,imx-netc-vsi";
+				reg = <0x4ce50000 0x10000>,
+				      <0x4ca40000 0x10000>;
+				reg-names = "port", "vfconfig";
+				mac-index = <3>;
+				si-index = <0x14>;
+				clocks = <&scmi_clk IMX943_CLK_BUSNETCMIX>;
+				zephyr,random-mac-address;
+				status = "disabled";
+			};
+
+			enetc_psi3_vsi1: ethernet@4ce60000 {
+				compatible = "nxp,imx-netc-vsi";
+				reg = <0x4ce60000 0x10000>,
+				      <0x4ca80000 0x10000>;
+				reg-names = "port", "vfconfig";
+				mac-index = <3>;
+				si-index = <0x25>;
+				clocks = <&scmi_clk IMX943_CLK_BUSNETCMIX>;
+				zephyr,random-mac-address;
+				status = "disabled";
+			};
+
+			enetc_psi3_vsi2: ethernet@4ce70000 {
+				compatible = "nxp,imx-netc-vsi";
+				reg = <0x4ce70000 0x10000>,
+				      <0x4cac0000 0x10000>;
+				reg-names = "port", "vfconfig";
+				mac-index = <3>;
+				si-index = <0x36>;
+				clocks = <&scmi_clk IMX943_CLK_BUSNETCMIX>;
+				zephyr,random-mac-address;
+				status = "disabled";
+			};
 		};
 
 		edma2: dma@42000000 {
