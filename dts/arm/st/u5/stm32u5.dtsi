@@ -4,6 +4,7 @@
  * Copyright (c) 2023 PSICONTROL nv
  * Copyright (c) 2024 STMicroelectronics
  * Copyright (c) 2025 Harris Tomy
+ * Copyright (c) 2026 Witekio
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -912,6 +913,32 @@
 			resets = <&rctl STM32_RESET(APB3, 13)>;
 			interrupts = <110 0>;
 			interrupt-names = "global";
+			status = "disabled";
+		};
+
+		opamp1: opamp@46005000 {
+			compatible = "st,stm32u5-opamp", "st,stm32-opamp";
+			reg = <0x46005000 0x10>;
+			clocks = <&rcc STM32_CLOCK(APB3, 14)>;
+			clock-names = "opampx";
+			programmable-gain = "OPAMP_GAIN_2", "OPAMP_GAIN_4",
+					    "OPAMP_GAIN_8", "OPAMP_GAIN_16";
+			st,opamp-offset-trimming-time-ms = <1>;
+			st,opamp-has-vdda-isolation;
+			st,opamp-has-common-power-range;
+			status = "disabled";
+		};
+
+		opamp2: opamp@46005010 {
+			compatible = "st,stm32u5-opamp", "st,stm32-opamp";
+			reg = <0x46005010 0x10>;
+			clocks = <&rcc STM32_CLOCK(APB3, 14)>;
+			clock-names = "opampx";
+			programmable-gain = "OPAMP_GAIN_2", "OPAMP_GAIN_4",
+					    "OPAMP_GAIN_8", "OPAMP_GAIN_16";
+			st,opamp-offset-trimming-time-ms = <1>;
+			st,opamp-has-vdda-isolation;
+			st,opamp-has-common-power-range;
 			status = "disabled";
 		};
 

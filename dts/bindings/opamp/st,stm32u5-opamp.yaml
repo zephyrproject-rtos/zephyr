@@ -1,0 +1,101 @@
+# Copyright (c) 2026 Witekio
+# SPDX-License-Identifier: Apache-2.0
+
+title: STM32U5 OPAMP (Operational Amplifier)
+
+description: |
+  One OPAMP has two inputs and one output. The three I/Os can be connected
+  to external pins, enabling any type of external interconnection.
+  An OPAMP can be configured internally:
+    - standalone amplifier (external gain setting mode)
+    - follower
+    - non-inverting amplifier with gains of 2, 4, 8 or 16
+
+  The non-inverting input can be connected to an internal DAC channel.
+
+  Minimal DTS examples:
+
+    - Standalone amplifier (external gain):
+      ```
+      &opamp2 {
+        pinctrl-0 = <&opamp2_vinm_pa7 &opamp2_vinp_pa6 &opamp2_vout_pb0>;
+        pinctrl-names = "default";
+        functional-mode = "standalone";
+        inp = "VINP0";
+        inm = "VINM0";
+        status = "okay";
+      };
+      ```
+
+    - Follower (voltage buffer) of the DAC output:
+      ```
+      &opamp2 {
+        pinctrl-0 = <&opamp2_vout_pb0>;
+        pinctrl-names = "default";
+        functional-mode = "follower";
+        inp = "DAC";
+        status = "okay";
+      };
+      ```
+
+    - Non-inverting PGA (gain 2..16):
+      ```
+      &opamp2 {
+        pinctrl-0 = <&opamp2_vinp_pa6 &opamp2_vout_pb0>;
+        pinctrl-names = "default";
+        functional-mode = "non_inverting";
+        inp = "VINP0";
+        status = "okay";
+      };
+      ```
+
+include:
+  - st,stm32-opamp.yaml
+
+compatible: st,stm32u5-opamp
+
+properties:
+  st,power-mode:
+    type: string
+    description: |
+      OPAMP power mode, selected by the OPALPM and OPAHSM bits of OPAMPx_CSR:
+        - NORMALPOWER_NORMALSPEED: normal mode, standard slew rate.
+        - LOWPOWER_NORMALSPEED: low-power mode, standard slew rate.
+        - NORMALPOWER_HIGHSPEED: normal mode, increased consumption to
+          improve the slew rate.
+        - LOWPOWER_HIGHSPEED: low-power mode, increased consumption to
+          improve the slew rate.
+      Normal and low-power modes use separate trimming values (OPAMPx_OTR
+      and OPAMPx_LPOTR). Refer to the device datasheet for the slew rate,
+      bandwidth and consumption of each mode.
+    enum:
+      - NORMALPOWER_NORMALSPEED
+      - LOWPOWER_NORMALSPEED
+      - NORMALPOWER_HIGHSPEED
+      - LOWPOWER_HIGHSPEED
+    default: NORMALPOWER_NORMALSPEED
+
+  inp:
+    required: true
+    type: string
+    description: |
+      Non-inverting input selection (VP_SEL bit of OPAMPx_CSR):
+        - VINP0: GPIO pin
+        - DAC: internal DAC channel
+    enum:
+      - VINP0
+      - DAC
+
+  inm:
+    type: string
+    description: |
+      Inverting input selection (VM_SEL bits of OPAMPx_CSR):
+        - VINM0: GPIO pin
+        - VINM1: dedicated low-leakage input
+      Required in standalone mode. In non_inverting (PGA) mode it is optional
+      and connects the selected pin to the internal feedback node for
+      low-pass filtering. Leave unset to keep the inverting input not
+      externally connected. Ignored in follower mode.
+    enum:
+      - VINM0
+      - VINM1

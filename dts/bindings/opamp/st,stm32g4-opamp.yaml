@@ -164,16 +164,6 @@ properties:
       NOTES:
         - In st,inputs-mux-mode the timer mux register will be locked too
 
-  st,enable-self-calibration:
-    type: boolean
-    description: |
-      Enable self-calibration mode.
-      If not set, the self-calibration mode will be disabled by default.
-      The self-calibration mode is used to calibrate the OPAMP for optimal
-      performance.
-      NOTES:
-        - This step will be executed at OPAMP initialization
-
   inp:
     required: true
     type: string-array
@@ -236,25 +226,3 @@ properties:
       - TIM8_CH6
       - TIM20_CH6
     default: DISABLE
-
-  st,pmos-trimming-value:
-    type: int
-    description: |
-      OPAMP PMOS transistor offset trimming value.
-      The value will be applied directly to TRIMOFFSETP[4:0] (Bits 23:19 in OPAMPx_CST register).
-      If value is present and self-calibration is enabled, this value will overwrite values
-      calculated during self-calibration.
-      Please refer to RM0440 Rev 9, pp. 789/2140 for more details.
-    min: 0
-    max: 0x1f
-
-  st,nmos-trimming-value:
-    type: int
-    description: |
-      OPAMP NMOS transistor offset trimming value.
-      The value will be applied directly to TRIMOFFSETN[4:0] (Bits 28:24 in OPAMPx_CST register).
-      If value is present and self-calibration is enabled, this value will overwrite values
-      calculated during self-calibration.
-      Please refer to RM0440 Rev 9, pp. 789/2140 for more details.
-    min: 0
-    max: 0x1f
