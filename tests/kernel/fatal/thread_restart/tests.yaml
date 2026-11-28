@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  filter: CONFIG_SYS_CLOCK_EXISTS
+  ignore_faults: true
+  harness: ztest
+  tags:
+    - kernel
+    - fatal
+tests:
+  kernel.fatal.thread_restart:
+    integration_platforms:
+      - native_sim
+      - qemu_x86
+      - qemu_x86_64
+      - qemu_cortex_m3
+      - qemu_cortex_a53
+  kernel.fatal.thread_restart.userspace:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    extra_configs:
+      - CONFIG_USERSPACE=y
+    tags:
+      - userspace
+    integration_platforms:
+      - qemu_x86
+      - mps2/an385
+      - qemu_cortex_a53
