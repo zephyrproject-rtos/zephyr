@@ -1069,7 +1069,7 @@ static int alloc_send_ctx(struct isotp_send_ctx **sctx, k_timeout_t timeout)
 static k_timeout_t stmin_to_timeout(uint8_t stmin)
 {
 	/* According to ISO 15765-2 stmin should be 127ms if value is corrupt */
-	if (stmin > ISOTP_STMIN_MAX ||
+	if (stmin >= ISOTP_STMIN_MAX ||
 	    (stmin > ISOTP_STMIN_MS_MAX && stmin < ISOTP_STMIN_US_BEGIN)) {
 		return K_MSEC(ISOTP_STMIN_MS_MAX);
 	}
