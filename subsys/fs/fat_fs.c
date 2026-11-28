@@ -490,6 +490,12 @@ static int fatfs_mount(struct fs_mount_t *mountp)
 		mountp->flags |= FS_MOUNT_FLAG_USE_DISK_ACCESS;
 	}
 
+	/* fatfs does not deinit the disk upon error past the disk_initialize() call */
+	if (res == FR_NO_FILESYSTEM || res == FR_DISK_ERR) {
+		uint8_t param = DISK_IOCTL_POWER_OFF;
+		disk_ioctl(((FATFS *)mountp->fs_data)->pdrv, CTRL_POWER, &param);
+	}
+
 	return translate_error(res);
 
 }
