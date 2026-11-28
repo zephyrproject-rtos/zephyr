@@ -1072,6 +1072,10 @@ static DEVICE_API(ethernet, eth_xmc4xxx_api) = {
 
 PINCTRL_DT_INST_DEFINE(0);
 
+BUILD_ASSERT(DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, mii) ||
+		     DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii),
+	     "Only mii and rmii are supported");
+
 static struct eth_xmc4xxx_config eth_xmc4xxx_config = {
 	.regs = (ETH_GLOBAL_TypeDef *)DT_INST_REG_ADDR(0),
 	.irq_config_func = eth_xmc4xxx_irq_config,
@@ -1091,7 +1095,9 @@ static struct eth_xmc4xxx_config eth_xmc4xxx_config = {
 		.rxer = DT_INST_ENUM_IDX(0, rxer_port_ctrl),
 		.col = DT_INST_ENUM_IDX_OR(0, col_port_ctrl, 0),
 		.clk_tx = DT_INST_ENUM_IDX_OR(0, tx_clk_port_ctrl, 0),
-		.mode = DT_INST_ENUM_IDX_OR(0, phy_connection_type, 0),
+		.mode = DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii)
+				? XMC_ETH_MAC_PORT_CTRL_MODE_RMII
+				: XMC_ETH_MAC_PORT_CTRL_MODE_MII,
 		.mdio = DT_INST_ENUM_IDX_OR(0, mdi_port_ctrl, 0),
 	}};
 
