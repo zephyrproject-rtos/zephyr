@@ -56,7 +56,7 @@ static void xo24m_stop(void)
 
 static void clock_event_handler(void)
 {
-	common_clkstarted_handle(CLOCK_DEVICE_XO24M);
+	common_clk_ready_handle(CLOCK_DEVICE_XO24M);
 }
 
 static int clk_init(const struct device *dev)

@@ -34,9 +34,6 @@ STRUCT_CLOCK_CONFIG(generic, ONOFF_CNT_MAX);
 
 #else
 
-#define COMMON_CTX_MASK       (COMMON_CTX_ONOFF | COMMON_CTX_API)
-#define COMMON_GET_CTX(flags) (flags & COMMON_CTX_MASK)
-
 static bool irq_connected;
 
 #endif /* CONFIG_HAS_NORDIC_MULTI_OPTION_CLOCKS */
@@ -249,7 +246,7 @@ static int set_off_state(uint32_t *flags, uint32_t ctx)
 	return err;
 }
 
-static int set_starting_state(uint32_t *flags, uint32_t ctx)
+int common_set_starting_state(uint32_t *flags, uint32_t ctx)
 {
 	int err = 0;
 	unsigned int key = irq_lock();
@@ -276,7 +273,7 @@ void common_set_on_state(uint32_t *flags)
 	irq_unlock(key);
 }
 
-void common_blocking_start_callback(const struct device *dev, clock_control_subsys_t subsys,
+static void blocking_start_callback(const struct device *dev, clock_control_subsys_t subsys,
 				    void *user_data)
 {
 	struct k_sem *sem = user_data;
@@ -294,7 +291,7 @@ int common_async_start(const struct device *dev, clock_control_cb_t cb, void *us
 	const common_clock_config_t *dev_config = dev->config;
 	int err;
 
-	err = set_starting_state(&((common_clock_data_t *)dev->data)->flags, ctx);
+	err = common_set_starting_state(&((common_clock_data_t *)dev->data)->flags, ctx);
 	if (err < 0) {
 		return err;
 	}
@@ -323,7 +320,7 @@ int common_stop(const struct device *dev, uint32_t ctx)
 
 #if CONFIG_CLOCK_CONTROL_NRF_ONOFF
 
-static void common_onoff_started_callback(const struct device *dev, clock_control_subsys_t sys,
+void common_onoff_ready_callback(const struct device *dev, clock_control_subsys_t sys,
 				   void *user_data)
 {
 	ARG_UNUSED(sys);
@@ -335,7 +332,7 @@ static void common_onoff_started_callback(const struct device *dev, clock_contro
 
 #endif
 
-void common_clkstarted_handle(const struct device *dev)
+void common_clk_ready_handle(const struct device *dev)
 {
 	clock_control_cb_t callback = ((common_clock_data_t *)dev->data)->cb;
 
@@ -371,7 +368,7 @@ int common_api_blocking_start(const struct device *dev, clock_control_subsys_t s
 		return -ENOTSUP;
 	}
 
-	err = common_api_start(dev, NULL, common_blocking_start_callback, &sem);
+	err = common_api_start(dev, NULL, blocking_start_callback, &sem);
 	if (err < 0) {
 		return err;
 	}
@@ -420,19 +417,19 @@ int common_api_cancel_or_release(const struct device *dev, const struct nrf_cloc
 				       cli);
 }
 
-static void common_onoff_start(struct onoff_manager *manager, onoff_notify_fn notify)
+static void onoff_start(struct onoff_manager *manager, onoff_notify_fn notify)
 {
 	int err;
 	common_clock_data_t *dev_data = CONTAINER_OF(manager, common_clock_data_t, mgr);
 
-	err = common_async_start(dev_data->dev, common_onoff_started_callback, notify,
+	err = common_async_start(dev_data->dev, common_onoff_ready_callback, notify,
 				 COMMON_CTX_ONOFF);
 	if (err < 0) {
 		notify(manager, err);
 	}
 }
 
-static void common_onoff_stop(struct onoff_manager *manager, onoff_notify_fn notify)
+void common_onoff_stop(struct onoff_manager *manager, onoff_notify_fn notify)
 {
 	int res;
 	common_clock_data_t *dev_data = CONTAINER_OF(manager, common_clock_data_t, mgr);
@@ -447,7 +444,7 @@ int common_clk_init(const struct device *dev)
 {
 #if CONFIG_CLOCK_CONTROL_NRF_ONOFF
 	int err;
-	static const struct onoff_transitions transitions = {.start = common_onoff_start,
+	static const struct onoff_transitions transitions = {.start = onoff_start,
 							     .stop = common_onoff_stop};
 #endif
 	((common_clock_data_t *)dev->data)->dev = dev;

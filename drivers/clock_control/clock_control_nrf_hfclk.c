@@ -32,7 +32,7 @@ static void clock_event_handler(void)
 	 */
 	if (COMMON_GET_STATUS(((common_clock_data_t *)CLOCK_DEVICE_HFCLK->data)->flags) ==
 	    CLOCK_CONTROL_STATUS_STARTING) {
-		common_clkstarted_handle(CLOCK_DEVICE_HFCLK);
+		common_clk_ready_handle(CLOCK_DEVICE_HFCLK);
 	}
 }
 
@@ -60,7 +60,7 @@ static void generic_hfclk_start(void)
 
 	if (already_started) {
 		/* Clock already started by z_nrf_clock_bt_ctlr_hf_request */
-		common_clkstarted_handle(CLOCK_DEVICE_HFCLK);
+		common_clk_ready_handle(CLOCK_DEVICE_HFCLK);
 		return;
 	}
 

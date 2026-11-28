@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(clock_control_hfclk192m, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
 static void clock_event_handler(void)
 {
-	common_clkstarted_handle(CLOCK_DEVICE_HFCLK192M);
+	common_clk_ready_handle(CLOCK_DEVICE_HFCLK192M);
 }
 
 #if NRF_CLOCK_FEATURE_HFCLK_DIVIDE_PRESENT

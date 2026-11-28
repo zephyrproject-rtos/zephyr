@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(clock_control_hfclkaudio, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
 static void clock_event_handler(void)
 {
-	common_clkstarted_handle(CLOCK_DEVICE_HFCLKAUDIO);
+	common_clk_ready_handle(CLOCK_DEVICE_HFCLKAUDIO);
 }
 
 static void hfclkaudio_init(void)
