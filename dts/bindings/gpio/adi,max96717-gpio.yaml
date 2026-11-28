@@ -1,0 +1,42 @@
+# Copyright (c) 2026 Charles Dias
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  GPIO controller of the MAX96717 serializer: its MFP pins, numbered as in the datasheet, MFP0
+  being pin 0. A child node of the serializer, which brings the pins within reach over the GMSL2
+  link before this controller initializes.
+
+  Pins with another function on a board, such as the MFPs carrying the camera I2C bus, are taken
+  out of use with gpio-reserved-ranges. Interrupts and GPIO forwarding over the link are not
+  supported.
+
+  Example:
+
+    max96717: max96717@40 {
+        compatible = "adi,max96717";
+        reg = <0x40>;
+
+        ser_gpio: gpio {
+            compatible = "adi,max96717-gpio";
+            gpio-controller;
+            #gpio-cells = <2>;
+            ngpios = <11>;
+            gpio-reserved-ranges = <9 2>;
+        };
+    };
+
+compatible: "adi,max96717-gpio"
+
+include: gpio-controller.yaml
+
+properties:
+  "#gpio-cells":
+    const: 2
+
+  ngpios:
+    type: int
+    const: 11
+
+gpio-cells:
+  - pin
+  - flags
