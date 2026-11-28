@@ -15,6 +15,7 @@ supported:
   - pinctrl
   - uart
   - pwm
+  - i2c
   - spi
   - vref
   - counter

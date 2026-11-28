@@ -17,6 +17,7 @@ supported:
   - dac
   - hwinfo
   - pwm
+  - i2c
   - spi
   - vref
   - trng
