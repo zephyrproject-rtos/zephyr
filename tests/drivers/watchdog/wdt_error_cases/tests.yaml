@@ -36,6 +36,7 @@ tests:
       - pic32ck_gc01_cult
       - lp_mspm0g3507/mspm0g3507
       - lp_mspm0l2228/mspm0l2228
+      - kit_t2g_c2d6m_lite/cyt4dnjbzs/m7_0
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
       - ophelia4ev/nrf54l15/cpuapp

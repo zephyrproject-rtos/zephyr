@@ -15,6 +15,7 @@
 	aliases {
 		led0 = &user_led2;
 		sw0 = &user_bt1;
+		watchdog0 = &watchdog0;
 	};
 
 	chosen {
@@ -97,5 +98,9 @@ can0: &can0_1 {
 	pinctrl-0 = <&p5_3_can0_1_rx &p5_2_can0_1_tx>;
 	pinctrl-names = "default";
 	phys = <&transceiver0>;
+	status = "okay";
+};
+
+&watchdog0 {
 	status = "okay";
 };
