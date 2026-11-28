@@ -17,6 +17,8 @@ static void attrs_get(struct k_msgq *q)
 
 	k_msgq_get_attrs(q, &attrs);
 	zassert_equal(attrs.used_msgs, 0);
+	zassert_equal(k_msgq_num_used_get(q), 0);
+	zassert_equal(k_msgq_num_free_get(q), MSGQ_LEN);
 
 	/*fill the queue to full*/
 	for (int i = 0; i < MSGQ_LEN; i++) {
@@ -26,6 +28,8 @@ static void attrs_get(struct k_msgq *q)
 
 	k_msgq_get_attrs(q, &attrs);
 	zassert_equal(attrs.used_msgs, MSGQ_LEN);
+	zassert_equal(k_msgq_num_used_get(q), MSGQ_LEN);
+	zassert_equal(k_msgq_num_free_get(q), 0);
 
 	for (int i = 0; i < MSGQ_LEN; i++) {
 		ret = k_msgq_get(q, (void *)&rec_buf[i], K_NO_WAIT);
@@ -34,6 +38,8 @@ static void attrs_get(struct k_msgq *q)
 
 	k_msgq_get_attrs(q, &attrs);
 	zassert_equal(attrs.used_msgs, 0);
+	zassert_equal(k_msgq_num_used_get(q), 0);
+	zassert_equal(k_msgq_num_free_get(q), MSGQ_LEN);
 }
 
 /**
@@ -42,22 +48,26 @@ static void attrs_get(struct k_msgq *q)
  */
 
 /**
- * @brief Verify k_msgq_get_attrs() reports the used-message count.
+ * @brief Verify the used and free message count queries.
  *
  * @details
- * k_msgq_get_attrs() must reflect the live occupancy of the queue. The test
- * reads the attributes when empty, after filling the queue to capacity, and
- * again after draining it, confirming used_msgs tracks each transition.
+ * k_msgq_get_attrs(), k_msgq_num_used_get() and k_msgq_num_free_get() must
+ * all reflect the live occupancy of the queue. The test reads them when
+ * empty, after filling the queue to capacity, and again after draining it,
+ * confirming the counts track each transition and agree with each other.
  *
  * Test steps:
- * - Get attributes of an empty queue and verify used_msgs is 0.
- * - Fill the queue and verify used_msgs equals the queue length.
- * - Drain the queue and verify used_msgs is 0 again.
+ * - Query an empty queue and verify 0 used and all slots free.
+ * - Fill the queue and verify the counts report it as full.
+ * - Drain the queue and verify the empty-queue counts again.
  *
  * Expected result:
- * - used_msgs reports 0, full, then 0 as messages are added and removed.
+ * - The used and free counts report empty, full, then empty as messages are
+ *   added and removed, through the attributes and the direct getters alike.
  *
  * @see k_msgq_get_attrs()
+ * @see k_msgq_num_used_get()
+ * @see k_msgq_num_free_get()
  */
 ZTEST(msgq_api, test_msgq_attrs_get)
 {
@@ -68,21 +78,24 @@ ZTEST(msgq_api, test_msgq_attrs_get)
 #ifdef CONFIG_USERSPACE
 
 /**
- * @brief Verify k_msgq_get_attrs() from user mode on an allocated queue.
+ * @brief Verify the message count queries from user mode on an allocated queue.
  *
  * @details
- * Same used-message accounting as test_msgq_attrs_get(), but exercised from a
- * user-mode thread on a queue created with k_msgq_alloc_init(), confirming the
- * attribute query works under userspace with a dynamically allocated queue.
+ * Same used and free message accounting as test_msgq_attrs_get(), but
+ * exercised from a user-mode thread on a queue created with
+ * k_msgq_alloc_init(), confirming the count queries work under userspace with
+ * a dynamically allocated queue.
  *
  * Test steps:
  * - Allocate and alloc-init a message queue as a user thread.
- * - Verify used_msgs is 0, then full, then 0 across fill/drain.
+ * - Verify the counts report empty, then full, then empty across fill/drain.
  *
  * Expected result:
- * - used_msgs is reported correctly from user mode.
+ * - The used and free counts are reported correctly from user mode.
  *
  * @see k_msgq_get_attrs()
+ * @see k_msgq_num_used_get()
+ * @see k_msgq_num_free_get()
  * @see k_msgq_alloc_init()
  */
 ZTEST_USER(msgq_api, test_msgq_user_attrs_get)
