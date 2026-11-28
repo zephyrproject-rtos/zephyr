@@ -11,12 +11,13 @@ from runners.core import RunnerCaps, ZephyrBinaryRunner
 class OpenFPGALoaderBinaryRunner(ZephyrBinaryRunner):
     """Runner front-end for openFPGALoader."""
 
-    def __init__(self, cfg, board, external_flash=False, verify=False, offset=None):
+    def __init__(self, cfg, board, external_flash=False, verify=False, offset=None, dev_id=None):
         super().__init__(cfg)
         self.board = board
         self.external_flash = external_flash
         self.verify = verify
         self.offset = offset
+        self.dev_id = dev_id
 
     @classmethod
     def name(cls):
@@ -24,7 +25,11 @@ class OpenFPGALoaderBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={"flash"})
+        return RunnerCaps(commands={"flash"}, dev_id=True)
+
+    @classmethod
+    def dev_id_help(cls) -> str:
+        return "USB serial number of the programmer (openFPGALoader --usb-serial-num)"
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -47,6 +52,7 @@ class OpenFPGALoaderBinaryRunner(ZephyrBinaryRunner):
             external_flash=args.external_flash,
             verify=args.verify,
             offset=args.offset,
+            dev_id=args.dev_id,
         )
 
     def do_run(self, command, **kwargs):
@@ -54,6 +60,8 @@ class OpenFPGALoaderBinaryRunner(ZephyrBinaryRunner):
         self.ensure_output("bin")
 
         command = ["openFPGALoader", "--board", self.board]
+        if self.dev_id:
+            command.extend(("--usb-serial-num", self.dev_id))
         if self.external_flash:
             command.append("--external-flash")
         command.append("--write-flash")
