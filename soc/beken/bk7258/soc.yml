@@ -1,0 +1,4 @@
+socs:
+- name: bk7258
+  cpuclusters:
+  - name: cpu0

@@ -1,0 +1,13 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_BK7258
+	select ARM
+	select CLOCK_CONTROL
+	# NOTE: Arm China STAR-MC1, Cortex-M33 compatible
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_FPU
+	select PINCTRL
+	select SOC_EARLY_INIT_HOOK
