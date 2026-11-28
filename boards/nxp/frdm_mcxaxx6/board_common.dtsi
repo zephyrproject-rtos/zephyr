@@ -239,7 +239,7 @@
 
 		storage_partition: partition@d8000 {
 			compatible = "zephyr,mapped-partition";
-			reg = <0x000d8000 DT_SIZE_K(112)>;
+			reg = <0x000d8000 DT_SIZE_K(96)>;
 			label = "storage";
 		};
 	};

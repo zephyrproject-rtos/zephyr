@@ -12,3 +12,8 @@
 /delete-node/ &lpcmp2;
 /delete-node/ &lpadc2;
 /delete-node/ &lpadc3;
+
+&flash {
+	reg = <0 DT_SIZE_K(960)>;
+	ranges = <0x0 0x0 DT_SIZE_K(960)>;
+};
