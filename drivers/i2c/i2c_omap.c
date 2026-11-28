@@ -993,7 +993,7 @@ static int i2c_omap_ll_result_to_err(const struct device *dev, int result)
 		data->bb_valid = true;
 		i2c_base_addr->IRQSTATUS = I2C_OMAP_STAT_CLR_MASK;
 
-		return -ENOMSG;
+		return -EIO;
 	}
 
 	return -EIO;
@@ -1079,9 +1079,8 @@ static int i2c_omap_msg_start(const struct device *dev, struct i2c_msg *msg, uin
  * @return 0 on success, negative error code on failure.
  *         Possible error codes include:
  *         - ETIMEDOUT: Timeout occurred during the transfer.
- *         - EIO: I/O error due to receiver overrun or transmit underflow.
+ *         - EIO: NACK from the target, receiver overrun or transmit underflow.
  *         - EAGAIN: Arbitration lost error, try again.
- *         - ENOMSG: Message error due to NACK.
  */
 static int i2c_omap_transfer_message(const struct device *dev, struct i2c_msg *msg, bool polling,
 				     uint16_t addr)
