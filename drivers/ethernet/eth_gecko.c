@@ -263,6 +263,8 @@ static void eth_rx(const struct device *dev)
 
 static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_gecko_dev_data *const dev_data = dev->data;
 	const struct eth_gecko_dev_cfg *const cfg = dev->config;
 	ETH_TypeDef *eth = cfg->regs;
@@ -326,6 +328,9 @@ error:
 static void rx_thread(void *arg1, void *unused1, void *unused2)
 {
 	const struct device *dev = (const struct device *)arg1;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_gecko_dev_data *const dev_data = dev->data;
 	const struct eth_gecko_dev_cfg *const cfg = dev->config;
 	int res;
@@ -367,6 +372,8 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 
 static void eth_isr(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_gecko_dev_data *const dev_data = dev->data;
 	const struct eth_gecko_dev_cfg *const cfg = dev->config;
 	ETH_TypeDef *eth = cfg->regs;
@@ -463,6 +470,8 @@ static void eth_init_pins(const struct device *dev)
 
 static int eth_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_gecko_dev_cfg *const cfg = dev->config;
 	ETH_TypeDef *eth = cfg->regs;
 
@@ -505,6 +514,9 @@ static void generate_mac(uint8_t mac_addr[6])
 static void eth_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_gecko_dev_data *const dev_data = dev->data;
 	const struct eth_gecko_dev_cfg *const cfg = dev->config;
 	ETH_TypeDef *eth = cfg->regs;
