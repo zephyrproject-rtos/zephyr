@@ -182,6 +182,232 @@
 				     <GIC_SPI 4391 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		};
 
+		ecm: syscon@189a0000 {
+			compatible = "syscon";
+			reg = <0x189a0000 0xa08>;
+			status = "disabled";
+		};
+
+		wwdt0: watchdog@1c100000 {
+			compatible = "renesas,rcar-gen5-wwdt";
+			reg = <0x1c100000 0x10>;
+			clocks = <&scmi_clk R8A78000_CLK_WWDT01>,
+				 <&scmi_clk R8A78000_CLK_WWDT00>;
+			clock-names = "bus", "counter";
+			renesas,ecm = <&ecm>;
+			renesas,ecm-error = <1 25>;
+			status = "disabled";
+		};
+
+		wwdt1: watchdog@1c110000 {
+			compatible = "renesas,rcar-gen5-wwdt";
+			reg = <0x1c110000 0x10>;
+			clocks = <&scmi_clk R8A78000_CLK_WWDT11>,
+				 <&scmi_clk R8A78000_CLK_WWDT10>;
+			clock-names = "bus", "counter";
+			renesas,ecm = <&ecm>;
+			renesas,ecm-error = <1 24>;
+			status = "disabled";
+		};
+
+		wwdt2: watchdog@1c120000 {
+			compatible = "renesas,rcar-gen5-wwdt";
+			reg = <0x1c120000 0x10>;
+			clocks = <&scmi_clk R8A78000_CLK_WWDT21>,
+				 <&scmi_clk R8A78000_CLK_WWDT20>;
+			clock-names = "bus", "counter";
+			renesas,ecm = <&ecm>;
+			renesas,ecm-error = <1 23>;
+			status = "disabled";
+		};
+
+		wwdt3: watchdog@1c130000 {
+			compatible = "renesas,rcar-gen5-wwdt";
+			reg = <0x1c130000 0x10>;
+			clocks = <&scmi_clk R8A78000_CLK_WWDT31>,
+				 <&scmi_clk R8A78000_CLK_WWDT30>;
+			clock-names = "bus", "counter";
+			renesas,ecm = <&ecm>;
+			renesas,ecm-error = <1 22>;
+			status = "disabled";
+		};
+
+		wwdt4: watchdog@1c140000 {
+			compatible = "renesas,rcar-gen5-wwdt";
+			reg = <0x1c140000 0x10>;
+			clocks = <&scmi_clk R8A78000_CLK_WWDT41>,
+				 <&scmi_clk R8A78000_CLK_WWDT40>;
+			clock-names = "bus", "counter";
+			renesas,ecm = <&ecm>;
+			renesas,ecm-error = <1 21>;
+			status = "disabled";
+		};
+
+		wwdt5: watchdog@1c150000 {
+			compatible = "renesas,rcar-gen5-wwdt";
+			reg = <0x1c150000 0x10>;
+			clocks = <&scmi_clk R8A78000_CLK_WWDT51>,
+				 <&scmi_clk R8A78000_CLK_WWDT50>;
+			clock-names = "bus", "counter";
+			renesas,ecm = <&ecm>;
+			renesas,ecm-error = <1 20>;
+			status = "disabled";
+		};
+
+		wwdt6: watchdog@1c160000 {
+			compatible = "renesas,rcar-gen5-wwdt";
+			reg = <0x1c160000 0x10>;
+			clocks = <&scmi_clk R8A78000_CLK_WWDT61>,
+				 <&scmi_clk R8A78000_CLK_WWDT60>;
+			clock-names = "bus", "counter";
+			renesas,ecm = <&ecm>;
+			renesas,ecm-error = <1 19>;
+			status = "disabled";
+		};
+
+		wwdt7: watchdog@1c170000 {
+			compatible = "renesas,rcar-gen5-wwdt";
+			reg = <0x1c170000 0x10>;
+			clocks = <&scmi_clk R8A78000_CLK_WWDT71>,
+				 <&scmi_clk R8A78000_CLK_WWDT70>;
+			clock-names = "bus", "counter";
+			renesas,ecm = <&ecm>;
+			renesas,ecm-error = <1 18>;
+			status = "disabled";
+		};
+
+		wwdt8: watchdog@1c180000 {
+			compatible = "renesas,rcar-gen5-wwdt";
+			reg = <0x1c180000 0x10>;
+			clocks = <&scmi_clk R8A78000_CLK_WWDT81>,
+				 <&scmi_clk R8A78000_CLK_WWDT80>;
+			clock-names = "bus", "counter";
+			renesas,ecm = <&ecm>;
+			renesas,ecm-error = <1 17>;
+			status = "disabled";
+		};
+
+		wwdt9: watchdog@1c190000 {
+			compatible = "renesas,rcar-gen5-wwdt";
+			reg = <0x1c190000 0x10>;
+			clocks = <&scmi_clk R8A78000_CLK_WWDT91>,
+				 <&scmi_clk R8A78000_CLK_WWDT90>;
+			clock-names = "bus", "counter";
+			renesas,ecm = <&ecm>;
+			renesas,ecm-error = <1 16>;
+			status = "disabled";
+		};
+
+		wwdt10: watchdog@1c1a0000 {
+			compatible = "renesas,rcar-gen5-wwdt";
+			reg = <0x1c1a0000 0x10>;
+			clocks = <&scmi_clk R8A78000_CLK_WWDT101>,
+				 <&scmi_clk R8A78000_CLK_WWDT100>;
+			clock-names = "bus", "counter";
+			renesas,ecm = <&ecm>;
+			renesas,ecm-error = <1 15>;
+			status = "disabled";
+		};
+
+		wwdt11: watchdog@1c1b0000 {
+			compatible = "renesas,rcar-gen5-wwdt";
+			reg = <0x1c1b0000 0x10>;
+			clocks = <&scmi_clk R8A78000_CLK_WWDT111>,
+				 <&scmi_clk R8A78000_CLK_WWDT110>;
+			clock-names = "bus", "counter";
+			renesas,ecm = <&ecm>;
+			renesas,ecm-error = <1 14>;
+			status = "disabled";
+		};
+
+		wwdt12: watchdog@1c1c0000 {
+			compatible = "renesas,rcar-gen5-wwdt";
+			reg = <0x1c1c0000 0x10>;
+			clocks = <&scmi_clk R8A78000_CLK_WWDT121>,
+				 <&scmi_clk R8A78000_CLK_WWDT120>;
+			clock-names = "bus", "counter";
+			renesas,ecm = <&ecm>;
+			renesas,ecm-error = <1 13>;
+			status = "disabled";
+		};
+
+		wwdt13: watchdog@1c1d0000 {
+			compatible = "renesas,rcar-gen5-wwdt";
+			reg = <0x1c1d0000 0x10>;
+			clocks = <&scmi_clk R8A78000_CLK_WWDT131>,
+				 <&scmi_clk R8A78000_CLK_WWDT130>;
+			clock-names = "bus", "counter";
+			renesas,ecm = <&ecm>;
+			renesas,ecm-error = <1 12>;
+			status = "disabled";
+		};
+
+		wwdt14: watchdog@1c1e0000 {
+			compatible = "renesas,rcar-gen5-wwdt";
+			reg = <0x1c1e0000 0x10>;
+			clocks = <&scmi_clk R8A78000_CLK_WWDT141>,
+				 <&scmi_clk R8A78000_CLK_WWDT140>;
+			clock-names = "bus", "counter";
+			renesas,ecm = <&ecm>;
+			renesas,ecm-error = <22 23>;
+			status = "disabled";
+		};
+
+		wwdt15: watchdog@1c1f0000 {
+			compatible = "renesas,rcar-gen5-wwdt";
+			reg = <0x1c1f0000 0x10>;
+			clocks = <&scmi_clk R8A78000_CLK_WWDT151>,
+				 <&scmi_clk R8A78000_CLK_WWDT150>;
+			clock-names = "bus", "counter";
+			renesas,ecm = <&ecm>;
+			renesas,ecm-error = <22 24>;
+			status = "disabled";
+		};
+
+		wwdt16: watchdog@1c200000 {
+			compatible = "renesas,rcar-gen5-wwdt";
+			reg = <0x1c200000 0x10>;
+			clocks = <&scmi_clk R8A78000_CLK_WWDT161>,
+				 <&scmi_clk R8A78000_CLK_WWDT160>;
+			clock-names = "bus", "counter";
+			renesas,ecm = <&ecm>;
+			renesas,ecm-error = <22 25>;
+			status = "disabled";
+		};
+
+		wwdt17: watchdog@1c210000 {
+			compatible = "renesas,rcar-gen5-wwdt";
+			reg = <0x1c210000 0x10>;
+			clocks = <&scmi_clk R8A78000_CLK_WWDT171>,
+				 <&scmi_clk R8A78000_CLK_WWDT170>;
+			clock-names = "bus", "counter";
+			renesas,ecm = <&ecm>;
+			renesas,ecm-error = <22 26>;
+			status = "disabled";
+		};
+
+		wwdt18: watchdog@1c220000 {
+			compatible = "renesas,rcar-gen5-wwdt";
+			reg = <0x1c220000 0x10>;
+			clocks = <&scmi_clk R8A78000_CLK_WWDT181>,
+				 <&scmi_clk R8A78000_CLK_WWDT180>;
+			clock-names = "bus", "counter";
+			renesas,ecm = <&ecm>;
+			renesas,ecm-error = <22 27>;
+			status = "disabled";
+		};
+
+		wwdt19: watchdog@1c230000 {
+			compatible = "renesas,rcar-gen5-wwdt";
+			reg = <0x1c230000 0x10>;
+			clocks = <&scmi_clk R8A78000_CLK_WWDT191>,
+				 <&scmi_clk R8A78000_CLK_WWDT190>;
+			clock-names = "bus", "counter";
+			renesas,ecm = <&ecm>;
+			renesas,ecm-error = <22 28>;
+			status = "disabled";
+		};
+
 		gic: interrupt-controller@39000000 {
 			compatible = "arm,gic-v3", "arm,gic";
 			reg = <0x39000000 0x20000>, /* GICD */

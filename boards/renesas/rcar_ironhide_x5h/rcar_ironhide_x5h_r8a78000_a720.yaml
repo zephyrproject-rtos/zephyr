@@ -10,4 +10,5 @@ toolchain:
 supported:
   - clock-control
   - serial
+  - watchdog
 vendor: renesas
