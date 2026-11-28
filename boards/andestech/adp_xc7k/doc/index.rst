@@ -172,9 +172,10 @@ Programming and debugging
 
 .. zephyr:board-supported-runners::
 
-For debugging zephyr applications or burning them into a flash, you will need to
-connect Andes ICE from host computer to ADP-XC7K board and execute the
-Andes ICE management software, ICEman, on this host computer.
+Applications for the ``adp_xc7k`` board can be built, flashed and debugged in
+the usual way (see :ref:`build_an_application` and :ref:`application_run` for
+more details). Flashing and debugging require an Andes ICE (AICE) and the
+Andes ICE management software, ICEman.
 
 Connecting Andes ICE (AICE)
 ===========================
@@ -188,34 +189,24 @@ ADP-XC7K board and the host computer as shown in the figure.
 
 More information can be found on `AICE-MINI+`_, `AICE-MICRO`_ website
 
-Building
-========
+Configuring a Console
+=====================
 
-You can build applications in the usual way. Here is an example for
-the :zephyr:code-sample:`hello_world` application.
+The Zephyr console is on UART2. Use the following settings with your serial
+terminal of choice (minicom, putty, etc.):
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: adp_xc7k/ae350_a25
-   :goals: build
+- Speed: 115200
+- Data: 8 bits
+- Parity: None
+- Stop bits: 1
 
 Flashing
 ========
 
-Before flashing, you have to download ICEman (``ice.zip``) from the
-`Andes Development Kit`_.
-If you want to use XIP mode (``CONFIG_XIP=y``), you also need to download
-the flash burner (``flash.zip``).
-
-At first, you should run ICEman when flashing and debugging program.
-
-.. code-block:: console
-
-   # Enable execute file permission of ICEman
-   chmod a+x ./ICEman
-
-   # Running the ICEman server
-   sudo ./ICEman -Z v5
+The board is configured to be flashed with the ``andes-iceman`` runner. Download
+ICEman (``ice.zip``) from the `Andes Development Kit`_. To program the SPI flash,
+you also need the SPI flash burner ``SPI_burn`` from ``flash.zip``. Add both to
+``PATH``, or pass their paths with ``--iceman`` and ``--spi-burn``.
 
 .. note::
 
@@ -224,65 +215,81 @@ At first, you should run ICEman when flashing and debugging program.
    :file:`/etc/udev/rules.d`, then unplugging and plugging the
    AICE adapter in again via USB.).
 
-If ``CONFIG_XIP=n``, you can load the program (``zephyr.elf``) into RAM directly
-and execute it.
+The runner programs the image depending on where it runs:
+
+- RAM or ILM (Instruction Local Memory): the runner loads ``zephyr.elf`` with GDB.
+- XIP on the SPI flash: the runner programs ``zephyr.bin`` into the SPI flash
+  with ``SPI_burn``.
+
+ICEman can run on the local host or on a remote host.
+
+Local ICEman
+------------
+
+By default, the runner starts ICEman on the host the AICE is connected to, and
+stops it when done:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: adp_xc7k/ae350_a25
+   :goals: build flash
+
+You should see the following message on the console:
 
 .. code-block:: console
 
-   # Check the ICEman server is running
-   # Load the program into RAM and execute it
-   riscv64-zephyr-elf-gdb build/zephyr/zephyr.elf
-   (gdb) target remote :1111
-   (gdb) monitor reset halt
-   (gdb) load
-   (gdb) quit
+   *** Booting Zephyr OS build vX.Y.Z ***
+   Hello World! adp_xc7k/ae350_a25
 
-If ``CONFIG_XIP=y``, you need to burn the program (``zephyr.bin``) into flash memory
-and execute it.
+Remote ICEman
+-------------
 
-.. code-block:: console
-
-   # Check the ICEman server is running
-   # Burn the program into flash and execute it
-   <FLASH>/bin/target_burn_frontend \
-       -P 4444 --unlock --verify --image=build/zephyr/zephyr.bin \
-       --algorithm-bin=<FLASH>/target_bin/target_SPI_v5_[32|64].bin
-
-   # Note:
-   #   1. Assume the flash burner is downloaded to <FLASH> directory
-   #   2. For algorithm-bin file, use target_SPI_v5_32.bin in RV32 platform and
-   #      use target_SPI_v5_64.bin in RV64 platform
-
-Open a serial terminal with the following settings:
-
-- Speed: 115200
-- Data: 8 bits
-- Parity: None
-- Stop bits: 1
-
-you should see the following message in the terminal:
+The runner can also connect to an ICEman already running on another host, for
+example a host shared by several users. ICEman is a server and reports the
+ports it listens on when it starts:
 
 .. code-block:: console
 
-   ***** Booting Zephyr OS v2.4.0 *****
-   Hello World! adp_xc7k
+   $ ./ICEman
+   ...
+   Burner listens on 2354
+   Telnet port: 4444
+   ...
+   The core #0 listens on 1111.
+   ICEman is ready to use.
+
+Pass the host name or IP address of the ICEman with ``--iceman-host``, and the
+ports from the ICEman output with these options:
+
+- ``--burner-port``: the port in ``Burner listens on 2354``. ``SPI_burn``
+  connects to it as a client to program the SPI flash.
+- ``--telnet-port``: the port in ``Telnet port: 4444``. The runner connects to
+  it to send commands, which could reset the target.
+- ``--gdb-port``: the port in ``The core #0 listens on 1111``. GDB connects to
+  it to load and debug the image.
+
+ICEman is not needed on the local host, but ``SPI_burn`` still is to program the
+SPI flash.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: adp_xc7k/ae350_a25
+   :goals: build flash
+   :flash-args: --iceman-host <host> --telnet-port <port> --gdb-port <port> --burner-port <port>
 
 Debugging
 =========
 
-.. code-block:: console
+You can debug an application in the usual way. Here is an example for the
+:zephyr:code-sample:`hello_world` application.
 
-   # Check the ICEman server is running
-   # Load and debug program
-   ./riscv64-zephyr-elf-gdb build/zephyr/zephyr.elf
-   (gdb) target remote :1111
-   (gdb) monitor reset halt
-   (gdb) load
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: adp_xc7k/ae350_a25
+   :maybe-skip-config:
+   :goals: debug
 
-If ``CONFIG_XIP=y``, please follow the flashing section to burn the program into
-flash memory first.
-Then, you can use GDB to debug program by above commands but do NOT execute ``load``
-command since the program has been placed in the flash memory.
+For a remote ICEman, pass the same options as for flashing.
 
 References
 **********
