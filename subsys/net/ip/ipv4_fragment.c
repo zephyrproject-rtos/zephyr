@@ -28,6 +28,9 @@ LOG_MODULE_DECLARE(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 /* Timeout for various buffer allocations in this file. */
 #define NET_BUF_TIMEOUT K_MSEC(100)
 
+/* Copied flag in the IPv4 option type */
+#define IPV4_OPT_COPIED BIT(7)
+
 static void ipv4_reassembly_timeout(struct k_work *work);
 
 static struct net_ipv4_reassembly ipv4_reassembly[CONFIG_NET_IPV4_FRAGMENT_MAX_COUNT];
@@ -173,6 +176,7 @@ static struct net_pkt *ipv4_reassemble_packet(struct net_ipv4_reassembly *reass)
 	struct net_ipv4_hdr *ipv4_hdr;
 	struct net_pkt *pkt;
 	struct net_buf *last;
+	size_t hdr_len;
 	int i;
 	int ret;
 	uint16_t chksum = 0;
@@ -200,10 +204,11 @@ static struct net_pkt *ipv4_reassemble_packet(struct net_ipv4_reassembly *reass)
 			return NULL;
 		}
 
-		LOG_DBG("Removing %d bytes from start of pkt %p", net_pkt_ip_hdr_len(pkt),
-			pkt->buffer);
+		hdr_len = net_pkt_ip_hdr_len(pkt) + net_pkt_ipv4_opts_len(pkt);
 
-		if (net_pkt_pull(pkt, net_pkt_ip_hdr_len(pkt))) {
+		LOG_DBG("Removing %zu bytes from start of pkt %p", hdr_len, pkt->buffer);
+
+		if (net_pkt_pull(pkt, hdr_len)) {
 			LOG_ERR("Failed to pull headers");
 			ipv4_reassembly_cancel(reass->id, &reass->src, &reass->dst);
 			return NULL;
@@ -323,7 +328,8 @@ static int ipv4_fragments_are_ready(struct net_ipv4_reassembly *reass)
 			return 0;
 		}
 
-		payload_len = net_pkt_get_len(pkt) - net_pkt_ip_hdr_len(pkt);
+		payload_len = net_pkt_get_len(pkt) - net_pkt_ip_hdr_len(pkt) -
+			      net_pkt_ipv4_opts_len(pkt);
 
 		if (payload_len < 0) {
 			return -EBADMSG;
@@ -383,7 +389,8 @@ enum net_verdict net_ipv4_handle_fragment_hdr(struct net_pkt *pkt, struct net_ip
 	more = (flag & NET_IPV4_MORE_FRAG_MASK) ? true : false;
 	net_pkt_set_ipv4_fragment_flags(pkt, flag);
 
-	if (more && (net_pkt_get_len(pkt) - net_pkt_ip_hdr_len(pkt)) % 8) {
+	if (more && (net_pkt_get_len(pkt) - net_pkt_ip_hdr_len(pkt) -
+		     net_pkt_ipv4_opts_len(pkt)) % 8) {
 		/* Fragment length is not multiple of 8, discard the packet and send bad IP
 		 * header error.
 		 */
@@ -484,18 +491,61 @@ drop:
 	return NET_DROP;
 }
 
+/* RFC 791 ch. 3.1, an option whose copied flag is set goes into every
+ * fragment, the others only into the first one. Collect the options that
+ * are copied and pad them with End of Option List to a multiple of 4.
+ */
+static int ipv4_fragment_copied_opts(const uint8_t *opts, uint8_t opts_len,
+				     uint8_t *copied)
+{
+	uint8_t copied_len = 0U;
+	uint8_t i = 0U;
+
+	while (i < opts_len && opts[i] != NET_IPV4_OPTS_EO) {
+		uint8_t len;
+
+		if (opts[i] == NET_IPV4_OPTS_NOP) {
+			i++;
+			continue;
+		}
+
+		if (opts_len - i < 2U) {
+			return -EINVAL;
+		}
+
+		len = opts[i + 1U];
+		if (len < 2U || len > opts_len - i) {
+			return -EINVAL;
+		}
+
+		if ((opts[i] & IPV4_OPT_COPIED) != 0U) {
+			memcpy(&copied[copied_len], &opts[i], len);
+			copied_len += len;
+		}
+
+		i += len;
+	}
+
+	while ((copied_len % 4U) != 0U) {
+		copied[copied_len++] = NET_IPV4_OPTS_EO;
+	}
+
+	return copied_len;
+}
+
 static int send_ipv4_fragment(struct net_pkt *pkt, uint16_t rand_id, uint16_t fit_len,
-			      uint16_t frag_offset, bool final)
+			      uint16_t frag_offset, bool final, const uint8_t *opts,
+			      uint8_t opts_len)
 {
 	int ret = -ENOBUFS;
 	struct net_pkt *frag_pkt;
 	struct net_pkt_cursor cur;
 	struct net_pkt_cursor cur_pkt;
+	uint16_t hdr_len = NET_IPV4H_LEN + opts_len;
 	uint16_t offset_pkt;
 	uint16_t chksum = 0;
 
-	frag_pkt = net_pkt_alloc_with_buffer(net_pkt_iface(pkt), fit_len +
-					     net_pkt_ip_hdr_len(pkt),
+	frag_pkt = net_pkt_alloc_with_buffer(net_pkt_iface(pkt), fit_len + hdr_len,
 					     NET_AF_INET, 0, NET_BUF_TIMEOUT);
 	if (!frag_pkt) {
 		return -ENOMEM;
@@ -507,15 +557,19 @@ static int send_ipv4_fragment(struct net_pkt *pkt, uint16_t rand_id, uint16_t fi
 
 	net_pkt_set_ll_proto_type(frag_pkt, net_pkt_ll_proto_type(pkt));
 
-	/* Copy the original IPv4 headers back to the fragment packet */
-	if (net_pkt_copy(frag_pkt, pkt, net_pkt_ip_hdr_len(pkt))) {
+	/* Copy the fixed part of the original IPv4 header and add the options
+	 * that this fragment carries.
+	 */
+	if (net_pkt_copy(frag_pkt, pkt, NET_IPV4H_LEN) ||
+	    (opts_len > 0U && net_pkt_write(frag_pkt, opts, opts_len))) {
 		goto fail;
 	}
 
 	net_pkt_cursor_restore(pkt, &cur_pkt);
 
 	/* Copy the payload part of this fragment from the original packet */
-	if (net_pkt_skip(pkt, (frag_offset + net_pkt_ip_hdr_len(pkt))) ||
+	if (net_pkt_skip(pkt, frag_offset + net_pkt_ip_hdr_len(pkt) +
+			 net_pkt_ipv4_opts_len(pkt)) ||
 	    net_pkt_copy(frag_pkt, pkt, fit_len)) {
 		goto fail;
 	}
@@ -523,7 +577,8 @@ static int send_ipv4_fragment(struct net_pkt *pkt, uint16_t rand_id, uint16_t fi
 	net_pkt_cursor_restore(frag_pkt, &cur);
 	net_pkt_cursor_restore(pkt, &cur_pkt);
 
-	net_pkt_set_ip_hdr_len(frag_pkt, net_pkt_ip_hdr_len(pkt));
+	net_pkt_set_ip_hdr_len(frag_pkt, NET_IPV4H_LEN);
+	net_pkt_set_ipv4_opts_len(frag_pkt, opts_len);
 
 	net_pkt_set_overwrite(frag_pkt, true);
 	net_pkt_cursor_init(frag_pkt);
@@ -545,7 +600,8 @@ static int send_ipv4_fragment(struct net_pkt *pkt, uint16_t rand_id, uint16_t fi
 	}
 
 	sys_put_be16(offset_pkt, ipv4_hdr->offset);
-	ipv4_hdr->len = net_htons((fit_len + net_pkt_ip_hdr_len(pkt)));
+	ipv4_hdr->vhl = 0x40 | (hdr_len / 4U);
+	ipv4_hdr->len = net_htons(fit_len + hdr_len);
 
 	ipv4_hdr->chksum = 0;
 
@@ -593,8 +649,13 @@ fail:
 int net_ipv4_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 				 uint16_t pkt_len, uint16_t mtu)
 {
+	uint8_t opts[NET_IPV4_HDR_OPTNS_MAX_LEN];
+	uint8_t copied_opts[NET_IPV4_HDR_OPTNS_MAX_LEN];
+	uint8_t opts_len = net_pkt_ipv4_opts_len(pkt);
+	uint16_t hdr_len = net_pkt_ip_hdr_len(pkt) + opts_len;
 	uint16_t frag_offset = 0;
 	uint16_t flag;
+	int copied_len;
 	int fit_len;
 	int ret;
 	struct net_ipv4_hdr *frag_hdr;
@@ -620,20 +681,51 @@ int net_ipv4_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 		rand_id = 1;
 	}
 
-	/* Calculate maximum payload that can fit into each packet after IPv4 header. Offsets are
-	 * multiples of 8, therefore round down to nearest 8-byte boundary.
+	if (opts_len > sizeof(opts)) {
+		return -EINVAL;
+	}
+
+	if (opts_len > 0U) {
+		struct net_pkt_cursor backup;
+		bool overwrite = net_pkt_is_being_overwritten(pkt);
+
+		net_pkt_cursor_backup(pkt, &backup);
+		net_pkt_set_overwrite(pkt, true);
+		net_pkt_cursor_init(pkt);
+
+		ret = net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt));
+		if (ret == 0) {
+			ret = net_pkt_read(pkt, opts, opts_len);
+		}
+
+		net_pkt_set_overwrite(pkt, overwrite);
+		net_pkt_cursor_restore(pkt, &backup);
+
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	copied_len = ipv4_fragment_copied_opts(opts, opts_len, copied_opts);
+	if (copied_len < 0) {
+		LOG_DBG("Malformed IPv4 header options");
+		return copied_len;
+	}
+
+	/* Calculate maximum payload that can fit into each packet after the IPv4 header of the
+	 * first fragment, which is the longest one. Offsets are multiples of 8, therefore round
+	 * down to nearest 8-byte boundary.
 	 */
-	fit_len = (mtu - net_pkt_ip_hdr_len(pkt)) / 8;
+	fit_len = (mtu - hdr_len) / 8;
 
 	if (fit_len <= 0) {
-		LOG_ERR("No room for IPv4 payload MTU %d hdrs_len %d", mtu,
-			net_pkt_ip_hdr_len(pkt));
+		LOG_ERR("No room for IPv4 payload MTU %d hdrs_len %d", mtu, hdr_len);
 		return -EINVAL;
 	}
 
 	fit_len *= 8;
 
-	pkt_len -= net_pkt_ip_hdr_len(pkt);
+	pkt_len -= hdr_len;
 
 	/* Calculate the L4 checksum (if not done already) before the fragmentation. */
 	if (!net_pkt_is_chksum_done(pkt)) {
@@ -643,6 +735,17 @@ int net_ipv4_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 		ret = net_pkt_acknowledge_data(pkt, &frag_access);
 		if (ret < 0) {
 			return ret;
+		}
+
+		/* net_icmpv4_finalize() skips the header options by itself when
+		 * they are enabled.
+		 */
+		if (frag_hdr->proto != NET_IPPROTO_ICMP ||
+		    !IS_ENABLED(CONFIG_NET_IPV4_HDR_OPTIONS)) {
+			ret = net_pkt_skip(pkt, opts_len);
+			if (ret < 0) {
+				return ret;
+			}
 		}
 
 		switch (frag_hdr->proto) {
@@ -675,7 +778,13 @@ int net_ipv4_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 			fit_len = (pkt_len - frag_offset);
 		}
 
-		ret = send_ipv4_fragment(pkt, rand_id, fit_len, frag_offset, final);
+		if (frag_offset == 0U) {
+			ret = send_ipv4_fragment(pkt, rand_id, fit_len, frag_offset, final,
+						 opts, opts_len);
+		} else {
+			ret = send_ipv4_fragment(pkt, rand_id, fit_len, frag_offset, final,
+						 copied_opts, copied_len);
+		}
 		if (ret < 0) {
 			return ret;
 		}
