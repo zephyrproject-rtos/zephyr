@@ -6,12 +6,15 @@ if(directives MATCHES "\\$<")
   message(FATAL_ERROR "Relocation directives contain unevaluated generator expressions")
 endif()
 
-set(expected
-  "\nSRAM2:COPY:${TEST_SOURCE_DIR}/src/test_file4.c;${TEST_SOURCE_DIR}/src/test_file5.c,"
-)
-string(FIND "${directives}" "${expected}" position)
-if(position EQUAL -1)
-  message(FATAL_ERROR "Missing expected generator-expression relocation directive: ${expected}")
+# Files given as a generator expression are not relocated with LTO
+if(NOT CONFIG_LTO)
+  set(expected
+    "\nSRAM2:COPY:${TEST_SOURCE_DIR}/src/test_file4.c;${TEST_SOURCE_DIR}/src/test_file5.c,"
+  )
+  string(FIND "${directives}" "${expected}" position)
+  if(position EQUAL -1)
+    message(FATAL_ERROR "Missing expected generator-expression relocation directive: ${expected}")
+  endif()
 endif()
 
 file(GLOB replies
