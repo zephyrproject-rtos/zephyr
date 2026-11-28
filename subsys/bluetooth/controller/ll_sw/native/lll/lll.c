@@ -164,6 +164,44 @@ int lll_reset(void)
 	return 0;
 }
 
+/* Number of entropy_get_entropy_isr() attempts to fill a buffer. The call
+ * does not wait and may return fewer bytes than requested; retrying can
+ * only help drivers that produce more data without another interrupt, so
+ * keep the bound small.
+ */
+#define LLL_RAND_ISR_RETRIES 3U
+
+static int rand_isr_fill(void *buf, size_t len)
+{
+	uint8_t *dst = (uint8_t *)buf;
+	uint8_t retries = LLL_RAND_ISR_RETRIES;
+	int err;
+
+	if (!IS_ENABLED(CONFIG_ENTROPY_HAS_DRIVER)) {
+		return -ENODEV;
+	}
+
+	do {
+		err = entropy_get_entropy_isr(dev_entropy, dst, len, 0U);
+		if (err < 0) {
+			return err;
+		}
+
+		dst += err;
+		len -= (size_t)err;
+		retries--;
+	} while ((len > 0U) && (retries > 0U));
+
+	if (len > 0U) {
+		/* Buffer not filled without waiting; do not use partially
+		 * randomised data.
+		 */
+		return -EAGAIN;
+	}
+
+	return 0;
+}
+
 int lll_csrand_get(void *buf, size_t len)
 {
 	if (!IS_ENABLED(CONFIG_ENTROPY_HAS_DRIVER)) {
@@ -175,11 +213,7 @@ int lll_csrand_get(void *buf, size_t len)
 
 int lll_csrand_isr_get(void *buf, size_t len)
 {
-	if (!IS_ENABLED(CONFIG_ENTROPY_HAS_DRIVER)) {
-		return -ENODEV;
-	}
-
-	return entropy_get_entropy_isr(dev_entropy, buf, len, 0U);
+	return rand_isr_fill(buf, len);
 }
 
 int lll_rand_get(void *buf, size_t len)
@@ -189,7 +223,7 @@ int lll_rand_get(void *buf, size_t len)
 
 int lll_rand_isr_get(void *buf, size_t len)
 {
-	return lll_csrand_isr_get(buf, len);
+	return rand_isr_fill(buf, len);
 }
 
 /* The radio model has no ramp up: a radio operation starts with its first

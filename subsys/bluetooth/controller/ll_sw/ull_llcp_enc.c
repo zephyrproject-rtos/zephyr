@@ -184,6 +184,7 @@ static struct node_tx *llcp_lp_enc_tx(struct ll_conn *conn, struct proc_ctx *ctx
 {
 	struct node_tx *tx;
 	struct pdu_data *pdu;
+	int err;
 
 	/* Allocate tx node */
 	tx = llcp_tx_alloc(conn, ctx);
@@ -194,7 +195,9 @@ static struct node_tx *llcp_lp_enc_tx(struct ll_conn *conn, struct proc_ctx *ctx
 	/* Encode LL Control PDU */
 	switch (opcode) {
 	case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
-		llcp_pdu_encode_enc_req(ctx, pdu);
+		err = llcp_pdu_encode_enc_req(ctx, pdu);
+/* unrecoverable at tx time; never transmit a degraded PDU */
+		LL_ASSERT_DBG(err == 0);
 		break;
 	case PDU_DATA_LLCTRL_TYPE_START_ENC_RSP:
 		llcp_pdu_encode_start_enc_rsp(pdu);
@@ -702,6 +705,7 @@ static struct node_tx *llcp_rp_enc_tx(struct ll_conn *conn, struct proc_ctx *ctx
 {
 	struct node_tx *tx;
 	struct pdu_data *pdu;
+	int err;
 
 	/* Allocate tx node */
 	tx = llcp_tx_alloc(conn, ctx);
@@ -712,7 +716,9 @@ static struct node_tx *llcp_rp_enc_tx(struct ll_conn *conn, struct proc_ctx *ctx
 	/* Encode LL Control PDU */
 	switch (opcode) {
 	case PDU_DATA_LLCTRL_TYPE_ENC_RSP:
-		llcp_pdu_encode_enc_rsp(pdu);
+		err = llcp_pdu_encode_enc_rsp(pdu);
+/* unrecoverable at tx time; never transmit a degraded PDU */
+		LL_ASSERT_DBG(err == 0);
 		break;
 	case PDU_DATA_LLCTRL_TYPE_START_ENC_REQ:
 		llcp_pdu_encode_start_enc_req(pdu);

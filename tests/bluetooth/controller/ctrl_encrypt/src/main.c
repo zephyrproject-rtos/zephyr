@@ -251,7 +251,6 @@ ZTEST(encryption_start, test_encryption_start_central_loc)
 	struct pdu_data_llctrl_enc_rsp enc_rsp = { .skds = { SKDS }, .ivs = { IVS } };
 
 	/* Prepare mocked call to lll_csrand_get */
-	lll_csrand_get_fake.return_val = sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm);
 	lll_csrand_get_custom_fake_context.buf = exp_enc_req.skdm;
 	lll_csrand_get_custom_fake_context.len = sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm);
 
@@ -409,7 +408,6 @@ ZTEST(encryption_start, test_encryption_start_central_loc_limited_memory)
 	struct pdu_data_llctrl_enc_rsp enc_rsp = { .skds = { SKDS }, .ivs = { IVS } };
 
 	/* Prepare mocked call to lll_csrand_get */
-	lll_csrand_get_fake.return_val = sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm);
 	lll_csrand_get_custom_fake_context.buf = exp_enc_req.skdm;
 	lll_csrand_get_custom_fake_context.len = sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm);
 
@@ -587,7 +585,6 @@ ZTEST(encryption_start, test_encryption_start_central_loc_reject_ext)
 	};
 
 	/* Prepare mocked call to lll_csrand_get */
-	lll_csrand_get_fake.return_val = sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm);
 	lll_csrand_get_custom_fake_context.buf = exp_enc_req.skdm;
 	lll_csrand_get_custom_fake_context.len = sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm);
 
@@ -689,7 +686,6 @@ ZTEST(encryption_start, test_encryption_start_central_loc_reject)
 	};
 
 	/* Prepare mocked call to lll_csrand_get */
-	lll_csrand_get_fake.return_val = sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm);
 	lll_csrand_get_custom_fake_context.buf = exp_enc_req.skdm;
 	lll_csrand_get_custom_fake_context.len = sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm);
 
@@ -792,7 +788,6 @@ ZTEST(encryption_start, test_encryption_start_central_loc_no_ltk)
 	struct pdu_data_llctrl_enc_rsp enc_rsp = { .skds = { SKDS }, .ivs = { IVS } };
 
 	/* Prepare mocked call to lll_csrand_get */
-	lll_csrand_get_fake.return_val = sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm);
 	lll_csrand_get_custom_fake_context.buf = exp_enc_req.skdm;
 	lll_csrand_get_custom_fake_context.len = sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm);
 
@@ -903,7 +898,6 @@ ZTEST(encryption_start, test_encryption_start_central_loc_no_ltk_2)
 	struct pdu_data_llctrl_enc_rsp enc_rsp = { .skds = { SKDS }, .ivs = { IVS } };
 
 	/* Prepare mocked call to lll_csrand_get */
-	lll_csrand_get_fake.return_val = sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm);
 	lll_csrand_get_custom_fake_context.buf = exp_enc_req.skdm;
 	lll_csrand_get_custom_fake_context.len = sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm);
 
@@ -1003,7 +997,6 @@ ZTEST(encryption_start, test_encryption_start_central_loc_reject_ext_success)
 	};
 
 	/* Prepare mocked call to lll_csrand_get */
-	lll_csrand_get_fake.return_val = sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm);
 	lll_csrand_get_custom_fake_context.buf = exp_enc_req.skdm;
 	lll_csrand_get_custom_fake_context.len = sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm);
 
@@ -1105,7 +1098,6 @@ ZTEST(encryption_start, test_encryption_start_central_loc_reject_success)
 	};
 
 	/* Prepare mocked call to lll_csrand_get */
-	lll_csrand_get_fake.return_val = sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm);
 	lll_csrand_get_custom_fake_context.buf = exp_enc_req.skdm;
 	lll_csrand_get_custom_fake_context.len = sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm);
 
@@ -1210,7 +1202,6 @@ ZTEST(encryption_start, test_encryption_start_central_loc_no_ltk_reject_ext_succ
 	struct pdu_data_llctrl_enc_rsp enc_rsp = { .skds = { SKDS }, .ivs = { IVS } };
 
 	/* Prepare mocked call to lll_csrand_get */
-	lll_csrand_get_fake.return_val = sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm);
 	lll_csrand_get_custom_fake_context.buf = exp_enc_req.skdm;
 	lll_csrand_get_custom_fake_context.len = sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm);
 
@@ -1321,7 +1312,6 @@ ZTEST(encryption_start, test_encryption_start_central_loc_no_ltk_2_reject_succes
 	struct pdu_data_llctrl_enc_rsp enc_rsp = { .skds = { SKDS }, .ivs = { IVS } };
 
 	/* Prepare mocked call to lll_csrand_get */
-	lll_csrand_get_fake.return_val = sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm);
 	lll_csrand_get_custom_fake_context.buf = exp_enc_req.skdm;
 	lll_csrand_get_custom_fake_context.len = sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm);
 
@@ -1434,7 +1424,6 @@ ZTEST(encryption_start, test_encryption_start_central_loc_mic)
 	};
 
 	/* Prepare mocked call to lll_csrand_get */
-	lll_csrand_get_fake.return_val = sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm);
 	lll_csrand_get_custom_fake_context.buf = exp_enc_req.skdm;
 	lll_csrand_get_custom_fake_context.len = sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm);
 
@@ -1576,7 +1565,6 @@ ZTEST(encryption_start, test_encryption_start_periph_rem)
 	};
 
 	/* Prepare mocked call to lll_csrand_get */
-	lll_csrand_get_fake.return_val = sizeof(exp_enc_rsp.skds) + sizeof(exp_enc_rsp.ivs);
 	lll_csrand_get_custom_fake_context.buf = exp_enc_rsp.skds;
 	lll_csrand_get_custom_fake_context.len = sizeof(exp_enc_rsp.skds) + sizeof(exp_enc_rsp.ivs);
 
@@ -1793,7 +1781,6 @@ ZTEST(encryption_start, test_encryption_start_periph_rem_limited_memory)
 	};
 
 	/* Prepare mocked call to lll_csrand_get */
-	lll_csrand_get_fake.return_val = sizeof(exp_enc_rsp.skds) + sizeof(exp_enc_rsp.ivs);
 	lll_csrand_get_custom_fake_context.buf = exp_enc_rsp.skds;
 	lll_csrand_get_custom_fake_context.len = sizeof(exp_enc_rsp.skds) + sizeof(exp_enc_rsp.ivs);
 
@@ -2041,7 +2028,6 @@ ZTEST(encryption_start, test_encryption_start_periph_rem_no_ltk)
 	};
 
 	/* Prepare mocked call to lll_csrand_get */
-	lll_csrand_get_fake.return_val = sizeof(exp_enc_rsp.skds) + sizeof(exp_enc_rsp.ivs);
 	lll_csrand_get_custom_fake_context.buf = exp_enc_rsp.skds;
 	lll_csrand_get_custom_fake_context.len = sizeof(exp_enc_rsp.skds) + sizeof(exp_enc_rsp.ivs);
 
@@ -2180,7 +2166,6 @@ ZTEST(encryption_start, test_encryption_start_periph_rem_mic)
 	};
 
 	/* Prepare mocked call to lll_csrand_get */
-	lll_csrand_get_fake.return_val = sizeof(exp_enc_rsp.skds) + sizeof(exp_enc_rsp.ivs);
 	lll_csrand_get_custom_fake_context.buf = exp_enc_rsp.skds;
 	lll_csrand_get_custom_fake_context.len = sizeof(exp_enc_rsp.skds) + sizeof(exp_enc_rsp.ivs);
 
@@ -2313,7 +2298,6 @@ ZTEST(encryption_pause, test_encryption_pause_central_loc)
 	struct pdu_data_llctrl_enc_rsp enc_rsp = { .skds = { SKDS }, .ivs = { IVS } };
 
 	/* Prepare mocked call to lll_csrand_get */
-	lll_csrand_get_fake.return_val = sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm);
 	lll_csrand_get_custom_fake_context.buf = exp_enc_req.skdm;
 	lll_csrand_get_custom_fake_context.len = sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm);
 
@@ -2458,7 +2442,6 @@ ZTEST(encryption_pause, test_encryption_pause_periph_rem)
 	};
 
 	/* Prepare mocked call to lll_csrand_get */
-	lll_csrand_get_fake.return_val = sizeof(exp_enc_rsp.skds) + sizeof(exp_enc_rsp.ivs);
 	lll_csrand_get_custom_fake_context.buf = exp_enc_rsp.skds;
 	lll_csrand_get_custom_fake_context.len = sizeof(exp_enc_rsp.skds) + sizeof(exp_enc_rsp.ivs);
 
@@ -2704,6 +2687,68 @@ ZTEST(encryption_pause, test_encryption_pause_periph_rem_invalid)
 		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
+/*
+ * SKDm/IVm and SKDs/IVs must be fully refreshed from entropy; a failure to
+ * obtain random data must fail the encode instead of transmitting stale
+ * values (zephyrproject-rtos/zephyr#126663).
+ */
+ZTEST(encryption_start, test_enc_pdu_encode_enc_req_rsp_rand)
+{
+	const uint8_t rand_data[] = {SKDM, IVM};
+	struct pdu_data pdu;
+	struct proc_ctx ctx;
+	int err;
+
+	/* Mocked entropy fills SKDm/IVm and SKDs/IVs */
+	lll_csrand_get_custom_fake_context.buf = (void *)rand_data;
+	lll_csrand_get_custom_fake_context.len = sizeof(rand_data);
+
+	memset(&ctx, 0, sizeof(ctx));
+	memset(&pdu, 0, sizeof(pdu));
+
+	err = llcp_pdu_encode_enc_req(&ctx, &pdu);
+	zassert_equal(err, 0, "llcp_pdu_encode_enc_req returned %d", err);
+	zassert_mem_equal(pdu.llctrl.enc_req.skdm, rand_data,
+			  sizeof(pdu.llctrl.enc_req.skdm) + sizeof(pdu.llctrl.enc_req.ivm),
+			  "SKDm/IVm not fully refreshed");
+
+	memset(&pdu, 0, sizeof(pdu));
+
+	err = llcp_pdu_encode_enc_rsp(&pdu);
+	zassert_equal(err, 0, "llcp_pdu_encode_enc_rsp returned %d", err);
+	zassert_mem_equal(pdu.llctrl.enc_rsp.skds, rand_data,
+			  sizeof(pdu.llctrl.enc_rsp.skds) + sizeof(pdu.llctrl.enc_rsp.ivs),
+			  "SKDs/IVs not fully refreshed");
+}
+
+static int entropy_error_fake(void *buf, size_t len)
+{
+	ARG_UNUSED(buf);
+	ARG_UNUSED(len);
+
+	return -EBUSY;
+}
+
+ZTEST(encryption_start, test_enc_pdu_encode_enc_req_rsp_rand_error)
+{
+	struct pdu_data pdu;
+	struct proc_ctx ctx;
+	int err;
+
+	/* Entropy failure: the encode must fail instead of leaving stale
+	 * SKDm/IVm or SKDs/IVs in the PDU.
+	 */
+	lll_csrand_get_fake.custom_fake = entropy_error_fake;
+
+	memset(&ctx, 0, sizeof(ctx));
+	memset(&pdu, 0, sizeof(pdu));
+
+	err = llcp_pdu_encode_enc_req(&ctx, &pdu);
+	zassert_equal(err, -EBUSY, "llcp_pdu_encode_enc_req returned %d", err);
+
+	err = llcp_pdu_encode_enc_rsp(&pdu);
+	zassert_equal(err, -EBUSY, "llcp_pdu_encode_enc_rsp returned %d", err);
+}
 
 ZTEST_SUITE(encryption_start, NULL, NULL, enc_setup, NULL, NULL);
 ZTEST_SUITE(encryption_pause, NULL, NULL, enc_setup, NULL, NULL);

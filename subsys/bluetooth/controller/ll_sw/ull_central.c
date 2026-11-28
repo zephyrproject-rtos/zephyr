@@ -98,6 +98,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	uint16_t max_rx_time;
 	memq_link_t *link;
 	uint32_t slot_us;
+	uint8_t crc_init[PDU_CRC_SIZE];
 	uint8_t hop;
 	int err;
 
@@ -175,6 +176,19 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 		goto conn_is_valid;
 	}
 
+	/* Draw random values up-front so that an entropy failure is reported
+	 * before any resource has been acquired.
+	 */
+	err = lll_csrand_get(crc_init, sizeof(crc_init));
+	if (err != 0) {
+		return BT_HCI_ERR_HW_FAILURE;
+	}
+
+	err = lll_csrand_get(&hop, sizeof(hop));
+	if (err != 0) {
+		return BT_HCI_ERR_HW_FAILURE;
+	}
+
 	link = ll_rx_link_alloc();
 	if (!link) {
 		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
@@ -192,7 +206,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	err = util_aa_le32(conn_lll->access_addr);
 	LL_ASSERT_DBG(!err);
 
-	lll_csrand_get(conn_lll->crc_init, sizeof(conn_lll->crc_init));
+	memcpy(conn_lll->crc_init, crc_init, sizeof(conn_lll->crc_init));
 
 	conn_lll->handle = 0xFFFF;
 	conn_lll->interval = interval;
@@ -246,7 +260,6 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	conn_lll->event_counter = 0;
 
 	conn_lll->data_chan_count = ull_chan_map_get(conn_lll->data_chan_map);
-	lll_csrand_get(&hop, sizeof(uint8_t));
 	conn_lll->data_chan_hop = 5 + (hop % 12);
 	conn_lll->data_chan_sel = 0;
 	conn_lll->data_chan_use = 0;

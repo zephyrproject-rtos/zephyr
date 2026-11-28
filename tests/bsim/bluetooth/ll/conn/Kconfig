@@ -6,6 +6,45 @@ config TEST_CONN_INTERVAL_1MS
 	help
 	  Test 1 ms connection interval support.
 
+config BT_CTLR_TEST_ENTROPY_SHIM
+	bool "Entropy shim for controller ISR entropy testing"
+	depends on BT_LL_SW_SPLIT
+	help
+	  Replace the entropy device with a software shim (entropy_shim.overlay)
+	  that can be forced to deliver short reads or errors from
+	  entropy_get_entropy_isr() when ENTROPY_BUSYWAIT is not requested.
+	  Used to test the Bluetooth controller's ISR entropy path.
+
+	  The shim configurations select CONFIG_BT_CTLR_TEST_ENTROPY_SHIM and set
+	  CONFIG_BT_CTLR_ENTROPY=n so that the vendor LLL does not select the
+	  nRF RNG entropy driver for the node taken over by the shim.
+
+if BT_CTLR_TEST_ENTROPY_SHIM
+
+config ENTROPY_SHIM
+	bool "BabbleSim test entropy shim driver"
+	default y
+	depends on DT_HAS_VND_ENTROPY_SHIM_ENABLED
+	select ENTROPY_GENERATOR
+	select ENTROPY_HAS_DRIVER
+	help
+	  Software entropy driver for the test-only entropy shim, see
+	  BT_CTLR_TEST_ENTROPY_SHIM.
+
+choice BT_CTLR_TEST_ENTROPY_SHIM_ISR_MODE
+	prompt "get_entropy_isr() behavior without ENTROPY_BUSYWAIT"
+	default BT_CTLR_TEST_ENTROPY_SHIM_ISR_SHORT_READ
+
+config BT_CTLR_TEST_ENTROPY_SHIM_ISR_SHORT_READ
+	bool "Return half of the requested bytes"
+
+config BT_CTLR_TEST_ENTROPY_SHIM_ISR_ERROR
+	bool "Return -EBUSY"
+
+endchoice
+
+endif # BT_CTLR_TEST_ENTROPY_SHIM
+
 menu "Zephyr Kernel"
 source "Kconfig.zephyr"
 endmenu

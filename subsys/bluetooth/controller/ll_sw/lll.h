@@ -619,6 +619,17 @@ int8_t lll_radio_tx_pwr_min_get(void);
 int8_t lll_radio_tx_pwr_max_get(void);
 int8_t lll_radio_tx_pwr_floor(int8_t tx_pwr_lvl);
 
+/*
+ * Entropy helpers.
+ *
+ * lll_csrand_get() and lll_rand_get() block until the buffer is filled.
+ * lll_csrand_isr_get() and lll_rand_isr_get() do not block; they retry a
+ * bounded number of times to fill the buffer without waiting.
+ *
+ * All of them return 0 when the buffer has been filled with random data,
+ * and a negative errno code otherwise; a caller must not use a buffer that
+ * was only partially filled.
+ */
 int lll_csrand_get(void *buf, size_t len);
 int lll_csrand_isr_get(void *buf, size_t len);
 int lll_rand_get(void *buf, size_t len);

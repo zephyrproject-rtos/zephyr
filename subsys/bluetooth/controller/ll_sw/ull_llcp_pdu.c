@@ -337,9 +337,10 @@ static void encode_enc_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 #endif /* CONFIG_BT_CENTRAL || CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CENTRAL)
-void llcp_pdu_encode_enc_req(struct proc_ctx *ctx, struct pdu_data *pdu)
+int llcp_pdu_encode_enc_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
 	struct pdu_data_llctrl_enc_req *p;
+	int err;
 
 	encode_enc_req(ctx, pdu);
 
@@ -348,8 +349,13 @@ void llcp_pdu_encode_enc_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 	BUILD_ASSERT(offsetof(struct pdu_data_llctrl_enc_req, ivm) ==
 		     offsetof(struct pdu_data_llctrl_enc_req, skdm) + sizeof(p->skdm),
 		     "Member IVM must be after member SKDM");
-	csrand_get(p->skdm, sizeof(p->skdm) + sizeof(p->ivm));
+	err = csrand_get(p->skdm, sizeof(p->skdm) + sizeof(p->ivm));
+	if (err != 0) {
+		/* Never transmit an ENC_REQ with stale SKDm/IVm */
+		return err;
+	}
 
+	return 0;
 }
 #endif /* CONFIG_BT_CENTRAL */
 
@@ -359,9 +365,10 @@ void llcp_ntf_encode_enc_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 	encode_enc_req(ctx, pdu);
 }
 
-void llcp_pdu_encode_enc_rsp(struct pdu_data *pdu)
+int llcp_pdu_encode_enc_rsp(struct pdu_data *pdu)
 {
 	struct pdu_data_llctrl_enc_rsp *p;
+	int err;
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = PDU_DATA_LLCTRL_LEN(enc_rsp);
@@ -372,7 +379,13 @@ void llcp_pdu_encode_enc_rsp(struct pdu_data *pdu)
 	BUILD_ASSERT(offsetof(struct pdu_data_llctrl_enc_rsp, ivs) ==
 		     offsetof(struct pdu_data_llctrl_enc_rsp, skds) + sizeof(p->skds),
 		     "Member IVS must be after member SKDS");
-	csrand_get(p->skds, sizeof(p->skds) + sizeof(p->ivs));
+	err = csrand_get(p->skds, sizeof(p->skds) + sizeof(p->ivs));
+	if (err != 0) {
+		/* Never transmit an ENC_RSP with stale SKDs/IVs */
+		return err;
+	}
+
+	return 0;
 }
 
 void llcp_pdu_encode_start_enc_req(struct pdu_data *pdu)

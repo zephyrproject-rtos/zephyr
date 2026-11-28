@@ -1,0 +1,13 @@
+# Copyright (c) 2026 The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: BabbleSim test entropy shim
+
+description: |
+  Test-only entropy driver for BabbleSim tests. Replaces the real entropy
+  device to force short reads or errors from entropy_get_entropy_isr() when
+  ENTROPY_BUSYWAIT is not requested, see CONFIG_BT_CTLR_TEST_ENTROPY_SHIM.
+
+compatible: vnd,entropy-shim
+
+include: base.yaml

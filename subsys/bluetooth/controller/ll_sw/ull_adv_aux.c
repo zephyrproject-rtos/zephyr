@@ -2704,9 +2704,14 @@ struct ll_adv_aux_set *ull_adv_aux_acquire(struct lll_adv *lll)
 	/* Initialize data channel calculation counter, data channel identifier,
 	 * and channel map to use.
 	 */
-	lll_csrand_get(&lll_aux->data_chan_counter,
-		       sizeof(lll_aux->data_chan_counter));
-	lll_csrand_get(&aux->data_chan_id, sizeof(aux->data_chan_id));
+	err = lll_csrand_get(&lll_aux->data_chan_counter, sizeof(lll_aux->data_chan_counter));
+	if (err != 0) {
+		goto entropy_fail;
+	}
+	err = lll_csrand_get(&aux->data_chan_id, sizeof(aux->data_chan_id));
+	if (err != 0) {
+		goto entropy_fail;
+	}
 	chm_last = aux->chm_first;
 	aux->chm_last = chm_last;
 	aux->chm[chm_last].data_chan_count =
@@ -2719,6 +2724,12 @@ struct ll_adv_aux_set *ull_adv_aux_acquire(struct lll_adv *lll)
 	aux->is_started = 0U;
 
 	return aux;
+
+entropy_fail:
+	lll->aux = NULL;
+	aux_release(aux);
+
+	return NULL;
 }
 
 void ull_adv_aux_release(struct ll_adv_aux_set *aux)

@@ -1541,11 +1541,19 @@ static void le_rand(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_rp_le_rand *rp;
 	uint8_t count = sizeof(rp->rand);
+	int err;
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
-	rp->status = 0x00;
 
-	lll_csrand_get(rp->rand, count);
+	err = lll_csrand_get(rp->rand, count);
+	if (err != 0) {
+		rp->status = BT_HCI_ERR_HW_FAILURE;
+		(void)memset(rp->rand, 0, count);
+
+		return;
+	}
+
+	rp->status = 0x00;
 }
 
 static void le_read_supp_states(struct net_buf *buf, struct net_buf **evt)
