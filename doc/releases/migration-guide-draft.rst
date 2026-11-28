@@ -491,6 +491,14 @@ Modem
   notification each, so the default of 16 uses more RAM than the 256-byte heap it replaces.
   (:github:`120425`)
 
+* Cellular modem: the ``CONFIG_MODEM_CELLULAR_NEW_BAUDRATE``,
+  ``CONFIG_MODEM_CELLULAR_NEW_BAUDRATE_DELAY`` and ``CONFIG_MODEM_CELLULAR_RESET_POWER_ON_DELAY_MS``
+  options have been removed. The delays are now constants in the vendor configuration
+  (:c:struct:`modem_cellular_vendor_config_common`), and the target baudrate is specified per
+  instance with the ``target-baudrate`` devicetree property. Drivers can use
+  :c:macro:`MODEM_CELLULAR_COMMON_BAUDRATE_CHAT_SCRIPT` to define the standard baudrate script.
+  (:github:`122583`)
+
 OPAMP
 =====
 
