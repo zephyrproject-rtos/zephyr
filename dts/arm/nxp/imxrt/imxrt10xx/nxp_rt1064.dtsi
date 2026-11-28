@@ -13,6 +13,7 @@
 
 &flexspi2 {
 	reg = <0x402a4000 0x4000>, <0x70000000 DT_SIZE_M(4)>;
+	ranges = <0x70000000 0x70000000 DT_SIZE_M(4)>;
 	reg-names = "reg_base", "ahb";
 	rx-clock-source = <1>;
 	status = "okay";
@@ -20,7 +21,7 @@
 	/* WINBOND */
 	soc_flash_ctrl: flash-controller@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		reg = <0>;
+		reg = <0x0 0x0>;
 		ranges = <0x0 0x70000000 DT_SIZE_M(4)>;
 		size = <33554432>;
 		spi-max-frequency = <DT_FREQ_M(133)>;

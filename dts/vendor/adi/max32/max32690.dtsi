@@ -46,18 +46,18 @@
 	gpio2: gpio@4000a000 {
 		compatible = "adi,max32-gpio";
 		reg = <0x4000a000 0x1000>;
-		gpio-controller;
 		#gpio-cells = <2>;
-		interrupts = <26 0>;
 		clocks = <&gcr ADI_MAX32_CLOCK_BUS0 2>;
+		gpio-controller;
+		interrupts = <26 0>;
 		status = "disabled";
 	};
 
 	gpio4: gpio@4000c000 {
 		compatible = "adi,max32-gpio";
 		reg = <0x4000c000 0x20>;
-		gpio-controller;
 		#gpio-cells = <2>;
+		gpio-controller;
 		interrupts = <54 0>;
 		status = "disabled";
 	};
@@ -65,23 +65,23 @@
 	gpio3: gpio@40080400 {
 		compatible = "adi,max32-gpio";
 		reg = <0x40080400 0x200>;
-		gpio-controller;
 		#gpio-cells = <2>;
-		interrupts = <58 0>;
 		clocks = <&gcr ADI_MAX32_CLOCK_BUS2 0>;
+		gpio-controller;
+		interrupts = <58 0>;
 		status = "disabled";
 	};
 };
 
 &adc {
 	compatible = "adi,max32-adc-sar", "adi,max32-adc";
-	clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
-	clock-divider = <16>;
 	channel-count = <21>;
-	track-count = <4>;
+	clock-divider = <16>;
+	clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 	idle-count = <5>;
-	vref-mv = <1250>;
 	resolution = <12>;
+	track-count = <4>;
+	vref-mv = <1250>;
 };
 
 /* MAX32690 extra peripherals. */
@@ -120,16 +120,17 @@
 		dma0: dma@40028000 {
 			compatible = "adi,max32-dma";
 			reg = <0x40028000 0x1000>;
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 5>;
-			interrupts = <28 0>, <29 0>, <30 0>, <31 0>;
-			dma-channels = <16>;
 			#dma-cells = <2>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 5>;
+			dma-channels = <16>;
+			interrupts = <28 0>, <29 0>, <30 0>, <31 0>;
 			status = "disabled";
 		};
 
 		flc1: flash_controller@40029400 {
 			compatible = "adi,max32-flash-controller";
 			reg = <0x40029400 0x400>;
+			ranges;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -141,8 +142,8 @@
 				ranges = <0x0 0x10300000 DT_SIZE_K(256)>;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				write-block-size = <16>;
 				erase-block-size = <8192>;
+				write-block-size = <16>;
 			};
 		};
 
@@ -185,9 +186,9 @@
 			reg = <0x40060000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			dma-names = "tx", "rx";
 			dmas = <&dma0 0 MAX32_DMA_SLOT_I2S_TX>,
 			       <&dma0 1 MAX32_DMA_SLOT_I2S_RX>;
-			dma-names = "tx", "rx";
 			status = "disabled";
 		};
 
@@ -208,16 +209,16 @@
 		wdt1: watchdog@40080800 {
 			compatible = "adi,max32-watchdog";
 			reg = <0x40080800 0x400>;
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 1>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 1>;
 			status = "disabled";
 		};
 
 		lptimer0: timer@40080c00 {
 			compatible = "adi,max32-timer";
 			reg = <0x40080c00 0x400>;
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 2>, <&clk_lptmr0>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 2>, <&clk_lptmr0>;
 			prescaler = <1>;
 			status = "disabled";
 
@@ -230,8 +231,8 @@
 		lptimer1: timer@40081000 {
 			compatible = "adi,max32-timer";
 			reg = <0x40081000 0x400>;
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 3>, <&clk_lptmr1>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 3>, <&clk_lptmr1>;
 			prescaler = <1>;
 			status = "disabled";
 
@@ -244,8 +245,8 @@
 		uart3: serial@40081400 {
 			compatible = "adi,max32-uart";
 			reg = <0x40081400 0x400>;
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 4>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 4>;
 			status = "disabled";
 		};
 	};

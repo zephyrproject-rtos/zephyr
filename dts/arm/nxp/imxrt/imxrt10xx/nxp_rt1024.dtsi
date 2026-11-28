@@ -46,7 +46,7 @@
 	/* 32 megabit internal flash present on chip */
 	soc_flash_ctrl: flash-controller@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		reg = <0>;
+		reg = <0x0 0x0>;
 		ranges = <0x0 0x60000000 DT_SIZE_M(4)>;
 		size = <DT_SIZE_M(4 * 8)>;
 		spi-max-frequency = <DT_FREQ_M(133)>;

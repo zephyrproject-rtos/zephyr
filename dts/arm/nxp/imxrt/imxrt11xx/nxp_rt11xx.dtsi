@@ -310,7 +310,7 @@
 			reg-names = "reg_base", "ahb";
 			interrupts = <130 0>;
 			#address-cells = <1>;
-			#size-cells = <0>;
+			#size-cells = <1>;
 			clocks = <&ccm IMX_CCM_FLEXSPI_CLK 0x0 0>;
 			status = "disabled";
 		};

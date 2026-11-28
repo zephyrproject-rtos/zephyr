@@ -33,6 +33,7 @@
 		};
 
 		memory: memory@30480000 {
+			reg = <0x30480000 0x10000000>;
 			ranges = <0x0 0x30480000 0x10000000>;
 		};
 
@@ -46,6 +47,7 @@
 
 		flexspi: spi@525e0000 {
 			reg = <0x525e0000 0x4000>, <0x38000000 DT_SIZE_M(128)>;
+			ranges = <0x28000000 0x28000000 DT_SIZE_M(16)>;
 			reg-names = "reg_base", "ahb";
 		};
 
@@ -60,6 +62,7 @@
 
 		flexspi2: spi@545e0000 {
 			reg = <0x545e0000 0x4000>, <0x14000000 DT_SIZE_M(64)>;
+			ranges = <0x4000000 0x4000000 DT_SIZE_M(64)>;
 			reg-names = "reg_base", "ahb";
 		};
 	};

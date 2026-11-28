@@ -119,13 +119,14 @@
 };
 
 &flexspi {
-	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(8)>;
+	reg = <0x402a8000 0x4000>, <0x60000000 (DT_SIZE_M(8) * 8)>;
+	ranges = <0x60000000 0x60000000 (DT_SIZE_M(8) * 8)>;
 	status = "okay";
 
 	/* Winbond external flash */
 	ext_flash_ctrl: flash-controller@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		reg = <0>;
+		reg = <0x0 0x0>;
 		ranges = <0x0 0x60000000 (DT_SIZE_M(8) * 8)>;
 		size = <(DT_SIZE_M(8) * 8)>;
 		spi-max-frequency = <DT_FREQ_M(133)>;

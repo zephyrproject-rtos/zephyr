@@ -297,6 +297,8 @@ arduino_serial: &flexcomm2_lpuart2 {};
 };
 
 &flexspi {
+	reg = <0x500c8000 0x1000>, <0x80000000 DT_SIZE_M(8)>;
+	ranges = <0x80000000 0x80000000 DT_SIZE_M(8)>;
 	pinctrl-0 = <&pinmux_flexspi>;
 	pinctrl-names = "default";
 	ahb-prefetch;
@@ -309,8 +311,8 @@ arduino_serial: &flexcomm2_lpuart2 {};
 	/* WINBOND flash memory*/
 	ext_flash_ctrl: flash-controller@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		reg = <0>;
-		ranges = <0x0 0x90000000 DT_SIZE_M(8)>;
+		reg = <0x0 0x0>;
+		ranges = <0x0 0x80000000 DT_SIZE_M(8)>;
 		size = <DT_SIZE_M(64)>;
 		spi-max-frequency = <DT_FREQ_M(133)>;
 		jedec-id = [ef 40 17];
@@ -343,7 +345,7 @@ arduino_serial: &flexcomm2_lpuart2 {};
 	 */
 	mx35lf1ge4ab: mx35lf1ge4ab@0 {
 		compatible = "nxp,imx-flexspi-nand";
-		reg = <0>;
+		reg = <0x0 0x0>;
 
 		/* MX35LF1GE4AB: 1 Gbit = 128 MiB; DT size is in bits */
 		size = <DT_SIZE_M(128 * 8)>;
