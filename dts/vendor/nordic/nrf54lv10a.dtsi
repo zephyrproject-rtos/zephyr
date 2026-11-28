@@ -98,17 +98,21 @@
 			#nordic,ficr-cells = <1>;
 		};
 
+		/* The VPR saved context starts at 0x2002fd40 and is only written when
+		 * FLPR hibernates, so only FLPR configurations need to exclude it. The
+		 * datasheet memory map lists no RAM from 0x2002fe40 up to ProtectedRAM.
+		 */
 		cpuapp_sram: memory@20000000 {
 			compatible = "mmio-sram";
-			reg = <0x20000000 DT_SIZE_K(191)>;
-			ranges = <0x0 0x20000000 DT_SIZE_K(191)>;
+			reg = <0x20000000 0x2fe40>;
+			ranges = <0x0 0x20000000 0x2fe40>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
  #ifndef USE_NON_SECURE_ADDRESS_MAP
 			cpuapp_sram_app: sram@60 {
 				compatible = "mmio-sram";
-				reg = <0x60 (DT_SIZE_K(191) - 0x60)>;
+				reg = <0x60 (0x2fe40 - 0x60)>;
 			};
  #endif
 		};

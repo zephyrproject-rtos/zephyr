@@ -115,29 +115,24 @@
 		};
 #endif
 
-#ifdef USE_NON_SECURE_ADDRESS_MAP
-		/* FLPR/VPR is not used with TF-M so NS can use its memory */
+		/* The VPR saved context starts at 0x2007fd40 and is only written when
+		 * FLPR hibernates, so only FLPR configurations need to exclude it. The
+		 * datasheet memory map lists no RAM from 0x2007fe40 up to ProtectedRAM.
+		 */
 		cpuapp_sram: memory@20000000 {
 			compatible = "mmio-sram";
 			reg = <0x20000000 0x7fe40>;
-			#address-cells = <1>;
-			#size-cells = <1>;
 			ranges = <0x0 0x20000000 0x7fe40>;
-		};
-#else
-		cpuapp_sram: memory@20000000 {
-			compatible = "mmio-sram";
-			reg = <0x20000000 DT_SIZE_K(511)>;
-			ranges = <0x0 0x20000000 DT_SIZE_K(511)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
+#ifndef USE_NON_SECURE_ADDRESS_MAP
 			cpuapp_sram_app: memory@60 {
 				compatible = "mmio-sram";
-				reg = <0x60 (DT_SIZE_K(511) - 0x60)>;
+				reg = <0x60 (0x7fe40 - 0x60)>;
 			};
-		};
 #endif
+		};
 
 #ifdef USE_NON_SECURE_ADDRESS_MAP
 		global_peripherals: peripheral@40000000 {

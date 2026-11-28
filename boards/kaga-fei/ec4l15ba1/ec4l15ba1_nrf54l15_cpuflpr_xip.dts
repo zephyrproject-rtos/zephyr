@@ -8,6 +8,6 @@
 #include "ec4l15ba1_nrf54l15_cpuflpr.dts"
 
 &cpuflpr_sram {
-	reg = <0x2002f000 DT_SIZE_K(68)>;
-	ranges = <0x0 0x2002f000 0x11000>;
+	reg = <0x2002ec00 DT_SIZE_K(68)>;
+	ranges = <0x0 0x2002ec00 0x11000>;
 };

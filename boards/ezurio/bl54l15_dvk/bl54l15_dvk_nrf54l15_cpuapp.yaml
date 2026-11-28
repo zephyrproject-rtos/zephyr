@@ -10,7 +10,7 @@ toolchain:
   - gnuarmemb
   - zephyr
 sysbuild: true
-ram: 188
+ram: 255
 flash: 1428
 supported:
   - adc
