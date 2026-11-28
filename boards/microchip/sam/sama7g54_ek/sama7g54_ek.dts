@@ -12,6 +12,7 @@
 #include <dt-bindings/sam/sama7g5/sama7g54/sama7g54-pinctrl.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/gpio/microchip-sam-gpio.h>
+#include <zephyr/dt-bindings/gpio/raspberrypi-csi-connector.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <microchip/sam/sama7/sama7g5/sama7g54.dtsi>
@@ -68,6 +69,15 @@
 			label = "blue";
 			gpios = <&piod 20 GPIO_ACTIVE_HIGH>;
 		};
+	};
+
+	/* Raspberry Pi 15-pin camera connector (J17) */
+	csi_connector: connector-csi {
+		compatible = "raspberrypi,csi-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <CSI_IO0 0 &pioe 1 0>;
 	};
 
 	gpio_keys {
@@ -317,6 +327,14 @@
 	};
 };
 
+&isc {
+	/*
+	 * The converted frames are meant for a display or a host rather than for
+	 * further processing, so hand them over encoded instead of linear.
+	 */
+	microchip,srgb-gamma;
+};
+
 &mcan0 {
 	pinctrl-0 = <&pinctrl_can0_default>;
 	pinctrl-names = "default";
@@ -503,6 +521,15 @@
 	};
 };
 
+&pioe {
+	/* XCLR of the camera connector, enabled by the camera shields */
+	csi_gpio0_hog: csi-gpio0-hog {
+		gpio-hog;
+		gpios = <1 GPIO_ACTIVE_HIGH>;
+		status = "disabled";
+	};
+};
+
 &pit64b0 {
 	clock-frequency = <DT_FREQ_M(10)>;
 };
@@ -562,6 +589,14 @@
 &trng {
 	status = "okay";
 };
+
+csi_interface: &csi2host {};
+
+csi_ep_in: &csi2host_ep_in {};
+
+csi_i2c: &i2c8 {};
+
+csi_capture_port: &isc {};
 
 mikrobus_header: &mikrobus_1_header {};
 
