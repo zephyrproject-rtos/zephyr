@@ -213,6 +213,11 @@
 	interrupt-parent = <&gic>;
 };
 
+&main_ospi0 {
+	interrupts = <GIC_SPI 240 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
+
 &main_epwm0 {
 	interrupts = <GIC_SPI 136 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&gic>;
