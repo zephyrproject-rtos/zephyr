@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief IPC service backend for host communication on Intel audio DSPs.
+ * @ingroup ipc_intel_adsp_host_ipc
+ */
+
 #ifndef ZEPHYR_INCLUDE_IPC_BACKENDS_INTEL_ADSP_HOST_IPC_H_
 #define ZEPHYR_INCLUDE_IPC_BACKENDS_INTEL_ADSP_HOST_IPC_H_
 
@@ -13,6 +19,14 @@
 #include <zephyr/pm/device.h>
 
 #include <zephyr/ipc/ipc_service_backend.h>
+
+/**
+ * @defgroup ipc_intel_adsp_host_ipc Intel ADSP host IPC backend
+ * @brief Callbacks and device data of the IPC link between an Intel audio DSP and its host.
+ * @ingroup ipc
+ * @since 4.3
+ * @{
+ */
 
 #ifdef CONFIG_INTEL_ADSP_IPC_OLD_INTERFACE
 
@@ -68,8 +82,27 @@ typedef bool (*intel_adsp_ipc_handler_t)(const struct device *dev, void *arg, ui
 typedef bool (*intel_adsp_ipc_done_t)(const struct device *dev, void *arg);
 
 #ifdef CONFIG_PM_DEVICE
+/**
+ * @brief Intel ADSP IPC resume callback.
+ *
+ * Called when the IPC device resumes, after the backend has been reinitialized.
+ *
+ * @param dev IPC device.
+ * @param arg Registered argument from intel_adsp_ipc_set_resume_handler().
+ * @return 0 on success, negative errno code to report a failed resume.
+ */
 typedef int (*intel_adsp_ipc_resume_handler_t)(const struct device *dev, void *arg);
 
+/**
+ * @brief Intel ADSP IPC suspend callback.
+ *
+ * Called when the IPC device is about to be suspended. The IPC interrupt is disabled only if
+ * the callback succeeds.
+ *
+ * @param dev IPC device.
+ * @param arg Registered argument from intel_adsp_ipc_set_suspend_handler().
+ * @return 0 to proceed with the suspend, negative errno code to abort it.
+ */
 typedef int (*intel_adsp_ipc_suspend_handler_t)(const struct device *dev, void *arg);
 #endif /* CONFIG_PM_DEVICE */
 
@@ -130,7 +163,10 @@ struct intel_adsp_ipc_data {
  * Endpoint private data struct.
  */
 struct intel_adsp_ipc_ept_priv_data {
-	/* Message done flag. */
+	/**
+	 * Set from the received callback to acknowledge the message to the host as soon as the
+	 * callback returns. Cleared by the backend.
+	 */
 	bool msg_done;
 	/** Pointer to additional private data. */
 	void *priv;
@@ -159,5 +195,7 @@ void intel_adsp_ipc_set_suspend_handler(const struct device *dev,
 					intel_adsp_ipc_suspend_handler_t fn, void *arg);
 
 #endif /* CONFIG_PM_DEVICE */
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_IPC_BACKENDS_INTEL_ADSP_HOST_IPC_H_ */
