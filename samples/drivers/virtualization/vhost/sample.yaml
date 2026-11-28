@@ -1,0 +1,20 @@
+sample:
+  description: VHost driver sample for VIRTIO backend implementation
+  name: vhost
+common:
+  integration_platforms:
+    - xenvm
+  platform_allow: xenvm
+  harness: console
+  harness_config:
+    type: multi_line
+    regex:
+      - "VHost device ready"
+      - "VHost sample application started"
+  timeout: 60
+  depends_on: vhost
+tests:
+  sample.drivers.virtualization.vhost:
+    tags: drivers virtualization vhost xen
+    min_ram: 32
+    extra_args: CONFIG_LOG_MODE_IMMEDIATE=y
