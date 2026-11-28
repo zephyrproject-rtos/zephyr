@@ -67,6 +67,7 @@ struct sam_hsmci_config {
 	const struct atmel_sam_pmc_config clock_cfg;
 	const struct pinctrl_dev_config *pincfg;
 	struct gpio_dt_spec carrier_detect;
+	uint8_t bus_width;
 };
 
 struct sam_hsmci_data {
@@ -99,12 +100,19 @@ static int sam_hsmci_reset(const struct device *dev)
 
 static int sam_hsmci_get_host_props(const struct device *dev, struct sdhc_host_props *props)
 {
+	const struct sam_hsmci_config *config = dev->config;
+
 	memset(props, 0, sizeof(*props));
 
 	props->f_max = _HSMCI_MAX_FREQ;
 	props->f_min = _HSMCI_MIN_FREQ;
-	/* high-speed not working yet due to limitations of the SDHC sm */
-	props->host_caps.high_spd_support = false;
+	/*
+	 * The SD stack switches to the 4-bit bus as part of high speed init.
+	 * Gate high speed on the 4-bit bus as other SDHC drivers do.
+	 */
+	props->host_caps.high_spd_support = (config->bus_width == 4);
+	props->host_caps.vol_330_support = true;
+	props->bus_4_bit_support = (config->bus_width == 4);
 	props->power_delay = 500;
 	props->is_spi = false;
 	props->max_current_330 = 4;
@@ -675,7 +683,8 @@ static DEVICE_API(sdhc, hsmci_api) = {
 		.base = (Hsmci *)DT_INST_REG_ADDR(N),                                              \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(N),                                       \
 		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(N),                                         \
-		.carrier_detect = GPIO_DT_SPEC_INST_GET_OR(N, cd_gpios, {0})};                     \
+		.carrier_detect = GPIO_DT_SPEC_INST_GET_OR(N, cd_gpios, {0}),                      \
+		.bus_width = DT_INST_PROP(N, bus_width)};                                          \
 	static struct sam_hsmci_data hsmci_##N##_data = {};                                        \
 	DEVICE_DT_INST_DEFINE(N, &sam_hsmci_init, NULL, &hsmci_##N##_data, &hsmci_##N##_config,    \
 			      POST_KERNEL, CONFIG_SDHC_INIT_PRIORITY, &hsmci_api);
