@@ -19,7 +19,7 @@
  * @brief Interfaces for I2C EEPROM target devices.
  * @defgroup i2c_eeprom_target_api I2C EEPROM Target
  * @since 1.13
- * @version 1.0.0
+ * @version 2.0.0
  * @ingroup i2c_interface
  * @{
  */
@@ -77,25 +77,6 @@ int eeprom_target_read_data(const struct device *dev, off_t offset,
  */
 int eeprom_target_write_data(const struct device *dev, off_t offset,
 			     const void *data, size_t len);
-
-/**
- * @brief Program memory of the virtual EEPROM
- *
- * @deprecated Use @ref eeprom_target_write_data instead.
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param eeprom_data Pointer of data to program into the virtual eeprom memory
- * @param length Length of data to program into the virtual eeprom memory
- *
- * @retval 0 If successful.
- * @retval -EINVAL Invalid data size
- */
-static inline __deprecated int eeprom_target_program(const struct device *dev,
-						     const uint8_t *eeprom_data,
-						     unsigned int length)
-{
-	return eeprom_target_write_data(dev, 0, eeprom_data, length);
-}
 
 /**
  * @brief Read single byte of virtual EEPROM memory
