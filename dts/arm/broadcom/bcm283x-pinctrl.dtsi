@@ -60,8 +60,8 @@
 		group1 {
 			pinmux = <UART0_TX_GPIO36>,
 				 <UART0_RX_GPIO37>,
-				 <UART0_CTS_GPIO38>,
-				 <UART0_RTS_GPIO39>;
+				 <UART0_RTS_GPIO38>,
+				 <UART0_CTS_GPIO39>;
 		};
 	};
 
@@ -108,8 +108,8 @@
 		group1 {
 			pinmux = <UART1_TX_GPIO40>,
 				 <UART1_RX_GPIO41>,
-				 <UART1_CTS_GPIO42>,
-				 <UART1_RTS_GPIO43>;
+				 <UART1_RTS_GPIO42>,
+				 <UART1_CTS_GPIO43>;
 		};
 	};
 
@@ -134,6 +134,13 @@
 		};
 	};
 
+	i2c0_gpio46: i2c0-gpio46 {
+		group1 {
+			pinmux = <I2C0_SDA_GPIO46>,
+				 <I2C0_SCL_GPIO47>;
+		};
+	};
+
 	i2c1_gpio2: i2c1-gpio2 {
 		group1 {
 			pinmux = <I2C1_SDA_GPIO2>,
@@ -145,6 +152,115 @@
 		group1 {
 			pinmux = <I2C1_SDA_GPIO44>,
 				 <I2C1_SCL_GPIO45>;
+		};
+	};
+
+	i2c1_gpio46: i2c1-gpio46 {
+		group1 {
+			pinmux = <I2C1_SDA_GPIO46>,
+				 <I2C1_SCL_GPIO47>;
+		};
+	};
+
+	spi0_gpio9: spi0-gpio9 {
+		group1 {
+			pinmux = <SPI0_MISO_GPIO9>,
+				 <SPI0_MOSI_GPIO10>,
+				 <SPI0_SCLK_GPIO11>;
+		};
+	};
+
+	spi0_gpio37: spi0-gpio37 {
+		group1 {
+			pinmux = <SPI0_MISO_GPIO37>,
+				 <SPI0_MOSI_GPIO38>,
+				 <SPI0_SCLK_GPIO39>;
+		};
+	};
+
+	spi0_gpio47: spi0-gpio47 {
+		group1 {
+			pinmux = <SPI0_MISO_GPIO47>,
+				 <SPI0_MOSI_GPIO48>,
+				 <SPI0_SCLK_GPIO49>;
+		};
+	};
+
+	spi1_gpio19: spi1-gpio19 {
+		group1 {
+			pinmux = <SPI1_MISO_GPIO19>,
+				 <SPI1_MOSI_GPIO20>,
+				 <SPI1_SCLK_GPIO21>;
+		};
+	};
+
+	pwm0_0_gpio12: pwm0-0-gpio12 {
+		group1 {
+			pinmux = <PWM0_0_GPIO12>;
+		};
+	};
+
+	pwm0_1_gpio13: pwm0-1-gpio13 {
+		group1 {
+			pinmux = <PWM0_1_GPIO13>;
+		};
+	};
+
+	pwm0_0_gpio18: pwm0-0-gpio18 {
+		group1 {
+			pinmux = <PWM0_0_GPIO18>;
+		};
+	};
+
+	pwm0_1_gpio19: pwm0-1-gpio19 {
+		group1 {
+			pinmux = <PWM0_1_GPIO19>;
+		};
+	};
+
+	pwm0_1_gpio45: pwm0-1-gpio45 {
+		group1 {
+			pinmux = <PWM0_1_GPIO45>;
+		};
+	};
+
+	pcm_gpio18: pcm-gpio18 {
+		group1 {
+			pinmux = <PCM_CLK_GPIO18>,
+				 <PCM_FS_GPIO19>,
+				 <PCM_DIN_GPIO20>,
+				 <PCM_DOUT_GPIO21>;
+		};
+	};
+
+	pcm_gpio28: pcm-gpio28 {
+		group1 {
+			pinmux = <PCM_CLK_GPIO28>,
+				 <PCM_FS_GPIO29>,
+				 <PCM_DIN_GPIO30>,
+				 <PCM_DOUT_GPIO31>;
+		};
+	};
+
+	emmc_gpio22: emmc-gpio22 {
+		group1 {
+			pinmux = <SD1_CLK_GPIO22>,
+				 <SD1_CMD_GPIO23>,
+				 <SD1_DAT0_GPIO24>,
+				 <SD1_DAT1_GPIO25>,
+				 <SD1_DAT2_GPIO26>,
+				 <SD1_DAT3_GPIO27>;
+		};
+	};
+
+	emmc_gpio48: emmc-gpio48 {
+		group1 {
+			pinmux = <SD1_CLK_GPIO48>,
+				 <SD1_CMD_GPIO49>,
+				 <SD1_DAT0_GPIO50>,
+				 <SD1_DAT1_GPIO51>,
+				 <SD1_DAT2_GPIO52>,
+				 <SD1_DAT3_GPIO53>;
 		};
 	};
 
