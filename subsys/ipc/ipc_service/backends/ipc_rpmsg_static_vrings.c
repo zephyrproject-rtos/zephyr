@@ -596,10 +596,12 @@ static int open(const struct device *instance)
 	rpmsg_inst->bound_cb = bound_cb;
 	rpmsg_inst->cb = ept_cb;
 
+	/* The pool covers only the RX/TX buffer area; the vring structures follow it. */
 	err = ipc_rpmsg_init(rpmsg_inst, data->role, conf->buffer_size,
 			     &data->vr.shm_io, &data->vr.vdev,
 			     (void *)data->vr.shm_addr,
-			     data->vr.shm_size, ns_bind_cb);
+			     data->vr.rx_addr - data->vr.shm_addr,
+			     ns_bind_cb);
 	if (err != 0) {
 		goto error;
 	}
