@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI Enhanced Quadrature Encoder Pulse based counter
+
+include: [base.yaml, pinctrl-device.yaml]
+
+compatible: "ti,am3352-eqep"
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
