@@ -45,6 +45,7 @@
 #include "adv.h"
 #include "att_internal.h"
 #include "buf_view.h"
+#include "buf_waiter.h"
 #include "classic/conn_br_internal.h"
 #include "classic/sco_internal.h"
 #include "classic/ssp.h"
@@ -112,9 +113,18 @@ static void deferred_work(struct k_work *work);
 static void notify_connected(struct bt_conn *conn);
 
 static struct bt_conn acl_conns[CONFIG_BT_MAX_CONN];
+
+/* The waiters of bt_conn_create_pdu_waiter() */
+static BT_BUF_WAITERS_DEFINE(acl_tx_waiters);
+
+static void acl_tx_pool_destroy(struct net_buf *buf)
+{
+	bt_buf_waiters_destroy(&acl_tx_waiters, buf);
+}
+
 NET_BUF_POOL_DEFINE(acl_tx_pool, CONFIG_BT_L2CAP_TX_BUF_COUNT,
 		    BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU),
-		    CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
+		    CONFIG_BT_CONN_TX_USER_DATA_SIZE, acl_tx_pool_destroy);
 
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
 const struct bt_conn_auth_cb *bt_auth;
@@ -1933,6 +1943,25 @@ struct net_buf *bt_conn_create_pdu_timeout(struct net_buf_pool *pool,
 
 	return buf;
 }
+
+#if defined(CONFIG_BT_CONN)
+struct net_buf *bt_conn_create_pdu_waiter(struct bt_buf_waiter *waiter, size_t reserve)
+{
+	struct net_buf *buf;
+
+	buf = bt_buf_waiter_alloc(&acl_tx_waiters, waiter, &acl_tx_pool);
+	if (buf != NULL) {
+		net_buf_reserve(buf, reserve + sizeof(struct bt_hci_acl_hdr) + BT_BUF_RESERVE);
+	}
+
+	return buf;
+}
+
+void bt_conn_pdu_waiter_cancel(struct bt_buf_waiter *waiter)
+{
+	bt_buf_waiter_cancel(&acl_tx_waiters, waiter);
+}
+#endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_CONN_TX)
 static void tx_complete_work(struct k_work *work)
