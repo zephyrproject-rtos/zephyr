@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+shield:
+  name: holybro_m10
+  full_name: M10 GPS
+  vendor: holybro
+  supported_features:
+    - gnss
+    - sensor

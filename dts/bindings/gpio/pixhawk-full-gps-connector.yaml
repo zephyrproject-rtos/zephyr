@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Pixhawk full GPS connector
+
+description: |
+  10-pin JST-GH port combining a serial port, an I2C bus, a safety switch,
+  its LED and a buzzer, as defined by the Pixhawk Connector Standard
+  (DS-009) as the Full GPS plus Safety Switch port. Flight controllers use
+  it for GNSS units with an integrated magnetometer, safety switch and
+  buzzer.
+
+  This binding provides a nexus mapping for the signal pins, indexed by
+  connector pin number. Use the PIXHAWK_FULL_GPS_* constants in
+  <zephyr/dt-bindings/gpio/pixhawk-connector.h> to refer to them.
+
+    1  VCC (5 V)
+    2  TX (output)
+    3  RX (input)
+    4  SCL
+    5  SDA
+    6  Safety switch (input)
+    7  Safety LED (output)
+    8  VDD 3.3 V (powers the switch and the LED)
+    9  Buzzer (output, from a buzzer driver)
+    10 GND
+
+  See https://github.com/pixhawk/Pixhawk-Standards for the standard.
+
+compatible: "pixhawk-full-gps-connector"
+
+include: [gpio-nexus.yaml, base.yaml]
