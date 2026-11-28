@@ -45,7 +45,8 @@ BUF_DEF(sdram1, BUF_SIZE_SDRAM);
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sdram2))
 BUF_DEF(sdram2, BUF_SIZE_SDRAM);
 #endif
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sram1))
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sram1)) && \
+	DT_NODE_HAS_PROP(DT_NODELABEL(sram1), zephyr_memory_region)
 BUF_DEF(sram1, BUF_SIZE_SRAM);
 #endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sram2))
@@ -91,10 +92,12 @@ ZTEST(test_ram, test_sdram2)
 
 ZTEST(test_ram, test_sram1)
 {
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sram1))
+#if !DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sram1))
+	ztest_test_skip();
+#elif DT_NODE_HAS_PROP(DT_NODELABEL(sram1), zephyr_memory_region)
 	test_ram_rw(buf_sram1, BUF_SIZE_SRAM);
 #else
-	ztest_test_skip();
+	test_ram_rw((uint32_t *)DT_REG_ADDR(DT_NODELABEL(sram1)), BUF_SIZE_SRAM);
 #endif
 }
 
