@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_I2C_AT24_AREA_OFFSET
+	hex "EEPROM offset of the test area"
+	default 0x0
+	help
+	  First EEPROM address the test writes. The test overwrites one page
+	  from here. Boards that keep data at the start of the EEPROM, such as
+	  the board ID on the AM62L EVM, move the test area past it. Must be
+	  page-aligned, and the page must lie inside the device and inside
+	  what the EEPROM's address width (8 or 16 bits) can reach.
+
+source "Kconfig.zephyr"
