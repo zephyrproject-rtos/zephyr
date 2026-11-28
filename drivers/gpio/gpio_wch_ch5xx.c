@@ -30,6 +30,10 @@
 #define GPIO_REG(bits, port, reg) (regs->PA_##reg)
 #endif
 
+#if defined(CH570_CH572) || defined(CH591_CH592)
+#define HAS_INT_EDGE_TYPE 1
+#endif
+
 struct gpio_ch5xx_config {
 	struct gpio_driver_config common;
 	GPIO_TypeDef *regs;
@@ -173,6 +177,13 @@ static int gpio_ch5xx_pin_interrupt_configure(const struct device *dev, gpio_pin
 		return 0;
 	}
 
+#if !HAS_INT_EDGE_TYPE
+	if (trigger == GPIO_INT_TRIG_BOTH) {
+		/* No INT_EDGE_TYPE register: any-edge interrupts are not supported */
+		return -ENOTSUP;
+	}
+#endif
+
 	if (mode == GPIO_INT_MODE_LEVEL) {
 		GPIO_REG(16, config->port, INT_MODE) &= ~pin_mask;
 	} else if (mode == GPIO_INT_MODE_EDGE) {
@@ -183,16 +194,22 @@ static int gpio_ch5xx_pin_interrupt_configure(const struct device *dev, gpio_pin
 
 	switch (trigger) {
 	case GPIO_INT_TRIG_LOW:
+#if HAS_INT_EDGE_TYPE
 		GPIO_REG(16, config->port, INT_EDGE_TYPE) &= ~pin_mask;
+#endif
 		GPIO_REG(16, config->port, OUT) &= ~pin_mask;
 		break;
 	case GPIO_INT_TRIG_HIGH:
+#if HAS_INT_EDGE_TYPE
 		GPIO_REG(16, config->port, INT_EDGE_TYPE) &= ~pin_mask;
+#endif
 		GPIO_REG(16, config->port, OUT) |= pin_mask;
 		break;
+#if HAS_INT_EDGE_TYPE
 	case GPIO_INT_TRIG_BOTH:
 		GPIO_REG(16, config->port, INT_EDGE_TYPE) |= pin_mask;
 		break;
+#endif
 	default:
 		return -ENOTSUP;
 	}
@@ -255,7 +272,7 @@ static DEVICE_API(gpio, gpio_ch5xx_driver_api) = {
 #define GPIO_CH5XX_INIT(idx)                                                                       \
 	static const struct gpio_ch5xx_config gpio_ch5xx_##idx##_config = {                        \
 		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(idx),                                    \
-		.regs = (GPIO_TypeDef *)DT_INST_REG_ADDR(idx),                                     \
+		.regs = (GPIO_TypeDef *)DT_REG_ADDR(DT_PARENT(DT_DRV_INST(idx))),                  \
 		.port = DT_INST_ENUM_IDX(idx, port),                                               \
 	};                                                                                         \
 	static struct gpio_ch5xx_data gpio_ch5xx_##idx##_data;                                     \

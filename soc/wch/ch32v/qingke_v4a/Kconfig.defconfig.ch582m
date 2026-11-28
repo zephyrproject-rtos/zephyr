@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_CH582M
+
+configdefault VECTOR_TABLE_SIZE
+	default 35
+
+configdefault NUM_IRQS
+	default 36
+
+endif # SOC_CH582M

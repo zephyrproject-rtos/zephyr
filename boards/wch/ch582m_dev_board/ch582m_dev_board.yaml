@@ -1,0 +1,14 @@
+identifier: ch582m_dev_board
+name: WCH CH582M Dev Board
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 32
+flash: 448
+vendor: wch
+supported:
+  - gpio
+  - led
+  - uart
