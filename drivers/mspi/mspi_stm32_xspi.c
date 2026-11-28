@@ -110,6 +110,15 @@ static int mspi_stm32_xspi_dma_stream_setup(void *hdma, struct stm32_stream *dma
 		return -ENODEV;
 	}
 
+	/* DMA channel has not been initialized */
+	if (dma_stream->channel < 0) {
+		dma_stream->channel = dma_request_channel(dma_stream->dev, NULL);
+		if (dma_stream->channel < 0) {
+			LOG_ERR("Failed to request DMA channel: %d", dma_stream->channel);
+			return -ENODEV;
+		}
+	}
+
 	dma_stream->cfg.user_data = hdma;
 	/* This field is used to inform driver that it is overridden */
 	dma_stream->cfg.linked_channel = STM32_DMA_HAL_OVERRIDE;
@@ -2089,8 +2098,8 @@ static int mspi_stm32_xspi_pm_action(const struct device *dev, enum pm_device_ac
 
 #define XSPI_DMA_CHANNEL_INIT(node, dir, src_dev, dest_dev)                                       \
 	.dev = DEVICE_DT_GET(DT_DMAS_CTLR(node)),                                                 \
-	.channel = DT_DMAS_CELL_BY_NAME(node, dir, channel),                                      \
-	.phys_addr = DT_REG_ADDR(DT_DMAS_CTLR(node)),                                              \
+	.channel = DT_DMAS_CELL_BY_NAME_OR(node, dir, channel, -1),                               \
+	.phys_addr = DT_REG_ADDR(DT_DMAS_CTLR(node)),                                             \
 	.cfg = {                                                                                  \
 		.dma_slot = DT_DMAS_CELL_BY_NAME(node, dir, slot),                                \
 		.channel_direction = STM32_DMA_CONFIG_DIRECTION(DMA_CHANNEL_CONFIG(node, dir)),   \
