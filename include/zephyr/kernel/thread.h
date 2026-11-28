@@ -13,6 +13,7 @@
 
 #include <zephyr/kernel/stats.h>
 #include <zephyr/arch/arch_interface.h>
+#include <zephyr/debug/lockdep.h>
 
 /**
  * @typedef k_thread_entry_t
@@ -314,6 +315,11 @@ struct k_thread {
 	/** crude thread-local storage */
 	void *custom_data;
 #endif /* CONFIG_THREAD_CUSTOM_DATA */
+
+#ifdef CONFIG_LOCKDEP
+	/** Locks currently held by this thread. */
+	struct z_lockdep_thread_state lockdep;
+#endif /* CONFIG_LOCKDEP */
 
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
 	struct _thread_userspace_local_data *userspace_local_data;
