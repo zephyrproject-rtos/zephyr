@@ -10,3 +10,26 @@ properties:
 
   clocks:
     required: true
+
+  resets-soc:
+    type: int
+    default: 1
+    enum:
+      - 0
+      - 1
+    description: |
+      1 if a watchdog timeout reset reaches the whole SoC. Defaults to 1 so
+      existing CMSDK boards keep accepting WDT_FLAG_RESET_SOC. Set 0 when the
+      reset line does not reset the chip (for example it only resets a local
+      CPU).
+
+  resets-cpu:
+    type: int
+    default: 1
+    enum:
+      - 0
+      - 1
+    description: |
+      1 if a watchdog timeout can reset the local CPU. Defaults to 1 so
+      existing CMSDK boards keep accepting WDT_FLAG_RESET_CPU_CORE. Set 0
+      when that reset mode is not wired.
