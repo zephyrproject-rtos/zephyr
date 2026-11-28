@@ -138,12 +138,22 @@ static void bt_ready(void)
 	}
 }
 
+static void reboot_work_handler(struct k_work *work)
+{
+	sys_reboot(SYS_REBOOT_WARM);
+}
+
 void pairing_complete(struct bt_conn *conn, bool bonded)
 {
+	static K_WORK_DELAYABLE_DEFINE(reboot_work, reboot_work_handler);
+	int err;
+
 	printk("Pairing completed. Rebooting in 5 seconds...\n");
 
-	k_sleep(K_SECONDS(5));
-	sys_reboot(SYS_REBOOT_WARM);
+	err = k_work_schedule(&reboot_work, K_SECONDS(5));
+	if (err < 0) {
+		printk("Failed to schedule the reboot (err %d)\n", err);
+	}
 }
 
 static struct bt_conn_auth_info_cb bt_conn_auth_info = {
