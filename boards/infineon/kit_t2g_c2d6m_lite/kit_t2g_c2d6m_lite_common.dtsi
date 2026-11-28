@@ -30,6 +30,39 @@
 			gpios = <&gpio_prt7 7 GPIO_ACTIVE_HIGH>;
 		};
 	};
+
+	/* Oscillator on the REF_CLK pin of the Ethernet MAC */
+	eth0_refclk: eth0-refclk {
+		compatible = "fixed-clock";
+		clock-frequency = <125000000>;
+		#clock-cells = <0>;
+	};
+};
+
+/*
+ * Realtek RTL8211FI gigabit PHY on RGMII, its reset is tied to XRES. The PHY
+ * is strapped to address 1; address 0 is its broadcast address.
+ */
+&eth0 {
+	clocks = <&clk_peri>, <&eth0_refclk>, <&clk_hf5>;
+	clock-names = "pclk", "ref_clk", "tsu_clk";
+	pinctrl-0 = <&p13_0_eth0_mdc &p13_1_eth0_mdio
+		     &p13_2_eth0_txd0 &p13_3_eth0_txd1 &p13_6_eth0_txd2 &p13_7_eth0_txd3
+		     &p13_4_eth0_tx_clk &p14_0_eth0_tx_ctl &p13_5_eth0_ref_clk
+		     &p14_3_eth0_rxd0 &p14_4_eth0_rxd1 &p14_5_eth0_rxd2 &p14_6_eth0_rxd3
+		     &p14_2_eth0_rx_clk &p14_7_eth0_rx_ctl>;
+	pinctrl-names = "default";
+	phy-handle = <&eth0_phy>;
+	phy-connection-type = "rgmii-id";
+	local-mac-address = [02 00 00 00 00 01];
+};
+
+&eth0_mdio {
+	eth0_phy: phy@1 {
+		compatible = "realtek,rtl8211f";
+		reg = <1>;
+		status = "disabled";
+	};
 };
 
 /*
@@ -185,6 +218,10 @@ uart9: &scb9 {
 };
 
 &clk_mem {
+	status = "okay";
+};
+
+&clk_peri {
 	status = "okay";
 };
 

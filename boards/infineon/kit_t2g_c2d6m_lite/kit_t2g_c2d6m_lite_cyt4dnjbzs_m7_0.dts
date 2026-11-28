@@ -99,3 +99,19 @@ can0: &can0_1 {
 	phys = <&transceiver0>;
 	status = "okay";
 };
+
+&eth0 {
+	status = "okay";
+};
+
+&eth0_mdio {
+	status = "okay";
+};
+
+&eth0_phy {
+	status = "okay";
+};
+
+&eth0_ptp {
+	status = "okay";
+};
