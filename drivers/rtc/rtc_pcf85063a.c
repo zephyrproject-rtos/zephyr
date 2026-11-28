@@ -33,11 +33,19 @@ LOG_MODULE_REGISTER(pcf85063a);
 
 #define PCF85063A_CONTROL1_REGISTER  0x00
 #define PCF85063A_CONTROL2_REGISTER  0x01
+#define PCF85063A_OFFSET_REGISTER    0x02
 #define PCF85063A_TIME_DATE_REGISTER 0x04
 #define PCF85063A_ALARM_REGISTER     0x0B
 
 #define PCF85063A_CONTROL2_REGISTER_AIE_EN BIT(7)
 #define PCF85063A_CONTROL1_REGISTER_12_24  BIT(1)
+
+#define PCF85063A_OFFSET_MODE             BIT(7)
+#define PCF85063A_OFFSET_MASK             GENMASK(6, 0)
+#define PCF85063A_OFFSET_SLOW_PPB_PER_LSB 4340
+#define PCF85063A_OFFSET_FAST_PPB_PER_LSB 4069
+#define PCF85063A_OFFSET_MIN              (-64)
+#define PCF85063A_OFFSET_MAX              63
 
 #define PCF85063A_SECONDS_MASK  GENMASK(6, 0)
 #define PCF85063A_MINUTES_MASK  GENMASK(6, 0)
@@ -147,6 +155,70 @@ static int pcf85063a_get_time(const struct device *dev, struct rtc_time *timeptr
 
 	return 0;
 }
+
+#ifdef CONFIG_RTC_CALIBRATION
+
+static int32_t pcf85063a_offset_step(uint8_t offset)
+{
+	return (offset & PCF85063A_OFFSET_MODE) != 0U ? PCF85063A_OFFSET_FAST_PPB_PER_LSB
+						      : PCF85063A_OFFSET_SLOW_PPB_PER_LSB;
+}
+
+static int pcf85063a_set_calibration(const struct device *dev, int32_t calibration)
+{
+	const struct pcf85063a_config *config = dev->config;
+	uint8_t raw_offset;
+	int32_t step_ppb;
+	int32_t offset;
+	int ret;
+
+	ret = i2c_reg_read_byte_dt(&config->i2c, PCF85063A_OFFSET_REGISTER, &raw_offset);
+	if (ret != 0) {
+		LOG_ERR("Unable to get the offset value. Err: %i", ret);
+		return ret;
+	}
+
+	step_ppb = pcf85063a_offset_step(raw_offset);
+	/* Frequency correction has the opposite sign to the chip's period offset. */
+	if ((calibration < -PCF85063A_OFFSET_MAX * step_ppb) ||
+	    (calibration > -PCF85063A_OFFSET_MIN * step_ppb)) {
+		return -EINVAL;
+	}
+
+	/* Validate before negating to avoid overflow for INT32_MIN. Ties round away from zero. */
+	offset = DIV_ROUND_CLOSEST(-calibration, step_ppb);
+	/* Keep the current correction mode and replace only the signed seven-bit offset. */
+	raw_offset =
+		(raw_offset & PCF85063A_OFFSET_MODE) | ((uint8_t)offset & PCF85063A_OFFSET_MASK);
+
+	ret = i2c_reg_write_byte_dt(&config->i2c, PCF85063A_OFFSET_REGISTER, raw_offset);
+	if (ret != 0) {
+		LOG_ERR("Unable to set the offset value. Err: %i", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int pcf85063a_get_calibration(const struct device *dev, int32_t *calibration)
+{
+	const struct pcf85063a_config *config = dev->config;
+	int ret;
+	uint8_t raw_offset;
+
+	ret = i2c_reg_read_byte_dt(&config->i2c, PCF85063A_OFFSET_REGISTER, &raw_offset);
+	if (ret != 0) {
+		LOG_ERR("Unable to get the offset value. Err: %i", ret);
+		return ret;
+	}
+
+	*calibration = -sign_extend(raw_offset & PCF85063A_OFFSET_MASK, 6) *
+		       pcf85063a_offset_step(raw_offset);
+
+	return 0;
+}
+
+#endif /* CONFIG_RTC_CALIBRATION */
 
 #ifdef PCF85063A_INT1_GPIOS_IN_USE
 
@@ -397,6 +469,10 @@ static DEVICE_API(rtc, pcf85063a_driver_api) = {
 	.alarm_get_time = pcf85063a_alarm_get_time,
 	.alarm_is_pending = pcf85063a_alarm_is_pending,
 	.alarm_set_callback = pcf85063a_alarm_set_callback,
+#endif
+#ifdef CONFIG_RTC_CALIBRATION
+	.set_calibration = pcf85063a_set_calibration,
+	.get_calibration = pcf85063a_get_calibration,
 #endif
 };
 
