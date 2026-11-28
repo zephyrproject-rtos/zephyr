@@ -1,0 +1,54 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+
+mainmenu "TI VTM thermal shutdown sample"
+
+config APP_CRITICAL_MC
+	int "Critical temperature in millidegrees Celsius"
+	default 110000
+	help
+	  Programmed into the VTM GT_TH2 threshold of the monitored sensor.
+	  Keep it below the hardware reset threshold (ti,max-reset-mc), so
+	  that software gets the chance to shut down before the SoC does a
+	  hardware warm reset.
+
+config APP_TEST_BELOW_MC
+	int "Test mode: arm the threshold this far below the current temperature"
+	range 0 100000
+	default 0
+	help
+	  When non-zero, the critical threshold is programmed to the current
+	  die temperature minus this value (millidegrees Celsius) instead of
+	  APP_CRITICAL_MC. The trigger then fires without heating the board.
+	  The sample reports a pass or a fail line after APP_TEST_TIMEOUT_MS.
+
+config APP_TEST_TIMEOUT_MS
+	int "Test mode: time to wait for the trigger"
+	default 3000
+	help
+	  Used only when APP_TEST_BELOW_MC is non-zero.
+
+config APP_ARM_DELAY_S
+	int "Delay before arming the trigger, in seconds"
+	default 0
+	help
+	  Gives a console time to attach before a shutdown action runs.
+
+choice APP_ACTION
+	prompt "Action on the critical trigger"
+	default APP_ACTION_REBOOT
+
+config APP_ACTION_REBOOT
+	bool "Cold reboot"
+	select REBOOT
+	select SCHED_CPU_MASK if SMP
+	help
+	  The reboot runs on CPU 0: a PSCI reset issued from a secondary core
+	  did not reset the AM62L EVM.
+
+config APP_ACTION_LOG
+	bool "Log only"
+
+endchoice
+
+source "Kconfig.zephyr"

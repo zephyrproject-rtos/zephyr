@@ -1,0 +1,22 @@
+sample:
+  name: TI VTM thermal shutdown sample
+common:
+  tags:
+    - sensors
+  filter: dt_nodelabel_enabled("sensor0")
+  platform_allow:
+    - am62l_evm/am62l3/a53
+  integration_platforms:
+    - am62l_evm/am62l3/a53
+tests:
+  sample.sensor.ti_vtm_shutdown:
+    build_only: true
+  sample.sensor.ti_vtm_shutdown.trip:
+    extra_configs:
+      - CONFIG_APP_ACTION_LOG=y
+      - CONFIG_APP_TEST_BELOW_MC=10000
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "VTM-TRIP: PASS trigger fired"

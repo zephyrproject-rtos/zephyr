@@ -173,6 +173,17 @@
 		status = "disabled";
 	};
 
+	wkup_vtm0: vtm@b00000 {
+		compatible = "ti,vtm";
+		reg = <0xb00000 0x1000>,
+		      <0xb01000 0x1000>;
+		reg-names = "cfg1", "cfg2";
+		power-domains = <&vtm0_pd>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
 	main_timer0: timer@2400000 {
 		compatible = "ti,am654-timer";
 		reg = <0x2400000 DT_SIZE_K(1)>;
