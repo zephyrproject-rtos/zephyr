@@ -322,8 +322,8 @@ static inline void print_qos(const struct bt_bap_qos_cfg *qos)
 		       qos->interval, qos->framing, qos->phy, qos->sdu, qos->rtn, qos->latency,
 		       qos->pd);
 #else
-	bt_shell_print("QoS: interval %u framing 0x%02x phy 0x%02x sdu %u rtn %u pd %u",
-		       qos->interval, qos->framing, qos->phy, qos->sdu, qos->rtn, qos->pd);
+	bt_shell_print("QoS: interval %u framing 0x%02x phy 0x%02x sdu %u pd %u",
+		       qos->interval, qos->framing, qos->phy, qos->sdu, qos->pd);
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE || CONFIG_BT_BAP_UNICAST */
 }
 

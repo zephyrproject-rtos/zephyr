@@ -183,10 +183,9 @@ extern "C" {
 		.framing = _framing,                                                               \
 		.phy = _phy,                                                                       \
 		.sdu = _sdu,                                                                       \
-		.rtn = _rtn,                                                                       \
 		IF_ENABLED(UTIL_OR(IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SOURCE),                     \
 				   IS_ENABLED(CONFIG_BT_BAP_UNICAST)),                             \
-			   (.latency = _latency,))                                                 \
+			   (.latency = _latency, .rtn = _rtn,))                                   \
 		.pd = _pd,                                                                         \
 	})
 
@@ -268,14 +267,6 @@ struct bt_bap_qos_cfg {
 		uint8_t phy;
 
 		/**
-		 * @brief Retransmission Number
-		 *
-		 * This a recommendation to the controller, and the actual retransmission number
-		 * may be different than this.
-		 */
-		uint8_t rtn;
-
-		/**
 		 * @brief Maximum SDU size
 		 *
 		 * Value range @ref BT_ISO_MIN_SDU to @ref BT_ISO_MAX_SDU.
@@ -290,6 +281,13 @@ struct bt_bap_qos_cfg {
 		 * Not used for the @kconfig{CONFIG_BT_BAP_BROADCAST_SINK} role.
 		 */
 		uint16_t latency;
+		/**
+		 * @brief Retransmission Number
+		 *
+		 * This a recommendation to the controller, and the actual retransmission number
+		 * may be different than this.
+		 */
+		uint8_t rtn;
 #endif /*  CONFIG_BT_BAP_BROADCAST_SOURCE || CONFIG_BT_BAP_UNICAST */
 
 		/**
