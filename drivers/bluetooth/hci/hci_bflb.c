@@ -86,9 +86,10 @@ extern void bflb_ble_irq_setup(void);
  * Allocate an event net_buf and stamp the HCI event header.
  *
  * Uses K_NO_WAIT because the caller may be in ISR context. Returns NULL if
- * the pool is exhausted.
+ * the pool is exhausted, or if an event with payload_len bytes of parameters
+ * does not fit in the buffer.
  */
-static struct net_buf *bflb_evt_alloc(uint8_t evt, uint8_t payload_len)
+static struct net_buf *bflb_evt_alloc(uint8_t evt, size_t payload_len)
 {
 	struct net_buf *buf;
 	struct bt_hci_evt_hdr *hdr;
@@ -98,12 +99,31 @@ static struct net_buf *bflb_evt_alloc(uint8_t evt, uint8_t payload_len)
 		return NULL;
 	}
 
+	if (payload_len > UINT8_MAX || sizeof(*hdr) + payload_len > net_buf_tailroom(buf)) {
+		LOG_ERR("Event 0x%02x too long for buffer: %zu", evt, payload_len);
+		net_buf_unref(buf);
+		return NULL;
+	}
+
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->evt = evt;
-	hdr->len = payload_len;
+	hdr->len = (uint8_t)payload_len;
 
 	return buf;
 }
+
+/* The longest ACL data packet, with its header, that the controller hands
+ * over: an LE data PDU carries up to 251 bytes, and a BR/EDR packet (3-DH5),
+ * which only the BR/EDR variant of the BL61x controller delivers, up to 1021.
+ */
+#define BFLB_ACL_RX_MAX                                                                            \
+	(BT_HCI_ACL_HDR_SIZE + (IS_ENABLED(CONFIG_BFLB_BL61X_BLE_1M2S1BREDR1) ? 1021U : 251U))
+
+/* A BR/EDR controller library added for another SoC needs BFLB_ACL_RX_MAX
+ * extended: refuse BR/EDR in the Host with any other variant until it is.
+ */
+BUILD_ASSERT(!IS_ENABLED(CONFIG_BT_CLASSIC) || IS_ENABLED(CONFIG_BFLB_BL61X_BLE_1M2S1BREDR1),
+	     "BFLB_ACL_RX_MAX holds BR/EDR data only for the BR/EDR variant of BL61x");
 
 /*
  * Controller RX callback — called from controller context (possibly ISR).
@@ -112,7 +132,9 @@ static struct net_buf *bflb_evt_alloc(uint8_t evt, uint8_t payload_len)
  *
  * ACL data requires immediate extraction: bt_onchiphci_handle_rx_acl
  * dereferences param as a ke_msg* to access Exchange Memory, and the
- * ke_msg may be freed after this callback returns.
+ * ke_msg may be freed after this callback returns. It takes no size for the
+ * memory it copies the packet to, so the packet goes through a buffer that
+ * holds the longest one, and from there to an RX buffer if it fits.
  */
 static void controller_rx_cb(uint8_t pkt_type, uint16_t src_id, uint8_t *param, uint8_t param_len)
 {
@@ -178,6 +200,7 @@ static void controller_rx_cb(uint8_t pkt_type, uint16_t src_id, uint8_t *param, 
 	}
 #if defined(CONFIG_BT_CONN)
 	case BT_HCI_ACL_DATA: {
+		static uint8_t acl_rx[BFLB_ACL_RX_MAX];
 		uint16_t acl_len;
 
 		buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_NO_WAIT);
@@ -186,8 +209,17 @@ static void controller_rx_cb(uint8_t pkt_type, uint16_t src_id, uint8_t *param, 
 			return;
 		}
 
-		acl_len = bt_onchiphci_handle_rx_acl(param, net_buf_tail(buf));
-		net_buf_add(buf, acl_len);
+		acl_len = bt_onchiphci_handle_rx_acl(param, acl_rx);
+		__ASSERT(acl_len <= sizeof(acl_rx), "ACL data longer than expected: %u", acl_len);
+
+		if (acl_len > net_buf_tailroom(buf)) {
+			LOG_ERR("ACL data too long for buffer: %u > %zu", acl_len,
+				net_buf_tailroom(buf));
+			net_buf_unref(buf);
+			return;
+		}
+
+		(void)net_buf_add_mem(buf, acl_rx, acl_len);
 		break;
 	}
 #endif
