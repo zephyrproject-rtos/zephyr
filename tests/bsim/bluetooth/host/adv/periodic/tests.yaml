@@ -49,3 +49,19 @@ tests:
         - tests_scripts/per_adv_sync_term_leak.sh
     extra_args:
       EXTRA_CONF_FILE=prj_sync_term_leak.conf
+  bluetooth.host.adv.periodic.long_data.chains:
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_host_adv_periodic_prj_long_data_chains_conf
+      tests_scripts:
+        - tests_scripts/per_adv_long_data_chains.sh
+    extra_args:
+      EXTRA_CONF_FILE=prj_long_data.conf;overlay-chains.conf
+  bluetooth.host.adv.periodic.sync_term_leak.chains:
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_host_adv_periodic_prj_sync_term_leak_chains_conf
+      tests_scripts:
+        - tests_scripts/per_adv_sync_term_leak_chains.sh
+    extra_args:
+      EXTRA_CONF_FILE=prj_sync_term_leak.conf;overlay-chains.conf
