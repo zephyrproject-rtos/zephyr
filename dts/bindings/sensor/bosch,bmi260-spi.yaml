@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Shreyas Acharya
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    The BMI260 on a SPI bus. The device powers up in I2C mode and switches to
+    SPI on the first chip select, so the driver issues a throwaway read before
+    using the bus, and again after a soft reset.
+
+compatible: "bosch,bmi260"
+
+include: [spi-device.yaml, "bosch,bmi260.yaml"]

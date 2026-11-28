@@ -1,0 +1,91 @@
+# Copyright (c) 2026 Shreyas Acharya
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BMI260
+	bool "BMI260 inertial measurement unit"
+	default y
+	depends on DT_HAS_BOSCH_BMI260_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI260),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI260),spi)
+	help
+	  Enable driver for the Bosch BMI260 6-axis inertial measurement unit,
+	  providing accelerometer, gyroscope and die temperature readings over
+	  I2C or SPI.
+
+if BMI260
+
+config BMI260_BUS_I2C
+	bool
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI260),i2c)
+
+config BMI260_BUS_SPI
+	bool
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI260),spi)
+
+config BMI260_LOG_CONFIG
+	bool "Log the device configuration after initialization"
+	depends on LOG
+	help
+	  Read back and log the rate, range, offset compensation and error
+	  registers once initialization has finished. Useful when a reading
+	  looks wrong and the question is whether the device is configured the
+	  way the driver believes it is.
+
+config BMI260_TRIGGER
+	bool
+
+choice
+	prompt "Trigger mode"
+	default BMI260_TRIGGER_NONE
+	help
+	  Specify the type of triggering to be used by the driver. The
+	  interrupt driven modes need an interrupt line from the sensor to be
+	  described by the irq-gpios property; without one the sensor can only
+	  be read by polling.
+
+config BMI260_TRIGGER_NONE
+	bool "No trigger"
+
+config BMI260_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_BOSCH_BMI260),irq-gpios)
+	select BMI260_TRIGGER
+
+config BMI260_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_BOSCH_BMI260),irq-gpios)
+	select BMI260_TRIGGER
+
+endchoice
+
+if BMI260_TRIGGER_OWN_THREAD
+
+config BMI260_THREAD_PRIORITY
+	int "Thread priority"
+	default 10
+	help
+	  Priority of the thread used by the driver to handle interrupts.
+
+config BMI260_THREAD_STACK_SIZE
+	int "Thread stack size"
+	default 1024
+	help
+	  Stack size of the thread used by the driver to handle interrupts.
+
+endif # BMI260_TRIGGER_OWN_THREAD
+
+config EMUL_BMI260
+	bool "Emulator for the BMI260"
+	default y
+	depends on BMI260
+	depends on EMUL
+	help
+	  Enable the hardware emulator for the BMI260. Doing so allows
+	  exercising the driver against emulated I2C and SPI buses without real
+	  hardware.
+
+endif # BMI260

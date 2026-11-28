@@ -613,3 +613,10 @@ test_spi_dps310: dps310@48 {
 	reg = <0x48>;
 	spi-max-frequency = <0>;
 };
+
+test_spi_bmi260: bmi260@49 {
+	compatible = "bosch,bmi260";
+	reg = <0x49>;
+	spi-max-frequency = <0>;
+	irq-gpios = <&test_gpio 0 0>;
+};

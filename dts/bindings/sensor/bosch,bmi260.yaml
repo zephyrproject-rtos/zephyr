@@ -1,0 +1,55 @@
+# Copyright (c) 2026 Shreyas Acharya
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    The BMI260 is a 6-axis inertial measurement unit combining a 16-bit
+    accelerometer and a 16-bit gyroscope, and reporting its own die
+    temperature. See more info at:
+    https://www.bosch-sensortec.com/products/motion-sensors/imus/bmi260.html
+
+include: sensor-device.yaml
+
+compatible: "bosch,bmi260"
+
+properties:
+  irq-gpios:
+    type: phandle-array
+    description: |
+      The INT1 and, optionally, INT2 signal connections. Index 0 is INT1 and
+      index 1 is INT2. Without this property the sensor can only be polled
+      and sensor_trigger_set() reports -ENOTSUP.
+
+  accel-odr:
+    type: int
+    default: 100
+    description: |
+      Accelerometer output data rate in Hz, applied at initialization.
+      Defaults to 100 Hz, the reset value of ACC_CONF.acc_odr.
+    enum: [25, 50, 100, 200, 400, 800, 1600]
+
+  accel-range:
+    type: int
+    default: 2
+    description: |
+      Accelerometer full-scale range in g, applied at initialization.
+      Defaults to 2 g, which is less than the reset value of 8 g but is the
+      most commonly useful setting and the one with the finest resolution.
+    enum: [2, 4, 8, 16]
+
+  gyro-odr:
+    type: int
+    default: 100
+    description: |
+      Gyroscope output data rate in Hz, applied at initialization. Defaults
+      to 100 Hz, below the reset value of 200 Hz, to match accel-odr so that
+      both sensors produce a sample per data-ready interrupt.
+    enum: [25, 50, 100, 200, 400, 800, 1600, 3200]
+
+  gyro-range:
+    type: int
+    default: 2000
+    description: |
+      Gyroscope full-scale range in degrees per second, applied at
+      initialization. Defaults to 2000 dps, the reset value of
+      GYR_RANGE.gyr_range.
+    enum: [125, 250, 500, 1000, 2000]
