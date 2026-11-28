@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config UDC_INFINEON_USBFS
+	bool "Infineon MXUSBFS device controller driver"
+	default y
+	depends on DT_HAS_INFINEON_USBFS_ENABLED
+	select EVENTS
+	help
+	  Infineon MXUSBFS full-speed USB device controller driver
+
+if UDC_INFINEON_USBFS
+
+config UDC_INFINEON_USBFS_DMA
+	bool "DMA endpoint data transfers"
+	default y
+	# The SoC provides a single USBFS instance, labelled usbfs0 on every die.
+	depends on $(dt_nodelabel_has_prop,usbfs0,dmas)
+	select USE_INFINEON_DMA
+	help
+	  Copy data endpoint payloads between the endpoint buffer and RAM
+	  with DataWire instead of the CPU. Throughput is about the same,
+	  but each packet costs less CPU time, mostly on OUT endpoints
+
+config UDC_INFINEON_USBFS_STACK_SIZE
+	int "UDC controller driver internal thread stack size"
+	default 1024
+	help
+	  Device controller driver internal thread stack size.
+
+config UDC_INFINEON_USBFS_THREAD_PRIORITY
+	int "UDC controller driver thread priority"
+	default 8
+	help
+	  Device controller driver thread priority.
+
+endif # UDC_INFINEON_USBFS
