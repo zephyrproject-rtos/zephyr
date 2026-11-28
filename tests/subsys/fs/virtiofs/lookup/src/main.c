@@ -46,7 +46,7 @@ FAKE_VALUE_FUNC(int, virtiofs_mkdir, const struct device *, uint64_t, const char
 FAKE_VALUE_FUNC(int, virtiofs_unlink, const struct device *, const char *, enum fuse_object_type);
 FAKE_VALUE_FUNC(int, virtiofs_statfs, const struct device *, struct fuse_kstatfs *);
 FAKE_VALUE_FUNC(int, virtiofs_readdir, const struct device *, uint64_t, uint64_t, uint64_t,
-		uint8_t *, uint32_t, uint8_t *, uint32_t);
+		uint8_t *, uint32_t);
 
 struct lookup_result {
 	int ret;

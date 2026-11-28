@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  filesystem.virtiofs.forget:
+    platform_allow:
+      - qemu_cortex_a53
+      - qemu_x86_64
+    integration_platforms:
+      - qemu_x86_64
+    tags:
+      - filesystem
+      - virtio
