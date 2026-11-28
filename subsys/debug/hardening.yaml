@@ -45,6 +45,15 @@ rules:
       internals to anyone watching the port.
     references: [CWE-200]
 
+  EXCEPTION_STACK_TRACE:
+    value: n
+    profiles: [strict]
+    rationale: |
+      Prints the return addresses of the faulting call chain on each reported exception, revealing
+      to anyone who sees the fault log which code path a crafted input reached and where that code
+      is located.
+    references: [CWE-209]
+
   GDBSTUB:
     value: n
     profiles: [strict]
@@ -74,6 +83,15 @@ rules:
       Places a software sentinel value at the end of each thread stack and checks it at context
       switches, catching overflows on hardware without MPU/MMU stack protection.
     references: [CWE-121, CWE-787]
+
+  SYMTAB:
+    value: n
+    profiles: [strict]
+    rationale: |
+      Compiles the name and offset of every function into the image itself, so anyone who extracts
+      the image or reads device memory gets its code labeled for reverse engineering. Stripping the
+      ELF does not remove the table.
+    references: [CWE-200]
 
   THREAD_ANALYZER:
     value: n
