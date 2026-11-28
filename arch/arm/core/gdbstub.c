@@ -18,6 +18,9 @@ static const int packet_pos[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 1
 /* Required struct */
 static struct gdb_ctx ctx;
 
+/* Set before the wait-for-GDB BKPT in arch_gdb_init(); cleared after skip. */
+static bool init_bkpt_pending;
+
 /* Return true if BKPT instruction caused the current entry */
 static int is_bkpt(unsigned int exc_cause)
 {
@@ -87,11 +90,14 @@ void z_gdb_entry(struct arch_esf *esf, unsigned int exc_cause)
 	esf->basic.xpsr = ctx.registers[SPSR];
 	/* TODO: restore regs from extra exc. info */
 
-	if (bkpt_entry) {
-		/* Apply this offset, so that the process won't be affected by the
-		 * BKPT instruction
-		 */
-		esf->basic.pc += 0x4;
+	/*
+	 * Skip the wait-for-GDB BKPT planted by arch_gdb_init(). Later
+	 * software breakpoints are restored by GDB before continue;
+	 * advancing PC would skip the real instruction.
+	 */
+	if ((bkpt_entry != 0) && init_bkpt_pending) {
+		esf->basic.pc += ((ctx.registers[SPSR] & BIT(SPSR_T)) != 0U) ? 2U : 4U;
+		init_bkpt_pending = false;
 	}
 	esf->basic.xpsr = ctx.registers[SPSR];
 }
@@ -104,7 +110,8 @@ void arch_gdb_init(void)
 	reg_val |= DBGDSCR_MONITOR_MODE_EN;
 	__asm__ volatile("mcr p14, 0, %0, c0, c2, 2" ::"r"(reg_val) :);
 
-	/* Generate the Prefetch abort exception */
+	/* Generate the Prefetch abort exception to wait for GDB */
+	init_bkpt_pending = true;
 	__asm__ volatile("BKPT");
 }
 
