@@ -76,6 +76,7 @@ MAKE_REG_HELPER(tpidruro,    0, 13, 0, 3);
 MAKE_REG64_HELPER(ICC_SGI1R, 0, 12);
 MAKE_REG64_HELPER(cntvct,    1, 14);
 MAKE_REG64_HELPER(cntv_cval, 3, 14);
+MAKE_REG64_HELPER(cpuectlr,  1, 15);
 
 /*
  * GIC v3 compatibility macros:
