@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Hamza Bahri
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32 USB_DRD_FS controller
+
+  Dual-role variant of the STM32 USB controller: in addition to device mode,
+  it has host channels and can be used by the USB host controller driver.
+  Nodes keep "st,stm32-usb" as a fallback compatible for the device drivers:
+
+    compatible = "st,stm32-usb-drd", "st,stm32-usb";
+
+compatible: "st,stm32-usb-drd"
+
+include: st,stm32-usb.yaml
