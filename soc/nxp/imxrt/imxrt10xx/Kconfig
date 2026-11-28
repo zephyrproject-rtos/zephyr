@@ -1,4 +1,4 @@
-# Copyright 2024 NXP
+# Copyright 2024, 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_IMXRT10XX
@@ -22,6 +22,7 @@ config SOC_MIMXRT1011
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_ICACHE
 	select CPU_HAS_DCACHE
+	select HAS_MCUX_SRC
 
 config SOC_MIMXRT1015
 	select CPU_HAS_FPU
