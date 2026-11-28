@@ -1,5 +1,5 @@
-# Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company) or
-# an affiliate of Cypress Semiconductor Corporation
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -18,3 +18,14 @@ properties:
 
   pinctrl-0:
     required: true
+
+  sck-gpios:
+    type: phandle-array
+    description: |
+      GPIO to which the SPI controller SCK signal is routed. The pin stays assigned to the SCB
+      through pinctrl; this GPIO is only used to read the SCK level back. It is only needed
+      together with cs-gpios: after the SCB is (re)configured or re-enabled its SCK output
+      takes a while to settle at the CPOL idle level, so on every transfer the driver waits
+      for it before asserting a GPIO chip select. The SCK pinctrl node must have input-enable
+      so that its level can be read. Use GPIO_ACTIVE_HIGH; the physical pin level is compared
+      with CPOL.
