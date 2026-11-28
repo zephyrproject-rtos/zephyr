@@ -21,6 +21,7 @@
 #if CONFIG_I2C_RENESAS_RA_IIC_BUS_RECOVERY
 #include <zephyr/drivers/gpio.h>
 #include "i2c_bitbang.h"
+#include "i2c-priv.h"
 #endif /* CONFIG_I2C_RENESAS_RA_IIC_BUS_RECOVERY */
 
 #include <zephyr/logging/log.h>
