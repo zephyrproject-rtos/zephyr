@@ -1,4 +1,5 @@
 # Copyright (c) 2024 Antmicro <www.antmicro.com>
+# Copyright (c) 2026 RAKwireless Technology Limited
 # SPDX-License-Identifier: Apache-2.0
 
 config EEPROM_MB85RSXX
@@ -7,4 +8,4 @@ config EEPROM_MB85RSXX
 	depends on DT_HAS_FUJITSU_MB85RSXX_ENABLED
 	select SPI
 	help
-	  Enable FUJITSU mb85rsxx SPI FRAM
+	  Enable Fujitsu MB85RSxx SPI FRAM (MB85RS2MT, MB85RS2MTA, MB85RS4MT).
