@@ -21,6 +21,10 @@ LOG_MODULE_REGISTER(shell_websocket, CONFIG_SHELL_WEBSOCKET_LOG_LEVEL);
 #define WEBSOCKET_LINE_SIZE CONFIG_SHELL_WEBSOCKET_LINE_BUF_SIZE
 #define WEBSOCKET_TIMEOUT   CONFIG_SHELL_WEBSOCKET_SEND_TIMEOUT
 
+/* Pause between retries while the stack is out of buffers, growing like the
+ * socket layer's own retry for blocking sends.
+ */
+
 #define WEBSOCKET_MIN_COMMAND_LEN 2
 #define WEBSOCKET_WILL_DO_COMMAND_LEN 3
 
@@ -38,6 +42,12 @@ static void ws_end_client_connection(struct shell_websocket *ws, bool in_send_wo
 
 	LOG_DBG("Closing connection to #%d", ws->fds[0].fd);
 
+	/* Serialize with the output writers. An in-flight send keeps the
+	 * WebSocket context alive; closing it concurrently would free the
+	 * context under the sender. The wait is bounded by the send deadline.
+	 */
+	k_mutex_lock(&ws->tx_lock, K_FOREVER);
+
 	k_mutex_lock(&ws->socket_lock, K_FOREVER);
 
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_WS)) {
@@ -48,6 +58,7 @@ static void ws_end_client_connection(struct shell_websocket *ws, bool in_send_wo
 
 	ws->fds[0].fd = -1;
 	ws->output_lock = false;
+	ws->session++;
 
 	if (in_send_work) {
 		(void)k_work_cancel_delayable(&ws->send_work);
@@ -64,51 +75,80 @@ static void ws_end_client_connection(struct shell_websocket *ws, bool in_send_wo
 	}
 
 	k_mutex_unlock(&ws->socket_lock);
+
+	k_mutex_unlock(&ws->tx_lock);
 }
 
-static int ws_send(struct shell_websocket *ws, bool block)
+/* Waits with socket_lock released until a send may succeed again, so a
+ * client that stops reading never holds up the connection close: for a full
+ * window until the socket is writable, for a buffer shortage a growing pause.
+ */
+
+
+
+static bool ws_session_changed(struct shell_websocket *ws, uint32_t session)
 {
+	bool changed;
+
+	k_mutex_lock(&ws->socket_lock, K_FOREVER);
+	changed = ws->session != session || ws->output_lock || ws->fds[0].fd < 0;
+	k_mutex_unlock(&ws->socket_lock);
+
+	return changed;
+}
+
+static int ws_send(struct shell_websocket *ws, int fd, uint32_t session, bool block)
+{
+	int64_t deadline = k_uptime_get() + CONFIG_SHELL_WEBSOCKET_TX_TIMEOUT;
+	int32_t timeout = 0;
 	int ret;
-	uint8_t *msg = ws->line_out.buf;
-	uint16_t len = ws->line_out.len;
 
 	if (ws->line_out.len == 0) {
 		return 0;
 	}
 
-	if (ws->fds[0].fd < 0) {
+	if (fd < 0) {
 		return -ENOTCONN;
 	}
 
-	while (len > 0) {
-		ret = zsock_send(ws->fds[0].fd, msg, len,
-				 block ? 0 : ZSOCK_MSG_DONTWAIT);
-		if (!block && (ret < 0) && (errno == EAGAIN)) {
-			/* Not all data was sent - move the remaining data and
-			 * update length.
-			 */
-			memmove(ws->line_out.buf, msg, len);
-			ws->line_out.len = len;
-			return -EAGAIN;
+	if (block) {
+		timeout = (int32_t)(deadline - k_uptime_get());
+		if (timeout < 0) {
+			return -ETIMEDOUT;
 		}
-
-		if (ret < 0) {
-			ret = -errno;
-			LOG_ERR("Failed to send %d, shutting down", -ret);
-			/* Only the send work handler sends without blocking. */
-			ws_end_client_connection(ws, !block);
-			return ret;
-		}
-
-		msg += ret;
-		len -= ret;
 	}
 
-	/* We reinitialize the line buffer */
+	/* websocket_send_msg() frames the line as a single text frame and
+	 * honors the given timeout. The socket lock is not held here, so the
+	 * connection state can change while the frame is being sent; that is
+	 * detected below through the connection generation.
+	 */
+	ret = websocket_send_msg(fd, ws->line_out.buf, ws->line_out.len,
+				 WEBSOCKET_OPCODE_DATA_TEXT, false, true, timeout);
+	if (ret >= 0) {
+		/* We reinitialize the line buffer */
+		ws->line_out.len = 0;
+		return 0;
+	}
+
+	if (!block && ret == -EAGAIN) {
+		/* Nothing was sent, keep the line for the next attempt. */
+		return -EAGAIN;
+	}
+
+	/* A frame that could not be completed must not be resumed: a partially
+	 * sent frame would make the following frame be parsed as its payload.
+	 * Drop the pending output, the caller closes the connection.
+	 */
 	ws->line_out.len = 0;
 
-	return 0;
+	if (ws_session_changed(ws, session)) {
+		return -ECANCELED;
+	}
+
+	return ret;
 }
+
 
 static void ws_send_prematurely(struct k_work *work)
 {
@@ -116,18 +156,47 @@ static void ws_send_prematurely(struct k_work *work)
 	struct shell_websocket *ws = CONTAINER_OF(dwork,
 						  struct shell_websocket,
 						  send_work);
-	int ret = -EAGAIN;
+	uint32_t session;
+	int fd;
+	int ret;
+
+	/* Do not make the system workqueue wait for a shell writer or for the
+	 * connection state; retry later when either is busy.
+	 */
+	if (k_mutex_lock(&ws->tx_lock, K_NO_WAIT) != 0) {
+		k_work_reschedule(&ws->send_work, K_MSEC(WEBSOCKET_TIMEOUT));
+		return;
+	}
+
+	if (k_mutex_lock(&ws->socket_lock, K_NO_WAIT) != 0) {
+		k_mutex_unlock(&ws->tx_lock);
+		k_work_reschedule(&ws->send_work, K_MSEC(WEBSOCKET_TIMEOUT));
+		return;
+	}
+
+	if (ws->fds[0].fd < 0 || ws->output_lock) {
+		k_mutex_unlock(&ws->socket_lock);
+		k_mutex_unlock(&ws->tx_lock);
+		return;
+	}
+
+	fd = ws->fds[0].fd;
+	session = ws->session;
+	k_mutex_unlock(&ws->socket_lock);
 
 	/* Use non-blocking send to prevent system workqueue blocking. */
-	if (k_mutex_lock(&ws->socket_lock, K_NO_WAIT) == 0) {
-		ret = ws_send(ws, false);
-		k_mutex_unlock(&ws->socket_lock);
-	}
+	ret = ws_send(ws, fd, session, false);
+	k_mutex_unlock(&ws->tx_lock);
+
 	if (ret == -EAGAIN) {
-		/* Not all data was sent, reschedule the work. */
+		/* Nothing was sent, retry the same line later. */
 		k_work_reschedule(&ws->send_work, K_MSEC(WEBSOCKET_TIMEOUT));
+	} else if (ret < 0 && ret != -ENOTCONN && ret != -ECANCELED) {
+		LOG_ERR("Failed to send %d, closing connection", -ret);
+		ws_end_client_connection(ws, true);
 	}
 }
+
 
 static void ws_recv(struct shell_websocket *ws, struct zsock_pollfd *pollfd)
 {
@@ -218,6 +287,9 @@ static int shell_ws_init(struct shell_websocket *ctx, int ws_socket)
 		ws_end_client_connection(ctx, false);
 	}
 
+	ctx->line_out.len = 0;
+	ctx->output_lock = false;
+	ctx->session++;
 	ctx->fds[0].fd = ws_socket;
 	ctx->fds[0].events = ZSOCK_POLLIN;
 
@@ -264,6 +336,7 @@ static int init(const struct shell_transport *transport,
 	k_work_init_delayable(&ws->send_work, ws_send_prematurely);
 	k_mutex_init(&ws->rx_lock);
 	k_mutex_init(&ws->socket_lock);
+	k_mutex_init(&ws->tx_lock);
 
 	return 0;
 }
@@ -299,12 +372,22 @@ static int sh_write(const struct shell_transport *transport,
 	*cnt = 0;
 	lb = &ws->line_out;
 
+	/* Serialize the writers. The socket lock itself must not be held across
+	 * a send: sending may block while the peer is not reading, and holding
+	 * it would also keep the socket service thread from closing the
+	 * connection.
+	 */
+	k_mutex_lock(&ws->tx_lock, K_FOREVER);
+
 	/* Stop the transmission timer, so it does not interrupt the operation.
 	 */
 	timeout = k_ticks_to_ms_ceil32(k_work_delayable_remaining_get(&ws->send_work));
 	was_running = k_work_cancel_delayable_sync(&ws->send_work, &sync);
 
 	do {
+		uint32_t session;
+		int fd;
+
 		if (lb->len + length - *cnt > WEBSOCKET_LINE_SIZE) {
 			copy_len = WEBSOCKET_LINE_SIZE - lb->len;
 		} else {
@@ -322,16 +405,29 @@ static int sh_write(const struct shell_transport *transport,
 			if (ws->fds[0].fd < 0 || ws->output_lock) {
 				*cnt = length;
 				k_mutex_unlock(&ws->socket_lock);
+				k_mutex_unlock(&ws->tx_lock);
 				return 0;
 			}
-			ret = ws_send(ws, true);
+
+			fd = ws->fds[0].fd;
+			session = ws->session;
 			k_mutex_unlock(&ws->socket_lock);
+
+			ret = ws_send(ws, fd, session, true);
 			if (ret != 0) {
-				*cnt = length;
-				if (ret == -ENOTCONN || ret == -ECONNRESET || ret == -EPIPE) {
-					return 0;
+				k_mutex_lock(&ws->socket_lock, K_FOREVER);
+				if (ws->session == session) {
+					ws->output_lock = true;
 				}
-				return ret;
+				k_mutex_unlock(&ws->socket_lock);
+				k_mutex_unlock(&ws->tx_lock);
+
+				*cnt = length;
+				if (ret != -ENOTCONN && ret != -ECANCELED) {
+					LOG_ERR("Failed to send %d, closing connection", -ret);
+					ws_end_client_connection(ws, false);
+				}
+				return 0; /* Return 0 to not trigger ASSERT in shell_ops.c */
 			}
 		}
 
@@ -348,8 +444,11 @@ static int sh_write(const struct shell_transport *transport,
 
 	ws->shell_handler(SHELL_TRANSPORT_EVT_TX_RDY, ws->shell_context);
 
+	k_mutex_unlock(&ws->tx_lock);
+
 	return 0;
 }
+
 
 static int sh_read(const struct shell_transport *transport,
 		   void *data, size_t length, size_t *cnt)

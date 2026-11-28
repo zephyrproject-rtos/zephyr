@@ -52,6 +52,9 @@ struct shell_websocket {
 	/** Mutex protecting the socket access. */
 	struct k_mutex socket_lock;
 
+	/** Mutex serializing the output writers. */
+	struct k_mutex tx_lock;
+
 	/** Input buffer. */
 	uint8_t rx_buf[CONFIG_SHELL_CMD_BUFF_SIZE];
 
@@ -69,6 +72,12 @@ struct shell_websocket {
 
 	/** If set, no output is sent to the WEBSOCKET client. */
 	bool output_lock;
+
+	/** Connection generation, incremented on every connect and close so a
+	 *  send that waits for the socket can detect that the connection
+	 *  changed while the lock was released.
+	 */
+	uint32_t session;
 };
 
 extern const struct shell_transport_api shell_websocket_transport_api;

@@ -723,6 +723,15 @@ config SHELL_WEBSOCKET_SEND_TIMEOUT
 	  This option can be used to modify the duration of the timer that kick
 	  in when a line buffer is not empty but did not yet meet the line feed.
 
+config SHELL_WEBSOCKET_TX_TIMEOUT
+	int "Websocket frame send timeout"
+	default 1000
+	help
+	  Maximum time a shell output writer may spend delivering one line to
+	  the network stack before the WebSocket frame is considered lost. The
+	  connection is closed when this deadline expires, so that the shell and
+	  the socket service are not blocked for the whole socket send timeout.
+
 module = SHELL_WEBSOCKET
 default-timeout = 100
 source "subsys/shell/Kconfig.template.shell_log_queue_timeout"
