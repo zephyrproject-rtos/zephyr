@@ -885,7 +885,6 @@ struct quic_endpoint {
 		uint64_t max_data;       /* Max data we allow peer to send */
 		uint64_t bytes_received; /* Connection flow-control credit consumed */
 		uint64_t max_data_sent;  /* Last MAX_DATA value we sent */
-		bool need_window_update; /* Flag to send MAX_DATA */
 	} rx_fc;
 
 #if defined(CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT)
@@ -1239,11 +1238,12 @@ __net_socket struct quic_stream {
 	/** Stream priority (to order streams within a connection) */
 	uint8_t priority;
 
-	/** Flag indicating stream needs window update (MAX_STREAM_DATA) */
-	bool need_window_update : 1;
-
-	/** Read half shut down via shutdown(SHUT_RD), discard incoming data */
-	bool read_closed : 1;
+	/** Read half shut down via shutdown(SHUT_RD), discard incoming data.
+	 * Not a bit-field: the application sets it in shutdown() while the
+	 * receive path writes the bit-fields below, and a write to a
+	 * bit-field rewrites the bits next to it as well.
+	 */
+	bool read_closed;
 
 	/** A rejected 0-RTT FIN must be replayed after queued data is resent. */
 	bool replay_fin_pending : 1;

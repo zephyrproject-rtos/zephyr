@@ -3495,7 +3495,15 @@ ZTESTABLE_STATIC void quic_endpoint_notify_streams_closed(struct quic_endpoint *
 		 * streams on it, is closed. Other connections, including a
 		 * new one that reuses the context of a closed one, are not.
 		 */
+		k_mutex_lock(&endpoints_lock, K_FOREVER);
 		affected = sys_slist_find(&ctx->endpoints, &ep->node, NULL);
+		k_mutex_unlock(&endpoints_lock);
+
+		/* The stream list is changed under streams_lock: a stream that
+		 * is released at the same time unlinks itself holding only that
+		 * lock.
+		 */
+		k_mutex_lock(&streams_lock, K_FOREVER);
 
 		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ctx->streams, stream, tmp, node) {
 			if (stream->ep == ep) {
@@ -3517,6 +3525,8 @@ ZTESTABLE_STATIC void quic_endpoint_notify_streams_closed(struct quic_endpoint *
 				ep->is_closing_notified = true;
 			}
 		}
+
+		k_mutex_unlock(&streams_lock);
 
 		/* A listening socket is closed only by its own endpoint, not by
 		 * a connection that goes away before it is accepted. The
@@ -5590,7 +5600,6 @@ static void quic_endpoint_init(struct quic_endpoint *ep)
 	ep->rx_fc.max_data = CONFIG_QUIC_INITIAL_MAX_DATA;
 	ep->rx_fc.bytes_received = 0;
 	ep->rx_fc.max_data_sent = CONFIG_QUIC_INITIAL_MAX_DATA;
-	ep->rx_fc.need_window_update = false;
 	ep->rx_sl.max_bidi = CONFIG_QUIC_INITIAL_MAX_STREAMS_BIDI;
 	ep->rx_sl.max_uni = CONFIG_QUIC_INITIAL_MAX_STREAMS_UNI;
 	ep->rx_sl.open_bidi = 0;
@@ -8069,8 +8078,11 @@ ZTESTABLE_STATIC struct quic_stream *quic_find_stream(struct quic_context *ctx,
 {
 	struct quic_stream *stream, *tmp, *found = NULL;
 
-	/* Look up stream in connection's stream list */
+	/* Look up stream in connection's stream list, which is changed
+	 * under streams_lock
+	 */
 	k_mutex_lock(&contexts_lock, K_FOREVER);
+	k_mutex_lock(&streams_lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ctx->streams, stream, tmp, node) {
 		/* A stream ID is only unique within one connection. The
@@ -8092,6 +8104,7 @@ ZTESTABLE_STATIC struct quic_stream *quic_find_stream(struct quic_context *ctx,
 		break;
 	}
 
+	k_mutex_unlock(&streams_lock);
 	k_mutex_unlock(&contexts_lock);
 
 	return found;
@@ -8107,6 +8120,7 @@ static struct quic_stream *quic_find_stream_by_id(struct quic_endpoint *ep,
 	int i;
 
 	k_mutex_lock(&contexts_lock, K_FOREVER);
+	k_mutex_lock(&streams_lock, K_FOREVER);
 
 	for (i = 0; i < ARRAY_SIZE(contexts); i++) {
 		struct quic_context *ctx = &contexts[i];
@@ -8125,6 +8139,7 @@ static struct quic_stream *quic_find_stream_by_id(struct quic_endpoint *ep,
 	}
 
 out:
+	k_mutex_unlock(&streams_lock);
 	k_mutex_unlock(&contexts_lock);
 	return found;
 }

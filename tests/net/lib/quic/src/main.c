@@ -8376,6 +8376,179 @@ ZTEST(net_socket_quic, test_504_closed_connection_hangs_up_with_streams_waiting)
 	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
 }
 
+static void notify_streams_closed_thread(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	quic_endpoint_notify_streams_closed(p1);
+}
+
+ZTEST(net_socket_quic, test_545_closing_endpoint_unlinks_streams_under_lock)
+{
+	static K_THREAD_STACK_DEFINE(stack, 4096);
+	static struct k_thread thread;
+	static struct quic_stream stream;
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_context *ctx;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54390");
+	ctx->is_listening = false;
+	ep->handshake.completed = true;
+	sys_slist_append(&ctx->endpoints, &ep->node);
+	link_test_stream(&stream, ctx, ep, 0);
+	k_sem_reset(&ctx->incoming.stream_sem);
+
+	/* A stream that is released unlinks itself holding streams_lock only,
+	 * so the close of its endpoint must not change the list meanwhile.
+	 */
+	quic_test_streams_lock(true);
+
+	k_thread_create(&thread, stack, K_THREAD_STACK_SIZEOF(stack),
+			notify_streams_closed_thread, ep, NULL, NULL,
+			K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
+	k_sleep(K_MSEC(10));
+
+	zexpect_true(sys_slist_find(&ctx->streams, &stream.node, NULL),
+		     "Stream unlinked while the stream list is locked");
+	zexpect_equal_ptr(stream.ep, ep, "Stream closed while the stream list is locked");
+
+	quic_test_streams_lock(false);
+
+	ret = k_thread_join(&thread, K_SECONDS(1));
+	zassert_ok(ret, "Endpoint close did not finish (%d)", ret);
+
+	zexpect_false(sys_slist_find(&ctx->streams, &stream.node, NULL),
+		      "Stream of the closed endpoint still linked");
+	zexpect_is_null(stream.ep, "Stream of the closed endpoint not closed");
+	zexpect_true(ctx->closed, "Connection of the endpoint not closed");
+
+	unlink_test_stream(&stream, ctx);
+	(void)sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
+	ctx->is_listening = true;
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
+static struct quic_stream *find_stream_result;
+
+static void find_stream_thread(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p3);
+
+	find_stream_result = quic_find_stream(p1, p2, 0);
+}
+
+ZTEST(net_socket_quic, test_546_stream_lookup_walks_the_list_under_lock)
+{
+	static K_THREAD_STACK_DEFINE(stack, 4096);
+	static struct k_thread thread;
+	static struct quic_stream stream;
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_context *ctx;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54391");
+	link_test_stream(&stream, ctx, ep, 0);
+	atomic_set(&stream.refcount, 1);
+	find_stream_result = NULL;
+
+	/* The list is changed under streams_lock, so a lookup has to wait */
+	quic_test_streams_lock(true);
+
+	k_thread_create(&thread, stack, K_THREAD_STACK_SIZEOF(stack),
+			find_stream_thread, ctx, ep, NULL,
+			K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
+	k_sleep(K_MSEC(10));
+
+	zexpect_equal(k_thread_join(&thread, K_NO_WAIT), -EBUSY,
+		      "Stream looked up while the stream list is locked");
+
+	quic_test_streams_lock(false);
+
+	ret = k_thread_join(&thread, K_SECONDS(1));
+	zassert_ok(ret, "Stream lookup did not finish (%d)", ret);
+
+	zexpect_equal_ptr(find_stream_result, &stream, "Stream not found");
+	zexpect_equal(atomic_get(&stream.refcount), 2, "Lookup did not take a reference");
+	atomic_set(&stream.refcount, 1);
+
+	unlink_test_stream(&stream, ctx);
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
+static void max_data_thread(void *p1, void *p2, void *p3)
+{
+	const uint8_t payload[] = {
+		QUIC_FRAME_TYPE_MAX_DATA,
+		0x50, 0x00, /* Maximum data 4096 */
+	};
+	bool ack_only = false;
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	(void)handle_crypto_level_packet(p1, QUIC_SECRET_LEVEL_APPLICATION,
+					 payload, sizeof(payload), sizeof(payload),
+					 &ack_only);
+}
+
+ZTEST(net_socket_quic, test_547_max_data_walks_the_stream_list_under_lock)
+{
+	static K_THREAD_STACK_DEFINE(stack, 4096);
+	static struct k_thread thread;
+	static struct quic_stream stream;
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_context *ctx;
+	unsigned int signaled;
+	int result;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54392");
+	ctx->is_listening = false;
+	atomic_set(&ep->refcount, 2);
+	sys_slist_append(&ctx->endpoints, &ep->node);
+	link_test_stream(&stream, ctx, ep, 0);
+	k_poll_signal_init(&stream.send.signal);
+	ep->tx_fc.max_data = 1024U;
+
+	/* MAX_DATA wakes the writers of every stream of the connection. The
+	 * list is changed under streams_lock, so the walk has to wait.
+	 */
+	quic_test_streams_lock(true);
+
+	k_thread_create(&thread, stack, K_THREAD_STACK_SIZEOF(stack),
+			max_data_thread, ep, NULL, NULL,
+			K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
+	k_sleep(K_MSEC(10));
+
+	k_poll_signal_check(&stream.send.signal, &signaled, &result);
+	zexpect_equal(signaled, 0U, "Stream woken while the stream list is locked");
+
+	quic_test_streams_lock(false);
+
+	ret = k_thread_join(&thread, K_SECONDS(1));
+	zassert_ok(ret, "MAX_DATA handling did not finish (%d)", ret);
+
+	k_poll_signal_check(&stream.send.signal, &signaled, &result);
+	zexpect_equal(signaled, 1U, "Stream not woken by MAX_DATA");
+	zexpect_equal(ep->tx_fc.max_data, 4096U, "MAX_DATA not taken");
+
+	unlink_test_stream(&stream, ctx);
+	(void)sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
+	ctx->is_listening = true;
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
 /* Feed a STREAM frame with the FIN bit and no data to the endpoint */
 static int stream_fin_for_stream(struct quic_endpoint *ep, struct quic_context *ctx,
 				 uint8_t stream_id)

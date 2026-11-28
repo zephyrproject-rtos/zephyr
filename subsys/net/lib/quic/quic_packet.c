@@ -448,9 +448,6 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 			stream_seq_mark_opened(opened, stream_id >> 2);
 		}
 
-		sys_slist_find_and_remove(&conn->streams, &stream->node);
-		sys_slist_prepend(&conn->streams, &stream->node);
-
 		/* The reference of the new stream goes to the accept queue,
 		 * where the application can take the stream and close it at
 		 * once. Keep one until the data of this frame is delivered.
@@ -860,11 +857,17 @@ static int handle_max_data_frame(struct quic_endpoint *ep,
 		 */
 		ctx = quic_find_context(ep);
 		if (ctx != NULL) {
+			k_mutex_lock(&contexts_lock, K_FOREVER);
+			k_mutex_lock(&streams_lock, K_FOREVER);
+
 			SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ctx->streams, stream, tmp, node) {
 				if (stream->ep == ep) {
 					k_poll_signal_raise(&stream->send.signal, 0);
 				}
 			}
+
+			k_mutex_unlock(&streams_lock);
+			k_mutex_unlock(&contexts_lock);
 		}
 
 		if (IS_ENABLED(CONFIG_QUIC_0RTT) &&
