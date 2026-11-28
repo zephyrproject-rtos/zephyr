@@ -964,6 +964,8 @@ ZTEST(isotp_conformance, test_sender_fc_errors)
 {
 	int ret, filter_id, i;
 	struct frame_desired ff_frame, fc_frame;
+	struct can_frame short_fc = {0};
+	struct can_frame dummy_frame;
 
 	ff_frame.data[0] = FF_PCI_BYTE_1(DATA_SEND_LENGTH);
 	ff_frame.data[1] = FF_PCI_BYTE_2(DATA_SEND_LENGTH);
@@ -1012,6 +1014,34 @@ ZTEST(isotp_conformance, test_sender_fc_errors)
 
 	ret = k_sem_take(&send_compl_sem, K_MSEC(200));
 	zassert_equal(ret, 0, "Send complete callback not called");
+
+	/* short FC frame */
+	k_sem_reset(&send_compl_sem);
+	ret = isotp_send(&send_ctx, can_dev, random_data, DATA_SEND_LENGTH,
+			 &tx_addr, &rx_addr, send_complete_cb,
+			 INT_TO_POINTER(ISOTP_N_ERROR));
+	zassert_equal(ret, ISOTP_N_OK, "Send returned %d", ret);
+
+	check_frame_series(&ff_frame, 1, &frame_msgq);
+
+	short_fc.flags = ((rx_addr.std_id > 0x7FF) ? CAN_FRAME_IDE : 0) |
+			 (IS_ENABLED(CONFIG_TEST_USE_CAN_FD_MODE) ?
+			  CAN_FRAME_FDF | CAN_FRAME_BRS : 0);
+	short_fc.id = rx_addr.std_id;
+	short_fc.dlc = can_bytes_to_dlc(1);
+	short_fc.data[0] = FC_PCI_BYTE_1(FC_PCI_CTS);
+	short_fc.data[1] = 0xAA;
+	short_fc.data[2] = 0xBB;
+
+	ret = can_send(can_dev, &short_fc, K_MSEC(500), NULL, NULL);
+	zassert_equal(ret, 0, "Sending short FC failed: %d", ret);
+
+	ret = k_sem_take(&send_compl_sem, K_MSEC(200));
+	zassert_equal(ret, 0, "Send complete callback not called");
+
+	ret = k_msgq_get(&frame_msgq, &dummy_frame, K_MSEC(50));
+	zassert_equal(ret, -EAGAIN, "Expected no CF after short FC, got %d", ret);
+
 	k_msgq_cleanup(&frame_msgq);
 	can_remove_rx_filter(can_dev, filter_id);
 }
