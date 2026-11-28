@@ -278,7 +278,8 @@ static int usbip_handle_submit(struct usbip_dev_ctx *const dev_ctx,
 	ep = cmd->hdr.ep;
 	if (cmd->submit.length != 0) {
 		if (USB_EP_GET_IDX(ep) == 0U) {
-			buf = usbh_xfer_buf_alloc(dev_ctx->udev, cmd->submit.length);
+			ep = usb_reqtype_is_to_device(&setup) ? 0x00 : 0x80;
+			buf = usbh_xfer_buf_alloc(dev_ctx->udev, ep, cmd->submit.length);
 		} else {
 			buf = net_buf_alloc_len(&usbip_pool, cmd->submit.length, K_NO_WAIT);
 		}

@@ -142,7 +142,7 @@ struct uhc_transfer {
 	/** Maximum packet size */
 	uint16_t mps;
 	/** Interval, used for periodic transfers only */
-	uint16_t interval;
+	uint8_t interval;
 	/** Start frame, used for periodic transfers only */
 	uint16_t start_frame;
 	/** Flag marks request buffer is queued */
@@ -459,6 +459,28 @@ struct uhc_transfer *uhc_xfer_alloc_with_buf(const struct device *dev,
 					     void *const cb,
 					     void *const cb_priv,
 					     size_t size);
+
+/**
+ * @brief Query the properties of an endpoint, if found
+ *
+ * The pointers are filled with the values from the device and configuration descriptors,
+ * only available after successful enumeration.
+ *
+ * @param[in] dev            Pointer to UHC device
+ * @param[in] udev           Pointer to USB device
+ * @param[in] ep             Endpoint address
+ * @param[out] mps_p         If not NULL, receives the max packet size value
+ * @param[out] bInterval_p   If not NULL, receives the raw bInterval value
+ * @param[out] type_p        If not NULL, receives the type value
+ *
+ * @return 0 on success, all other values should be treated as error.
+ */
+int uhc_get_ep_properties(const struct device *dev,
+			  struct usb_device *const udev,
+			  const uint8_t ep,
+			  uint16_t *const mps_p,
+			  uint8_t *const bInterval_p,
+			  uint8_t *const type_p);
 
 /**
  * @brief Increment the UHC transfer reference
