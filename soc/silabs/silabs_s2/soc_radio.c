@@ -43,6 +43,20 @@ void rail_isr_installer(void)
 			    RDMAILBOX_IRQHandler,
 			    NULL, 0);
 	}));
+
+	/* RFECA is present on some chip families only */
+	IF_ENABLED(DT_IRQ_HAS_NAME(DT_NODELABEL(radio), rfeca0), ({
+		IRQ_CONNECT(RADIO_IRQN(rfeca0),
+			    RADIO_IRQ_PRIO(rfeca0),
+			    RFECA0_IRQHandler,
+			    NULL, 0);
+	}));
+	IF_ENABLED(DT_IRQ_HAS_NAME(DT_NODELABEL(radio), rfeca1), ({
+		IRQ_CONNECT(RADIO_IRQN(rfeca1),
+			    RADIO_IRQ_PRIO(rfeca1),
+			    RFECA1_IRQHandler,
+			    NULL, 0);
+	}));
 }
 
 void soc_radio_init(void)

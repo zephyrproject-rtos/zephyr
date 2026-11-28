@@ -12,6 +12,10 @@
 #include <sl_rail.h>
 #include <sl_status.h>
 
+#if defined(CONFIG_BT_SILABS_EFR32)
+#include <sl_rail_ble.h>
+#endif
+
 #if defined(CONFIG_IEEE802154_SILABS_EFR32)
 #include <sl_rail_ieee802154.h>
 #endif
@@ -284,6 +288,14 @@ void RDMAILBOX_IRQHandler(void)
 {
 }
 
+void RFECA0_IRQHandler(void)
+{
+}
+
+void RFECA1_IRQHandler(void)
+{
+}
+
 void SYSMBLPW0CPU_IRQHandler(void)
 {
 }
@@ -340,6 +352,15 @@ sl_rail_status_t sl_rail_copy_device_info(sl_rail_handle_t radio_handle)
 {
 	return SL_RAIL_STATUS_NO_ERROR;
 }
+
+#if defined(CONFIG_BT_SILABS_EFR32)
+sl_rail_status_t
+sl_rail_ble_config_cs_antenna(sl_rail_handle_t rail_handle,
+			      const sl_rail_ble_cs_antenna_config_t *p_antenna_config)
+{
+	return SL_RAIL_STATUS_NO_ERROR;
+}
+#endif
 
 #if defined(CONFIG_IEEE802154_SILABS_EFR32)
 void sl_openthread_init(void)

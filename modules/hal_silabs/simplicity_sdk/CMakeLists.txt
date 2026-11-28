@@ -126,7 +126,10 @@ if(CONFIG_SOC_VENDOR_SILABS_HAS_RADIO)
       )
     endif()
     zephyr_library_sources(src/sl_btctrl_hci_reset_shim.c)
-    zephyr_include_directories(config/ll)
+    zephyr_include_directories(
+      config/ll
+      ${radio_dir}/rail_lib/protocol/ble
+    )
 
     zephyr_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedtls_iface)
   endif()

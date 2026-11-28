@@ -13,6 +13,7 @@
 #include <sl_hci_common_transport.h>
 #include <sl_rail_util_compatible_pa.h>
 #include <sl_rail.h>
+#include <sl_rail_ble.h>
 #include <soc_radio.h>
 
 #include <zephyr/logging/log.h>
@@ -330,6 +331,28 @@ static int efr_hci_open(const struct device *dev)
 	}
 
 	efr_hci_set_tx_power(CONFIG_BT_CTLR_TX_PWR_ANTENNA);
+
+	if (IS_ENABLED(CONFIG_BT_CHANNEL_SOUNDING)) {
+		/* The Controller takes the number of Channel Sounding antennas from RAIL, which
+		 * has none until they are configured: the Controller then reports zero antennas
+		 * in its capabilities and disallows the LE CS Test command. Configure a single
+		 * antenna with no offset.
+		 */
+		static const int16_t antenna_offset_cm[SL_RAIL_BLE_CS_MAX_ANTENNAS];
+		const sl_rail_ble_cs_antenna_config_t antenna_config = {
+			.antenna_count = 1U,
+			.p_antenna_offset_cm = antenna_offset_cm,
+		};
+		sl_rail_status_t status;
+
+		status = sl_rail_ble_config_cs_antenna(sli_btctrl_get_radio_context_handle(),
+						       &antenna_config);
+		if (status != SL_RAIL_STATUS_NO_ERROR) {
+			LOG_ERR("RAIL: failed to configure CS antenna, status=%d", status);
+			ret = -EIO;
+			goto deinit;
+		}
+	}
 
 	if (IS_ENABLED(CONFIG_PM)) {
 		sl_rail_timer_sync_config_t timer_sync_config = SL_RAIL_TIMER_SYNC_DEFAULT;
