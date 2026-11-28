@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.dma.pm.mcux_lpc:
+    tags:
+      - dma
+      - pm
+    platform_allow:
+      - lpcxpresso55s69/lpc55s69/cpu0
+      - mimxrt595_evk/mimxrt595s/cm33
+      - mimxrt685_evk/mimxrt685s/cm33
+    integration_platforms:
+      - lpcxpresso55s69/lpc55s69/cpu0
+      - mimxrt595_evk/mimxrt595s/cm33
+      - mimxrt685_evk/mimxrt685s/cm33
+    filter: CONFIG_DMA_MCUX_LPC and not CONFIG_SMP
