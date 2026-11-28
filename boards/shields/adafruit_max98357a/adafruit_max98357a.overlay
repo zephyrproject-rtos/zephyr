@@ -1,0 +1,19 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		i2s-codec-tx = &zephyr_i2s;
+	};
+};
+
+&zephyr_i2s {
+	status = "okay";
+
+	audio_codec: max98357a@0 {
+		compatible = "maxim,max98357a";
+		reg = <0>;
+	};
+};
