@@ -52,6 +52,19 @@ static struct nsem_obj *nsem_find(const char *name)
 	return NULL;
 }
 
+static struct nsem_obj *nsem_find_by_sem(const sem_t *sem)
+{
+	struct nsem_obj *nsem;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&nsem_list, nsem, snode) {
+		if (&nsem->sem == sem) {
+			return nsem;
+		}
+	}
+
+	return NULL;
+}
+
 /* Clean up a named semaphore object completely (incl its `name` buffer) */
 static void nsem_cleanup(struct nsem_obj *nsem)
 {
@@ -107,7 +120,7 @@ int sem_destroy(sem_t *semaphore)
  */
 int sem_getvalue(sem_t *semaphore, int *value)
 {
-	if (semaphore == NULL) {
+	if (semaphore == NULL || value == NULL) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -123,16 +136,15 @@ int sem_getvalue(sem_t *semaphore, int *value)
  */
 int sem_init(sem_t *semaphore, int pshared, unsigned int value)
 {
-	if (value > CONFIG_POSIX_SEM_VALUE_MAX) {
+	if (semaphore == NULL || value > CONFIG_POSIX_SEM_VALUE_MAX) {
 		errno = EINVAL;
 		return -1;
 	}
 
-	/*
-	 * Zephyr has no concept of process, so only thread shared
-	 * semaphore makes sense in here.
-	 */
-	__ASSERT(pshared == 0, "pshared should be 0");
+	if (pshared != 0) {
+		errno = ENOSYS;
+		return -1;
+	}
 
 	k_sem_init(semaphore, value, CONFIG_POSIX_SEM_VALUE_MAX);
 
@@ -160,9 +172,9 @@ int sem_post(sem_t *semaphore)
  *
  * See IEEE 1003.1
  */
-int sem_timedwait(sem_t *semaphore, struct timespec *abstime)
+int sem_timedwait(sem_t *semaphore, const struct timespec *abstime)
 {
-	if ((abstime == NULL) || !timespec_is_valid(abstime)) {
+	if (semaphore == NULL || abstime == NULL || !timespec_is_valid(abstime)) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -182,12 +194,17 @@ int sem_timedwait(sem_t *semaphore, struct timespec *abstime)
  */
 int sem_trywait(sem_t *semaphore)
 {
+	if (semaphore == NULL) {
+		errno = EINVAL;
+		return -1;
+	}
+
 	if (k_sem_take(semaphore, K_NO_WAIT) == -EBUSY) {
 		errno = EAGAIN;
 		return -1;
-	} else {
-		return 0;
 	}
+
+	return 0;
 }
 
 /**
@@ -197,6 +214,11 @@ int sem_trywait(sem_t *semaphore)
  */
 int sem_wait(sem_t *semaphore)
 {
+	if (semaphore == NULL) {
+		errno = EINVAL;
+		return -1;
+	}
+
 	/* With K_FOREVER, may return only success. */
 	(void)k_sem_take(semaphore, K_FOREVER);
 	return 0;
@@ -206,19 +228,17 @@ sem_t *sem_open(const char *name, int oflags, ...)
 {
 	va_list va;
 	mode_t mode;
-	unsigned int value;
+	unsigned int value = 0U;
 	struct nsem_obj *nsem = NULL;
 	size_t namelen;
 
-	va_start(va, oflags);
-	BUILD_ASSERT(sizeof(mode_t) <= sizeof(int));
-	mode = va_arg(va, int);
-	value = va_arg(va, unsigned int);
-	va_end(va);
-
-	if (value > CONFIG_POSIX_SEM_VALUE_MAX) {
-		errno = EINVAL;
-		return (sem_t *)SEM_FAILED;
+	if ((oflags & O_CREAT) != 0) {
+		va_start(va, oflags);
+		BUILD_ASSERT(sizeof(mode_t) <= sizeof(int));
+		mode = va_arg(va, int);
+		ARG_UNUSED(mode);
+		value = va_arg(va, unsigned int);
+		va_end(va);
 	}
 
 	if (name == NULL) {
@@ -253,6 +273,11 @@ sem_t *sem_open(const char *name, int oflags, ...)
 
 	if ((oflags & O_CREAT) == 0) {
 		errno = ENOENT;
+		goto error_unlock;
+	}
+
+	if (value > CONFIG_POSIX_SEM_VALUE_MAX) {
+		errno = EINVAL;
 		goto error_unlock;
 	}
 
@@ -328,7 +353,7 @@ unlock:
 
 int sem_close(sem_t *sem)
 {
-	struct nsem_obj *nsem = CONTAINER_OF(sem, struct nsem_obj, sem);
+	struct nsem_obj *nsem;
 
 	if (sem == NULL) {
 		errno = EINVAL;
@@ -336,6 +361,13 @@ int sem_close(sem_t *sem)
 	}
 
 	nsem_list_lock();
+	nsem = nsem_find_by_sem(sem);
+	if (nsem == NULL) {
+		nsem_list_unlock();
+		errno = EINVAL;
+		return -1;
+	}
+
 	nsem_unref(nsem);
 	nsem_list_unlock();
 	return 0;

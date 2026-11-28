@@ -20,7 +20,7 @@ int sem_destroy(sem_t *semaphore);
 int sem_getvalue(sem_t *ZRESTRICT semaphore, int *ZRESTRICT value);
 int sem_init(sem_t *semaphore, int pshared, unsigned int value);
 int sem_post(sem_t *semaphore);
-int sem_timedwait(sem_t *ZRESTRICT semaphore, struct timespec *ZRESTRICT abstime);
+int sem_timedwait(sem_t *ZRESTRICT semaphore, const struct timespec *ZRESTRICT abstime);
 int sem_trywait(sem_t *semaphore);
 int sem_wait(sem_t *semaphore);
 sem_t *sem_open(const char *name, int oflags, ...);
