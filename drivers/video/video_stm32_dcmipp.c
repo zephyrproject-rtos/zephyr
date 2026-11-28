@@ -7,6 +7,7 @@
 #include <errno.h>
 
 #include <stm32_bitops.h>
+#include <zephyr/cache.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -1436,6 +1437,12 @@ static int stm32_dcmipp_enqueue(const struct device *dev, struct video_buffer *v
 		k_mutex_unlock(&pipe->lock);
 		return -EINVAL;
 	}
+
+	/*
+	 * The hardware writes the buffer: nothing the CPU left of it in the data cache may be
+	 * written back over the frame or read in its place.
+	 */
+	sys_cache_data_flush_and_invd_range(vbuf->buffer, vbuf->size);
 
 	if (pipe->state == STM32_DCMIPP_WAIT_FOR_BUFFER) {
 		LOG_DBG("Restart CPTREQ after wait for buffer");
