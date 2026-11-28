@@ -69,6 +69,7 @@ The following pages cover additional Twister topics:
    commandline
    pytest
    twister_statuses
+   test_results
    twister_blackbox
 
 .. _twister_board_configuration:
@@ -1987,6 +1988,10 @@ directory other than the output directory, and ``--platform-reports`` to
 additionally emit a per-platform :file:`<platform>.json` and
 :file:`<platform>.xml`. ``--report-summary`` prints a summary of the failures
 from the latest run without rebuilding.
+
+With ``--report-ci``, Twister also writes :file:`zephyr-results.json`, a
+document for hardware test results that names the flashed image of each test.
+See :ref:`twister_test_results`.
 
 Per-test artifacts
 ==================

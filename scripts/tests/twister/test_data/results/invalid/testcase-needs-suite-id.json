@@ -1,0 +1,27 @@
+{
+  "base": "hil-two-boards.json",
+  "ops": [
+    [
+      "set",
+      [
+        "tests",
+        2,
+        "misc",
+        "zephyr",
+        "counts",
+        "PASS"
+      ],
+      1
+    ],
+    [
+      "del",
+      [
+        "tests",
+        3,
+        "misc",
+        "zephyr",
+        "suite_id"
+      ]
+    ]
+  ]
+}

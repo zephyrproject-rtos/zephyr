@@ -1,0 +1,14 @@
+{
+  "base": "hil-two-boards.json",
+  "ops": [
+    [
+      "set",
+      [
+        "submission",
+        "context",
+        "trigger"
+      ],
+      "tag"
+    ]
+  ]
+}

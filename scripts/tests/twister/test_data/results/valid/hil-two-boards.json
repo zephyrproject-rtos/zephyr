@@ -1,0 +1,385 @@
+{
+  "format": "zephyr-results",
+  "version": {
+    "major": 0,
+    "minor": 1
+  },
+  "submission": {
+    "id": "examplelab:3068165495:t2g_hil",
+    "origin": "examplelab",
+    "lab": "lab1",
+    "submitter": "examplelab-ci",
+    "generated_by": {
+      "tool": "twister --report-ci",
+      "version": "v4.5.0"
+    },
+    "created": "2026-11-14T12:03:04Z",
+    "context": {
+      "trigger": "manual",
+      "commit": "5dd96bc95cb1db3a6e0b17ebe3e894ed1c42acd7",
+      "repository": "https://git.example/examplelab/zephyr.git",
+      "ref": "main",
+      "run_url": "https://ci.example/examplelab/zephyr/-/pipelines/3068165495"
+    },
+    "summary": {
+      "status": "FAIL",
+      "suites": {
+        "FAIL": 1,
+        "PASS": 2
+      },
+      "testcases": {
+        "PASS": 2
+      }
+    }
+  },
+  "checkouts": [
+    {
+      "id": "examplelab:3068165495",
+      "origin": "examplelab",
+      "tree_name": "zephyr",
+      "git_repository_url": "https://git.example/examplelab/zephyr.git",
+      "git_commit_hash": "5dd96bc95cb1db3a6e0b17ebe3e894ed1c42acd7",
+      "git_commit_name": "v4.5.0",
+      "git_repository_branch": "main",
+      "start_time": "2026-11-14T11:34:27Z",
+      "misc": {
+        "zephyr": {
+          "commit_date": "2026-10-30T18:49:47+05:30",
+          "run": {
+            "id": "3068165495",
+            "url": "https://ci.example/examplelab/zephyr/-/pipelines/3068165495"
+          }
+        }
+      }
+    }
+  ],
+  "builds": [
+    {
+      "id": "examplelab:3068165495:t2g_hil:cytvii_b_e_1m_100_cpu/cyt2b75cae/m4:sample.basic.helloworld",
+      "origin": "examplelab",
+      "checkout_id": "examplelab:3068165495",
+      "duration": 26.94,
+      "architecture": "arm",
+      "compiler": "arm-zephyr-eabi-gcc (Zephyr SDK 1.0.1) 14.3.0",
+      "command": "west twister --device-testing --hardware-map hw.yaml -p cytvii_b_h_8m_320_cpu/cyt4bfcche/m7_0 -p kit_t2g_b_h_evk/cyt4bfbche/m7_0 -p kit_t2g_c2d6m_lite/cyt4dnjbzs/m7_0 -p kit_t2g_b_h_lite/cyt4bf8cds/m7_0 -p kit_t2g_b_e_lite/cyt2bl5cae/m4 -p cytvii_b_e_1m_100_cpu/cyt2b75cae/m4 -T samples/hello_world -T tests/kernel/timer/timer_api -s sample.basic.helloworld -s kernel.timer -O twister-out -M pass --clobber-output --disable-warnings-as-errors -j 1",
+      "config_name": "cytvii_b_e_1m_100_cpu/cyt2b75cae/m4",
+      "status": "PASS",
+      "log_url": "https://results.example.invalid/examplelab/3068165495/t2g_hil/cytvii_b_e_1m_100_cpu_cyt2b75cae_m4/sample.basic.helloworld/build.log",
+      "misc": {
+        "zephyr": {
+          "target": {
+            "id": "cytvii_b_e_1m_100_cpu/cyt2b75cae/m4",
+            "board": "cytvii_b_e_1m_100_cpu",
+            "soc": "cyt2b75cae",
+            "cpucluster": "m4",
+            "arch": "arm"
+          },
+          "provenance": "local",
+          "scenario": "sample.basic.helloworld",
+          "artifacts": [
+            {
+              "name": "zephyr.elf",
+              "sha256": "2fdae7e83f6053fe0ee63f4182539bd69e24e4bdfceb2b24a0f16f7e0eb6e459",
+              "size": 672592,
+              "flash": true
+            }
+          ],
+          "toolchain": {
+            "name": "zephyr",
+            "variant": "zephyr/gnu",
+            "sdk_version": "1.0.1"
+          },
+          "config_files": [
+            "samples/hello_world/prj.conf"
+          ],
+          "twister": {
+            "run_id": "bdca5c011704ba406f035cd842fac537"
+          }
+        }
+      }
+    },
+    {
+      "id": "examplelab:3068165495:t2g_hil:kit_t2g_b_h_lite/cyt4bf8cds/m7_0:sample.basic.helloworld",
+      "origin": "examplelab",
+      "checkout_id": "examplelab:3068165495",
+      "duration": 33.5,
+      "architecture": "arm",
+      "compiler": "arm-zephyr-eabi-gcc (Zephyr SDK 1.0.1) 14.3.0",
+      "command": "west twister --device-testing --hardware-map hw.yaml -p cytvii_b_h_8m_320_cpu/cyt4bfcche/m7_0 -p kit_t2g_b_h_evk/cyt4bfbche/m7_0 -p kit_t2g_c2d6m_lite/cyt4dnjbzs/m7_0 -p kit_t2g_b_h_lite/cyt4bf8cds/m7_0 -p kit_t2g_b_e_lite/cyt2bl5cae/m4 -p cytvii_b_e_1m_100_cpu/cyt2b75cae/m4 -T samples/hello_world -T tests/kernel/timer/timer_api -s sample.basic.helloworld -s kernel.timer -O twister-out -M pass --clobber-output --disable-warnings-as-errors -j 1",
+      "config_name": "kit_t2g_b_h_lite/cyt4bf8cds/m7_0",
+      "status": "PASS",
+      "misc": {
+        "zephyr": {
+          "target": {
+            "id": "kit_t2g_b_h_lite/cyt4bf8cds/m7_0",
+            "board": "kit_t2g_b_h_lite",
+            "soc": "cyt4bf8cds",
+            "cpucluster": "m7_0",
+            "arch": "arm"
+          },
+          "provenance": "local",
+          "scenario": "sample.basic.helloworld",
+          "artifacts": [
+            {
+              "name": "zephyr.elf",
+              "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+              "size": 779268,
+              "flash": true
+            }
+          ],
+          "toolchain": {
+            "name": "zephyr",
+            "variant": "zephyr/gnu",
+            "sdk_version": "1.0.1"
+          },
+          "twister": {
+            "run_id": "dc059e8eacd153d44003f0fd4a2cf6b0"
+          }
+        }
+      }
+    },
+    {
+      "id": "examplelab:3068165495:t2g_hil:kit_t2g_b_h_lite/cyt4bf8cds/m7_0:kernel.timer",
+      "origin": "examplelab",
+      "checkout_id": "examplelab:3068165495",
+      "duration": 39.19,
+      "architecture": "arm",
+      "compiler": "arm-zephyr-eabi-gcc (Zephyr SDK 1.0.1) 14.3.0",
+      "command": "west twister --device-testing --hardware-map hw.yaml -p cytvii_b_h_8m_320_cpu/cyt4bfcche/m7_0 -p kit_t2g_b_h_evk/cyt4bfbche/m7_0 -p kit_t2g_c2d6m_lite/cyt4dnjbzs/m7_0 -p kit_t2g_b_h_lite/cyt4bf8cds/m7_0 -p kit_t2g_b_e_lite/cyt2bl5cae/m4 -p cytvii_b_e_1m_100_cpu/cyt2b75cae/m4 -T samples/hello_world -T tests/kernel/timer/timer_api -s sample.basic.helloworld -s kernel.timer -O twister-out -M pass --clobber-output --disable-warnings-as-errors -j 1",
+      "config_name": "kit_t2g_b_h_lite/cyt4bf8cds/m7_0",
+      "status": "PASS",
+      "misc": {
+        "zephyr": {
+          "target": {
+            "id": "kit_t2g_b_h_lite/cyt4bf8cds/m7_0",
+            "board": "kit_t2g_b_h_lite",
+            "soc": "cyt4bf8cds",
+            "cpucluster": "m7_0",
+            "arch": "arm"
+          },
+          "provenance": "local",
+          "scenario": "kernel.timer",
+          "artifacts": [
+            {
+              "name": "zephyr.elf",
+              "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+              "size": 2253424,
+              "flash": true
+            }
+          ],
+          "toolchain": {
+            "name": "zephyr",
+            "variant": "zephyr/gnu",
+            "sdk_version": "1.0.1"
+          },
+          "twister": {
+            "run_id": "fd38fcf4ca255501918b086bfffce239"
+          }
+        }
+      }
+    }
+  ],
+  "tests": [
+    {
+      "id": "examplelab:3068165495:t2g_hil:cytvii_b_e_1m_100_cpu/cyt2b75cae/m4:sample.basic.helloworld@lab1",
+      "origin": "examplelab",
+      "build_id": "examplelab:3068165495:t2g_hil:cytvii_b_e_1m_100_cpu/cyt2b75cae/m4:sample.basic.helloworld",
+      "path": "sample.basic.helloworld",
+      "status": "FAIL",
+      "comment": "Unknown Error",
+      "duration": 70.74,
+      "log_url": "https://results.example.invalid/examplelab/3068165495/t2g_hil/cytvii_b_e_1m_100_cpu_cyt2b75cae_m4/sample.basic.helloworld/handler.log",
+      "log_excerpt": "KIKJ\tiyZre pOhSy rb uOiSl db uvi4l.d5 .v07-.r0c.11--7t722g--gu5pdsdt9r6ebacm9 5*c*b*1\r \n**He*l\rl\no World! cytvii_b_e_1m_100_cpu/cyt2b75cae/m4\r\n",
+      "output_files": [
+        {
+          "name": "handler.log",
+          "url": "https://results.example.invalid/examplelab/3068165495/t2g_hil/cytvii_b_e_1m_100_cpu_cyt2b75cae_m4/sample.basic.helloworld/handler.log"
+        },
+        {
+          "name": "device.log",
+          "url": "https://results.example.invalid/examplelab/3068165495/t2g_hil/cytvii_b_e_1m_100_cpu_cyt2b75cae_m4/sample.basic.helloworld/device.log"
+        }
+      ],
+      "environment": {
+        "comment": "cytvii_b_e_1m_100_cpu-000801029763 on lab1",
+        "compatible": [
+          "vnd,soc-board"
+        ],
+        "misc": {
+          "zephyr": {
+            "lab": "lab1",
+            "node": "node1",
+            "dut": {
+              "board_tag": "cytvii_b_e_1m_100_cpu-000801029763",
+              "probe": {
+                "serial": "000801029763"
+              }
+            }
+          }
+        }
+      },
+      "misc": {
+        "zephyr": {
+          "kind": "suite",
+          "original_id": "sample.basic.helloworld",
+          "failure_class": {
+            "reason": "other",
+            "detail": "Unknown Error",
+            "source": "twister"
+          },
+          "artifact": {
+            "name": "zephyr.elf",
+            "sha256": "2fdae7e83f6053fe0ee63f4182539bd69e24e4bdfceb2b24a0f16f7e0eb6e459",
+            "size": 672592,
+            "provenance": "local"
+          },
+          "retries": 0,
+          "tools": {
+            "harness": {
+              "name": "twister",
+              "version": "v4.5.0"
+            },
+            "lab_tool": {
+              "name": "labtool",
+              "version": "0.0.45"
+            }
+          },
+          "lab_job": {
+            "flash_job_id": 209
+          }
+        }
+      }
+    },
+    {
+      "id": "examplelab:3068165495:t2g_hil:kit_t2g_b_h_lite/cyt4bf8cds/m7_0:sample.basic.helloworld@lab1",
+      "origin": "examplelab",
+      "build_id": "examplelab:3068165495:t2g_hil:kit_t2g_b_h_lite/cyt4bf8cds/m7_0:sample.basic.helloworld",
+      "path": "sample.basic.helloworld",
+      "status": "PASS",
+      "duration": 11.01,
+      "environment": {
+        "comment": "kit_t2g_b_h_lite-041A049E02272400 on lab1",
+        "misc": {
+          "zephyr": {
+            "lab": "lab1",
+            "node": "node1",
+            "dut": {
+              "board_tag": "kit_t2g_b_h_lite-041A049E02272400",
+              "probe": {
+                "serial": "041A049E02272400"
+              }
+            }
+          }
+        }
+      },
+      "misc": {
+        "zephyr": {
+          "kind": "suite",
+          "original_id": "sample.basic.helloworld",
+          "artifact": {
+            "name": "zephyr.elf",
+            "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "size": 779268,
+            "provenance": "local"
+          },
+          "retries": 0,
+          "tools": {
+            "harness": {
+              "name": "twister",
+              "version": "v4.5.0"
+            },
+            "lab_tool": {
+              "name": "labtool",
+              "version": "0.0.45"
+            }
+          },
+          "lab_job": {
+            "flash_job_id": 210
+          }
+        }
+      }
+    },
+    {
+      "id": "examplelab:3068165495:t2g_hil:kit_t2g_b_h_lite/cyt4bf8cds/m7_0:kernel.timer@lab1",
+      "origin": "examplelab",
+      "build_id": "examplelab:3068165495:t2g_hil:kit_t2g_b_h_lite/cyt4bf8cds/m7_0:kernel.timer",
+      "path": "kernel.timer",
+      "status": "PASS",
+      "duration": 19.71,
+      "environment": {
+        "comment": "kit_t2g_b_h_lite-041A049E02272400 on lab1",
+        "misc": {
+          "zephyr": {
+            "lab": "lab1",
+            "node": "node1",
+            "dut": {
+              "board_tag": "kit_t2g_b_h_lite-041A049E02272400",
+              "probe": {
+                "serial": "041A049E02272400"
+              }
+            }
+          }
+        }
+      },
+      "misc": {
+        "zephyr": {
+          "kind": "suite",
+          "original_id": "kernel.timer",
+          "artifact": {
+            "name": "zephyr.elf",
+            "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "size": 2253424,
+            "provenance": "local"
+          },
+          "retries": 0,
+          "counts": {
+            "PASS": 2
+          },
+          "tools": {
+            "harness": {
+              "name": "twister",
+              "version": "v4.5.0"
+            },
+            "lab_tool": {
+              "name": "labtool",
+              "version": "0.0.45"
+            }
+          },
+          "lab_job": {
+            "flash_job_id": 204
+          }
+        }
+      }
+    },
+    {
+      "id": "examplelab:3068165495:t2g_hil:kit_t2g_b_h_lite/cyt4bf8cds/m7_0:kernel.timer.timer_api.timer_cleanup_pending@lab1",
+      "origin": "examplelab",
+      "build_id": "examplelab:3068165495:t2g_hil:kit_t2g_b_h_lite/cyt4bf8cds/m7_0:kernel.timer",
+      "path": "kernel.timer.timer_api.timer_cleanup_pending",
+      "status": "PASS",
+      "duration": 0.01,
+      "misc": {
+        "zephyr": {
+          "kind": "testcase",
+          "original_id": "kernel.timer.timer_api.timer_cleanup_pending",
+          "suite_id": "examplelab:3068165495:t2g_hil:kit_t2g_b_h_lite/cyt4bf8cds/m7_0:kernel.timer@lab1"
+        }
+      }
+    },
+    {
+      "id": "examplelab:3068165495:t2g_hil:kit_t2g_b_h_lite/cyt4bf8cds/m7_0:kernel.timer.time_conversions_conversions_ms_to_cyc_floor32_@lab1",
+      "origin": "examplelab",
+      "build_id": "examplelab:3068165495:t2g_hil:kit_t2g_b_h_lite/cyt4bf8cds/m7_0:kernel.timer",
+      "path": "kernel.timer.time_conversions_conversions_ms_to_cyc_floor32_",
+      "status": "PASS",
+      "duration": 0.0,
+      "misc": {
+        "zephyr": {
+          "kind": "testcase",
+          "original_id": "kernel.timer.time_conversions[conversions/ms_to_cyc_floor32]",
+          "suite_id": "examplelab:3068165495:t2g_hil:kit_t2g_b_h_lite/cyt4bf8cds/m7_0:kernel.timer@lab1"
+        }
+      }
+    }
+  ]
+}

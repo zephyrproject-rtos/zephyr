@@ -1,0 +1,54 @@
+{
+  "environment": {
+    "os": "Linux",
+    "zephyr_version": "v4.5.0-rc1-12-g0123456789ab",
+    "toolchain": "zephyr/gnu",
+    "commit_date": "2026-10-30T18:49:47+05:30",
+    "run_date": "2026-11-17T04:38:29+00:00",
+    "options": {
+      "build_only": true
+    }
+  },
+  "testsuites": [
+    {
+      "name": "kernel.timer",
+      "arch": "arm",
+      "platform": "board_a/soc_a/cpu0",
+      "path": "tests/kernel/timer/timer_api",
+      "run_id": "5f5f",
+      "retries": 0,
+      "toolchain": "zephyr/gnu",
+      "artifacts": [
+        {
+          "file": "zephyr/zephyr.elf",
+          "sha256": "12cfef32c9cefda66569c06d011a24627c6aee5860427e324f6c223f95999086",
+          "size": 672592
+        },
+        {
+          "file": "zephyr/zephyr.hex",
+          "sha256": "5c4eb82e5175ccca4dc5a1bf878059c3d00d3e1507a1f39384bfaa6ae181afb9",
+          "size": 116227
+        },
+        {
+          "file": "zephyr/zephyr.bin",
+          "sha256": "7be07987db73b53877c5f0923e43968c010be532104029e2d8d9167dc6467411",
+          "size": 41292
+        }
+      ],
+      "used_ram": 39122,
+      "used_rom": 105632,
+      "status": "not run",
+      "reason": null,
+      "execution_time": "0.00",
+      "build_time": "47.91",
+      "testcases": [
+        {
+          "identifier": "kernel.timer.timer_api.timer_user_data",
+          "execution_time": "0.00",
+          "status": "not run",
+          "reason": "Test was built only"
+        }
+      ]
+    }
+  ]
+}

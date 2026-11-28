@@ -1,0 +1,212 @@
+{
+  "environment": {
+    "os": "Linux",
+    "zephyr_version": "v4.5.0-rc1-12-g0123456789ab",
+    "toolchain": "zephyr/gnu",
+    "commit_date": "2026-10-30T18:49:47+05:30",
+    "run_date": "2026-11-17T04:38:29+00:00",
+    "options": {
+      "device_testing": true
+    }
+  },
+  "testsuites": [
+    {
+      "name": "kernel.timer",
+      "arch": "arm",
+      "platform": "board_a/soc_a/cpu0",
+      "path": "tests/kernel/timer/timer_api",
+      "run_id": "0f0f",
+      "retries": 0,
+      "toolchain": "zephyr/gnu",
+      "dut": "board_a-0001",
+      "artifacts": [
+        {
+          "file": "zephyr/zephyr.elf",
+          "sha256": "4e3e5e6d326312f75245eadf2507ce5e26fc2a0a934e323d481ad9230575fda7",
+          "size": 672592
+        },
+        {
+          "file": "zephyr/zephyr.hex",
+          "sha256": "7c7f582c63136673f15f5d01f5eb70ef03bb7dde2ebb124b4fceff2c838b42e1",
+          "size": 116227
+        },
+        {
+          "file": "zephyr/zephyr.bin",
+          "sha256": "ef9c07aa8952198304c17b1a665991a2c7ca8b142ac220ffa5a457e83ae1fb61",
+          "size": 41292
+        }
+      ],
+      "status": "passed",
+      "reason": null,
+      "execution_time": "19.60",
+      "build_time": "17.13",
+      "testcases": [
+        {
+          "identifier": "kernel.timer.timer_api.timer_user_data",
+          "execution_time": "0.30",
+          "status": "passed",
+          "reason": null
+        },
+        {
+          "identifier": "kernel.timer.time_conversions[conversions/ms_to_cyc_floor32]",
+          "execution_time": "0.00",
+          "status": "passed",
+          "reason": null
+        },
+        {
+          "identifier": "kernel.timer.timer_api.timer_status_get",
+          "execution_time": "0.00",
+          "status": "skipped",
+          "reason": "not supported"
+        }
+      ]
+    },
+    {
+      "name": "kernel.timer",
+      "arch": "arm",
+      "platform": "board_b@2.0.0/soc_b/cpu0",
+      "path": "tests/kernel/timer/timer_api",
+      "run_id": "1f1f",
+      "retries": 0,
+      "toolchain": "zephyr/gnu",
+      "dut": "board_b-0002",
+      "artifacts": [
+        {
+          "file": "zephyr/zephyr.elf",
+          "sha256": "eaf90f83cb142348ee194080111b75091e767dfcf507cc9445fe339e9e5c0ec5",
+          "size": 672592
+        },
+        {
+          "file": "zephyr/zephyr.hex",
+          "sha256": "7986b5b7f3c8f0a101dc2fb5bea6b2077871c9b6ddb4e1ddef4737d70fa4b087",
+          "size": 116227
+        },
+        {
+          "file": "zephyr/zephyr.bin",
+          "sha256": "934e9746ce3ae705244d08711fad03b1ad9b88fb1cde5dd3a775efb212957ef6",
+          "size": 41292
+        }
+      ],
+      "status": "failed",
+      "reason": "Timeout during flashing",
+      "execution_time": "133.69",
+      "build_time": "22.25",
+      "log": "flash timeout\n",
+      "testcases": [
+        {
+          "identifier": "kernel.timer.timer_api.timer_user_data",
+          "execution_time": "0.00",
+          "status": "blocked",
+          "reason": "Timeout during flashing"
+        },
+        {
+          "identifier": "kernel.timer.timer_api.timer_status_get",
+          "execution_time": "0.00",
+          "status": "blocked",
+          "reason": "Timeout during flashing"
+        }
+      ]
+    },
+    {
+      "name": "sample.basic.helloworld",
+      "arch": "arm",
+      "platform": "board_a/soc_a/cpu0",
+      "path": "samples/hello_world",
+      "run_id": "2f2f",
+      "retries": 0,
+      "toolchain": "zephyr/gnu",
+      "dut": "board_a-0001",
+      "artifacts": [
+        {
+          "file": "zephyr/zephyr.elf",
+          "sha256": "6815e4c250992bdaf0ac68bbad2580cfc95eb4e46ea1ea3c762a7e3bd41a7d8e",
+          "size": 672592
+        },
+        {
+          "file": "zephyr/zephyr.hex",
+          "sha256": "74064a55acaab74d203913d0d7d3a4b681f8912c1a25582b4b1a24df8a766480",
+          "size": 116227
+        },
+        {
+          "file": "zephyr/zephyr.bin",
+          "sha256": "9c4745dab26e2fd1a2354a4ba05a7b7a9125fc548e857e86e5f889b480f3da06",
+          "size": 41292
+        }
+      ],
+      "status": "failed",
+      "reason": "Serial Device Error",
+      "execution_time": "1.00",
+      "build_time": "10.00",
+      "log": "",
+      "testcases": [
+        {
+          "identifier": "sample.basic.helloworld",
+          "execution_time": "0.00",
+          "status": "failed",
+          "reason": null
+        }
+      ]
+    },
+    {
+      "name": "sample.basic.helloworld",
+      "arch": "arm",
+      "platform": "board_b@2.0.0/soc_b/cpu0",
+      "path": "samples/hello_world",
+      "run_id": "3f3f",
+      "retries": 0,
+      "toolchain": "zephyr/gnu",
+      "dut": "board_b-0002",
+      "artifacts": [
+        {
+          "file": "zephyr/zephyr.elf",
+          "sha256": "8c5a128e841c7c31b324ccf30b040bda21df7cb5c2f23090102477cc78c4d438",
+          "size": 672592
+        },
+        {
+          "file": "zephyr/zephyr.hex",
+          "sha256": "5ec04520ab8a6d361d857b8b21bd0bf76ba12a8a82eac08ad5308d3584cdc509",
+          "size": 116227
+        },
+        {
+          "file": "zephyr/zephyr.bin",
+          "sha256": "8e1e4488b36840fd96657bafce0134f82b222568c54c894b32fa93ca5bff550d",
+          "size": 41292
+        }
+      ],
+      "status": "failed",
+      "reason": "Unknown Error",
+      "execution_time": "70.11",
+      "build_time": "11.70",
+      "log": "KIKJ iyZre o World!\r\n",
+      "testcases": [
+        {
+          "identifier": "sample.basic.helloworld",
+          "execution_time": "0.00",
+          "status": "failed",
+          "reason": null
+        }
+      ]
+    },
+    {
+      "name": "kernel.common",
+      "arch": "arm",
+      "platform": "board_a/soc_a/cpu0",
+      "path": "tests/kernel/common",
+      "status": "filtered",
+      "reason": "Platform is not supported",
+      "testcases": []
+    },
+    {
+      "name": "kernel.mem",
+      "arch": "arm",
+      "platform": "board_a/soc_a/cpu0",
+      "path": "tests/kernel/mem",
+      "run_id": "4f4f",
+      "toolchain": "zephyr/gnu",
+      "status": "error",
+      "reason": "Build failure",
+      "build_time": "3.00",
+      "testcases": []
+    }
+  ]
+}

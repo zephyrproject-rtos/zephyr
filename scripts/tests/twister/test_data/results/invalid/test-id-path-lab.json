@@ -1,0 +1,14 @@
+{
+  "base": "hil-two-boards.json",
+  "ops": [
+    [
+      "set",
+      [
+        "tests",
+        3,
+        "id"
+      ],
+      "examplelab:3068165495:t2g_hil:kit_t2g_b_h_lite/cyt4bf8cds/m7_0:kernel.timer.timer_api.timer_cleanup_pending@lab-xx"
+    ]
+  ]
+}

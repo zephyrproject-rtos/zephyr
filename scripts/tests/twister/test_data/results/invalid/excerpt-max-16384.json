@@ -1,0 +1,15 @@
+{
+  "base": "hil-two-boards.json",
+  "ops": [
+    [
+      "fill",
+      [
+        "tests",
+        0,
+        "log_excerpt"
+      ],
+      "x",
+      16385
+    ]
+  ]
+}

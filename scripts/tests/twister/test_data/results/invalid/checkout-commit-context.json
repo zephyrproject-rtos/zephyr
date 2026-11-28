@@ -1,0 +1,14 @@
+{
+  "base": "hil-two-boards.json",
+  "ops": [
+    [
+      "set",
+      [
+        "checkouts",
+        0,
+        "git_commit_hash"
+      ],
+      "0000000000000000000000000000000000000000"
+    ]
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "base": "hil-two-boards.json",
+  "ops": [
+    [
+      "set",
+      [
+        "tests",
+        1,
+        "misc",
+        "zephyr",
+        "skip_reason"
+      ],
+      {
+        "reason": "filtered"
+      }
+    ]
+  ]
+}

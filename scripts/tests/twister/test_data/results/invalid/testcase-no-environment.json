@@ -1,0 +1,28 @@
+{
+  "base": "hil-two-boards.json",
+  "ops": [
+    [
+      "set",
+      [
+        "tests",
+        3,
+        "environment"
+      ],
+      {
+        "comment": "kit_t2g_b_h_lite-041A049E02272400 on lab1",
+        "misc": {
+          "zephyr": {
+            "lab": "lab1",
+            "node": "node1",
+            "dut": {
+              "board_tag": "kit_t2g_b_h_lite-041A049E02272400",
+              "probe": {
+                "serial": "041A049E02272400"
+              }
+            }
+          }
+        }
+      }
+    ]
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "base": "hil-two-boards.json",
+  "ops": [
+    [
+      "del",
+      [
+        "builds",
+        0,
+        "misc",
+        "zephyr",
+        "scenario"
+      ]
+    ]
+  ]
+}

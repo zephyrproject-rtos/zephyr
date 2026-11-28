@@ -1759,6 +1759,13 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
             "available_ram": 12278,
             "used_rom": 1024,
             "available_rom": 1047552,
+            "artifacts": [
+                {
+                    "file": "zephyr/zephyr.elf",
+                    "sha256": "0123456789abcdef",
+                    "size": 2048
+                }
+            ],
             "status": "passed",
             "toolchain": "zephyr",
             "reason": "OK",
@@ -1853,7 +1860,14 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
                 'used_ram': 4096,
                 'used_rom': 1024,
                 'available_ram': 12278,
-                'available_rom': 1047552
+                'available_rom': 1047552,
+                'artifacts': [
+                    {
+                        'file': 'zephyr/zephyr.elf',
+                        'sha256': '0123456789abcdef',
+                        'size': 2048
+                    }
+                ]
             },
             'retries': 0,
             'toolchain': 'zephyr',
@@ -1872,7 +1886,8 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
                 'used_ram': 0,
                 'used_rom': 0,
                 'available_ram': 0,
-                'available_rom': 0
+                'available_rom': 0,
+                'artifacts': []
             },
             'status': TwisterStatus.NONE,
             'reason': None,
@@ -1886,7 +1901,8 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
                 'used_ram': 4096,
                 'used_rom': 1024,
                 'available_ram': 12278,
-                'available_rom': 1047552
+                'available_rom': 1047552,
+                'artifacts': []
             },
             'retries': 1,
             'toolchain': 'zephyr',
@@ -1911,7 +1927,8 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
                 'used_ram': 4096,
                 'used_rom': 1024,
                 'available_ram': 12278,
-                'available_rom': 1047552
+                'available_rom': 1047552,
+                'artifacts': []
             },
             'retries': 0,
             'toolchain': 'zephyr',
