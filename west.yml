@@ -373,6 +373,12 @@ manifest:
       groups:
         - testing
         - tee
+    - name: qemu-devicetrees
+      url: https://github.com/Xilinx/qemu-devicetrees
+      revision: f5fc4213431edb730a8b808119c693f34d863822
+      path: modules/hal/qemu_devicetrees
+      groups:
+        - optional
     - name: reqmgmt
       path: doc/reqmgmt
       revision: c6803e9b4e9bf9ae7fad3c7cd85dbf35d0d09ede

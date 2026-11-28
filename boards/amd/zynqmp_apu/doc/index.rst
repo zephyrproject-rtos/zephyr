@@ -57,6 +57,12 @@ XSDB runner loads the bitstream, FSBL, ``bl31.elf``, and Zephyr ELF separately.
 When ``CONFIG_BUILD_WITH_TFA`` is enabled, ``west flash`` passes the built
 ``bl31.elf`` path automatically via ``--bl31``.
 
+Running in QEMU
+===============
+
+This board can be emulated with QEMU using the optional ``qemu-devicetrees``
+module; see :ref:`amd-qemu-emulation` for setup and usage.
+
 References
 **********
 

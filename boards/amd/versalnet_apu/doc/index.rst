@@ -67,6 +67,12 @@ You should see the following message on the console:
    Hello World! versalnet_apu/amd_versalnet_apu
 
 
+Running in QEMU
+===============
+
+This board can be emulated with QEMU using the optional ``qemu-devicetrees``
+module; see :ref:`amd-qemu-emulation` for setup and usage.
+
 References
 **********
 
