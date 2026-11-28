@@ -729,6 +729,7 @@ int supplicant_send_wifi_mgmt_event(const char *ifname, enum net_event_wifi_cmd 
 
 	switch (event) {
 	case NET_EVENT_WIFI_CMD_CONNECT_RESULT:
+		supplicant_connect_result_sent();
 		/* The supplicant sends a bare status value from places that have no
 		 * IEEE 802.11 code to report.
 		 */
