@@ -123,8 +123,8 @@ enum {
 	 * of the RPA timeout.
 	 */
 	BT_ADV_RPA_VALID,
-	/* The private random address of the advertiser is being updated. */
-	BT_ADV_RPA_UPDATE,
+	/* Disabled for an RPA update: the RPA rotation enables it again, a stop cancels that. */
+	BT_ADV_RPA_PAUSED,
 	/* The advertiser set is limited by a timeout, or number of advertising
 	 * events, or both.
 	 */
