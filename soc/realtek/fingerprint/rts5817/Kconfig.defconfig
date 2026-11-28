@@ -9,4 +9,8 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config NUM_IRQS
 	default 32
 
+# The image is linked at the first flash offset that is mapped on the bus.
+config FLASH_LOAD_OFFSET
+	default 0x1100
+
 endif # SOC_RTS5817
