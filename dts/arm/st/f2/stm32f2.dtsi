@@ -16,6 +16,7 @@
 #include <zephyr/dt-bindings/reset/stm32f2_4_7_reset.h>
 #include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 #include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/stm32_adc.h>
 #include <freq.h>
 #include <mem.h>
 

@@ -175,3 +175,11 @@ child-binding:
         Output pin selection for the bias voltage. The actual interpretation
         depends on the driver. This is used only for drivers which select
         the ADC_CONFIGURABLE_VBIAS_PIN Kconfig option.
+
+    zephyr,internal-channel:
+      type: int
+      description: |
+        Driver-specific identifier for an internal input associated with this
+        channel. The value is interpreted by the ADC driver.
+        This is used only for drivers which select the
+        ADC_CONFIGURABLE_INTERNAL_CHANNELS Kconfig option.

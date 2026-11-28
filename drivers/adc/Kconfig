@@ -42,6 +42,11 @@ config ADC_EMUL_SHELL
 config ADC_CONFIGURABLE_INPUTS
 	bool
 
+# By selecting this option, ADC drivers indicate that internal input channels
+# can be explicitly identified when configuring an ADC channel.
+config ADC_CONFIGURABLE_INTERNAL_CHANNELS
+	bool
+
 # By selecting or not this option particular ADC drivers indicate if it is
 # required to explicitly specify for the excitation current source the pin
 # which should be used.

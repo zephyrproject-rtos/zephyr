@@ -10,6 +10,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/adc.h>
+#include <zephyr/dt-bindings/adc/stm32_adc.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/nvmem.h>
 #include <zephyr/pm/device_runtime.h>
@@ -91,24 +92,6 @@ struct stm32_temp_config {
 #endif /* HAS_CALIBRATION */
 	bool is_ntc;
 };
-
-static void stm32_temp_enable_tempsensor_channel(ADC_TypeDef *adc)
-{
-	const uint32_t path = LL_ADC_GetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc));
-
-	LL_ADC_SetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc),
-					path | LL_ADC_PATH_INTERNAL_TEMPSENSOR);
-
-	k_usleep(LL_ADC_DELAY_TEMPSENSOR_STAB_US);
-}
-
-__maybe_unused static void stm32_temp_disable_tempsensor_channel(ADC_TypeDef *adc)
-{
-	const uint32_t path = LL_ADC_GetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc));
-
-	LL_ADC_SetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc),
-					path & ~LL_ADC_PATH_INTERNAL_TEMPSENSOR);
-}
 
 #if defined(HAS_DUAL_CALIBRATION)
 static int stm32_temp_ts_cal2_temp(const struct stm32_temp_config *cfg)
@@ -220,26 +203,20 @@ static int stm32_temp_sample_fetch(const struct device *dev, enum sensor_channel
 	k_mutex_lock(&data->mutex, K_FOREVER);
 	pm_device_runtime_get(cfg->adc);
 
-#ifndef CONFIG_STM32_TEMP_INJECTED
-	rc = adc_channel_setup(cfg->adc, &cfg->adc_cfg);
-	if (rc != 0) {
-		LOG_DBG("Setup AIN%u got %d", cfg->adc_cfg.channel_id, rc);
-		goto unlock;
+	if (!IS_ENABLED(CONFIG_STM32_TEMP_INJECTED)) {
+		rc = adc_channel_setup(cfg->adc, &cfg->adc_cfg);
+		if (rc != 0) {
+			LOG_DBG("Setup AIN%u got %d", cfg->adc_cfg.channel_id, rc);
+			goto unlock;
+		}
 	}
-
-	stm32_temp_enable_tempsensor_channel(cfg->adc_base);
-#endif /* CONFIG_STM32_TEMP_INJECTED */
 
 	rc = adc_read(cfg->adc, sp);
 	if (rc == 0) {
 		data->raw = data->sample_buffer;
 	}
 
-#ifndef CONFIG_STM32_TEMP_INJECTED
-	stm32_temp_disable_tempsensor_channel(cfg->adc_base);
-
 unlock:
-#endif /* CONFIG_STM32_TEMP_INJECTED */
 	pm_device_runtime_put(cfg->adc);
 	k_mutex_unlock(&data->mutex);
 
@@ -344,16 +321,14 @@ static int stm32_temp_init(const struct device *dev)
 #endif /* CONFIG_STM32_TEMP_INJECTED */
 	};
 
-#ifdef CONFIG_STM32_TEMP_INJECTED
-	int rc = adc_channel_setup(cfg->adc, &cfg->adc_cfg);
+	if (IS_ENABLED(CONFIG_STM32_TEMP_INJECTED)) {
+		int rc = adc_channel_setup(cfg->adc, &cfg->adc_cfg);
 
-	if (rc != 0) {
-		LOG_DBG("Setup AIN%u got %d", cfg->adc_cfg.channel_id, rc);
-		return rc;
+		if (rc != 0) {
+			LOG_DBG("Setup AIN%u got %d", cfg->adc_cfg.channel_id, rc);
+			return rc;
+		}
 	}
-
-	stm32_temp_enable_tempsensor_channel(cfg->adc_base);
-#endif /* CONFIG_STM32_TEMP_INJECTED */
 
 	return 0;
 }
@@ -395,7 +370,8 @@ static const struct stm32_temp_config stm32_temp_dev_config = {
 		.reference = ADC_REF_INTERNAL,
 		.acquisition_time = ADC_ACQ_TIME_MAX,
 		.channel_id = DT_INST_IO_CHANNELS_INPUT(0),
-		.differential = 0
+		.differential = 0,
+		.internal_channel = STM32_ADC_INTERNAL_CHANNEL_TEMPSENSOR,
 	},
 #if defined(HAS_CALIBRATION)
 	.ts_cal1 = INIT_PARAMETER(0, ts_cal1),

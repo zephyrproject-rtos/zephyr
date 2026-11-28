@@ -198,6 +198,14 @@ struct adc_channel_cfg {
 	 */
 	uint32_t vbias_pins;
 #endif /* CONFIG_ADC_CONFIGURABLE_VBIAS_PIN */
+
+#ifdef CONFIG_ADC_CONFIGURABLE_INTERNAL_CHANNELS
+	/**
+	 * Driver-specific identifier for an internal input associated with this
+	 * channel. The value is interpreted by the ADC driver.
+	 */
+	uint8_t internal_channel;
+#endif /* CONFIG_ADC_CONFIGURABLE_INTERNAL_CHANNELS */
 };
 
 /**
@@ -282,6 +290,8 @@ IF_ENABLED(CONFIG_ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN, \
 	 .current_source_pin = DT_PROP_OR(node_id, zephyr_current_source_pin, {0}),)) \
 IF_ENABLED(CONFIG_ADC_CONFIGURABLE_VBIAS_PIN, \
 	(.vbias_pins = DT_PROP_OR(node_id, zephyr_vbias_pins, 0),)) \
+IF_ENABLED(CONFIG_ADC_CONFIGURABLE_INTERNAL_CHANNELS, \
+	(.internal_channel = DT_PROP_OR(node_id, zephyr_internal_channel, 0),)) \
 }
 
 /**
