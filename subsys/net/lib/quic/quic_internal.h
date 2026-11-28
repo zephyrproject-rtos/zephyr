@@ -1633,5 +1633,6 @@ void quic_test_endpoint_unref(struct quic_endpoint *ep);
 void quic_test_check_idle_timeouts(void);
 bool quic_ctx_queue_incoming_stream(struct quic_context *ctx, struct quic_stream *stream);
 void quic_endpoint_notify_streams_closed(struct quic_endpoint *ep);
+void quic_test_receive_data(int sock, struct quic_endpoint *ep_hint);
 
 #endif /* CONFIG_NET_TEST */
