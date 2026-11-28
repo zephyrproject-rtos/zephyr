@@ -123,6 +123,5 @@
 
 &mx_flash {
 	size = <DT_SIZE_M(64)>;
-	spi-bus-width = <4>;
 	status = "okay";
 };

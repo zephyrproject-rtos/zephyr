@@ -16,4 +16,5 @@
 
 &mx_flash {
 	qspi-max-frequency = <DT_FREQ_M(50)>;
+	spi-bus-width = <4>;
 };
