@@ -602,6 +602,9 @@ struct zbus_async_listener_work {
 	struct k_fifo *message_fifo;
 	struct k_work_q *queue;
 	void (*callback)(const struct zbus_channel *chan, const void *msg);
+#if defined(CONFIG_TRACING_ZBUS)
+	const struct zbus_observer *obs;
+#endif
 };
 
 void async_listener_work_handler(struct k_work *item);
@@ -623,11 +626,15 @@ void async_listener_work_handler(struct k_work *item);
  */
 #define ZBUS_ASYNC_LISTENER_DEFINE_WITH_ENABLE(_name, _cb, _enable)               \
 	static K_FIFO_DEFINE(_zbus_observer_work_fifo_##_name);                   \
+	_ZBUS_OBS_EXTERN(_name);                                                  \
 	static struct zbus_async_listener_work _zbus_observer_work_##_name = {    \
 		.work = Z_WORK_INITIALIZER(async_listener_work_handler),          \
 		.message_fifo = &_CONCAT(_zbus_observer_work_fifo_, _name),       \
 		.queue = &k_sys_work_q,                                           \
 		.callback = _cb,                                                  \
+		IF_ENABLED(CONFIG_TRACING_ZBUS, (                                 \
+			.obs = &_name,                                            \
+		))                                                                \
 	};                                                                        \
 	static struct zbus_observer_data _CONCAT(_zbus_obs_data_, _name) = {      \
 		.enabled = _enable,                                               \

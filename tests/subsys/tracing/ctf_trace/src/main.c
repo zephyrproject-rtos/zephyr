@@ -12,6 +12,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/zbus/zbus.h>
 
 static K_SEM_DEFINE(sem, 0, 1);
 static K_MUTEX_DEFINE(mutex);
@@ -35,6 +36,58 @@ static void worker_fn(void *a, void *b, void *c)
 	ARG_UNUSED(a);
 	ARG_UNUSED(b);
 	ARG_UNUSED(c);
+}
+
+struct zmsg {
+	uint32_t v;
+};
+
+ZBUS_CHAN_DEFINE(zchan, struct zmsg, NULL, NULL, ZBUS_OBSERVERS(zlis, zsub, zmsub, zalis),
+		 ZBUS_MSG_INIT(.v = 0));
+
+static K_SEM_DEFINE(zalis_done, 0, 1);
+
+static void zlis_cb(const struct zbus_channel *chan)
+{
+	ARG_UNUSED(chan);
+}
+
+static void zalis_cb(const struct zbus_channel *chan, const void *msg)
+{
+	ARG_UNUSED(chan);
+	ARG_UNUSED(msg);
+	k_sem_give(&zalis_done);
+}
+
+ZBUS_LISTENER_DEFINE(zlis, zlis_cb);
+ZBUS_SUBSCRIBER_DEFINE(zsub, 1);
+ZBUS_MSG_SUBSCRIBER_DEFINE(zmsub);
+ZBUS_ASYNC_LISTENER_DEFINE(zalis, zalis_cb);
+
+/*
+ * Print the addresses the zbus events identify channels and observers by, and
+ * the return value of a read from a claimed channel, for the harness to check
+ * the decoded fields against.
+ */
+static void trace_zbus(void)
+{
+	const struct zbus_channel *chan;
+	struct zmsg msg = {.v = 1};
+	int busy;
+
+	(void)zbus_chan_pub(&zchan, &msg, K_MSEC(10));
+	(void)zbus_sub_wait(&zsub, &chan, K_NO_WAIT);
+	(void)zbus_sub_wait_msg(&zmsub, &chan, &msg, K_NO_WAIT);
+	(void)k_sem_take(&zalis_done, K_FOREVER);
+
+	(void)zbus_chan_claim(&zchan, K_NO_WAIT);
+	busy = zbus_chan_read(&zchan, &msg, K_NO_WAIT);
+	(void)zbus_chan_finish(&zchan);
+
+	printk("ZBUS chan=%08x lis=%08x sub=%08x msub=%08x alis=%08x busy=%d\n",
+	       (uint32_t)(uintptr_t)&zchan, (uint32_t)(uintptr_t)&zlis,
+	       (uint32_t)(uintptr_t)&zsub, (uint32_t)(uintptr_t)&zmsub, (uint32_t)(uintptr_t)&zalis,
+	       busy);
 }
 
 int main(void)
@@ -74,6 +127,8 @@ int main(void)
 
 	mem = k_heap_alloc(&heap, 32, K_NO_WAIT);
 	k_heap_free(&heap, mem);
+
+	trace_zbus();
 
 	printk("CTF TRACE DONE\n");
 

@@ -10,6 +10,7 @@ expected events are present with sane fields.
 import glob
 import logging
 import os
+import re
 import sys
 import time
 
@@ -36,7 +37,23 @@ EXPECTED_EVENTS = [
     "stack_push_enter",
     "heap_alloc_enter",
     "heap_alloc_exit",
+    "zbus_chan_pub_enter",
+    "zbus_chan_pub_exit",
+    "zbus_obs_notify_enter",
+    "zbus_obs_notify_exit",
+    "zbus_sub_wait_exit",
+    "zbus_sub_wait_msg_exit",
+    "zbus_async_listener_enter",
+    "zbus_async_listener_exit",
+    "zbus_chan_claim_exit",
+    "zbus_chan_read_exit",
+    "zbus_chan_finish_exit",
 ]
+
+ZBUS_IDS_RE = re.compile(
+    r"ZBUS chan=(?P<chan>[0-9a-f]+) lis=(?P<lis>[0-9a-f]+) sub=(?P<sub>[0-9a-f]+) "
+    r"msub=(?P<msub>[0-9a-f]+) alis=(?P<alis>[0-9a-f]+) busy=(?P<busy>-?[0-9]+)"
+)
 
 
 def _find_trace(build_dir):
@@ -50,7 +67,9 @@ def _find_trace(build_dir):
 
 def test_ctf_trace(dut):
     # Wait for the app to finish emitting its tracepoints.
-    dut.readlines_until(regex=".*CTF TRACE DONE", timeout=30)
+    lines = dut.readlines_until(regex=".*CTF TRACE DONE", timeout=30)
+    zbus_ids = next((m for m in map(ZBUS_IDS_RE.search, lines) if m), None)
+    assert zbus_ids, "zbus addresses not printed"
 
     build_dir = dut.device_config.app_build_dir or dut.device_config.build_dir
 
@@ -86,4 +105,44 @@ def test_ctf_trace(dut):
     idx = {n: names.index(n) for n in ("queue_init", "queue_get_exit")}
     assert idx["queue_init"] < idx["queue_get_exit"], "queue_init must precede queue_get_exit"
 
+    _check_zbus(tr.events, zbus_ids)
+
     logger.info("CTF trace validated: all %d expected event types present", len(EXPECTED_EVENTS))
+
+
+def _check_zbus(events, ids):
+    """Check the decoded zbus event fields against the values the app printed."""
+    chan = int(ids["chan"], 16)
+    obs = {name: int(ids[name], 16) for name in ("lis", "sub", "msub", "alis")}
+
+    def first(name):
+        return next(e.fields for e in events if e.name == name)
+
+    pub_enter = first("zbus_chan_pub_enter")
+    assert pub_enter["id"] == chan, f"zbus_chan_pub_enter: {pub_enter}"
+    # K_MSEC(10), recorded in microseconds after rounding up to whole ticks.
+    assert 10000 <= pub_enter["timeout"] < 11000, f"zbus_chan_pub_enter: {pub_enter}"
+    pub_exit = first("zbus_chan_pub_exit")
+    assert pub_exit["id"] == chan and pub_exit["ret"] == 0, f"zbus_chan_pub_exit: {pub_exit}"
+
+    # Observers are notified in ZBUS_OBSERVERS() order.
+    notified = [e.fields for e in events if e.name == "zbus_obs_notify_exit"]
+    expected = [obs["lis"], obs["sub"], obs["msub"], obs["alis"]]
+    assert [f["id"] for f in notified] == expected, f"zbus_obs_notify_exit: {notified}"
+    for f in notified:
+        assert f["chan"] == chan and f["ret"] == 0, f"zbus_obs_notify_exit: {f}"
+
+    for name, sub in (("zbus_sub_wait_exit", "sub"), ("zbus_sub_wait_msg_exit", "msub")):
+        f = first(name)
+        assert (f["id"], f["chan"], f["ret"]) == (obs[sub], chan, 0), f"{name}: {f}"
+
+    for name in ("zbus_async_listener_enter", "zbus_async_listener_exit"):
+        f = first(name)
+        assert (f["id"], f["chan"]) == (obs["alis"], chan), f"{name}: {f}"
+
+    # A read of a claimed channel fails: checks the signed return value.
+    read_exit = first("zbus_chan_read_exit")
+    assert (read_exit["id"], read_exit["ret"]) == (chan, int(ids["busy"])), (
+        f"zbus_chan_read_exit: {read_exit}"
+    )
+    assert int(ids["busy"]) < 0, f"zbus_chan_read of a claimed channel returned {ids['busy']}"

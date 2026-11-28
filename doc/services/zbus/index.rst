@@ -673,6 +673,8 @@ to a channel. Users can then retrieve the channel reference by using the identif
         ...
     }
 
+.. _zbus_runtime_channels:
+
 Runtime channel creation
 ------------------------
 
@@ -965,6 +967,28 @@ illustrates the runtime registration usage.
   The :c:struct:`zbus_observer_node` can only be reused in :c:func:`zbus_chan_add_obs_with_node` after removing
   the channel observer it was first associated with through :c:func:`zbus_chan_rm_obs`.
 
+.. _zbus_tracing:
+
+Tracing
+=======
+
+With :ref:`tracing` enabled, :kconfig:option:`CONFIG_TRACING_ZBUS` traces:
+
+* the entry and result of :c:func:`zbus_chan_pub`, :c:func:`zbus_chan_read`,
+  :c:func:`zbus_chan_notify`, :c:func:`zbus_chan_claim` and :c:func:`zbus_chan_finish`;
+* each observer that zbus notifies during a publish or a notify, with the result. A listener's
+  callback runs inside this event; for the other observer types, it covers queuing the
+  notification;
+* :c:func:`zbus_sub_wait` and :c:func:`zbus_sub_wait_msg`, with the channel that woke the
+  subscriber or message subscriber;
+* each async listener callback, in its work queue.
+
+The :ref:`CTF backend <ctf>` records them as ``zbus_*`` events. Like kernel objects, channels and
+observers are identified by address, so a trace viewer can name them from the symbols of the
+application's ELF file. A channel without a symbol, such as a
+:ref:`runtime channel <zbus_runtime_channels>` allocated on the heap or on a stack, can only be
+shown as an address.
+
 .. _zbus_proxy_agent:
 
 Proxy Agent Communication (Experimental)
@@ -1159,6 +1183,7 @@ Related configuration options:
   observers to statically allocate;
 * :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_NONE` use user-provided runtime
   observers nodes;
+* :kconfig:option:`CONFIG_TRACING_ZBUS` traces zbus operations, see :ref:`zbus_tracing`;
 * :kconfig:option:`CONFIG_ZBUS_PROXY_AGENT` enable proxy agent communication support.
 
 Proxy Agent Configuration Options
