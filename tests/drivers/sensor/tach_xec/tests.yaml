@@ -1,0 +1,45 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - sensors
+  build_only: true
+tests:
+  drivers.sensor.tach.xec.build:
+    platform_allow:
+      - mec15xxevb_assy6853
+      - mec172xevb_assy6906
+      - mec_assy6941/mec1753_qsz
+    integration_platforms:
+      - mec_assy6941/mec1753_qsz
+  drivers.sensor.tach.xec.pm.build:
+    platform_allow:
+      - mec15xxevb_assy6853
+      - mec172xevb_assy6906
+      - mec_assy6941/mec1753_qsz
+    integration_platforms:
+      - mec_assy6941/mec1753_qsz
+    extra_configs:
+      - CONFIG_PM=y
+      - CONFIG_PM_DEVICE=y
+  # The overlay enables four tachometers, so this also covers four handler
+  # threads and their stacks fitting on the smallest of the three parts.
+  drivers.sensor.tach.xec.trigger.build:
+    platform_allow:
+      - mec15xxevb_assy6853
+      - mec172xevb_assy6906
+      - mec_assy6941/mec1753_qsz
+    integration_platforms:
+      - mec_assy6941/mec1753_qsz
+    extra_configs:
+      - CONFIG_TACH_XEC_TRIGGER_OWN_THREAD=y
+  # The work queue path has no series specific code, so one platform covers it.
+  drivers.sensor.tach.xec.trigger.global.build:
+    platform_allow:
+      - mec_assy6941/mec1753_qsz
+    integration_platforms:
+      - mec_assy6941/mec1753_qsz
+    extra_configs:
+      - CONFIG_TACH_XEC_TRIGGER_GLOBAL_THREAD=y
