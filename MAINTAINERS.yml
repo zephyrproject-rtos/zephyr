@@ -6026,20 +6026,39 @@ ST Sensors:
   tests:
     - drivers.sensor
 
-STM32 Platforms:
+STM32 Platforms (Boards & Samples):
   status: maintained
   maintainers:
     - erwango
   collaborators:
-    - FRASTM
+    - djiatsaf-st
+    - etienne-lms
+  files:
+    - boards/st/
+    - samples/boards/st/
+  files-exclude:
+    - boards/st/*wb*/
+    - boards/st/stm32mp*/
+  labels:
+    - "platform: STM32"
+  description: >-
+    ST MCU development boards and samples.
+  tests:
+    - sample.boards.stm32
+
+STM32 Platforms (Drivers & Bindings):
+  status: maintained
+  maintainers:
+    - erwango
+    - mathieuchopstm
+  collaborators:
     - gautierg-st
     - GeorgeCGV
-    - mathieuchopstm
     - djiatsaf-st
     - etienne-lms
     - juickar
+    - rgallaispou
   files:
-    - boards/st/
     - drivers/*/*stm32*.c
     - drivers/*/*stm32*.h
     - drivers/*/*/*stm32*
@@ -6047,10 +6066,7 @@ STM32 Platforms:
     - dts/arm/st/
     - dts/bindings/*/*stm32*
     - soc/st/stm32/
-    - samples/boards/st/
   files-exclude:
-    - boards/st/*wb*/
-    - boards/st/stm32mp*/
     - drivers/bluetooth/hci/*stm32*.c
     - drivers/clock_control/clock_stm32_ll_mp*.c
     - drivers/ieee802154/*stm32*.c
@@ -6059,7 +6075,7 @@ STM32 Platforms:
   labels:
     - "platform: STM32"
   description: >-
-    STM32 SOCs, dts files and related drivers. ST MCU development boards.
+    STM32 SOCs, dts files and related drivers.
   tests:
     - sample.boards.stm32
 
@@ -6088,8 +6104,8 @@ STM32 Platforms (Wireless):
   status: maintained
   maintainers:
     - erwango
-  collaborators:
     - asm5878
+  collaborators:
     - HoZHel
     - mathieuchopstm
     - vtardy-st
@@ -7576,7 +7592,6 @@ West:
   maintainers:
     - erwango
   collaborators:
-    - FRASTM
     - gautierg-st
     - etienne-lms
     - mathieuchopstm
@@ -7585,6 +7600,7 @@ West:
     - asm5878
     - HoZHel
     - vtardy-st
+    - rgallaispou
   files:
     - modules/Kconfig.stm32
   labels:
