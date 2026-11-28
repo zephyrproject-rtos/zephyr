@@ -1,0 +1,109 @@
+# Copyright (c) 2026 Zephyr SNMP Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "SNMP Agent Validation Sample"
+
+menu "SNMP Validation Sample Options"
+
+config SNMP_SAMPLE_ENTERPRISE_ID
+	int "Enterprise ID for Private MIB (1.3.6.1.4.1.<ID>)"
+	default 54321
+	help
+	  Enterprise number under which the sample Private MIB is registered.
+	  Default is 54321, resulting in OID tree 1.3.6.1.4.1.54321.1...
+
+config SNMP_SAMPLE_SENSOR_OBJECT
+	bool "Enable simulated sensor objects"
+	default y
+	help
+	  Registers simulated sensors in Private MIB:
+	  - sensorValue (INTEGER / simulated temperature)
+	  - sensorHumidity (GAUGE32 / relative humidity)
+	  - sensorDescription (OCTET STRING)
+	  - sensorStatusOid (OBJECT IDENTIFIER)
+
+config SNMP_SAMPLE_LED_OBJECT
+	bool "Enable LED control object (ledState)"
+	default y
+	help
+	  Registers ledState (read-write INTEGER) controlling the user LED (led0).
+
+config SNMP_SAMPLE_BUTTON_TRAP
+	bool "Enable User Button trap notification"
+	default y
+	help
+	  Enables GPIO interrupt on User Button (sw0). Pressing the button sends
+	  an SNMP Trap/Notification to the configured destination with buttonCounter.
+
+config SNMP_SAMPLE_TRAP_DEST
+	string "Trap destination IPv4 address"
+	default "192.168.68.103"
+	depends on SNMP_TRAP_ENABLED
+	help
+	  IP address of the SNMP Manager receiving traps and notifications on UDP port 162.
+
+config SNMP_SAMPLE_SECOND_INSTANCE
+	bool "Run a second SNMP agent instance (dual-instance demo)"
+	depends on SNMP_MAX_INSTANCES >= 2
+	default n
+	help
+	  Proves the multi-instance feature at application level: besides the LAN
+	  agent (g_agent_lan) on CONFIG_SNMP_AGENT_PORT, main.c owns a second
+	  independent struct snmp_agent (g_agent_wan) with its own sysName
+	  ("NUCLEO-H743ZI-WAN"), its own MIB tree and its own counters, served on
+	  the same interface but a different UDP port (SNMP_SAMPLE_WAN_PORT,
+	  default 1610). Two instances cannot share :161 on one interface --
+	  plain socket semantics make the second bind() fail with -EADDRINUSE --
+	  so the demo uses a separate port instead.
+
+	  Sizing the transport budgets (enforced by BUILD_ASSERT in
+	  src/snmp_service.c):
+
+	    CONFIG_ZVFS_POLL_MAX >= CONFIG_SNMP_MAX_INSTANCES * SNMP_SVC_FDS + 1
+
+	  where SNMP_SVC_FDS is 2 with CONFIG_NET_IPV6 (IPv4 + IPv6 listener per
+	  instance) and 1 otherwise, and the +1 is the socket-service thread's
+	  eventfd. Keep additional headroom if other socket services (telnet
+	  shell, custom) are registered in the same application. Each RUNNING
+	  instance also costs ~30 KiB of struct RAM (~39 KiB with v3) plus its socket-service
+	  descriptor, so size CONFIG_SNMP_MAX_INSTANCES against the budget.
+
+	  Enable with (qemu_x86 example, IPv6 => 2*2+1 = 5 poll entries):
+
+	    west build -b qemu_x86 samples/snmp_agent_v3 -- \
+	      -DCONFIG_SNMP_MAX_INSTANCES=2 -DCONFIG_ZVFS_POLL_MAX=5 \
+	      -DCONFIG_SNMP_SAMPLE_SECOND_INSTANCE=y
+
+	  Query the two instances with distinct sysName to verify isolation:
+	    snmpget -v2c -c public udp:<IP>:1610 1.3.6.1.2.1.1.5.0
+
+config SNMP_SAMPLE_WAN_PORT
+	int "UDP port of the second (WAN) demo instance"
+	default 1610
+	depends on SNMP_SAMPLE_SECOND_INSTANCE
+	range 1 65535
+	help
+	  Listen port of g_agent_wan. Must differ from CONFIG_SNMP_AGENT_PORT
+	  because both demo instances share one interface.
+
+config SNMP_SAMPLE_V3_MONITOR_USER
+	string "authNoPriv monitor user name"
+	default "v3monitor"
+	help
+	  Name of the second USM user registered by main.c at runtime. The
+	  user is created with HMAC-SHA-1 authentication and no privacy, and
+	  it is the account already mapped to VACM group "readonly" by
+	  snmp_vacm_init(), so it can read the system group but nothing else.
+	  This exercises the authNoPriv path next to the authPriv default user.
+
+config SNMP_SAMPLE_V3_MONITOR_AUTH_PASS
+	string "authNoPriv monitor authentication pass phrase"
+	default "v3-monitor-auth-passphrase-test-only"
+	help
+	  Test-only pass phrase for SNMP_SAMPLE_V3_MONITOR_USER. RFC 3414
+	  section 11.2 requires at least 8 octets; anything shorter is
+	  rejected by snmp_usm_add_user() with -EINVAL.
+
+endmenu
+
+source "Kconfig.zephyr"

@@ -1,0 +1,428 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2026 StructCore Embedded
+#
+# SNMP Agent — Kconfig options.
+# See snmp.h for the public API and quick-start guide.
+# Referenced RFCs: 3412, 3414, 3415, 3416, 3418, 1213.
+
+menuconfig SNMP
+	bool "SNMP (Simple Network Management Protocol) support"
+	depends on NETWORKING
+	depends on NET_UDP
+	depends on NET_SOCKETS
+	depends on NET_SOCKETS_SERVICE
+	default n
+	help
+	  Master switch for the embedded SNMP agent (v1/v2c/v3).
+	  Enables the ASN.1 BER codec, MIB tree engine, and UDP :161 listener.
+	  Disable to remove all SNMP code from the binary (~0 bytes).
+
+if SNMP
+
+config SNMP_MAX_INSTANCES
+	int "Maximum number of concurrently RUNNING SNMP agent instances"
+	range 1 8
+	default 1
+	help
+	  Compile-time bound on simultaneously RUNNING struct snmp_agent instances.
+	  Measured sizeof(struct snmp_agent) is approximately 30 KiB for v1/v2c-only
+	  builds and 40 KiB with SNMPv3 enabled on 32-bit targets. Size this against
+	  your RAM budget, not against the port count.
+
+	  Transport side effects, all enforced by BUILD_ASSERT in
+	  src/snmp_service.c:
+	    - reserves exactly this many net_socket_service descriptors, and
+	    - reserves this many * (1, or 2 with CONFIG_NET_IPV6) entries of
+	      CONFIG_ZVFS_POLL_MAX (plus one for the service thread's eventfd).
+	  Raise CONFIG_ZVFS_POLL_MAX accordingly if other socket services are in use.
+
+	  Stack note: the service thread runs the whole recv/process/send section, and
+	  the GETBULK and SNMPv3 encode paths use several KiB of stack, so
+	  CONFIG_NET_SOCKETS_SERVICE_STACK_SIZE must be sized >= 12 KiB whenever
+	  SNMPv3 or GetBulk is enabled.
+
+config SNMP_AGENT_PORT
+	int "Default UDP listening port"
+	default 161
+	range 1 65535
+	help
+	  Default port used when struct snmp_agent_cfg.port is 0. The effective
+	  per-instance port is cfg.port (stored in agent->port): the agent struct, not
+	  Kconfig, is the source of truth at runtime. Different instances may therefore
+	  listen on different ports.
+
+config SNMP_COMMUNITY_READ
+	string "Default read community string (SNMPv1/v2c)"
+	default "public"
+	depends on SNMP_VERSION_1 || SNMP_VERSION_2C
+	help
+	  Community string required for GET, GETNEXT, and GETBULK requests.
+
+config SNMP_COMMUNITY_WRITE
+	string "Default write community string (SNMPv1/v2c)"
+	default "private"
+	depends on SNMP_VERSION_1 || SNMP_VERSION_2C
+	help
+	  Community string required for SET requests.
+
+config SNMP_VERSION_1
+	bool "SNMPv1 protocol support"
+	default y
+	help
+	  SNMPv1 (RFC 1157) — community-based authentication.
+	  Supports GET, GETNEXT, SET, and TRAP-v1.
+	  Traps use the legacy v1 format (enterprise OID + agent-addr fields).
+	  For modern NMS compatibility, prefer v2c traps (VERSION_2C).
+
+config SNMP_VERSION_2C
+	bool "SNMPv2c protocol support"
+	default y
+	help
+	  SNMPv2c (RFC 3416) — community-based authentication.
+	  Supports GET, GETNEXT, GETBULK, SET, TRAP-v2c, and INFORM.
+	  Bulk operations (snmpbulkwalk) require this option.
+	  Traps use the standard v2c format with sysUpTime.0 + snmpTrapOID.0
+	  varbinds. This is the recommended version for modern NMS tools.
+
+config SNMP_VERSION_3
+	bool "SNMPv3 protocol support"
+	default n
+	select PSA_CRYPTO
+	select PSA_WANT_KEY_TYPE_AES if SNMP_USM_PRIV_AES
+	select PSA_WANT_ALG_CFB if SNMP_USM_PRIV_AES
+	select PSA_WANT_ALG_HMAC
+	select PSA_WANT_KEY_TYPE_HMAC
+	# The hash algorithms are selected by SNMP_USM_AUTH_SHA / _SHA256 / _MD5 below,
+	# so a build that disables a protocol does not drag in its hash (and enabling
+	# MD5 as a side effect of v3 would trip the "not secure symbol" warning).
+	help
+	  SNMPv3 (RFC 3412/3414/3415) — User-based Security Model (USM)
+	  with HMAC-SHA1/SHA256 authentication and AES-128-CFB privacy.
+	  Requires PSA Crypto / mbedtls. Adds approximately 10 KiB of RAM per
+	  instance compared to a v1/v2c-only build.
+	  Supports engine discovery (Report-PDU), timeliness check (150 s
+	  window), and View-based Access Control (VACM) with admin/readonly
+	  groups. Key localization per RFC 3414 §A.2.
+
+
+if SNMP_VERSION_3
+
+config SNMP_V3_ENGINE_BOOTS
+	int "SNMPv3 engine boots counter"
+	default 1
+	range 1 2147483647
+	help
+	  Initial value for the SNMPv3 authoritative engine boots counter
+	  (snmpEngineBoots). Must be strictly monotonically increasing
+	  across reboots to prevent replay attacks (RFC 3414 §5.1.3).
+	  Persist this value in EEPROM / backup SRAM and read it at boot
+	  via prj.conf or a runtime setter.
+
+config SNMP_V3_USER_NAME
+	string "SNMPv3 user name"
+	default "admin"
+	help
+	  Security name (msgUserName) for the default SNMPv3 user.
+	  This name is matched against the incoming message's user field
+	  in the USM security parameters.
+
+config SNMP_V3_AUTH_PASS
+	string "SNMPv3 authentication password"
+	default "authpass123"
+	help
+	  Authentication password for HMAC-SHA1 or HMAC-MD5.
+	  Used to derive the localized auth key (RFC 3414 §A.2).
+	  Change this from the default before deploying.
+
+config SNMP_V3_PRIV_PASS
+	string "SNMPv3 privacy password"
+	default "privpass123"
+	help
+	  Privacy (encryption) password for AES-128-CFB or DES-CBC.
+	  Used to derive the localized priv key (RFC 3414 §A.2).
+	  Change this from the default before deploying.
+
+config SNMP_USM_AUTH_SHA
+	bool "HMAC-SHA-1 authentication"
+	default y
+	select PSA_WANT_ALG_SHA_1
+	help
+	  Enable SHA-1 based HMAC authentication for SNMPv3 (RFC 3414).
+	  Produces a 12-byte authentication tag. Recommended over MD5.
+
+config SNMP_USM_AUTH_SHA256
+	bool "HMAC-SHA-256 authentication (RFC 7860)"
+	default y
+	select PSA_WANT_ALG_SHA_256
+	help
+	  Enable SHA-256 based HMAC authentication for SNMPv3 (RFC 7860).
+	  Produces a 24-byte authentication tag.
+
+config SNMP_USM_AUTH_MD5
+	bool "HMAC-MD5 authentication (Insecure)"
+	default n
+	select PSA_WANT_ALG_MD5
+	help
+	  Enable MD5 based HMAC authentication for SNMPv3 (RFC 3414).
+	  Produces a 12-byte authentication tag. MD5 is considered
+	  cryptographically broken; use SHA-1 or disable v3 instead.
+
+config SNMP_USM_PRIV_AES
+	bool "AES-128 privacy encryption"
+	default y
+	select PSA_WANT_KEY_TYPE_AES
+	select PSA_WANT_ALG_CFB
+	help
+	  Enable AES-128 in CFB mode for SNMPv3 scopedPDU encryption
+	  (RFC 3414). Uses a 16-byte initialization vector.
+
+config SNMP_USM_PRIV_DES
+	bool "DES privacy encryption (NOT IMPLEMENTED)"
+	default n
+	help
+	  Reserved symbol: DES-CBC privacy is not implemented. Enabling this
+	  only documents intent; snmp_usm_add_user() rejects users whose
+	  priv_protocol is SNMP_USM_PRIV_DES with -ENOTSUP. Use AES-128-CFB.
+
+choice SNMP_V3_AUTH_PROTOCOL_CHOICE
+	prompt "Default SNMPv3 authentication protocol"
+	default SNMP_V3_AUTH_PROTOCOL_SHA1 if SNMP_USM_AUTH_SHA
+	default SNMP_V3_AUTH_PROTOCOL_SHA256 if SNMP_USM_AUTH_SHA256
+	default SNMP_V3_AUTH_PROTOCOL_NONE
+	help
+	  Authentication protocol for the compile-time default user.
+
+config SNMP_V3_AUTH_PROTOCOL_NONE
+	bool "None (noAuthNoPriv)"
+
+config SNMP_V3_AUTH_PROTOCOL_SHA1
+	bool "HMAC-SHA-1"
+	depends on SNMP_USM_AUTH_SHA
+
+config SNMP_V3_AUTH_PROTOCOL_MD5
+	bool "HMAC-MD5"
+	depends on SNMP_USM_AUTH_MD5
+
+config SNMP_V3_AUTH_PROTOCOL_SHA256
+	bool "HMAC-SHA-256"
+	depends on SNMP_USM_AUTH_SHA256
+
+endchoice
+
+config SNMP_V3_AUTH_PROTOCOL
+	int
+	default 0 if SNMP_V3_AUTH_PROTOCOL_NONE
+	default 1 if SNMP_V3_AUTH_PROTOCOL_SHA1
+	default 2 if SNMP_V3_AUTH_PROTOCOL_MD5
+	default 3 if SNMP_V3_AUTH_PROTOCOL_SHA256
+
+config SNMP_V3_PRIV_PROTOCOL
+	int "Default SNMPv3 privacy protocol"
+	range 0 1
+	default 1
+	help
+	  0 = none, 1 = AES-128-CFB. Privacy requires an authentication
+	  protocol (SNMP_V3_AUTH_PROTOCOL != 0); privacy with no
+	  authentication is rejected at init.
+
+config SNMP_V3_MAX_USERS
+	int "Maximum USM users per agent instance"
+	range 1 32
+	default 4
+	help
+	  Size of the snmpEngineID-localised user table inside every struct
+	  snmp_agent. Each entry costs ~208 bytes, so the table is one of the
+	  largest per-instance contributors (~832 bytes at the default of 4).
+	  Raised from a compile-time #define to a Kconfig symbol in phase 8.
+
+config SNMP_VACM_MAX_CONTEXTS
+	int "Maximum VACM contexts"
+	range 1 64
+	default 8
+	help
+	  Maximum number of contexts in vacmContextTable (RFC 3415).
+
+config SNMP_VACM_MAX_GROUPS
+	int "Maximum VACM group mappings"
+	range 1 64
+	default 16
+	help
+	  Maximum number of security-to-group mappings in vacmSecurityToGroupTable (RFC 3415).
+
+config SNMP_VACM_MAX_ACCESS_RULES
+	int "Maximum VACM access rules"
+	range 1 64
+	default 16
+	help
+	  Maximum number of access rules in vacmAccessTable (RFC 3415).
+
+config SNMP_VACM_MAX_VIEW_TREES
+	int "Maximum VACM view tree family entries"
+	range 1 128
+	default 32
+	help
+	  Maximum number of view tree family entries in vacmViewTreeFamilyTable (RFC 3415).
+
+endif # SNMP_VERSION_3
+
+config SNMP_MAX_PDU_SIZE
+	int "Maximum SNMP PDU size in bytes"
+	range 484 4096
+	default 1024
+	help
+	  Maximum size of a single SNMP packet (request or response).
+	  Larger GetBulk responses are truncated. Most SNMP implementations
+	  use 1500-2048; 1024 is conservative for embedded use.
+	  The lower bound is RFC 3412 §8.1's 484-octet minimum msgMaxSize.
+	  Values above 2048 require increasing CONFIG_NET_SOCKETS_SERVICE_STACK_SIZE.
+
+config SNMP_MAX_OID_LEN
+	int "Maximum OID depth"
+	range 2 128
+	default 16
+	help
+	  Maximum number of sub-identifiers in an OID. A typical enterprise
+	  OID like .1.3.6.1.4.1.54321.1.2.3.0 has depth 11.
+	  Higher values increase struct size and stack usage.
+
+config SNMP_MAX_VARBINDS
+	int "Maximum Varbinds per PDU"
+	range 1 255
+	default 32
+	help
+	  Maximum number of variable bindings in a single request/response.
+	  GetBulk responses use this as a hard limit on the total number
+	  of varbinds returned. Higher values increase static BSS memory.
+
+config SNMP_MAX_MIB_NODES
+	int "Maximum registered MIB nodes"
+	range 1 512
+	default 128
+	help
+	  Maximum number of MIB nodes that can be registered in the tree.
+	  The default MIB-II groups consume 37 nodes (30 snmp counters +
+	  7 system group). The remaining slots are available for enterprise
+	  MIB nodes.
+
+config SNMP_MAX_TABLES
+	int "Maximum registered MIB tables"
+	range 1 64
+	default 8
+	help
+	  Maximum number of MIB tables that can be registered. Each table
+	  supports single-integer indexing with per-column get/set callbacks.
+
+config SNMP_MAX_IFACES
+	int "Maximum registered network interfaces for MIB-II ifTable"
+	default 8
+	range 1 32
+	help
+	  Maximum number of network interfaces tracked in MIB-II ifTable
+	  (RFC 2863 / RFC 1213).
+
+config SNMP_TRAP_ENABLED
+	bool "SNMP Trap & Inform notification engine"
+	default y
+	help
+	  Enable generation and transmission of SNMP Traps v1/v2c/v3
+	  and Inform requests (acknowledged notifications) to configured
+	  trap destinations on UDP port 162.
+	  When both v2c and v1 are enabled, traps use the v2c format.
+
+if SNMP_TRAP_ENABLED
+
+config SNMP_TRAP_PORT
+	int "SNMP Trap destination UDP port"
+	default 162
+	range 1 65535
+	help
+	  Destination UDP port for SNMP traps and notifications (default: 162).
+
+choice SNMP_TRAP_FORMAT
+	prompt "Trap notification format"
+	default SNMP_TRAP_FORMAT_V2C if SNMP_VERSION_2C
+	default SNMP_TRAP_FORMAT_V1 if SNMP_VERSION_1
+	default SNMP_TRAP_FORMAT_V3 if SNMP_VERSION_3
+	help
+	  Format used when generating SNMP traps and notifications.
+
+config SNMP_TRAP_FORMAT_V1
+	bool "SNMPv1 Trap (RFC 1157)"
+	depends on SNMP_VERSION_1
+	help
+	  Generate legacy TRAPv1 PDU with enterprise OID and agent address.
+
+config SNMP_TRAP_FORMAT_V2C
+	bool "SNMPv2c Trap (RFC 3416)"
+	depends on SNMP_VERSION_2C
+	help
+	  Generate SNMPv2-Trap PDU with sysUpTime.0 and snmpTrapOID.0 varbinds.
+
+config SNMP_TRAP_FORMAT_V3
+	bool "SNMPv3 Notification (RFC 3412)"
+	depends on SNMP_VERSION_3
+	help
+	  Generate SNMPv3 notification PDU with USM security.
+
+endchoice
+
+config SNMP_TRAP_DEST_COUNT
+	int "Maximum concurrent trap destinations"
+	range 1 32
+	default 4
+	help
+	  Maximum number of trap destination hosts.
+	  Destinations are configured at runtime via
+	  snmp_trap_add_destination() or snmp_trap_add_destination_port().
+	  Increase this if you need to send traps to more than 4 NMS servers.
+
+config SNMP_TRAP_V3_USER
+	string "SNMPv3 notification user name"
+	default ""
+	depends on SNMP_TRAP_FORMAT_V3
+	help
+	  USM user used to authenticate and encrypt outgoing SNMPv3
+	  notifications. Empty selects the first configured USM user,
+	  falling back to SNMP_V3_USER_NAME when the table is empty.
+	  The named user must already exist in the agent's user table.
+
+endif # SNMP_TRAP_ENABLED
+
+config SNMP_RATE_LIMIT
+	bool "SNMP request rate limiting"
+	default n
+	help
+	  Enable a simple token-bucket rate limiter for incoming SNMP
+	  requests. When the rate limit is exceeded, requests are silently
+	  dropped and snmpSilentDrops counter is incremented. This helps
+	  protect against CPU exhaustion from SNMP floods.
+
+if SNMP_RATE_LIMIT
+
+config SNMP_RATE_LIMIT_RPS
+	int "Maximum requests per second"
+	default 20
+	range 1 1000
+	help
+	  Maximum number of SNMP requests processed per second.
+	  Requests beyond this limit are silently dropped.
+	  A value of 20 is reasonable for most embedded devices.
+
+config SNMP_RATE_LIMIT_BURST
+	int "Burst allowance"
+	default 5
+	range 0 50
+	help
+	  Number of extra requests allowed in a burst beyond the
+	  steady-state rate. Higher values allow short bursts but
+	  increase vulnerability to CPU spikes.
+
+endif # SNMP_RATE_LIMIT
+
+module = SNMP
+module-str = snmp
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # SNMP
+

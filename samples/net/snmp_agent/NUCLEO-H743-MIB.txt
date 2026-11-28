@@ -1,0 +1,138 @@
+-- SPDX-FileCopyrightText: Copyright (c) 2026 StructCore Embedded
+-- SPDX-License-Identifier: Apache-2.0
+
+NUCLEO-H743-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+    MODULE-IDENTITY, OBJECT-TYPE, NOTIFICATION-TYPE,
+    Integer32, Counter32, Gauge32, enterprises
+        FROM SNMPv2-SMI
+    DisplayString
+        FROM SNMPv2-TC;
+
+nucleoH743 MODULE-IDENTITY
+    LAST-UPDATED "202609200000Z"
+    ORGANIZATION "Zephyr SNMP Project"
+    CONTACT-INFO "admin@example.com"
+    DESCRIPTION  "Private MIB for NUCLEO-H743ZI SNMP Validation Sample on Zephyr RTOS"
+    REVISION     "202609200000Z"
+    DESCRIPTION  "Initial revision"
+    ::= { enterprises 54321 1 }
+
+-- Tree Structure:
+-- enterprises (1.3.6.1.4.1)
+--   └── 54321
+--         └── nucleoH743 (1)
+--               ├── device (1)
+--               │     ├── sensorValue (1.0)
+--               │     ├── ledState (2.0)
+--               │     ├── buttonCounter (3.0)
+--               │     ├── sensorHumidity (4.0)
+--               │     ├── sensorDescription (5.0)
+--               │     └── sensorStatusOid (6.0)
+--               ├── notifications (2)
+--               │     └── buttonPressed (1)
+--               └── sensorTable (3)
+--                     └── sensorEntry (1)
+--                           ├── sensorIndex (1)
+--                           ├── sensorName (2)
+--                           └── sensorVal (3)
+
+device OBJECT IDENTIFIER ::= { nucleoH743 1 }
+notifications OBJECT IDENTIFIER ::= { nucleoH743 2 }
+
+sensorValue OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION "Simulated temperature reading in degrees Celsius."
+    ::= { device 1 }
+
+ledState OBJECT-TYPE
+    SYNTAX      Integer32 (0..1)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION "State of the User LED (led0) on NUCLEO-H743ZI: 0 = OFF, 1 = ON."
+    ::= { device 2 }
+
+buttonCounter OBJECT-TYPE
+    SYNTAX      Counter32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION "Total number of times the User Button (sw0) has been pressed."
+    ::= { device 3 }
+
+sensorHumidity OBJECT-TYPE
+    SYNTAX      Gauge32 (0..100)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION "Simulated relative humidity percentage (0-100%)."
+    ::= { device 4 }
+
+sensorDescription OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..64))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION "Descriptive label for the board sensor node."
+    ::= { device 5 }
+
+sensorStatusOid OBJECT-TYPE
+    SYNTAX      OBJECT IDENTIFIER
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION "Pointer OID to the primary sensor object."
+    ::= { device 6 }
+
+-- Notifications
+
+buttonPressed NOTIFICATION-TYPE
+    OBJECTS     { buttonCounter, ledState }
+    STATUS      current
+    DESCRIPTION "Notification sent when the User Button (sw0) is pressed on the board."
+    ::= { notifications 1 }
+
+-- Table
+
+sensorTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF SensorEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION "Table of simulated sensors for GetNext / GetBulk validation."
+    ::= { nucleoH743 3 }
+
+sensorEntry OBJECT-TYPE
+    SYNTAX      SensorEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION "Row entry in the sensor table."
+    INDEX       { sensorIndex }
+    ::= { sensorTable 1 }
+
+SensorEntry ::= SEQUENCE {
+    sensorIndex  Integer32,
+    sensorName   DisplayString,
+    sensorVal    Integer32
+}
+
+sensorIndex OBJECT-TYPE
+    SYNTAX      Integer32 (1..65535)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION "Index of the sensor in the table."
+    ::= { sensorEntry 1 }
+
+sensorName OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..32))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION "Name/identifier of the sensor."
+    ::= { sensorEntry 2 }
+
+sensorVal OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION "Current value of the sensor."
+    ::= { sensorEntry 3 }
+
+END

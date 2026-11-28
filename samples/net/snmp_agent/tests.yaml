@@ -1,0 +1,18 @@
+# Copyright (c) 2026 StructCore Embedded
+#
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: SNMP Agent Sample
+  description: Demonstrates Zephyr SNMP Agent (v1/v2c) with scalar and table nodes
+common:
+  build_only: true
+  tags:
+    - net
+    - snmp
+tests:
+  sample.net.snmp:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - qemu_x86

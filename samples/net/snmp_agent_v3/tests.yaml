@@ -1,0 +1,18 @@
+# Copyright (c) 2026 StructCore Embedded
+#
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: SNMPv3 Agent Sample
+  description: Demonstrates Zephyr SNMP Agent with SNMPv3 USM/VACM security
+common:
+  build_only: true
+  tags:
+    - net
+    - snmp
+tests:
+  sample.net.snmp_v3:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - qemu_x86
