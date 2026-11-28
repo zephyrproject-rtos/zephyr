@@ -2605,6 +2605,7 @@ int bt_bap_scan_delegator_register(struct bt_bap_scan_delegator_cb *cb);
  * @retval 0 Success
  * @retval -EALREADY Already unregistering
  * @retval -EAGAIN Not registered
+ * @retval -EBUSY The stack is calling back for an attribute of the service in another thread
  */
 int bt_bap_scan_delegator_unregister(void);
 
