@@ -7,6 +7,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/ztress.h>
 #include <zephyr/ipc/pbuf.h>
+#include <zephyr/ipc/icmsg.h>
 #include <zephyr/random/random.h>
 
 
@@ -104,6 +105,39 @@ ZTEST(test_pbuf, test_rw)
 	zassert_equal(ret, MPS);
 	/* Check data correctness. */
 	zassert_mem_equal(write_buf, read_buf, MPS);
+}
+
+ZTEST(test_pbuf, test_icmsg_send_size_limits)
+{
+	struct pbuf_cfg cfg = PBUF_CFG_INIT(memory_area, MEM_AREA_SZ, 0, 0);
+	struct pbuf pb = {.cfg = &cfg};
+	struct icmsg_data_t data = {
+		.tx_pb = &pb,
+		.state = ICMSG_STATE_CONNECTED_SID_DISABLED,
+	};
+	const struct icmsg_config_t conf = {0};
+	char payload[MPS] = {0};
+	uint32_t buffer_len = cfg.len;
+
+#ifdef CONFIG_IPC_SERVICE_ICMSG_SHMEM_ACCESS_SYNC
+	k_mutex_init(&data.tx_lock);
+#endif
+	zassert_ok(pbuf_tx_init(&pb));
+	zassert_equal(pbuf_write(&pb, payload, sizeof(payload)), sizeof(payload));
+
+	/* Exhaustion must not be mistaken for a permanently oversized message. */
+	zassert_equal(icmsg_send(&conf, &data, payload, sizeof(payload)), -ENOMEM);
+	zassert_equal(icmsg_send(&conf, &data, payload, sizeof(payload) + 1U), -EMSGSIZE);
+	/* Isolate the packet length field limit from the ring's capacity limit. */
+	cfg.len = (uint32_t)UINT16_MAX + 1U + PBUF_PACKET_LEN_SZ + _PBUF_IDX_SIZE;
+	zassert_equal(icmsg_send(&conf, &data, payload, (size_t)UINT16_MAX + 1U), -EMSGSIZE);
+	cfg.len = buffer_len;
+
+	zassert_equal(pbuf_read(&pb, NULL, 0), sizeof(payload));
+	zassert_equal(pbuf_read(&pb, payload, sizeof(payload)), sizeof(payload));
+	for (size_t i = 0U; i < sizeof(payload); i++) {
+		zassert_equal(payload[i], 0);
+	}
 }
 
 /* API ret codes tests. */

@@ -66,7 +66,7 @@ static void formatted_text_print(const struct shell *sh, const char *str,
 			}
 
 			/* String will fit in one line. */
-			z_shell_raw_fprintf(sh->fprintf_ctx, str + offset);
+			z_shell_raw_fprintf(sh->fprintf_ctx, "%s", str + offset);
 
 			break;
 		}
@@ -210,7 +210,7 @@ void z_shell_help_subcmd_print(const struct shell *sh,
 	}
 
 	if (description != NULL) {
-		z_shell_fprintf(sh, SHELL_NORMAL, description);
+		z_shell_fprintf(sh, SHELL_NORMAL, "%s", description);
 	}
 
 	/* Printing subcommands and help string (if exists). */

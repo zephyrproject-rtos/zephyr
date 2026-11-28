@@ -520,6 +520,12 @@ int icmsg_send(const struct icmsg_config_t *conf,
 		return -ENODATA;
 	}
 
+	/* An empty packet buffer must fit the payload and its length field. */
+	if (len > UINT16_MAX ||
+	    len > dev_data->tx_pb->cfg->len - PBUF_PACKET_LEN_SZ - _PBUF_IDX_SIZE) {
+		return -EMSGSIZE;
+	}
+
 	ret = reserve_tx_buffer_if_unused(dev_data);
 	if (ret < 0) {
 		return -ENOBUFS;

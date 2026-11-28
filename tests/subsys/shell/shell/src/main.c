@@ -104,6 +104,30 @@ ZTEST(shell_1cpu, test_cmd_help)
 	test_shell_execute_cmd("help dummy dummy", -EINVAL);
 }
 
+static void received_help_get(size_t idx, struct shell_static_entry *entry)
+{
+	*entry = (struct shell_static_entry){
+		.syntax = idx == 0U ? "rate%s" : NULL,
+		.help = "Description %% %n\nUsage: rate%s <arg>",
+	};
+}
+
+SHELL_DYNAMIC_CMD_CREATE(received_help_commands, received_help_get);
+SHELL_CMD_REGISTER(received_help, &received_help_commands, NULL, NULL);
+
+ZTEST(sh, test_received_help_literal)
+{
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+	size_t len;
+	const char *output;
+
+	shell_backend_dummy_clear_output(sh);
+	test_shell_execute_cmd("received_help rate%s --help", 1);
+	output = shell_backend_dummy_get_output(sh, &len);
+	zassert_not_null(strstr(output, "Description %% %n"));
+	zassert_not_null(strstr(output, "Usage: rate%s <arg>"));
+}
+
 ZTEST(sh, test_cmd_clear)
 {
 	test_shell_execute_cmd("clear", 0);
