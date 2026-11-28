@@ -10,3 +10,4 @@ toolchain:
   - zephyr
 supported:
   - gpio
+  - spi
