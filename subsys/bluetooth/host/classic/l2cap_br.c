@@ -3093,6 +3093,8 @@ destroy:
 	BR_CHAN(chan)->psm = 0U;
 	if (L2CAP_BR_CID_IS_DYN(BR_CHAN(chan)->rx.cid)) {
 		BR_CHAN(chan)->rx.cid = 0U;
+		/* The peer CID is only valid for this connection of the channel */
+		BR_CHAN(chan)->tx.cid = 0U;
 	}
 #endif
 	if (chan->destroy) {
@@ -5412,7 +5414,14 @@ int bt_l2cap_br_chan_disconnect(struct bt_l2cap_chan *chan)
 		return -EALREADY;
 	}
 
-	if (atomic_test_and_clear_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_REQ)) {
+	/* Without the Destination CID, the Connection Request is still to be
+	 * sent or answered and there is no peer channel to disconnect: an
+	 * L2CAP_DISCONNECTION_REQ cannot be related to the channel yet (Core
+	 * v6.3 Vol 3 Part A 6.1.2, Table 6.2). Close the channel locally, the
+	 * RTX timeout of a connecting channel cleans it up.
+	 */
+	if (atomic_test_and_clear_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_REQ) ||
+	    (br_chan->tx.cid == 0U)) {
 		LOG_WRN("Connect req is pending on chan %p", chan);
 		bt_work_reschedule(&BR_CHAN(chan)->rtx_work, K_NO_WAIT);
 		return 0;
