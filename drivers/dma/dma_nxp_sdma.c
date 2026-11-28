@@ -34,10 +34,16 @@ struct sdma_channel_data {
 	const struct device *dev;
 	sdma_buffer_descriptor_t *bd_pool; /*pre-allocated list of BD used for transfer */
 	uint32_t bd_count; /* number of bd */
+	uint32_t bd_size[DMA_NXP_SDMA_BD_COUNT]; /* byte count of each bd */
+	/* next bd expected to complete */
+	uint32_t next_bd;
 	uint32_t capacity; /* total transfer capacity for this channel */
 	struct dma_config *dma_cfg;
 	uint32_t event_source; /* DMA REQ number that trigger this channel */
 	struct dma_status stat;
+	/* guards stat, started and the BD ring */
+	struct k_spinlock lock;
+	bool started; /* between start() and stop(); reported as dma_status.busy */
 
 	void *arg; /* argument passed to user-defined DMA callback */
 	dma_callback_t cb; /* user-defined callback for DMA transfer completion */
@@ -49,12 +55,14 @@ struct sdma_dev_data {
 	struct sdma_channel_data chan[FSL_FEATURE_SDMA_MODULE_CHANNEL];
 	sdma_buffer_descriptor_t bd_pool[FSL_FEATURE_SDMA_MODULE_CHANNEL][DMA_NXP_SDMA_BD_COUNT]
 		__aligned(64);
+	struct k_mutex ch0_lock; /* channel 0 loads every channel's context */
 };
 
 static int dma_nxp_sdma_init_stat(struct sdma_channel_data *chan_data)
 {
 	chan_data->stat.read_position = 0;
 	chan_data->stat.write_position = 0;
+	chan_data->stat.total_copied = 0;
 
 	switch (chan_data->direction) {
 	case MEMORY_TO_PERIPHERAL:
@@ -116,6 +124,45 @@ static int dma_nxp_sdma_produce(struct sdma_channel_data *chan_data, uint32_t by
 	return 0;
 }
 
+/* Called with chan_data->lock held. Returns the number of BDs completed. */
+static uint32_t dma_nxp_sdma_complete(struct sdma_channel_data *chan_data)
+{
+	sdma_buffer_descriptor_t *bd;
+	uint32_t completed = 0;
+	uint32_t size;
+
+	/* one interrupt can stand for more than one completed BD */
+	while (completed < chan_data->bd_count) {
+		bd = &chan_data->bd_pool[chan_data->next_bd];
+
+		/* the engine clears Done behind the CPU cache */
+		sys_cache_data_invd_range(bd, sizeof(*bd));
+		if ((bd->status & (uint8_t)kSDMA_BDStatusDone) != 0U) {
+			break; /* still owned by the engine */
+		}
+
+		size = chan_data->bd_size[chan_data->next_bd];
+		if (chan_data->direction == MEMORY_TO_PERIPHERAL) {
+			dma_nxp_sdma_consume(chan_data, size);
+		} else {
+			dma_nxp_sdma_produce(chan_data, size);
+		}
+		chan_data->stat.total_copied += size;
+
+		/* give the BD back to the engine */
+		bd->count = size;
+		bd->status |= (uint8_t)kSDMA_BDStatusDone;
+
+		/* keep the HAL's BD index and the CCB's current BD pointer in step */
+		SDMA_HandleIRQ(&chan_data->handle);
+
+		chan_data->next_bd = (chan_data->next_bd + 1) % chan_data->bd_count;
+		completed++;
+	}
+
+	return completed;
+}
+
 static void dma_nxp_sdma_isr(const void *data)
 {
 	uint32_t val;
@@ -132,12 +179,25 @@ static void dma_nxp_sdma_isr(const void *data)
 	val = SDMA_GetChannelInterruptStatus(dev_cfg->base) >> 1U;
 	while (val) {
 		if ((val & 0x1) != 0) {
+			k_spinlock_key_t key;
+			uint32_t completed;
+			bool notify;
+
 			chan_data = &dev_data->chan[i];
 			SDMA_ClearChannelInterruptStatus(dev_cfg->base, 1 << i);
-			SDMA_HandleIRQ(&chan_data->handle);
 
-			if (chan_data->cb)
+			key = k_spin_lock(&chan_data->lock);
+			completed = dma_nxp_sdma_complete(chan_data);
+			notify = chan_data->started;
+			/* don't restart a channel stop() has stopped */
+			if (notify && completed != 0) {
+				SDMA_StartChannelSoftware(dev_cfg->base, i);
+			}
+			k_spin_unlock(&chan_data->lock, key);
+
+			for (; notify && chan_data->cb && completed != 0; completed--) {
 				chan_data->cb(chan_data->dev, chan_data->arg, i, DMA_STATUS_BLOCK);
+			}
 		}
 		i++;
 		val >>= 1;
@@ -181,35 +241,38 @@ int sdma_set_peripheral_type(struct dma_config *config, sdma_peripheral_t *type)
 	return 0;
 }
 
-void dma_nxp_sdma_callback(sdma_handle_t *handle, void *userData, bool TransferDone,
-			   uint32_t bdIndex)
+static int dma_nxp_sdma_validate_config(struct dma_config *config, sdma_peripheral_t *peripheral)
 {
-	const struct sdma_dev_cfg *dev_cfg;
-	struct sdma_channel_data *chan_data = userData;
-	sdma_buffer_descriptor_t *bd;
-	int xfer_size;
+	struct dma_block_config *block_cfg = config->head_block;
+	uint32_t i;
 
-	dev_cfg = chan_data->dev->config;
-
-	xfer_size = chan_data->capacity / chan_data->bd_count;
-
-	switch (chan_data->direction) {
-	case MEMORY_TO_PERIPHERAL:
-		dma_nxp_sdma_consume(chan_data, xfer_size);
-		break;
-	case PERIPHERAL_TO_MEMORY:
-		dma_nxp_sdma_produce(chan_data, xfer_size);
-		break;
-	default:
-		break;
+	if (config->channel_direction != MEMORY_TO_PERIPHERAL &&
+	    config->channel_direction != PERIPHERAL_TO_MEMORY) {
+		LOG_ERR("%s: unsupported direction %d", __func__, config->channel_direction);
+		return -EINVAL;
 	}
 
-	/* prepare next BD for transfer */
-	bd = &chan_data->bd_pool[bdIndex];
-	bd->count = xfer_size;
-	bd->status |= (uint8_t)kSDMA_BDStatusDone;
+	if (config->block_count == 0 || config->block_count > DMA_NXP_SDMA_BD_COUNT) {
+		LOG_ERR("%s: unsupported block count %u", __func__, config->block_count);
+		return -EINVAL;
+	}
 
-	SDMA_StartChannelSoftware(dev_cfg->base, chan_data->index);
+	for (i = 0; i < config->block_count; i++) {
+		/* a BD holds a 16-bit byte count */
+		if (block_cfg == NULL || block_cfg->block_size == 0 ||
+		    block_cfg->block_size > UINT16_MAX) {
+			LOG_ERR("%s: invalid block %u", __func__, i);
+			return -EINVAL;
+		}
+		block_cfg = block_cfg->next_block;
+	}
+
+	if (sdma_set_peripheral_type(config, peripheral) < 0) {
+		LOG_ERR("%s: failed to set peripheral type", __func__);
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 static int dma_nxp_sdma_channel_init(const struct device *dev, uint32_t channel)
@@ -220,8 +283,6 @@ static int dma_nxp_sdma_channel_init(const struct device *dev, uint32_t channel)
 
 	chan_data = &dev_data->chan[channel];
 	SDMA_CreateHandle(&chan_data->handle, dev_cfg->base, channel, &sdma_contexts[channel]);
-
-	SDMA_SetCallback(&chan_data->handle, dma_nxp_sdma_callback, chan_data);
 
 	return 0;
 }
@@ -242,6 +303,7 @@ static void dma_nxp_sdma_setup_bd(const struct device *dev, uint32_t channel,
 	/* initialize bd pool */
 	chan_data->bd_pool = &dev_data->bd_pool[channel][0];
 	chan_data->bd_count = config->block_count;
+	chan_data->next_bd = 0;
 
 	memset(chan_data->bd_pool, 0, sizeof(sdma_buffer_descriptor_t) * chan_data->bd_count);
 	SDMA_InstallBDMemory(&chan_data->handle, chan_data->bd_pool, chan_data->bd_count);
@@ -263,6 +325,7 @@ static void dma_nxp_sdma_setup_bd(const struct device *dev, uint32_t channel,
 			config->source_data_size, block_cfg->block_size,
 			is_last, true, is_wrap, chan_data->transfer_cfg.type);
 
+		chan_data->bd_size[i] = block_cfg->block_size;
 		chan_data->capacity += block_cfg->block_size;
 		block_cfg = block_cfg->next_block;
 		crt_bd++;
@@ -276,16 +339,28 @@ static int dma_nxp_sdma_config(const struct device *dev, uint32_t channel,
 	struct sdma_dev_data *dev_data = dev->data;
 	struct sdma_channel_data *chan_data;
 	struct dma_block_config *block_cfg;
+	sdma_peripheral_t peripheral;
+	k_spinlock_key_t key;
 	int ret;
 
-	if (channel >= FSL_FEATURE_SDMA_MODULE_CHANNEL) {
+	if (channel >= FSL_FEATURE_SDMA_MODULE_CHANNEL || config == NULL) {
 		LOG_ERR("sdma_config() invalid channel %d", channel);
 		return -EINVAL;
 	}
 
-	dma_nxp_sdma_channel_init(dev, channel);
+	ret = dma_nxp_sdma_validate_config(config, &peripheral);
+	if (ret < 0) {
+		return ret;
+	}
 
 	chan_data = &dev_data->chan[channel];
+
+	key = k_spin_lock(&chan_data->lock);
+	chan_data->started = false;
+	k_spin_unlock(&chan_data->lock, key);
+
+	dma_nxp_sdma_channel_init(dev, channel);
+
 	chan_data->dev = dev;
 	chan_data->direction = config->channel_direction;
 
@@ -294,11 +369,7 @@ static int dma_nxp_sdma_config(const struct device *dev, uint32_t channel,
 
 	sdma_set_transfer_type(config, &chan_data->transfer_cfg.type);
 
-	ret = sdma_set_peripheral_type(config, &chan_data->peripheral);
-	if (ret < 0) {
-		LOG_ERR("%s: failed to set peripheral type", __func__);
-		return ret;
-	}
+	chan_data->peripheral = peripheral;
 
 	if (chan_data->peripheral == kSDMA_PeripheralMultiFifoPDM) {
 		unsigned int n_fifos = 4; /* TODO: make this configurable */
@@ -331,7 +402,10 @@ static int dma_nxp_sdma_config(const struct device *dev, uint32_t channel,
 	 */
 	chan_data->transfer_cfg.isEventIgnore = false;
 	chan_data->transfer_cfg.isSoftTriggerIgnore = false;
+
+	k_mutex_lock(&dev_data->ch0_lock, K_FOREVER);
 	SDMA_SubmitTransfer(&chan_data->handle, &chan_data->transfer_cfg);
+	k_mutex_unlock(&dev_data->ch0_lock);
 
 	return 0;
 }
@@ -341,6 +415,7 @@ static int dma_nxp_sdma_start(const struct device *dev, uint32_t channel)
 	const struct sdma_dev_cfg *dev_cfg = dev->config;
 	struct sdma_dev_data *dev_data = dev->data;
 	struct sdma_channel_data *chan_data;
+	k_spinlock_key_t key;
 
 	if (channel >= FSL_FEATURE_SDMA_MODULE_CHANNEL) {
 		LOG_ERR("%s: invalid channel %d", __func__, channel);
@@ -349,8 +424,11 @@ static int dma_nxp_sdma_start(const struct device *dev, uint32_t channel)
 
 	chan_data = &dev_data->chan[channel];
 
+	key = k_spin_lock(&chan_data->lock);
 	SDMA_SetChannelPriority(dev_cfg->base, channel, DMA_NXP_SDMA_CHAN_DEFAULT_PRIO);
+	chan_data->started = true;
 	SDMA_StartChannelSoftware(dev_cfg->base, channel);
+	k_spin_unlock(&chan_data->lock, key);
 
 	return 0;
 }
@@ -359,6 +437,7 @@ static int dma_nxp_sdma_stop(const struct device *dev, uint32_t channel)
 {
 	struct sdma_dev_data *dev_data = dev->data;
 	struct sdma_channel_data *chan_data;
+	k_spinlock_key_t key;
 
 	if (channel >= FSL_FEATURE_SDMA_MODULE_CHANNEL) {
 		LOG_ERR("%s: invalid channel %d", __func__, channel);
@@ -367,7 +446,10 @@ static int dma_nxp_sdma_stop(const struct device *dev, uint32_t channel)
 
 	chan_data = &dev_data->chan[channel];
 
+	key = k_spin_lock(&chan_data->lock);
 	SDMA_StopTransfer(&chan_data->handle);
+	chan_data->started = false;
+	k_spin_unlock(&chan_data->lock, key);
 	return 0;
 }
 
@@ -376,14 +458,23 @@ static int dma_nxp_sdma_get_status(const struct device *dev, uint32_t channel,
 {
 	struct sdma_dev_data *dev_data = dev->data;
 	struct sdma_channel_data *chan_data;
-	unsigned int key;
+	k_spinlock_key_t key;
+
+	if (channel >= FSL_FEATURE_SDMA_MODULE_CHANNEL || stat == NULL) {
+		return -EINVAL;
+	}
 
 	chan_data = &dev_data->chan[channel];
 
-	key = irq_lock();
+	key = k_spin_lock(&chan_data->lock);
+	stat->busy = chan_data->started;
+	stat->dir = chan_data->direction;
 	stat->free = chan_data->stat.free;
 	stat->pending_length = chan_data->stat.pending_length;
-	irq_unlock(key);
+	stat->read_position = chan_data->stat.read_position;
+	stat->write_position = chan_data->stat.write_position;
+	stat->total_copied = chan_data->stat.total_copied;
+	k_spin_unlock(&chan_data->lock, key);
 
 	return 0;
 }
@@ -393,7 +484,12 @@ static int dma_nxp_sdma_reload(const struct device *dev, uint32_t channel, uint3
 {
 	struct sdma_dev_data *dev_data = dev->data;
 	struct sdma_channel_data *chan_data;
-	unsigned int key;
+	k_spinlock_key_t key;
+	int ret;
+
+	if (channel >= FSL_FEATURE_SDMA_MODULE_CHANNEL) {
+		return -EINVAL;
+	}
 
 	chan_data = &dev_data->chan[channel];
 
@@ -401,15 +497,15 @@ static int dma_nxp_sdma_reload(const struct device *dev, uint32_t channel, uint3
 		return 0;
 	}
 
-	key = irq_lock();
+	key = k_spin_lock(&chan_data->lock);
 	if (chan_data->direction == MEMORY_TO_PERIPHERAL) {
-		dma_nxp_sdma_produce(chan_data, size);
+		ret = dma_nxp_sdma_produce(chan_data, size);
 	} else {
-		dma_nxp_sdma_consume(chan_data, size);
+		ret = dma_nxp_sdma_consume(chan_data, size);
 	}
-	irq_unlock(key);
+	k_spin_unlock(&chan_data->lock, key);
 
-	return 0;
+	return ret;
 }
 
 static int dma_nxp_sdma_get_attribute(const struct device *dev, uint32_t type, uint32_t *val)
@@ -477,6 +573,8 @@ static int dma_nxp_sdma_init(const struct device *dev)
 	defconfig.ratio = kSDMA_ARMClockFreq;
 
 	SDMA_Init(cfg->base, &defconfig);
+
+	k_mutex_init(&data->ch0_lock);
 
 	/* configure interrupts */
 	cfg->irq_config();
