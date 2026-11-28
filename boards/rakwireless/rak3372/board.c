@@ -58,6 +58,7 @@
 	wisblock_pinctrl_apply(PINCTRL_DT_DEV_CONFIG_GET(DT_NODELABEL(name)),		\
 			       name##_states, ARRAY_SIZE(name##_states))
 
+#if defined(CONFIG_ADC_STM32) || defined(CONFIG_PWM_STM32)
 static void wisblock_pinctrl_apply(struct pinctrl_dev_config *config,
 				   const struct pinctrl_state *states, uint8_t state_cnt)
 {
@@ -66,8 +67,9 @@ static void wisblock_pinctrl_apply(struct pinctrl_dev_config *config,
 	__ASSERT(ret == 0, "WisBlock pinctrl update failed: %d", ret);
 	ARG_UNUSED(ret);
 }
+#endif
 
-#if defined(CONFIG_ADC)
+#if defined(CONFIG_ADC_STM32)
 static const pinctrl_soc_pin_t adc1_pins[] = {
 	WISBLOCK_ADC_IN_PIN(2, 'B', 3)   /* AIN0 */
 	WISBLOCK_ADC_IN_PIN(3, 'B', 4)   /* AIN1 */
@@ -79,9 +81,9 @@ static const pinctrl_soc_pin_t adc1_sleep[] = {};
 #endif
 
 WISBLOCK_PINCTRL_STATES(adc1);
-#endif /* CONFIG_ADC */
+#endif /* CONFIG_ADC_STM32 */
 
-#if defined(CONFIG_PWM)
+#if defined(CONFIG_PWM_STM32)
 static const pinctrl_soc_pin_t pwm1_pins[] = {
 	WISBLOCK_PWM_OUT_PIN(pwm1, 1, 'A', 8)  /* IO2 */
 };
@@ -98,14 +100,14 @@ static const pinctrl_soc_pin_t pwm2_sleep[] = {};
 
 WISBLOCK_PINCTRL_STATES(pwm1);
 WISBLOCK_PINCTRL_STATES(pwm2);
-#endif /* CONFIG_PWM */
+#endif /* CONFIG_PWM_STM32 */
 
 void board_early_init_hook(void)
 {
-#if defined(CONFIG_ADC)
+#if defined(CONFIG_ADC_STM32)
 	WISBLOCK_PINCTRL_APPLY(adc1);
 #endif
-#if defined(CONFIG_PWM)
+#if defined(CONFIG_PWM_STM32)
 	WISBLOCK_PINCTRL_APPLY(pwm1);
 	WISBLOCK_PINCTRL_APPLY(pwm2);
 #endif
