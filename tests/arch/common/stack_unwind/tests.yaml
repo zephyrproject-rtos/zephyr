@@ -209,3 +209,69 @@ tests:
         - "<err> os:       4: fp: \\w+ ra: \\w+"
         - "<err> os:       5: fp: \\w+ ra: \\w+"
         - "<err> os: Halting system"
+  arch.common.stack_unwind.tricore:
+    arch_allow: tricore
+    integration_platforms:
+      - qemu_tc4x
+      - qemu_tc3x
+    harness_config:
+      type: multi_line
+      regex:
+        - "E: call trace:"
+        - "E:\\s+\\d+: 0x[0-9a-f]+"
+        - "E:\\s+\\d+: 0x[0-9a-f]+"
+  arch.common.stack_unwind.tricore_spurious:
+    arch_allow: tricore
+    integration_platforms:
+      - qemu_tc4x
+      - qemu_tc3x
+    extra_args: EXTRA_CFLAGS=-DSTACK_UNWIND_TRICORE_SPURIOUS_TEST
+    extra_configs:
+      - CONFIG_IRQ_OFFLOAD=y
+      - CONFIG_EXCEPTION_DUMP_HOOK=y
+    harness_config:
+      type: multi_line
+      regex:
+        - "E: call trace:"
+        - "^HOOK FRAME:\\s+0: 0x[0-9a-f]+"
+        - "E:\\s+0: 0x[0-9a-f]+"
+        - "^HOOK FRAME:\\s+1: 0x[0-9a-f]+"
+        - "E:\\s+1: 0x[0-9a-f]+"
+  arch.common.stack_unwind.tricore_api:
+    arch_allow: tricore
+    integration_platforms:
+      - qemu_tc4x
+      - qemu_tc3x
+    extra_args: EXTRA_CFLAGS=-DSTACK_WALK_API_TEST
+    extra_configs:
+      - CONFIG_SYMTAB=y
+      - CONFIG_ARCH_STACKWALK_MAX_FRAMES=64
+      - CONFIG_IRQ_OFFLOAD=y
+      # The nested entry check raises irq_offload() from an offload handler.
+      - CONFIG_IRQ_OFFLOAD_NESTED=y
+    harness_config:
+      type: multi_line
+      regex:
+        - "CUR: api_walk_here api_level2 api_level1"
+        - "THR: ok"
+        - "^ABORT: ok"
+        - "^ESF ABORT: ok"
+        - "^ESF RECLAIMED: count=0"
+        - "^SNAPSHOT LIMIT: count=32$"
+        - "^SNAPSHOT STOP: count=3 calls=4 after=0$"
+        - "STOP: count=3 calls=4 after=0"
+        - "IRQ: ok"
+        - "^IRQ ABORT: ok"
+  arch.common.stack_unwind.tricore_zero:
+    arch_allow: tricore
+    integration_platforms:
+      - qemu_tc4x
+      - qemu_tc3x
+    extra_args: EXTRA_CFLAGS=-DSTACK_WALK_API_TEST
+    extra_configs:
+      - CONFIG_ARCH_STACKWALK_MAX_FRAMES=0
+      - CONFIG_SYMTAB=y
+    harness_config:
+      type: multi_line
+      regex:
+        - "ZERO: count=0"
