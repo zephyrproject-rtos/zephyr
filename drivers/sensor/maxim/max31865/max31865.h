@@ -10,6 +10,7 @@
 
 #include <math.h>
 
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/sensor/max31865.h>
 #include <zephyr/drivers/spi.h>
@@ -45,6 +46,11 @@ LOG_MODULE_REGISTER(MAX31865, CONFIG_SENSOR_LOG_LEVEL);
 /* Bitmask to clear fault status bits D5, D3, and D2 */
 #define FAULT_BITS_CLEAR_MASK 0x2C
 
+#define MAX31865_CONFIG_ONE_SHOT BIT(5)
+
+#define MAX31865_CONVERSION_TIME_MS 66
+#define MAX31865_DRDY_TIMEOUT_MS    (MAX31865_CONVERSION_TIME_MS + 10)
+
 /**
  * RTD data, RTD current, and measurement reference
  * voltage. The ITS-90 standard is used; other RTDs
@@ -76,6 +82,10 @@ static const double RTD_C[6] = {-242.02, 2.2228, 2.5859e-3, 4.8260e-6, 2.8183e-8
 struct max31865_data {
 	double temperature;
 	uint8_t config_control_bits;
+#ifdef CONFIG_MAX31865_DRDY
+	struct gpio_callback drdy_cb;
+	struct k_sem drdy_sem;
+#endif
 };
 
 /**
@@ -83,10 +93,12 @@ struct max31865_data {
  */
 struct max31865_config {
 	const struct spi_dt_spec spi;
+#ifdef CONFIG_MAX31865_DRDY
+	const struct gpio_dt_spec drdy;
+#endif
 	uint16_t resistance_at_zero;
 	uint16_t resistance_reference;
 	bool conversion_mode;
-	bool one_shot;
 	bool three_wire;
 	uint8_t fault_cycle;
 	bool filter_50hz;

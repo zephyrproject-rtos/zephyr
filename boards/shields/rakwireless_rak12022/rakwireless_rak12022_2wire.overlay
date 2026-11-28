@@ -1,0 +1,6 @@
+/*
+ * SPDX-FileCopyrightText: Copyright RAKwireless Technology Limited
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "rakwireless_rak12022_common.dtsi"
