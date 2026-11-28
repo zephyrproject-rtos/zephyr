@@ -25,6 +25,9 @@ extern "C" {
 #if DT_ANY_INST_HAS_BOOL_STATUS_OKAY(initial_soft_reset)
 #define WITH_SOFT_RESET 1
 #endif
+#if DT_ANY_INST_HAS_BOOL_STATUS_OKAY(requires_ulbpr)
+#define WITH_ULBPR 1
+#endif
 #if DT_ANY_INST_HAS_BOOL_STATUS_OKAY(has_dpd)
 #define WITH_DPD 1
 #endif
@@ -169,6 +172,7 @@ struct flash_mspi_nor_config {
 	bool single_io_addr      : 1;
 	bool initial_soft_reset  : 1;
 	bool has_dpd             : 1;
+	bool requires_ulbpr      : 1;
 	bool uses_runtime_sfdp   : 1;
 	enum mspi_xfer_mode control_xfer_mode;
 	enum mspi_xfer_mode data_xfer_mode;

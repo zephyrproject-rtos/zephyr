@@ -16,6 +16,7 @@ include:
       - sfdp-ff05
       - sfdp-ff84
       - quad-enable-requirements
+      - requires-ulbpr
       - has-dpd
       - dpd-wakeup-sequence
       - t-enter-dpd
