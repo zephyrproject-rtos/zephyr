@@ -50,6 +50,7 @@ property type whose value is a single integer, i.e. ``int`` and
    $(dt_compat_enabled,<compatible string>)
    $(dt_compat_enabled_num,<compatible string>)
    $(dt_compat_on_bus,<compatible string>,<bus>)
+   $(dt_first_enabled_cpu_path)
    $(dt_gpio_hogs_enabled)
    $(dt_has_compat,<compatible string>)
    $(dt_highest_controller_irq_number,<node path>,<cell>)

@@ -247,4 +247,8 @@ config KCONFIG_DT_MTD_RANGE_4000
 
 endmenu
 
+config KCONFIG_DT_FIRST_ENABLED_CPU_PATH
+	string
+	default "$(dt_first_enabled_cpu_path)"
+
 source "Kconfig.zephyr"
