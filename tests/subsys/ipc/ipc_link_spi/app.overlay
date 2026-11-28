@@ -1,0 +1,48 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Basalte bv
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	gpio_link: gpio-link {
+		compatible = "vnd,test-gpio-link";
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <2>;
+	};
+
+	spi_peripheral: spi-link-peripheral {
+		compatible = "vnd,test-spi-link";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ipc_peripheral: ipc@0 {
+			compatible = "zephyr,ipc-spi-peripheral";
+			reg = <0>;
+			spi-max-frequency = <1000000>;
+			rdy-gpios = <&gpio_link 0 GPIO_ACTIVE_HIGH>;
+			irq-gpios = <&gpio_link 1 GPIO_ACTIVE_HIGH>;
+			mtu = <256>;
+			retransmit-timeout-ms = <100>;
+		};
+	};
+
+	spi_controller: spi-link-controller {
+		compatible = "vnd,test-spi-link";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		peer = <&spi_peripheral>;
+
+		ipc_controller: ipc@0 {
+			compatible = "zephyr,ipc-spi";
+			reg = <0>;
+			spi-max-frequency = <1000000>;
+			rdy-gpios = <&gpio_link 0 GPIO_ACTIVE_HIGH>;
+			irq-gpios = <&gpio_link 1 GPIO_ACTIVE_HIGH>;
+			mtu = <256>;
+			retransmit-timeout-ms = <100>;
+		};
+	};
+};

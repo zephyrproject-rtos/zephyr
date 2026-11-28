@@ -870,36 +870,49 @@ static int uart_emul_rx_disable(const struct device *dev)
 }
 #endif /* CONFIG_UART_ASYNC_API */
 
-static DEVICE_API(uart, uart_emul_api) = {
-	.poll_in = uart_emul_poll_in,
-	.poll_out = uart_emul_poll_out,
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
-	.config_get = uart_emul_config_get,
-	.configure = uart_emul_configure,
+#define UART_EMUL_API_CONFIGURE                                                                    \
+	.config_get = uart_emul_config_get, .configure = uart_emul_configure,
+#else
+#define UART_EMUL_API_CONFIGURE
 #endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
-	.err_check = uart_emul_err_check,
+
+#define UART_EMUL_API_POLLING                                                                      \
+	.poll_in = uart_emul_poll_in, .poll_out = uart_emul_poll_out,                              \
+	.err_check = uart_emul_err_check, UART_EMUL_API_CONFIGURE
+
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.fifo_fill = uart_emul_fifo_fill,
-	.fifo_read = uart_emul_fifo_read,
-	.irq_tx_enable = uart_emul_irq_tx_enable,
-	.irq_rx_enable = uart_emul_irq_rx_enable,
-	.irq_tx_disable = uart_emul_irq_tx_disable,
-	.irq_rx_disable = uart_emul_irq_rx_disable,
-	.irq_tx_ready = uart_emul_irq_tx_ready,
-	.irq_rx_ready = uart_emul_irq_rx_ready,
-	.irq_tx_complete = uart_emul_irq_tx_complete,
-	.irq_callback_set = uart_emul_irq_callback_set,
+#define UART_EMUL_API_INTERRUPT_DRIVEN                                                             \
+	.fifo_fill = uart_emul_fifo_fill, .fifo_read = uart_emul_fifo_read,                        \
+	.irq_tx_enable = uart_emul_irq_tx_enable, .irq_rx_enable = uart_emul_irq_rx_enable,        \
+	.irq_tx_disable = uart_emul_irq_tx_disable, .irq_rx_disable = uart_emul_irq_rx_disable,    \
+	.irq_tx_ready = uart_emul_irq_tx_ready, .irq_rx_ready = uart_emul_irq_rx_ready,            \
+	.irq_tx_complete = uart_emul_irq_tx_complete,                                              \
+	.irq_callback_set = uart_emul_irq_callback_set,                                            \
 	.irq_is_pending = uart_emul_irq_is_pending,
+#else
+#define UART_EMUL_API_INTERRUPT_DRIVEN
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+
 #ifdef CONFIG_UART_ASYNC_API
-	.callback_set = uart_emul_callback_set,
-	.tx = uart_emul_tx,
-	.tx_abort = uart_emul_tx_abort,
-	.rx_enable = uart_emul_rx_enable,
-	.rx_buf_rsp = uart_emul_rx_buf_rsp,
-	.rx_disable = uart_emul_rx_disable,
+#define UART_EMUL_API_ASYNC                                                                        \
+	.callback_set = uart_emul_callback_set, .tx = uart_emul_tx,                                \
+	.tx_abort = uart_emul_tx_abort, .rx_enable = uart_emul_rx_enable,                          \
+	.rx_buf_rsp = uart_emul_rx_buf_rsp, .rx_disable = uart_emul_rx_disable,
+#else
+#define UART_EMUL_API_ASYNC
 #endif /* CONFIG_UART_ASYNC_API */
-};
+
+/* One table per combination of modes, picked by the supported-modes property of an instance */
+static DEVICE_API(uart, uart_emul_api) = {
+	UART_EMUL_API_POLLING UART_EMUL_API_INTERRUPT_DRIVEN UART_EMUL_API_ASYNC};
+
+static DEVICE_API(uart, uart_emul_api_interrupt_driven) = {
+	UART_EMUL_API_POLLING UART_EMUL_API_INTERRUPT_DRIVEN};
+
+static DEVICE_API(uart, uart_emul_api_async) = {UART_EMUL_API_POLLING UART_EMUL_API_ASYNC};
+
+static DEVICE_API(uart, uart_emul_api_polling) = {UART_EMUL_API_POLLING};
 
 void uart_emul_callback_tx_data_ready_set(const struct device *dev,
 					  uart_emul_callback_tx_data_ready_t cb, void *user_data)
@@ -1012,6 +1025,15 @@ int uart_emul_register(const struct device *dev, struct uart_emul *emul)
 		.dev = DEVICE_DT_GET(node_id),                                                     \
 	},
 
+#define UART_EMUL_HAS_MODE(inst, mode) DT_INST_ENUM_HAS_VALUE(inst, supported_modes, mode)
+
+#define UART_EMUL_API(inst)                                                                        \
+	COND_CODE_1(UART_EMUL_HAS_MODE(inst, interrupt_driven),                                    \
+		    (COND_CODE_1(UART_EMUL_HAS_MODE(inst, async), (&uart_emul_api),                \
+				 (&uart_emul_api_interrupt_driven))),                              \
+		    (COND_CODE_1(UART_EMUL_HAS_MODE(inst, async), (&uart_emul_api_async),          \
+				 (&uart_emul_api_polling))))
+
 #define DEFINE_UART_EMUL(inst)                                                                     \
 	static const struct emul_link_for_bus emuls_##inst[] = {                                   \
 		DT_FOREACH_CHILD_STATUS_OKAY(DT_DRV_INST(inst), EMUL_LINK_AND_COMMA)};             \
@@ -1059,6 +1081,6 @@ int uart_emul_register(const struct device *dev, struct uart_emul *emul)
 	SYS_INIT(uart_emul_post_init_##inst, POST_KERNEL, CONFIG_UART_EMUL_DEVICE_INIT_PRIORITY);  \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &uart_emul_data_##inst, &uart_emul_cfg_##inst,     \
-			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, &uart_emul_api);
+			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, UART_EMUL_API(inst));
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_UART_EMUL)
