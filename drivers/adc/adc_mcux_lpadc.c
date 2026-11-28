@@ -657,18 +657,6 @@ static int mcux_lpadc_read_async(const struct device *dev,
 	enum pm_device_state state;
 	int error;
 
-	/*
-	 * A conversion issued against a suspended converter can never complete:
-	 * SUSPEND runs LPADC_Enable(false), so no watermark interrupt is ever
-	 * raised. Reject the request instead of arming a sequence that only the
-	 * acquisition timeout would eventually clean up. Without device PM the
-	 * state reads back as active, so this costs such a build nothing.
-	 */
-	if ((pm_device_state_get(dev, &state) == 0) && (state != PM_DEVICE_STATE_ACTIVE)) {
-		LOG_ERR("Converter is not active (pm state %d)", state);
-		return -EBUSY;
-	}
-
 	adc_context_lock(&data->ctx, async ? true : false, async);
 
 	/*
@@ -679,6 +667,14 @@ static int mcux_lpadc_read_async(const struct device *dev,
 	if (error != 0) {
 		adc_context_release(&data->ctx, error);
 		return error;
+	}
+
+	/* Runtime-managed devices must be resumed before checking their state. */
+	if ((pm_device_state_get(dev, &state) == 0) && (state != PM_DEVICE_STATE_ACTIVE)) {
+		LOG_ERR("Converter is not active (pm state %d)", state);
+		mcux_lpadc_pm_release(dev);
+		adc_context_release(&data->ctx, -EBUSY);
+		return -EBUSY;
 	}
 
 	error = mcux_lpadc_start_read(dev, sequence);
