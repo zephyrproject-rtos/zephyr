@@ -1,0 +1,49 @@
+# Copyright (c) 2026 Dhruv Menon <dhruvmenon1104@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  One interrupt-router output that peripherals can use as their interrupt
+  parent on TI K3.
+
+  Point a device's interrupt-parent here. In that device's interrupts
+  property, list the router input number and priority 0. The board or SoC
+  already wires this output to a CPU interrupt.
+
+compatible: "ti,sci-intr-out"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+    description: Router output number for this line.
+
+  interrupts:
+    required: true
+    description: CPU interrupt this router output is connected to.
+
+  "#interrupt-cells":
+    const: 2
+
+interrupt-cells:
+  - irq
+  - priority
+
+# Priority must be 0 for peripherals. The CPU interrupt's priority and trigger
+# come from this node's interrupts property above.
+
+examples:
+  - |
+    main_gpio_intr_16: interrupt-controller@10 {
+        compatible = "ti,sci-intr-out";
+        reg = <16>;
+        interrupt-controller;
+        #interrupt-cells = <2>;
+        interrupt-parent = <&vim>;
+        interrupts = <0 104 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+    };
+
+    main_i2c4: i2c@fe80000 {
+        interrupt-parent = <&main_gpio_intr_16>;
+        interrupts = <178 0>;   /* router input 178, priority 0 */
+    };

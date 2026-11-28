@@ -11,6 +11,11 @@
 #include "ctrl_partitions.h"
 #include <zephyr/cache.h>
 
+#if defined(CONFIG_TI_SCI_INTR)
+#include <zephyr/drivers/interrupt_controller/intc_ti_sci_intr.h>
+#include <zephyr/irq_multilevel.h>
+#endif
+
 unsigned int z_soc_irq_get_active(void)
 {
 	return z_vim_irq_get_active();
@@ -28,26 +33,81 @@ void z_soc_irq_init(void)
 
 void z_soc_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 {
-	/* Configure interrupt type and priority */
+#if defined(CONFIG_TI_SCI_INTR)
+	if (irq_get_level(irq) > 1U) {
+		ti_sci_intr_irq_priority_set(irq, prio, flags);
+		return;
+	}
+#endif
 	z_vim_irq_priority_set(irq, prio, flags);
 }
 
 void z_soc_irq_enable(unsigned int irq)
 {
-	/* Enable interrupt */
+#if defined(CONFIG_TI_SCI_INTR)
+	if (irq_get_level(irq) > 1U) {
+		ti_sci_intr_irq_enable(irq);
+		return;
+	}
+#endif
 	z_vim_irq_enable(irq);
 }
 
 void z_soc_irq_disable(unsigned int irq)
 {
-	/* Disable interrupt */
+#if defined(CONFIG_TI_SCI_INTR)
+	if (irq_get_level(irq) > 1U) {
+		ti_sci_intr_irq_disable(irq);
+		return;
+	}
+#endif
 	z_vim_irq_disable(irq);
 }
 
 int z_soc_irq_is_enabled(unsigned int irq)
 {
-	/* Check if interrupt is enabled */
+#if defined(CONFIG_TI_SCI_INTR)
+	if (irq_get_level(irq) > 1U) {
+		return ti_sci_intr_irq_is_enabled(irq);
+	}
+#endif
 	return z_vim_irq_is_enabled(irq);
+}
+
+void z_soc_irq_clear_pending(unsigned int irq)
+{
+#if defined(CONFIG_TI_SCI_INTR)
+	/*
+	 * Leaf IR inputs share the parent VIM line so only clear when this input
+	 * owns the route
+	 */
+	if (irq_get_level(irq) > 1U) {
+		ti_sci_intr_irq_clear_pending(irq);
+		return;
+	}
+#endif
+	z_vim_irq_clear_pending(irq);
+}
+
+void z_soc_irq_set_pending(unsigned int irq)
+{
+#if defined(CONFIG_TI_SCI_INTR)
+	if (irq_get_level(irq) > 1U) {
+		ti_sci_intr_irq_mark_pending(irq);
+		return;
+	}
+#endif
+	z_vim_irq_set_pending(irq);
+}
+
+bool z_soc_irq_is_pending(unsigned int irq)
+{
+#if defined(CONFIG_TI_SCI_INTR)
+	if (irq_get_level(irq) > 1U) {
+		return ti_sci_intr_irq_is_pending(irq);
+	}
+#endif
+	return z_vim_irq_is_pending(irq);
 }
 
 void soc_early_init_hook(void)

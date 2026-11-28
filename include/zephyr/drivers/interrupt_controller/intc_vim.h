@@ -7,6 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_VIM_H_
 #define ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_VIM_H_
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include <zephyr/devicetree.h>
@@ -16,7 +17,6 @@
 #define VIM_BASE_ADDR             DT_REG_ADDR(DT_INST(0, ti_vim))
 
 #define VIM_MAX_IRQ_PER_GROUP     (32)
-#define VIM_MAX_GROUP_NUM         ((uint32_t)(CONFIG_NUM_IRQS / VIM_MAX_IRQ_PER_GROUP))
 
 #define VIM_GET_IRQ_GROUP_NUM(n)  ((uint32_t)((n) / VIM_MAX_IRQ_PER_GROUP))
 #define VIM_GET_IRQ_BIT_NUM(n)    ((uint32_t)((n) % VIM_MAX_IRQ_PER_GROUP))
@@ -184,5 +184,29 @@ int z_vim_irq_is_enabled(unsigned int irq);
  * @param irq interrupt ID.
  */
 void z_vim_arm_enter_irq(int irq);
+
+/**
+ * @brief Set an interrupt pending (software trigger).
+ *
+ * @param irq interrupt ID.
+ */
+void z_vim_irq_set_pending(unsigned int irq);
+
+/**
+ * @brief Check if an interrupt is pending.
+ *
+ * @param irq interrupt ID.
+ *
+ * @retval false If interrupt is not pending.
+ * @retval true If interrupt is pending.
+ */
+bool z_vim_irq_is_pending(unsigned int irq);
+
+/**
+ * @brief Clear a pending interrupt while it may remain masked.
+ *
+ * @param irq interrupt ID.
+ */
+void z_vim_irq_clear_pending(unsigned int irq);
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_VIM_H_ */

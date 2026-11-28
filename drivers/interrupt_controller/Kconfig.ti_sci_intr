@@ -1,0 +1,34 @@
+# Copyright (c) 2026 Dhruv Menon <dhruvmenon1104@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config TI_SCI_INTR
+	bool "TI K3 TISCI Interrupt Router"
+	default y
+	depends on DT_HAS_TI_SCI_INTR_ENABLED
+	depends on DT_HAS_TI_SCI_INTR_OUT_ENABLED
+	depends on TISCI
+	depends on SYS_CLOCK_EXISTS
+	depends on GEN_SW_ISR_TABLE
+	depends on TI_VIM
+	select MULTI_LEVEL_INTERRUPTS
+	select 2ND_LEVEL_INTERRUPTS
+	help
+	  Let peripherals on TI K3 use an interrupt router the same way they
+	  use any other interrupt parent: IRQ_CONNECT and irq_enable.
+
+	  Turn this on when the board or SoC describes a ti,sci-intr router
+	  with ti,sci-intr-out outputs (for example the MAIN or MCU GPIO mux
+	  routers on J722S). The SoC or board must also set up the usual
+	  multilevel IRQ layout for those outputs.
+
+if TI_SCI_INTR
+
+config TI_SCI_INTR_WORKQ_INIT_PRIORITY
+	int
+	default 41
+	help
+	  POST_KERNEL priority for starting the router workqueue.
+	  Must be greater than INTC_INIT_PRIORITY so the workqueue starts
+	  after the router device (INTC_INIT_PRIORITY defaults to 40).
+
+endif # TI_SCI_INTR
