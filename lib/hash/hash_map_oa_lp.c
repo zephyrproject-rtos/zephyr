@@ -123,10 +123,6 @@ static int sys_hashmap_oa_lp_rehash(struct sys_hashmap *map, bool grow)
 		return 0;
 	}
 
-	if (map->data->size != SIZE_MAX && map->data->size == map->config->max_size) {
-		return -ENOSPC;
-	}
-
 	/* extract all entries from the hashmap */
 	old_size = data->size;
 	old_n_buckets = data->n_buckets;
