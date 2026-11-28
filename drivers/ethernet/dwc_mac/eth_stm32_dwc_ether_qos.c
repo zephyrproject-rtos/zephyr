@@ -274,6 +274,8 @@ static void stm32mp1_eth2_select_phy_interface(enum stm32mp1_phy_interface phy_i
 
 int dwmac_bus_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_stm32_dwc_config *cfg = dev->config;
 	int ret;
 
@@ -335,6 +337,8 @@ int dwmac_bus_init(const struct device *dev)
 
 int dwmac_platform_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_stm32_dwc_config *cfg = dev->config;
 
 	/* basic configuration for this platform */

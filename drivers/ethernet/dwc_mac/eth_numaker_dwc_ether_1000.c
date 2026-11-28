@@ -65,6 +65,8 @@ static int eth_numaker_reset(bool assert_reset)
 
 int dwmac_bus_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct dwmac_config *cfg = dev->config;
 	int ret;
 
@@ -164,6 +166,8 @@ static int eth_numaker_mac_load(const struct net_eth_mac_config *cfg, uint8_t *m
 
 int dwmac_platform_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct net_eth_mac_config mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(0);
 	struct dwmac_priv *p = dev->data;
 	int ret;

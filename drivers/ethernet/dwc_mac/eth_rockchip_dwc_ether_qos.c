@@ -208,6 +208,8 @@ static int rk3588_gmac_enable_clocks(const struct device *dev)
  */
 void dwmac_platform_link_speed_changed(const struct device *dev, enum phy_link_speed speed)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct rk3588_gmac_config *cfg = dev->config;
 
 	rk3588_gmac_grf_set_rgmii_speed(cfg->php_grf, cfg->id, speed);
@@ -217,6 +219,8 @@ void dwmac_platform_link_speed_changed(const struct device *dev, enum phy_link_s
 
 int dwmac_bus_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct rk3588_gmac_config *cfg = dev->config;
 	int ret;
 
@@ -353,6 +357,8 @@ DT_INST_FOREACH_STATUS_OKAY(RK3588_GMAC_DEFINE)
 
 int dwmac_platform_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct rk3588_gmac_config *cfg = dev->config;
 
 	DWMAC_REG_WRITE(MAC_CONF, MAC_CONF_DM);

@@ -42,6 +42,8 @@ static struct net_eth_mac_config mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(0);
 
 int dwmac_platform_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct dwmac_priv *p = dev->data;
 	int ret;
 	uint8_t *desc_uncached_addr;
