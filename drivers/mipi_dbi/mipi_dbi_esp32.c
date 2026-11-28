@@ -44,6 +44,14 @@ LOG_MODULE_REGISTER(mipi_dbi_esp32_lcd, CONFIG_MIPI_DBI_LOG_LEVEL);
 
 #define LCD_DMA_TRANSFER_TIMEOUT_MS (1000)
 
+/*
+ * Time in microseconds to let the GDMA fill the LCD FIFO before the bus
+ * starts clocking. Shorter, and the first byte of a transfer can go out
+ * before the FIFO has it. Same value as the ESP-IDF i80 driver uses in
+ * lcd_start_transaction().
+ */
+#define LCD_DMA_FIFO_FILL_DELAY_US (4)
+
 struct mipi_dbi_esp32_device_config {
 	uint32_t pclk_freq_hz;
 	bool pclk_idle_low;
@@ -261,6 +269,8 @@ static int mipi_dbi_esp32_transfer(const struct device *dev, const struct mipi_d
 		if (ret < 0) {
 			goto free;
 		}
+
+		k_busy_wait(LCD_DMA_FIFO_FILL_DELAY_US);
 	}
 
 	lcd_ll_start(hal->dev);
