@@ -1061,6 +1061,17 @@ static int dma_stm32_get_status(const struct device *dev,
 
 	stream = &config->streams[id];
 	stat->pending_length = LL_DMA_GetBlkDataLength(STM32_DMA_GET_CHANNEL(dma, id));
+#ifdef DMA_CSR_FIFOL
+	/*
+	 * BNDT counts the data read from the source. Data held in the channel
+	 * FIFO has not been written to the destination yet, count it as pending.
+	 * FIFOL is in units of the destination data width. LPDMA has no FIFO:
+	 * FIFOL reads 0 on LPDMA channels, or is not defined when only LPDMA
+	 * is present.
+	 */
+	stat->pending_length +=
+		LL_DMA_GetFIFOLevel(STM32_DMA_GET_CHANNEL(dma, id)) * stream->dst_size;
+#endif /* DMA_CSR_FIFOL */
 	stat->dir = stream->direction;
 	stat->busy = stream->busy;
 
