@@ -1,0 +1,13 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/ti-k3-pinctrl.h>
+
+/*
+ * The test reads back the pin it drives and takes interrupts on it, so the
+ * pad needs its receiver on.
+ */
+&main_gpio0_3_led {
+	pinmux = <K3_PINMUX(0x0238, PIN_INPUT, MUX_MODE_7)>; /* D6, MMC1_SDWP */
+};
