@@ -11,9 +11,13 @@ config SOC_SERIES_INTEL_ADSP_CAVS
 config SOC_SERIES
 	default "intel_adsp_cavs" if SOC_SERIES_INTEL_ADSP_CAVS
 
+config SOC_SERIES_INTEL_ADSP_CAVS_V25
+	bool
+
 config SOC_CAVSV25
 	bool
 	select SOC_SERIES_INTEL_ADSP_CAVS
+	select SOC_SERIES_INTEL_ADSP_CAVS_V25
 	help
 	  Intel Tiger Lake
 
