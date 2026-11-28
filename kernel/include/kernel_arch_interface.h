@@ -286,6 +286,26 @@ FUNC_NORETURN void arch_system_halt(unsigned int reason);
  */
 static inline bool arch_is_in_isr(void);
 
+/**
+ * Test if the current context is in interrupt context with local IRQs locked.
+ *
+ * The caller must hold a local IRQ lock, including one acquired by a spinlock.
+ * This keeps the current CPU stable while its interrupt state is inspected.
+ * The result has the same meaning as arch_is_in_isr(), and the local IRQ lock
+ * state is preserved.
+ *
+ * @retval true The caller is in interrupt context.
+ * @retval false The caller is not in interrupt context.
+ */
+static inline bool arch_is_in_isr_irqlocked(void);
+
+#ifndef CONFIG_ARCH_HAS_CUSTOM_IS_IN_ISR_IRQLOCKED
+static inline bool arch_is_in_isr_irqlocked(void)
+{
+	return arch_is_in_isr();
+}
+#endif
+
 /** @} */
 
 /**

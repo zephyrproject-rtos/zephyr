@@ -4,6 +4,11 @@ cmake_minimum_required(VERSION 3.28.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(kernel_common)
 
+target_include_directories(app PRIVATE
+  "${ZEPHYR_BASE}/kernel/include"
+  "${ZEPHYR_BASE}/arch/${ARCH}/include"
+)
+
 if(CONFIG_PRINTK)
   target_sources(
     app PRIVATE
