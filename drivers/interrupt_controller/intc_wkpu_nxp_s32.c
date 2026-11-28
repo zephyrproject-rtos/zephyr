@@ -62,7 +62,7 @@ static void wkpu_nxp_s32_interrupt_handler(const struct device *dev)
 		irq = u64_count_trailing_zeros(irq_mask);
 
 		/* Clear status flag */
-		REG_WRITE(WKPU_WISR(irq / 32U), REG_READ(WKPU_WISR(irq / 32U)) | irq_mask);
+		REG_WRITE(WKPU_WISR(irq / 32U), BIT(irq % 32U));
 
 		if (data->cb[irq].cb != NULL) {
 			data->cb[irq].cb(data->cb[irq].pin, data->cb[irq].data);
@@ -133,7 +133,7 @@ void wkpu_nxp_s32_enable_interrupt(const struct device *dev, uint8_t irq,
 	REG_WRITE(WKPU_WIFEER(reg_idx), reg_val);
 
 	/* Clear status flag and unmask interrupt */
-	REG_WRITE(WKPU_WISR(reg_idx), REG_READ(WKPU_WISR(reg_idx)) | mask);
+	REG_WRITE(WKPU_WISR(reg_idx), mask);
 	REG_WRITE(WKPU_IRER(reg_idx), REG_READ(WKPU_IRER(reg_idx)) | mask);
 }
 
@@ -150,7 +150,7 @@ void wkpu_nxp_s32_disable_interrupt(const struct device *dev, uint8_t irq)
 	REG_WRITE(WKPU_WIFEER(reg_idx), REG_READ(WKPU_WIFEER(reg_idx)) & ~mask);
 
 	/* Clear status flag and mask interrupt */
-	REG_WRITE(WKPU_WISR(reg_idx), REG_READ(WKPU_WISR(reg_idx)) | mask);
+	REG_WRITE(WKPU_WISR(reg_idx), mask);
 	REG_WRITE(WKPU_IRER(reg_idx), REG_READ(WKPU_IRER(reg_idx)) & ~mask);
 }
 

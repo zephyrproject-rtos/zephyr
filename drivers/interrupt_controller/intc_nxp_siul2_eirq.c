@@ -81,7 +81,7 @@ static inline void nxp_siul2_eirq_interrupt_handler(const struct device *dev, ui
 		irq = u64_count_trailing_zeros(mask);
 
 		/* Clear status flag */
-		REG_WRITE(SIUL2_DISR0, REG_READ(SIUL2_DISR0) | mask);
+		REG_WRITE(SIUL2_DISR0, mask);
 
 		if (data->cb[irq].cb != NULL) {
 			data->cb[irq].cb(data->cb[irq].pin, data->cb[irq].data);
@@ -150,7 +150,7 @@ void nxp_siul2_eirq_enable_interrupt(const struct device *dev, uint8_t irq,
 	REG_WRITE(SIUL2_IFEER0, reg_val);
 
 	/* Clear status flag and unmask interrupt */
-	REG_WRITE(SIUL2_DISR0, REG_READ(SIUL2_DISR0) | BIT(irq));
+	REG_WRITE(SIUL2_DISR0, BIT(irq));
 	REG_WRITE(SIUL2_DIRER0, REG_READ(SIUL2_DIRER0) | BIT(irq));
 }
 
@@ -165,7 +165,7 @@ void nxp_siul2_eirq_disable_interrupt(const struct device *dev, uint8_t irq)
 	REG_WRITE(SIUL2_IFEER0, REG_READ(SIUL2_IFEER0) & ~BIT(irq));
 
 	/* Clear status flag and mask interrupt */
-	REG_WRITE(SIUL2_DISR0, REG_READ(SIUL2_DISR0) | BIT(irq));
+	REG_WRITE(SIUL2_DISR0, BIT(irq));
 	REG_WRITE(SIUL2_DIRER0, REG_READ(SIUL2_DIRER0) & ~BIT(irq));
 }
 
