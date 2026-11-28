@@ -14,9 +14,12 @@ include:
   - name: i2c-device.yaml
     property-blocklist:
       - supply-gpios
-      - vin-supply
 
 properties:
+  pa-gpios:
+    type: phandle-array
+    description: Enable signal for an external power amplifier.
+
   everest,mono-dac-source:
     type: string
     enum:
