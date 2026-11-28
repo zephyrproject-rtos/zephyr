@@ -257,26 +257,11 @@ static size_t cdc_acm_tx_current_tailroom_locked(struct cdc_acm_uart_data *const
 
 static uint32_t cdc_acm_tx_fifo_space_get(struct cdc_acm_uart_data *const data)
 {
-	const uint32_t count = data->tx_fifo.pool->buf_count;
 	k_spinlock_key_t key;
-	uint32_t available;
 	uint32_t space;
 
 	key = k_spin_lock(&data->lock);
-
-	available = count - data->tx_fifo.enqueued;
-
-	if (available == 0) {
-		space = 0;
-	} else if (available == 1 || !data->echo_mitigated) {
-		space = cdc_acm_tx_current_tailroom_locked(data);
-	} else {
-		/* Use available - 1 to prevent sudden drop of available
-		 * size when a partially filled buffer is enqueued.
-		 */
-		space = USBD_MAX_BULK_MPS * (available - 1);
-	}
-
+	space = cdc_acm_tx_current_tailroom_locked(data);
 	k_spin_unlock(&data->lock, key);
 
 	return space;
