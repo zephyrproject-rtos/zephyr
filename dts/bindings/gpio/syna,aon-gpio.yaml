@@ -1,0 +1,29 @@
+#
+# SPDX-FileCopyrightText: Copyright (c) 2025 Synaptics Incorporated
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Synaptics AON GPIO
+
+compatible: "syna,aon-gpio"
+
+include: [gpio-controller.yaml, base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  reg-width:
+    type: int
+    description:
+      Width in bits for configuration of each GPIO in register.
+
+  polarity-shift:
+    type: int
+    description:
+      Bit position inside configuration bits to set polarity.
+
+gpio-cells:
+  - pin
+  - flags

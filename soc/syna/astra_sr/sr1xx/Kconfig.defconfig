@@ -1,10 +1,14 @@
-# Copyright (c) 2025 Synaptics, Inc.
+# SPDX-FileCopyrightText: Copyright (c) 2025 Synaptics Incorporated
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_SR1XX
 
 configdefault CACHE_MANAGEMENT
 	default y
+
+choice CACHE_TYPE
+	default EXTERNAL_CACHE if SOC_SR100_M4
+endchoice
 
 config NUM_IRQS
 	default 128
