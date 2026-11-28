@@ -57,12 +57,6 @@ LOG_MODULE_REGISTER(lorawan_native_as923, CONFIG_LORAWAN_LOG_LEVEL);
  */
 #define AS923_JOIN_DR 2
 
-/* CFList type 0: number of extra frequencies */
-#define CFLIST_CH_COUNT 5
-
-/* CFList frequency unit (100 Hz) */
-#define CFLIST_FREQ_STEP_HZ 100
-
 /*
  * AS923 datarate table: DR0..DR6 (Table 67).
  *
@@ -287,14 +281,15 @@ static int as923_validate_dl_settings(uint8_t rx1_dr_offset, uint8_t rx2_datarat
 	return 0;
 }
 
-static int as923_apply_cflist(const uint8_t cflist[16], struct lwan_channel *ch, size_t *count)
+static int as923_apply_cflist(const uint8_t cflist[LWAN_CFLIST_SIZE], struct lwan_channel *ch,
+			      size_t *count)
 {
 	uint8_t cflist_type;
 	size_t cflist_end;
 
-	cflist_type = cflist[15];
+	cflist_type = cflist[LWAN_CFLIST_TYPE_OFFSET];
 
-	if (cflist_type != 0) {
+	if (cflist_type != LWAN_CFLIST_TYPE_FREQ) {
 		LOG_WRN("Unsupported CFList type: %u", cflist_type);
 		return 0;
 	}
@@ -304,7 +299,7 @@ static int as923_apply_cflist(const uint8_t cflist[16], struct lwan_channel *ch,
 	 * values (in units of 100 Hz). AS923_FREQ_OFFSET_HZ is not applied
 	 * to them (3.10.4).
 	 */
-	for (int i = 0; i < CFLIST_CH_COUNT; i++) {
+	for (int i = 0; i < LWAN_CFLIST_ENTRIES; i++) {
 		uint32_t freq;
 		size_t idx = AS923_DEFAULT_CH_COUNT + i;
 
@@ -313,7 +308,7 @@ static int as923_apply_cflist(const uint8_t cflist[16], struct lwan_channel *ch,
 		}
 
 		freq = sys_get_le24(&cflist[i * 3]);
-		freq *= CFLIST_FREQ_STEP_HZ;
+		freq *= LWAN_CFLIST_FREQ_STEP_HZ;
 
 		/*
 		 * Clear the whole descriptor: a stale frequency from an
@@ -334,7 +329,7 @@ static int as923_apply_cflist(const uint8_t cflist[16], struct lwan_channel *ch,
 	}
 
 	/* Extend count to cover all CFList slots so disabled entries are visible */
-	cflist_end = AS923_DEFAULT_CH_COUNT + CFLIST_CH_COUNT;
+	cflist_end = AS923_DEFAULT_CH_COUNT + LWAN_CFLIST_ENTRIES;
 
 	if (cflist_end > LWAN_MAX_CHANNELS) {
 		cflist_end = LWAN_MAX_CHANNELS;

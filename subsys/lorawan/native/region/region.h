@@ -17,6 +17,21 @@
 extern "C" {
 #endif
 
+/*
+ * Join-Accept CFList (RP002-1.0.5, 3.3.1): five entries and a type octet in
+ * 16 bytes. Type 0 lists frequencies and belongs to the dynamic channel plan
+ * regions; type 1 lists channel masks and belongs to the fixed plan ones,
+ * which 3.3.1 forbids from accepting type 0.
+ */
+#define LWAN_CFLIST_SIZE        16
+#define LWAN_CFLIST_TYPE_OFFSET 15
+#define LWAN_CFLIST_ENTRIES     5
+
+#define LWAN_CFLIST_TYPE_FREQ    0
+#define LWAN_CFLIST_FREQ_STEP_HZ 100
+
+#define LWAN_CFLIST_TYPE_CH_MASK 1
+
 struct lwan_channel {
 	/* Frequency in Hz */
 	uint32_t frequency;
@@ -123,13 +138,13 @@ struct lwan_region_ops {
 	/**
 	 * @brief Apply a CFList from join accept.
 	 *
-	 * @param cflist 16-byte CFList from join accept.
+	 * @param cflist CFList from the Join-Accept, LWAN_CFLIST_SIZE bytes.
 	 * @param ch Channel array to update.
 	 * @param count In: current count; Out: updated count.
 	 * @return 0 on success, negative errno on failure.
 	 */
-	int (*apply_cflist)(const uint8_t cflist[16],
-			    struct lwan_channel *ch, size_t *count);
+	int (*apply_cflist)(const uint8_t cflist[LWAN_CFLIST_SIZE], struct lwan_channel *ch,
+			    size_t *count);
 
 	/**
 	 * @brief Validate a datarate index for this region.

@@ -38,12 +38,6 @@ LOG_MODULE_REGISTER(lorawan_native_eu868, CONFIG_LORAWAN_LOG_LEVEL);
 /* EU868 mandatory default channels */
 #define EU868_DEFAULT_CH_COUNT	3
 
-/* CFList type 0: number of extra frequencies */
-#define CFLIST_CH_COUNT		5
-
-/* CFList frequency unit (100 Hz) */
-#define CFLIST_FREQ_STEP_HZ	100
-
 /* EU868 datarate table: DR0..DR6 */
 static const struct lwan_dr_params eu868_dr_table[] = {
 	[0] = { .sf = SF_12, .bw = BW_125_KHZ, .max_payload = 51 },
@@ -202,15 +196,15 @@ static int eu868_validate_dl_settings(uint8_t rx1_dr_offset,
 	return 0;
 }
 
-static int eu868_apply_cflist(const uint8_t cflist[16],
-			      struct lwan_channel *ch, size_t *count)
+static int eu868_apply_cflist(const uint8_t cflist[LWAN_CFLIST_SIZE], struct lwan_channel *ch,
+			      size_t *count)
 {
 	uint8_t cflist_type;
 	size_t cflist_end;
 
-	cflist_type = cflist[15];
+	cflist_type = cflist[LWAN_CFLIST_TYPE_OFFSET];
 
-	if (cflist_type != 0) {
+	if (cflist_type != LWAN_CFLIST_TYPE_FREQ) {
 		LOG_WRN("Unsupported CFList type: %u", cflist_type);
 		return 0;
 	}
@@ -219,7 +213,7 @@ static int eu868_apply_cflist(const uint8_t cflist[16],
 	 * CFList type 0: 5 frequencies encoded as 3-byte little-endian
 	 * values (in units of 100 Hz).
 	 */
-	for (int i = 0; i < CFLIST_CH_COUNT; i++) {
+	for (int i = 0; i < LWAN_CFLIST_ENTRIES; i++) {
 		uint32_t freq;
 		size_t idx = EU868_DEFAULT_CH_COUNT + i;
 
@@ -228,7 +222,7 @@ static int eu868_apply_cflist(const uint8_t cflist[16],
 		}
 
 		freq = sys_get_le24(&cflist[i * 3]);
-		freq *= CFLIST_FREQ_STEP_HZ;
+		freq *= LWAN_CFLIST_FREQ_STEP_HZ;
 
 		if (freq == 0) {
 			ch[idx] = (struct lwan_channel){ 0 };
@@ -244,7 +238,7 @@ static int eu868_apply_cflist(const uint8_t cflist[16],
 	}
 
 	/* Extend count to cover all CFList slots so disabled entries are visible */
-	cflist_end = EU868_DEFAULT_CH_COUNT + CFLIST_CH_COUNT;
+	cflist_end = EU868_DEFAULT_CH_COUNT + LWAN_CFLIST_ENTRIES;
 
 	if (cflist_end > LWAN_MAX_CHANNELS) {
 		cflist_end = LWAN_MAX_CHANNELS;
