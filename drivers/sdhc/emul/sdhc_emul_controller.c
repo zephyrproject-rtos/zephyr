@@ -98,6 +98,22 @@ static int sdhc_emul_ctlr_request(const struct device *dev,
 
 static int sdhc_emul_ctlr_set_io(const struct device *dev, struct sdhc_io *ios)
 {
+	struct sdhc_emul *emul = sdhc_emul_get_card(dev);
+	int ret;
+
+	if (emul == NULL) {
+		return 0;
+	}
+	if (emul->mock_api != NULL && emul->mock_api->set_io != NULL) {
+		ret = emul->mock_api->set_io(emul->target, ios);
+		if (ret != -ENOSYS) {
+			return ret;
+		}
+	}
+	if (emul->api != NULL && emul->api->set_io != NULL) {
+		return emul->api->set_io(emul->target, ios);
+	}
+
 	return 0;
 }
 
@@ -114,7 +130,22 @@ static int sdhc_emul_ctlr_get_card_present(const struct device *dev)
 
 static int sdhc_emul_ctlr_execute_tuning(const struct device *dev)
 {
-	LOG_DBG("Tuning executed (emul)");
+	struct sdhc_emul *emul = sdhc_emul_get_card(dev);
+	int ret;
+
+	if (emul == NULL) {
+		return 0;
+	}
+	if (emul->mock_api != NULL && emul->mock_api->execute_tuning != NULL) {
+		ret = emul->mock_api->execute_tuning(emul->target);
+		if (ret != -ENOSYS) {
+			return ret;
+		}
+	}
+	if (emul->api != NULL && emul->api->execute_tuning != NULL) {
+		return emul->api->execute_tuning(emul->target);
+	}
+
 	return 0;
 }
 

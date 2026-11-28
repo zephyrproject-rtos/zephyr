@@ -70,6 +70,29 @@ typedef int (*sdhc_emul_request_t)(const struct emul *target,
 				   struct sdhc_data *data);
 
 /**
+ * Notify the emulated card of the host I/O configuration.
+ *
+ * @param target The device emulator instance.
+ * @param ios Host I/O configuration.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS Use the default emulator implementation.
+ * @retval -EINVAL Unsupported I/O configuration.
+ */
+typedef int (*sdhc_emul_set_io_t)(const struct emul *target, const struct sdhc_io *ios);
+
+/**
+ * Execute tuning on the emulated card.
+ *
+ * @param target The device emulator instance.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS Use the default emulator implementation.
+ * @retval -EIO Tuning failed.
+ */
+typedef int (*sdhc_emul_execute_tuning_t)(const struct emul *target);
+
+/**
  * Check if the emulated card is busy.
  *
  * @param target The device Emulator instance.
@@ -125,6 +148,12 @@ struct sdhc_emul_api {
 
 	/** Check if the emulated card is present */
 	sdhc_emul_card_present_t card_present;
+
+	/** Optional notification of the host I/O configuration */
+	sdhc_emul_set_io_t set_io;
+
+	/** Optional tuning operation */
+	sdhc_emul_execute_tuning_t execute_tuning;
 };
 
 #ifdef __cplusplus
