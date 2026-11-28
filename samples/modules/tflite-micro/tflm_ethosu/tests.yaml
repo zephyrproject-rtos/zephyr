@@ -63,3 +63,19 @@ tests:
       - CONFIG_ETHOS_U85_2048=y
       - CONFIG_SAMPLE_TFLM_ETHOSU_PMU=y
       - DTC_OVERLAY_FILE="boards/mps4_corstone320_fvp.ta.overlay;boards/mps4_corstone320_fvp.sram_only.overlay"
+  sample.drivers.tflm_ethosu.corstone1000_a320:
+    tags:
+      - NPU
+    modules:
+      - tflite-micro
+    filter: dt_compat_enabled("arm,ethos-u")
+    platform_allow:
+      - fvp_corstone1000/a320
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "status=0"
+        - "status=0"
+        - "status=0"
+        - "status=0"

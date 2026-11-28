@@ -34,6 +34,7 @@ Zephyr board options
    * Arm Generic Timer
    * PL011 UART controller
    * SVE2 (Scalable Vector Extension 2)
+   * Ethos-U85 NPU with 256 MACs, cache coherent with the host through ACE
 
    Boot Architecture:
     - The Cortex-A320 host uses a multi-stage boot process involving two processors:
@@ -62,11 +63,6 @@ Zephyr board options
 
          The FVP provisioning cycle requires two full SE boot iterations before the
          real boot. This is normal — the first boot provisions dummy keys and reboots.
-
-      .. note::
-
-         The Ethos-U85 NPU is present in the Corstone-1000-A320 FVP but is not
-         currently supported by this board configuration.
 
   .. tab:: Corstone-1000-A35 (FVP)
 
@@ -294,15 +290,20 @@ using the Iris debug interface.
    :kconfig:option:`CONFIG_UART_CONSOLE`. The FVP has
    semihosting enabled by default.
 
+Ethos-U85 NPU
+=============
+
+On ``fvp_corstone1000/a320``, the Ethos-U85 NPU is enabled with
+:kconfig:option:`CONFIG_ETHOS_U`. It connects to the host CPU through ACE (AXI
+Coherency Extensions), so the hardware keeps the caches coherent and
+:kconfig:option:`CONFIG_ETHOS_U_DCACHE` defaults to ``n``.
+
 Known Limitations
 =================
 
 * **Linux/Unix host only** - the sysbuild integration uses POSIX shell
   utilities (``sh``, ``dd``, ``sgdisk``) to assemble the Secure Enclave
   flash image and is not currently supported on Windows hosts.
-
-* **Ethos-U85 NPU** — the NPU is present in the Corstone-1000-A320 FVP model
-  but is not currently supported by Zephyr.
 
 * **mmap overlap warning** — ``mmap_add_region_check() failed. error -22``
   appears in TF-A BL2/BL31. This is a non-fatal Ethos-U85 memory map overlap
