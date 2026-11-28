@@ -20,3 +20,84 @@ description: |
 compatible: "infineon,hppass-analog-v3"
 
 include: infineon,hppass-analog.yaml
+
+properties:
+  trig-in-8-type:
+    type: int
+    default: 0
+    description: Trigger input 8 type. Use IFX_HPPASS_TR_* constants.
+
+  trig-in-8-hw-mode:
+    type: int
+    default: 0
+    description: Trigger input 8 HW mode. Use IFX_HPPASS_TR_HW_* constants.
+
+  trig-in-9-type:
+    type: int
+    default: 0
+    description: Trigger input 9 type. Use IFX_HPPASS_TR_* constants.
+
+  trig-in-9-hw-mode:
+    type: int
+    default: 0
+    description: Trigger input 9 HW mode. Use IFX_HPPASS_TR_HW_* constants.
+
+  trig-in-10-type:
+    type: int
+    default: 0
+    description: Trigger input 10 type. Use IFX_HPPASS_TR_* constants.
+
+  trig-in-10-hw-mode:
+    type: int
+    default: 0
+    description: Trigger input 10 HW mode. Use IFX_HPPASS_TR_HW_* constants.
+
+  trig-in-11-type:
+    type: int
+    default: 0
+    description: Trigger input 11 type. Use IFX_HPPASS_TR_* constants.
+
+  trig-in-11-hw-mode:
+    type: int
+    default: 0
+    description: Trigger input 11 HW mode. Use IFX_HPPASS_TR_HW_* constants.
+
+  trig-in-12-type:
+    type: int
+    default: 0
+    description: Trigger input 12 type. Use IFX_HPPASS_TR_* constants.
+
+  trig-in-12-hw-mode:
+    type: int
+    default: 0
+    description: Trigger input 12 HW mode. Use IFX_HPPASS_TR_HW_* constants.
+
+  trig-in-13-type:
+    type: int
+    default: 0
+    description: Trigger input 13 type. Use IFX_HPPASS_TR_* constants.
+
+  trig-in-13-hw-mode:
+    type: int
+    default: 0
+    description: Trigger input 13 HW mode. Use IFX_HPPASS_TR_HW_* constants.
+
+  trig-in-14-type:
+    type: int
+    default: 0
+    description: Trigger input 14 type. Use IFX_HPPASS_TR_* constants.
+
+  trig-in-14-hw-mode:
+    type: int
+    default: 0
+    description: Trigger input 14 HW mode. Use IFX_HPPASS_TR_HW_* constants.
+
+  trig-in-15-type:
+    type: int
+    default: 0
+    description: Trigger input 15 type. Use IFX_HPPASS_TR_* constants.
+
+  trig-in-15-hw-mode:
+    type: int
+    default: 0
+    description: Trigger input 15 HW mode. Use IFX_HPPASS_TR_HW_* constants.

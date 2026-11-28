@@ -871,7 +871,8 @@
 				compatible = "infineon,hppass-sar-adc-v3",
 					     "infineon,hppass-sar-adc";
 				reg = <0x00080000 0x10000>;
-				interrupts = <125 4>;
+				interrupts = <125 4>, <156 4>;
+				interrupt-names = "sar", "fifo";
 				#address-cells = <1>;
 				#size-cells = <0>;
 				#io-channel-cells = <1>;
