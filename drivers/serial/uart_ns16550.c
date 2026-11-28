@@ -650,12 +650,14 @@ static void set_baud_rate(const struct device *dev, uint32_t baud_rate, uint32_t
 	}
 }
 
-static int uart_ns16550_configure(const struct device *dev,
-				  const struct uart_config *cfg)
+static int ns16550_configure(const struct device *dev, const struct uart_config *cfg,
+			     bool keep_ier)
 {
 	struct uart_ns16550_dev_data * const dev_data = dev->data;
 	const struct uart_ns16550_dev_config * const dev_cfg = dev->config;
 	uint8_t mdc = 0U, c;
+	uint8_t ier = 0U;
+	bool ier_masked = false;
 	uint32_t pclk = 0U;
 	int ret;
 
@@ -716,6 +718,12 @@ static int uart_ns16550_configure(const struct device *dev,
 			goto out;
 		}
 	}
+
+	if (keep_ier) {
+		ier = ns16550_inbyte(dev_cfg, IER(dev));
+	}
+	ns16550_outbyte(dev_cfg, IER(dev), 0x00);
+	ier_masked = true;
 
 	set_baud_rate(dev, cfg->baudrate, pclk);
 
@@ -819,16 +827,23 @@ static int uart_ns16550_configure(const struct device *dev,
 	/* clear the port */
 	(void)ns16550_read_char(dev, &c);
 
-	/* disable interrupts  */
-	ns16550_outbyte(dev_cfg, IER(dev), 0x00);
 	ret = 0;
 
 out:
+	if (ier_masked) {
+		ns16550_outbyte(dev_cfg, IER(dev), ier);
+	}
 	k_spin_unlock(&dev_data->lock, key);
 	return ret;
 };
 
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+static int uart_ns16550_configure(const struct device *dev,
+				  const struct uart_config *cfg)
+{
+	return ns16550_configure(dev, cfg, true);
+}
+
 static int uart_ns16550_config_get(const struct device *dev,
 				   struct uart_config *cfg)
 {
@@ -896,7 +911,7 @@ static int uart_ns16550_pm_action(const struct device *dev, enum pm_device_actio
 	case PM_DEVICE_ACTION_SUSPEND:
 		break;
 	case PM_DEVICE_ACTION_TURN_ON:
-		return uart_ns16550_configure(dev, uart_cfg);
+		return ns16550_configure(dev, uart_cfg, false);
 	case PM_DEVICE_ACTION_TURN_OFF:
 		if (dev_cfg->clock_dev != NULL) {
 			ret = clock_control_off(dev_cfg->clock_dev, dev_cfg->clock_subsys);
