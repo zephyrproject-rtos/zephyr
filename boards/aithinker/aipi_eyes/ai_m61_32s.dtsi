@@ -54,6 +54,8 @@
 		erase-block-size = <DT_SIZE_K(4)>;
 
 		spi-bus-mode = <4>;
+		sf-wrap-mode = <2>;
+		sf-wrap-length = <32>;
 		sf-pad = <2>;
 
 		/* The flash on the module of the AiPi Eyes S2 doesn't support useful SFDP,

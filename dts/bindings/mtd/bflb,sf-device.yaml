@@ -113,6 +113,50 @@ properties:
     type: boolean
     description: Enable QPI, only 4-4-4 is supported
 
+  sf-wrap-mode:
+    type: int
+    default: 1
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+    description: |
+      Configure the serial flash controller macro wrap mode.
+      0 bypasses wrap commands to the macro in the original mode.
+      1 handles wrap commands in the original mode.
+      2 bypasses wrap commands to the macro and forces wrap 16*4 commands
+      to be split into two wrap 8*4 commands.
+      3 handles wrap commands and forces wrap 16*4 commands to be split
+      into two wrap 8*4 commands.
+      The default matches the vendor SDK for typical NOR flash. Boards with
+      different macro wrap requirements, including QIO and BL616CL boards,
+      should override this property in DTS.
+      The setting is used only on BL61x, BL808, and BL616CL SoCs; other
+      SoCs ignore it.
+
+  sf-wrap-length:
+    type: int
+    default: 512
+    enum:
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+      - 256
+      - 512
+      - 1024
+      - 2048
+      - 4096
+    description: |
+      Configure the serial flash controller macro wrap length in bytes.
+      The default of 512 bytes matches the vendor SDK for typical NOR flash.
+      Boards with different macro wrap requirements should override this
+      property in DTS.
+      It is used only on BL61x, BL808, and BL616CL SoCs; other SoCs
+      ignore it.
+
   sf-pad-is-external:
     type: boolean
     description: |

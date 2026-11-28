@@ -54,6 +54,26 @@ enum flash_bflb_bus_mode {
 	BUS_QIO = 4,
 };
 
+enum flash_bflb_sf_wrap_mode {
+	FLASH_BFLB_SF_WRAP_MODE_BYPASS = 0,
+	FLASH_BFLB_SF_WRAP_MODE_HANDLE = 1,
+	FLASH_BFLB_SF_WRAP_MODE_BYPASS_SPLIT = 2,
+	FLASH_BFLB_SF_WRAP_MODE_HANDLE_SPLIT = 3,
+};
+
+enum flash_bflb_sf_wrap_length {
+	FLASH_BFLB_SF_WRAP_LENGTH_8 = 0,
+	FLASH_BFLB_SF_WRAP_LENGTH_16 = 1,
+	FLASH_BFLB_SF_WRAP_LENGTH_32 = 2,
+	FLASH_BFLB_SF_WRAP_LENGTH_64 = 3,
+	FLASH_BFLB_SF_WRAP_LENGTH_128 = 4,
+	FLASH_BFLB_SF_WRAP_LENGTH_256 = 5,
+	FLASH_BFLB_SF_WRAP_LENGTH_512 = 6,
+	FLASH_BFLB_SF_WRAP_LENGTH_1024 = 7,
+	FLASH_BFLB_SF_WRAP_LENGTH_2048 = 8,
+	FLASH_BFLB_SF_WRAP_LENGTH_4096 = 9,
+};
+
 /* Raw flash configuration data structure */
 struct bflb_header_flash_cfg {
 	/* Serial flash interface mode,
@@ -310,6 +330,8 @@ struct flash_bflb_device_cfg {
 	uint8_t                            auto_spi_mode;
 	uint8_t                            manual_spi_mode;
 	bool                               use_qpi;
+	enum flash_bflb_sf_wrap_mode       sf_wrap_mode;
+	uint8_t                            sf_wrap_length_index;
 	struct flash_bflb_device_commands  cmd;
 	struct flash_bflb_device_registers reg;
 	struct flash_bflb_pad_cfg          pad;
