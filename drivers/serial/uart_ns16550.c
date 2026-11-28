@@ -102,6 +102,9 @@ LOG_MODULE_REGISTER(uart_ns16550, CONFIG_UART_LOG_LEVEL);
 #define REG_DLF 0xC0  /* Divisor Latch Fraction         */
 #define REG_PCP 0x200 /* PRV_CLOCK_PARAMS (Apollo Lake) */
 #define REG_MDR1 0x08 /* Mode control reg. (TI_K3) */
+#define REG_EFR 0x02U
+#define REG_TCR 0x06U
+#define REG_SSR 0x11U
 #define REG_BRD1 0x10 /* Baud rate divisor. (BCM283x) */
 
 #if defined(CONFIG_UART_NS16550_INTEL_LPSS_DMA)
@@ -156,6 +159,20 @@ LOG_MODULE_REGISTER(uart_ns16550, CONFIG_UART_LOG_LEVEL);
 #define MDR1_FIR_MODE					(5)
 #define MDR1_CIR_MODE					(6)
 #define MDR1_DISABLE					(7)
+
+#define LCR_CONF_MODE_B 0xBFU
+
+#define EFR_ENHANCED_EN BIT(4)
+#define EFR_AUTO_RTS_EN BIT(6)
+#define EFR_AUTO_CTS_EN BIT(7)
+
+#define MCR_TCR_TLR BIT(6)
+
+#define SSR_TX_FIFO_FULL BIT(0)
+
+#define TCR_RX_FIFO_TRIG_HALT  (60 / 4)
+#define TCR_RX_FIFO_TRIG_START (32 / 4)
+#define TCR_VALUE              ((TCR_RX_FIFO_TRIG_START << 4) | TCR_RX_FIFO_TRIG_HALT)
 
 /* Modes available for BCM283x Auxiliary UART module */
 
@@ -268,6 +285,9 @@ LOG_MODULE_REGISTER(uart_ns16550, CONFIG_UART_LOG_LEVEL);
 #define LSR(dev) (get_port(dev) + (REG_LSR * reg_interval(dev)))
 #define MSR(dev) (get_port(dev) + (REG_MSR * reg_interval(dev)))
 #define MDR1(dev) (get_port(dev) + (REG_MDR1 * reg_interval(dev)))
+#define EFR(dev)  (get_port(dev) + (REG_EFR * reg_interval(dev)))
+#define TCR(dev)  (get_port(dev) + (REG_TCR * reg_interval(dev)))
+#define SSR(dev)  (get_port(dev) + (REG_SSR * reg_interval(dev)))
 #define BRD1(dev) (get_port(dev) + (REG_BRD1 * reg_interval(dev)))
 #define USR(dev) (get_port(dev) + REG_USR)
 #define DLF(dev) (get_port(dev) + REG_DLF)
@@ -650,6 +670,32 @@ static void set_baud_rate(const struct device *dev, uint32_t baud_rate, uint32_t
 	}
 }
 
+#ifdef CONFIG_UART_NS16550_TI_K3
+static void ns16550_ti_k3_set_flow_ctrl(const struct device *dev, uint8_t mcr, bool enable)
+{
+	const struct uart_ns16550_dev_config *const dev_cfg = dev->config;
+	uint8_t lcr = ns16550_inbyte(dev_cfg, LCR(dev));
+	uint8_t efr;
+
+	ns16550_outbyte(dev_cfg, LCR(dev), LCR_CONF_MODE_B);
+	efr = ns16550_inbyte(dev_cfg, EFR(dev));
+	ns16550_outbyte(dev_cfg, EFR(dev), efr | EFR_ENHANCED_EN);
+
+	ns16550_outbyte(dev_cfg, LCR(dev), LCR_DLAB | lcr);
+	ns16550_outbyte(dev_cfg, MDC(dev), mcr | MCR_TCR_TLR);
+	ns16550_outbyte(dev_cfg, TCR(dev), TCR_VALUE);
+	ns16550_outbyte(dev_cfg, MDC(dev), mcr);
+
+	efr &= ~(EFR_AUTO_CTS_EN | EFR_AUTO_RTS_EN);
+	if (enable) {
+		efr |= EFR_AUTO_CTS_EN | EFR_AUTO_RTS_EN;
+	}
+	ns16550_outbyte(dev_cfg, LCR(dev), LCR_CONF_MODE_B);
+	ns16550_outbyte(dev_cfg, EFR(dev), efr);
+	ns16550_outbyte(dev_cfg, LCR(dev), lcr);
+}
+#endif
+
 static int uart_ns16550_configure(const struct device *dev,
 				  const struct uart_config *cfg)
 {
@@ -774,8 +820,8 @@ static int uart_ns16550_configure(const struct device *dev,
 			uart_cfg.data_bits | uart_cfg.stop_bits | uart_cfg.parity);
 
 	mdc = MCR_OUT2 | MCR_RTS | MCR_DTR;
-#if defined(CONFIG_UART_NS16550_VARIANT_NS16750) || \
-	defined(CONFIG_UART_NS16550_VARIANT_NS16950)
+#if !defined(CONFIG_UART_NS16550_TI_K3) && (defined(CONFIG_UART_NS16550_VARIANT_NS16750) ||        \
+					    defined(CONFIG_UART_NS16550_VARIANT_NS16950))
 	if (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS) {
 		mdc |= MCR_AFCE;
 	}
@@ -786,6 +832,10 @@ static int uart_ns16550_configure(const struct device *dev,
 	}
 
 	ns16550_outbyte(dev_cfg, MDC(dev), mdc);
+
+#ifdef CONFIG_UART_NS16550_TI_K3
+	ns16550_ti_k3_set_flow_ctrl(dev, mdc, cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS);
+#endif
 
 	/*
 	 * Program FIFO: enabled, mode 0 (set for compatibility with quark),
@@ -1113,6 +1163,10 @@ static int uart_ns16550_fifo_fill(const struct device *dev,
 		 */
 		if (IS_ENABLED(CONFIG_UART_NS16550_DW8250_DW_APB) &&
 		    (ns16550_inbyte(dev_cfg, USR(dev)) & USR_TFNF) == 0) {
+			break;
+		}
+		if (IS_ENABLED(CONFIG_UART_NS16550_TI_K3) &&
+		    (ns16550_inbyte(dev_cfg, SSR(dev)) & SSR_TX_FIFO_FULL) != 0) {
 			break;
 		}
 		ns16550_outbyte(dev_cfg, THR(dev), tx_data[i]);
