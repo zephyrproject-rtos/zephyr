@@ -28,7 +28,8 @@ config GPIO_PI4IOE5V6408_POLL_PERIOD_MS
 	help
 	  When a node has no int-gpios property, the driver polls the
 	  chip's input register at this period to detect transitions.
-	  Used for boards without a described usable INT line; ignored
-	  otherwise.
+	  Polling only runs while at least one pin has an edge interrupt
+	  enabled. Used for boards without a described usable INT line;
+	  ignored otherwise.
 
 endif # GPIO_PI4IOE5V6408
