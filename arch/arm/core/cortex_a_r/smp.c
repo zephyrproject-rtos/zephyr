@@ -8,6 +8,7 @@
 #include <zephyr/arch/arm/cortex_a_r/lib_helpers.h>
 #include <zephyr/arch/cache.h>
 #include <zephyr/drivers/interrupt_controller/gic.h>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/drivers/pm_cpu_ops.h>
 #include <ipi.h>
 #include "boot.h"

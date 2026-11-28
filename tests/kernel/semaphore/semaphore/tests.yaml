@@ -4,3 +4,8 @@ tests:
       - kernel
       - userspace
     ignore_faults: true
+    # Renode drops an svc when an IRQ is pending but masked, so
+    # test_sem_give_from_isr loses an irq_offload() on this target.
+    # https://github.com/renode/renode/issues/1035
+    platform_exclude:
+      - cortex_r8_virtual/cortex_r8_virtual/smp
