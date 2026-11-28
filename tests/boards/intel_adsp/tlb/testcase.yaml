@@ -1,0 +1,14 @@
+common:
+  tags:
+    - boards
+    - mm
+  filter: CONFIG_MM_DRV_INTEL_ADSP_MTL_TLB
+tests:
+  boards.intel_adsp.tlb:
+    platform_allow:
+      - intel_adsp/ace15_mtpm
+      - intel_adsp/ace20_lnl
+      - intel_adsp/ace30/ptl
+      - intel_adsp/ace40/nvl
+    integration_platforms:
+      - intel_adsp/ace15_mtpm

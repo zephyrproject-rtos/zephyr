@@ -294,6 +294,17 @@ int sys_mm_drv_map_page(void *virt, uintptr_t phys, uint32_t flags)
 
 	entry_idx = get_tlb_entry_idx(va);
 
+	/* Do not replace an existing mapping, its physical page would leak */
+	if (tlb_entries[entry_idx] & TLB_ENABLE_BIT) {
+		k_spin_unlock(&tlb_lock, key);
+		if (UINT_TO_POINTER(phys) == NULL) {
+			sys_mem_blocks_free_contiguous(&L2_PHYS_SRAM_REGION,
+						       UINT_TO_POINTER(pa), 1);
+		}
+		ret = -EFAULT;
+		goto out;
+	}
+
 #ifdef CONFIG_SOC_INTEL_COMM_WIDGET
 	used_pages++;
 	sys_mm_drv_report_page_usage();
@@ -766,12 +777,15 @@ unlock_out:
 
 out:
 	/*
-	 * Since move is done in virtual space, need to
-	 * flush the cache to make sure the backing physical
-	 * pages have the new data.
+	 * Since move is done in virtual space, flush the new pages to
+	 * make sure the backing physical pages have the new data. The
+	 * old pages were flushed when they were unmapped, and cache
+	 * operations on them now fault where the MMU no longer maps
+	 * them. On errors the new pages may not be mapped either.
 	 */
-	sys_cache_data_flush_range(virt_new, size);
-	sys_cache_data_flush_and_invd_range(virt_old, size);
+	if (ret == 0) {
+		sys_cache_data_flush_range(virt_new, size);
+	}
 
 	return ret;
 }
