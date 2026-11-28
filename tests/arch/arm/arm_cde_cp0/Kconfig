@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+# ARMV8_M_CDE_CP0 is normally selected by the SoC. Select it here so that the
+# option can be exercised on any Armv8-M Mainline target.
+config TEST_ARM_CDE_CP0
+	bool "Build with the CDE coprocessor on CP0 enabled"
+	default y
+	depends on ARMV8_M_MAINLINE
+	select ARMV8_M_CDE_CP0
+
+source "Kconfig.zephyr"
