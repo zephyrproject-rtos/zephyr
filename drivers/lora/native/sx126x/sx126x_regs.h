@@ -299,6 +299,8 @@
 
 /* Convert milliseconds to timeout ticks */
 #define SX126X_MS_TO_TIMEOUT(ms)            ((uint32_t)((ms) * 64))
+/* Longest timeout the 24 bits hold */
+#define SX126X_TIMEOUT_MAX_MS               (0xFFFFFFU / 64U)
 
 /* Crystal Frequency */
 #define SX126X_XTAL_FREQ                    32000000UL
