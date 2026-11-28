@@ -4,5 +4,8 @@
 config SOC_T153_E907
 	bool
 
+config SOC_T153_A7
+	bool
+
 config SOC
-	default "t153" if SOC_T153_E907
+	default "t153" if SOC_T153_E907 || SOC_T153_A7

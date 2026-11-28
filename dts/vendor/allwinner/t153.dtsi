@@ -19,6 +19,13 @@
 			status = "disabled";
 		};
 
+		uart0: serial@2600000 {
+			compatible = "ns16550";
+			reg = <0x02600000 0x400>;
+			reg-shift = <2>;
+			status = "disabled";
+		};
+
 		uart3: serial@2603000 {
 			compatible = "ns16550";
 			reg = <0x02603000 0x400>;

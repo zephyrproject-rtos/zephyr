@@ -1,0 +1,77 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-a.dtsi>
+#include <allwinner/t153.dtsi>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	interrupt-parent = <&gic>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-a7";
+			reg = <0>;
+			device_type = "cpu";
+			enable-method = "psci";
+			status = "disabled";
+		};
+
+		cpu1: cpu@1 {
+			compatible = "arm,cortex-a7";
+			reg = <1>;
+			device_type = "cpu";
+			enable-method = "psci";
+			status = "disabled";
+		};
+
+		cpu2: cpu@2 {
+			compatible = "arm,cortex-a7";
+			reg = <2>;
+			device_type = "cpu";
+			enable-method = "psci";
+			status = "disabled";
+		};
+
+		cpu3: cpu@3 {
+			compatible = "arm,cortex-a7";
+			reg = <3>;
+			device_type = "cpu";
+			enable-method = "psci";
+			status = "disabled";
+		};
+	};
+
+	arch_timer: timer {
+		compatible = "arm,armv8-timer";
+		clock-frequency = <24000000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		status = "disabled";
+	};
+};
+
+&soc {
+	gic: interrupt-controller@3401000 {
+		compatible = "arm,gic-v2", "arm,gic";
+		reg = <0x03401000 0x1000>,
+		      <0x03402000 0x2000>;
+		interrupt-controller;
+		#interrupt-cells = <4>;
+		#address-cells = <0>;
+		status = "disabled";
+	};
+};
+
+&uart0 {
+	interrupts = <GIC_SPI 2 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	clock-frequency = <24000000>;
+};
