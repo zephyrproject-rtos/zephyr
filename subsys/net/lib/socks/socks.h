@@ -16,10 +16,11 @@
  * @param[in] ctx Network context.
  * @param[in] dest Address of the destination server.
  * @param[in] dest_len Address length of the destination server.
- * @param[out] leftover Packet holding data that the proxy sent in the same
- *             segment as the CONNECT reply, or NULL if there was none. The
- *             caller takes ownership and must queue it ahead of anything that
- *             arrives later, or release it.
+ * @param[in] cb Receive callback that the caller installs on success. Data
+ *            the proxy relays before that, including any that came in the
+ *            same segment as the CONNECT reply, is passed to it in order.
+ *            Must not be NULL.
+ * @param[in] user_data User data for @p cb.
  *
  * @retval 0 or an error code if it was unsuccessful.
  */
@@ -27,17 +28,20 @@
 int net_socks5_connect(struct net_context *ctx,
 		       const struct net_sockaddr *dest,
 		       net_socklen_t dest_len,
-		       struct net_pkt **leftover);
+		       net_context_recv_cb_t cb,
+		       void *user_data);
 #else
 inline int net_socks5_connect(struct net_context *ctx,
 			      const struct net_sockaddr *dest,
 			      net_socklen_t dest_len,
-			      struct net_pkt **leftover)
+			      net_context_recv_cb_t cb,
+			      void *user_data)
 {
 	ARG_UNUSED(ctx);
 	ARG_UNUSED(dest);
 	ARG_UNUSED(dest_len);
-	ARG_UNUSED(leftover);
+	ARG_UNUSED(cb);
+	ARG_UNUSED(user_data);
 
 	return -ENOTSUP;
 }
