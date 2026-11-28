@@ -1046,12 +1046,19 @@ static int uarte_nrfx_rx_disable(const struct device *dev)
 {
 	struct uarte_nrfx_data *data = dev->data;
 	struct uarte_async_rx *async_rx = &data->async->rx;
+	unsigned int key;
+	int err;
 
-	if (async_rx->buf == NULL) {
-		return -EFAULT;
-	}
+	/* Check the buffer and request the stop in one critical section.
+	 * Otherwise a stop already in progress (for example after an RX error)
+	 * can complete in between, and rx_disable() then sets discard_fifo with
+	 * RXTO masked, so every later uart_rx_enable() returns -EBUSY.
+	 */
+	key = irq_lock();
+	err = (async_rx->buf == NULL) ? -EFAULT : rx_disable(dev, true);
+	irq_unlock(key);
 
-	return rx_disable(dev, true);
+	return err;
 }
 
 #ifdef CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER
