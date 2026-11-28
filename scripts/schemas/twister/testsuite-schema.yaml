@@ -16,6 +16,14 @@ $defs:
         type: array
         items:
           type: string
+      qualifiers_exclude:
+        type: array
+        items:
+          type: string
+      qualifiers_allow:
+        type: array
+        items:
+          type: string
       testcases:
         type: array
         items:
