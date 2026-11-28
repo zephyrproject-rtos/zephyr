@@ -132,7 +132,7 @@ static inline uint32_t receive_get_sf_length(struct net_buf *buf, bool fdf)
 	return len;
 }
 
-static void receive_send_fc(struct isotp_recv_ctx *rctx, uint8_t fs)
+static int receive_send_fc(struct isotp_recv_ctx *rctx, uint8_t fs)
 {
 	struct can_frame frame;
 	uint8_t *data = frame.data;
@@ -165,8 +165,10 @@ static void receive_send_fc(struct isotp_recv_ctx *rctx, uint8_t fs)
 	if (ret) {
 		LOG_ERR("Can't send FC, (%d)", ret);
 		receive_report_error(rctx, ISOTP_N_TIMEOUT_A);
-		receive_state_machine(rctx);
+		return ret;
 	}
+
+	return 0;
 }
 
 static inline struct net_buf *receive_alloc_buffer_chain(uint32_t len)
@@ -319,7 +321,15 @@ static void receive_state_machine(struct isotp_recv_ctx *rctx)
 		__fallthrough;
 	case ISOTP_RX_STATE_SEND_FC:
 		LOG_DBG("SM send CTS FC frame");
-		receive_send_fc(rctx, ISOTP_PCI_FS_CTS);
+		if (receive_send_fc(rctx, ISOTP_PCI_FS_CTS) != 0) {
+			receive_state_machine(rctx);
+			break;
+		}
+
+		/* An async TX error may already have moved the state. */
+		if (rctx->state != ISOTP_RX_STATE_SEND_FC) {
+			break;
+		}
 		k_timer_start(&rctx->timer, K_MSEC(ISOTP_CR_TIMEOUT_MS), K_NO_WAIT);
 		rctx->state = ISOTP_RX_STATE_WAIT_CF;
 		break;
@@ -327,7 +337,13 @@ static void receive_state_machine(struct isotp_recv_ctx *rctx)
 	case ISOTP_RX_STATE_SEND_WAIT:
 		if (++rctx->wft < CONFIG_ISOTP_WFTMAX) {
 			LOG_DBG("Send wait frame number %d", rctx->wft);
-			receive_send_fc(rctx, ISOTP_PCI_FS_WAIT);
+			if (receive_send_fc(rctx, ISOTP_PCI_FS_WAIT) != 0) {
+				receive_state_machine(rctx);
+				break;
+			}
+			if (rctx->state != ISOTP_RX_STATE_SEND_WAIT) {
+				break;
+			}
 			k_timer_start(&rctx->timer, K_MSEC(ISOTP_ALLOC_TIMEOUT_MS), K_NO_WAIT);
 			rctx->state = ISOTP_RX_STATE_TRY_ALLOC;
 			break;
