@@ -173,6 +173,11 @@ static int tmc51xx_stepper_driver_init(const struct device *dev)
 		}
 	}
 
+	if (!device_is_ready(controller)) {
+		LOG_ERR_DEVICE_NOT_READY(controller);
+		return -ENODEV;
+	}
+
 	if (!IN_RANGE(config->sg_threshold, TMC5XXX_SG_MIN_VALUE, TMC5XXX_SG_MAX_VALUE)) {
 		LOG_ERR("Stallguard threshold out of range");
 		return -EINVAL;

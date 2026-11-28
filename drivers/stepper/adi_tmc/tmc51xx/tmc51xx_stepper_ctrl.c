@@ -404,6 +404,11 @@ static int tmc51xx_stepper_ctrl_init(const struct device *dev)
 
 	k_work_init_delayable(&data->stallguard_dwork, stallguard_work_handler);
 
+	if (!device_is_ready(controller)) {
+		LOG_ERR_DEVICE_NOT_READY(controller);
+		return -ENODEV;
+	}
+
 	err = tmc51xx_write(controller, TMC51XX_SWMODE, BIT(10));
 	if (err != 0) {
 		return -EIO;
