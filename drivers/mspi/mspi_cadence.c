@@ -25,6 +25,13 @@
 
 LOG_MODULE_REGISTER(mspi_cadence, CONFIG_MSPI_LOG_LEVEL);
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clocks) && defined(CONFIG_CLOCK_CONTROL)
+#include <zephyr/drivers/clock_control.h>
+#define CADENCE_MSPI_CLOCKS 1
+#else
+#define CADENCE_MSPI_CLOCKS 0
+#endif
+
 #define DEV_CFG(dev)  ((const struct mspi_cadence_config *)dev->config)
 #define DEV_DATA(dev) ((struct mspi_cadence_data *)dev->data)
 
@@ -35,6 +42,10 @@ struct mspi_cadence_config {
 	const struct pinctrl_dev_config *pinctrl;
 	const uint32_t sram_allocated_for_read;
 	const uint32_t reference_frequency;
+#if CADENCE_MSPI_CLOCKS
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
+#endif
 	const uint32_t nss_delay_ns;
 	const uint32_t btwn_delay_ns;
 	const uint32_t after_delay_ns;
@@ -47,7 +58,64 @@ struct mspi_cadence_data {
 	struct k_mutex access_lock;
 	struct k_sem transfer_lock;
 	const struct mspi_dev_id *current_peripheral;
+	uint32_t reference_frequency;
 };
+
+static uint32_t mspi_cadence_ref_freq(const struct device *controller)
+{
+	const struct mspi_cadence_config *config = DEV_CFG(controller);
+	struct mspi_cadence_data *data = DEV_DATA(controller);
+
+	if (data->reference_frequency != 0) {
+		return data->reference_frequency;
+	}
+
+#if CADENCE_MSPI_CLOCKS
+	if (config->clock_dev != NULL) {
+		uint32_t rate;
+
+		if (device_is_ready(config->clock_dev) &&
+		    clock_control_get_rate(config->clock_dev, config->clock_subsys, &rate) == 0 &&
+		    rate != 0) {
+			if (rate != config->reference_frequency) {
+				LOG_INF("Reference clock %u Hz (clock-frequency says %u Hz)", rate,
+					config->reference_frequency);
+			}
+			data->reference_frequency = rate;
+			return rate;
+		}
+
+		LOG_WRN("Reference clock rate unavailable, using clock-frequency");
+		return config->reference_frequency;
+	}
+#endif
+
+	data->reference_frequency = config->reference_frequency;
+	return data->reference_frequency;
+}
+
+static int mspi_cadence_poll(mem_addr_t reg, uint32_t mask, bool set, int64_t timeout_ms)
+{
+	const k_timepoint_t end = sys_timepoint_calc(K_MSEC(MAX(timeout_ms, 0)));
+
+	if (WAIT_FOR(((sys_read32(reg) & mask) != 0) == set, k_ticks_to_us_ceil32(1), NULL)) {
+		return 0;
+	}
+
+	while (((sys_read32(reg) & mask) != 0) != set) {
+		if (sys_timepoint_expired(end)) {
+			return -ETIMEDOUT;
+		}
+		k_sleep(K_TICKS(1));
+	}
+
+	return 0;
+}
+
+static int64_t mspi_cadence_ms_left(int64_t start_time, uint32_t timeout_ms)
+{
+	return start_time + timeout_ms - k_uptime_get();
+}
 
 /**
  * Wait for the MSPI controller to enter idle with the default timeout
@@ -55,18 +123,10 @@ struct mspi_cadence_data {
 static int mspi_cadence_wait_for_idle(const struct device *controller)
 {
 	const mem_addr_t base_addr = DEVICE_MMIO_GET(controller);
-	uint32_t config_reg = sys_read32(base_addr + CADENCE_MSPI_CONFIG_OFFSET);
-	uint32_t idle = config_reg & CADENCE_MSPI_CONFIG_REG_IDLE_BIT;
-	uint32_t retries = CADENCE_MSPI_GET_NUM_RETRIES(CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE);
 
-	while (idle == 0 && retries > 0) {
-		k_sleep(CADENCE_MSPI_TIME_BETWEEN_RETRIES);
-		config_reg = sys_read32(base_addr + CADENCE_MSPI_CONFIG_OFFSET);
-		idle = config_reg & CADENCE_MSPI_CONFIG_REG_IDLE_BIT;
-		--retries;
-	}
-
-	if (retries == 0 && idle == 0) {
+	if (mspi_cadence_poll(base_addr + CADENCE_MSPI_CONFIG_OFFSET,
+			      CADENCE_MSPI_CONFIG_REG_IDLE_BIT, true,
+			      CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE) != 0) {
 		LOG_ERR("Timeout while waiting for MSPI to enter idle");
 		return -EIO;
 	}
@@ -171,15 +231,12 @@ static void mspi_cadence_configure_delays(const struct device *controller, const
 {
 	const struct mspi_cadence_config *config = controller->config;
 	const mem_addr_t base_addr = DEVICE_MMIO_GET(controller);
+	const uint32_t ref_hz = mspi_cadence_ref_freq(controller);
 
-	uint32_t nss_delay =
-		mspi_cadence_ns_to_ticks(config->reference_frequency, config->nss_delay_ns);
-	uint32_t btwn_delay =
-		mspi_cadence_ns_to_ticks(config->reference_frequency, config->btwn_delay_ns);
-	uint32_t after_delay =
-		mspi_cadence_ns_to_ticks(config->reference_frequency, config->after_delay_ns);
-	uint32_t init_delay =
-		mspi_cadence_ns_to_ticks(config->reference_frequency, config->init_delay_ns);
+	uint32_t nss_delay = mspi_cadence_ns_to_ticks(ref_hz, config->nss_delay_ns);
+	uint32_t btwn_delay = mspi_cadence_ns_to_ticks(ref_hz, config->btwn_delay_ns);
+	uint32_t after_delay = mspi_cadence_ns_to_ticks(ref_hz, config->after_delay_ns);
+	uint32_t init_delay = mspi_cadence_ns_to_ticks(ref_hz, config->init_delay_ns);
 
 	/* tsclk is the number of REFCLK ticks per SCLK tick.
 	 * nss delay must be at least one SCLK tick.
@@ -452,14 +509,9 @@ static int mspi_cadence_stig(const struct device *controller, const struct mspi_
 	flash_cmd_ctrl |= CADENCE_MSPI_FLASH_CMD_CTRL_REG_CMD_EXEC_BIT;
 	sys_write32(flash_cmd_ctrl, base_address + CADENCE_MSPI_FLASH_CMD_CTRL_OFFSET);
 
-	uint32_t exec_status = sys_read32(base_address + CADENCE_MSPI_FLASH_CMD_CTRL_OFFSET) &
-			       CADENCE_MSPI_FLASH_CMD_CTRL_REG_CMD_EXEC_STATUS_BIT;
-	while (exec_status != 0 && k_uptime_get() - start_time < req->timeout) {
-		k_sleep(CADENCE_MSPI_TIME_BETWEEN_RETRIES);
-		exec_status = sys_read32(base_address + CADENCE_MSPI_FLASH_CMD_CTRL_OFFSET) &
-			      CADENCE_MSPI_FLASH_CMD_CTRL_REG_CMD_EXEC_STATUS_BIT;
-	}
-	if (exec_status != 0) {
+	if (mspi_cadence_poll(base_address + CADENCE_MSPI_FLASH_CMD_CTRL_OFFSET,
+			      CADENCE_MSPI_FLASH_CMD_CTRL_REG_CMD_EXEC_STATUS_BIT, false,
+			      mspi_cadence_ms_left(start_time, req->timeout)) != 0) {
 		LOG_ERR("Timeout while waiting for dedicated command to finish");
 		return -EIO;
 	}
@@ -567,16 +619,9 @@ static int mspi_cadence_indirect_read(const struct device *controller, const str
 	}
 
 	/* Wait until official indirect read completion */
-	uint32_t done_status =
-		sys_read32(base_address + CADENCE_MSPI_INDIRECT_READ_XFER_CTRL_OFFSET) &
-		CADENCE_MSPI_INDIRECT_READ_XFER_CTRL_REG_IND_OPS_DONE_STATUS_BIT;
-	while (done_status == 0 && k_uptime_get() - start_time < req->timeout) {
-		k_sleep(CADENCE_MSPI_TIME_BETWEEN_RETRIES);
-		done_status =
-			sys_read32(base_address + CADENCE_MSPI_INDIRECT_READ_XFER_CTRL_OFFSET) &
-			CADENCE_MSPI_INDIRECT_READ_XFER_CTRL_REG_IND_OPS_DONE_STATUS_BIT;
-	}
-	if (done_status == 0) {
+	if (mspi_cadence_poll(base_address + CADENCE_MSPI_INDIRECT_READ_XFER_CTRL_OFFSET,
+			      CADENCE_MSPI_INDIRECT_READ_XFER_CTRL_REG_IND_OPS_DONE_STATUS_BIT,
+			      true, mspi_cadence_ms_left(start_time, req->timeout)) != 0) {
 		LOG_ERR("Timeout waiting for official indirect read done confirmation");
 		goto timeout;
 	}
@@ -681,16 +726,9 @@ static int mspi_cadence_indirect_write(const struct device *controller, const st
 	}
 
 	/* Wait for official finish */
-	uint32_t done_status =
-		sys_read32(base_address + CADENCE_MSPI_INDIRECT_WRITE_XFER_CTRL_OFFSET) &
-		CADENCE_MSPI_INDIRECT_WRITE_XFER_CTRL_REG_IND_OPS_DONE_STATUS_BIT;
-	while (done_status == 0 && k_uptime_get() - start_time < req->timeout) {
-		k_sleep(CADENCE_MSPI_TIME_BETWEEN_RETRIES);
-		done_status =
-			sys_read32(base_address + CADENCE_MSPI_INDIRECT_WRITE_XFER_CTRL_OFFSET) &
-			CADENCE_MSPI_INDIRECT_WRITE_XFER_CTRL_REG_IND_OPS_DONE_STATUS_BIT;
-	}
-	if (done_status == 0) {
+	if (mspi_cadence_poll(base_address + CADENCE_MSPI_INDIRECT_WRITE_XFER_CTRL_OFFSET,
+			      CADENCE_MSPI_INDIRECT_WRITE_XFER_CTRL_REG_IND_OPS_DONE_STATUS_BIT,
+			      true, mspi_cadence_ms_left(start_time, req->timeout)) != 0) {
 		LOG_ERR("Timeout while waiting for official write done confirmation");
 		goto timeout;
 	}
@@ -903,7 +941,6 @@ static int mspi_cadence_dev_config(const struct device *controller,
 				   const struct mspi_dev_cfg *dev_cfg)
 {
 	const mem_addr_t base_addr = DEVICE_MMIO_GET(controller);
-	const struct mspi_cadence_config *config = controller->config;
 	struct mspi_cadence_data *data = controller->data;
 	int ret = 0;
 
@@ -1098,7 +1135,8 @@ static int mspi_cadence_dev_config(const struct device *controller,
 		 * DIV_ROUND_UP also returning at least 1 before being subtracted 1
 		 * resulting in 0.
 		 */
-		uint32_t required_div = DIV_ROUND_UP(config->reference_frequency, dev_cfg->freq);
+		uint32_t required_div =
+			DIV_ROUND_UP(mspi_cadence_ref_freq(controller), dev_cfg->freq);
 		uint32_t actual_div = DIV_ROUND_UP(required_div, 2) - 1;
 
 		if (actual_div > 15) {
@@ -1216,6 +1254,13 @@ static DEVICE_API(mspi, mspi_cadence_driver_api) = {
 	{.op_mode = DT_INST_ENUM_IDX_OR(n, op_mode, MSPI_OP_MODE_CONTROLLER),                      \
 	 .sw_multi_periph = DT_INST_PROP(n, software_multiperipheral)}
 
+#define CADENCE_MSPI_CLOCK_INIT(n)                                                                 \
+	.clock_dev = COND_CODE_1(DT_INST_CLOCKS_HAS_IDX(n, 0),                                     \
+				 (DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n))), (NULL)),                 \
+	.clock_subsys = COND_CODE_1(DT_INST_CLOCKS_HAS_IDX(n, 0),                                  \
+				    ((clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name)),        \
+				    (NULL)),
+
 #define CADENCE_MSPI_DEFINE(n)                                                                     \
 	CADENCE_CHECK_MULTIPERIPHERAL(n);                                                          \
 	PINCTRL_DT_DEFINE(DT_DRV_INST(n));                                                         \
@@ -1226,6 +1271,7 @@ static DEVICE_API(mspi, mspi_cadence_driver_api) = {
 		.mspi_config = MSPI_CONFIG(n),                                                     \
 		.sram_allocated_for_read = DT_PROP(DT_DRV_INST(n), read_buffer_size),              \
 		.reference_frequency = DT_PROP(DT_DRV_INST(n), clock_frequency),                   \
+		IF_ENABLED(CADENCE_MSPI_CLOCKS, (CADENCE_MSPI_CLOCK_INIT(n)))                      \
 		.nss_delay_ns = DT_INST_PROP(n, cdns_nss_delay_ns),                                \
 		.btwn_delay_ns = DT_INST_PROP(n, cdns_btwn_delay_ns),                              \
 		.after_delay_ns = DT_INST_PROP(n, cdns_after_delay_ns),                            \

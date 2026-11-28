@@ -37,11 +37,6 @@
 /* Default delay for time between clock enablement and chip select and other */
 #define CADENCE_MSPI_DEFAULT_DELAY 10
 
-/* Timeout calculations and default timeout values */
-#define CADENCE_MSPI_TIME_BETWEEN_RETRIES_MS     10
-#define CADENCE_MSPI_TIME_BETWEEN_RETRIES        K_MSEC(CADENCE_MSPI_TIME_BETWEEN_RETRIES_MS)
-#define CADENCE_MSPI_GET_NUM_RETRIES(timeout_ms) (timeout_ms / CADENCE_MSPI_TIME_BETWEEN_RETRIES_MS)
-
 /* General register offsets */
 #define CADENCE_MSPI_CONFIG_OFFSET                        0x0u
 #define CADENCE_MSPI_DEV_INSTR_RD_CONFIG_OFFSET           0x4u
