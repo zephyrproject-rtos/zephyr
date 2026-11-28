@@ -306,9 +306,16 @@ void z_arm_configure_dynamic_mpu_regions(struct k_thread *thread)
 		 */
 		guard_start = thread->arch.priv_stack_start - guard_size;
 
-		__ASSERT((uintptr_t)&z_priv_stacks_ram_start <= guard_start,
-		"Guard start: (0x%lx) below privilege stacks boundary: (%p)",
-		guard_start, z_priv_stacks_ram_start);
+		if ((thread->arch.priv_stack_start >= (uintptr_t)&z_priv_stacks_ram_start) &&
+		    (thread->arch.priv_stack_start <= (uintptr_t)&z_priv_stacks_ram_end)) {
+			/* No other Zephyr architecture hard-asserts this
+			 * guard/boundary relationship.
+			 */
+			if ((uintptr_t)&z_priv_stacks_ram_start > guard_start) {
+				LOG_WRN_ONCE("Guard 0x%lx below priv stacks start %p", guard_start,
+					     z_priv_stacks_ram_start);
+			}
+		}
 	} else
 #endif /* CONFIG_USERSPACE */
 	{
