@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import re
+import sys
 
 # Scratch register allocator.  Zephyr uses multiple Xtensa SRs as
 # scratch space for various special purposes.  Unfortunately the
@@ -80,6 +81,26 @@ for il in range(1, 1 + int(get("XCHAL_NUM_INTLEVELS"))):
     regs.append(f"EXCSAVE{il}")
     if il != int(get("XCHAL_DEBUGLEVEL")):
         maxint = max(il, maxint)
+# The NMI level is above XCHAL_NUM_INTLEVELS and has its own EXCSAVE too.
+if int(get("XCHAL_HAVE_NMI")):
+    regs.append(f"EXCSAVE{get('XCHAL_NMILEVEL')}")
+
+# The vector of each interrupt level above EXCM, except the debug level,
+# needs a register to free A0 before it can switch stacks.  Levels at or
+# below EXCM are masked while PS.EXCM is set, so they cannot interrupt
+# another vector before it has used ZSR_A0SAVE; levels above EXCM can,
+# so each needs its own scratch register.
+for il in range(1 + int(get("XCHAL_EXCM_LEVEL")), 1 + maxint):
+    if il != int(get("XCHAL_DEBUGLEVEL")):
+        NEEDED.append(f"HPINT{il}")
+if int(get("XCHAL_HAVE_NMI")):
+    NEEDED.append(f"HPINT{get('XCHAL_NMILEVEL')}")
+
+if len(NEEDED) > len(regs):
+    sys.exit(
+        f"gen_zsr.py: {len(NEEDED)} scratch registers needed ({', '.join(NEEDED)}), "
+        f"but the core has only {len(regs)} ({', '.join(regs)})"
+    )
 
 # Find the highest priority software interrupt.  We'll use that for
 # arch_irq_offload().

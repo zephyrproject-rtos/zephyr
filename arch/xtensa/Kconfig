@@ -218,6 +218,18 @@ endif    # XTENSA_CPU_HAS_HIFI
 
 endmenu  # Xtensa HiFi Options
 
+config XTENSA_HPINT_STACK_SIZE
+	int "Stack size for each interrupt level above EXCM"
+	range 512 8192
+	default 1024
+	help
+	  Size of the stack each CPU has for each interrupt level above
+	  XCHAL_EXCM_LEVEL, including the NMI. These interrupts can arrive
+	  while the CPU handles an exception or a register window spill, so
+	  their handler saves the whole register file on this stack and runs
+	  the ISR on it. irq_lock() does not mask these levels: their ISRs
+	  must not call kernel APIs. Must be a multiple of 16.
+
 config XTENSA_INTERRUPT_NONPREEMPTABLE
 	bool "Xtensa exceptions and interrupts cannot be pre-empted"
 	help
