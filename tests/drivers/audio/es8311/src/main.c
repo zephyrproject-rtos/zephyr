@@ -33,8 +33,7 @@ static const struct i2c_dt_spec es_warm = I2C_DT_SPEC_GET(WARM_NODE);
 static const struct device *const codec_profile = DEVICE_DT_GET(PROFILE_NODE);
 static const struct i2c_dt_spec es_profile = I2C_DT_SPEC_GET(PROFILE_NODE);
 
-/* Emulator test backend (defined in drivers/audio/emul_es8311.c). */
-#include <emul_es8311.h>
+#include "emul_es8311.h"
 
 /* Register fields used by the assertions. */
 #define ES8311_REG_RESET       0x00
