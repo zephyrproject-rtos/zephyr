@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Mentor Graphics MUSB host controller.
+
+  The MUSB core is a dual-role controller. The device role uses the
+  "mentor,musb" compatible; this binding selects the host role. Only one role
+  can be active for a given controller instance.
+
+compatible: "mentor,musb-host"
+
+include: usb-ep.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  num-bidir-endpoints:
+    description: |
+      Number of hardware endpoints available for host channels, including
+      EP0. At most 16.
+
+  vbus-gpios:
+    description: |
+      GPIO that controls VBUS power to the downstream port. The active level of
+      the GPIO (as encoded in the flags cell) is driven to enable VBUS. If this
+      property is omitted, the driver assumes VBUS is supplied externally and
+      performs no VBUS switching.

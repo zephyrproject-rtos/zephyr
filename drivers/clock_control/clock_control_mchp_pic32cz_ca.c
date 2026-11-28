@@ -666,11 +666,22 @@ static int clock_get_rate_dpll_out(const struct device *dev, uint8_t dpll_out_id
 	pll = dpll_out_id / PLLOUT_COUNT;
 	ret_val = clock_get_rate_dpll(dev, pll, &src_freq);
 	if (ret_val == 0) {
-		postdiv = *(&oscctrl_regs->OSCCTRL_PLL0POSTDIVA + (pll * DPLLREG_OFFSET)) &
-			  (OSCCTRL_PLL0POSTDIVA_POSTDIV0_Msk
-			   << ((dpll_out_id % PLLOUT_COUNT) * PLLOUT_POSTDIV_SPAN));
+		/*
+		 * 1. Shift the register right to move the target channel's bits to the LSB.
+		 * 2. Mask with POSTDIV0_Msk since the channel bits are now LSB-aligned.
+		 */
+		postdiv = (*(&oscctrl_regs->OSCCTRL_PLL0POSTDIVA + (pll * DPLLREG_OFFSET)) >>
+			   ((dpll_out_id % PLLOUT_COUNT) * PLLOUT_POSTDIV_SPAN)) &
+			  OSCCTRL_PLL0POSTDIVA_POSTDIV0_Msk;
+
+		/*
+		 * Hardware logic check: A register value of 0 means divide-by-1 (bypass).
+		 * Avoid division-by-zero or leaving *freq unassigned.
+		 */
 		if (postdiv != 0) {
 			*freq = src_freq / postdiv;
+		} else {
+			*freq = src_freq;
 		}
 	}
 
@@ -892,8 +903,19 @@ static int clock_mchp_on(const struct device *dev, clock_control_subsys_t sys)
 	if (ret_val != 0) {
 		return ret_val;
 	}
+	/*
+	 * Wait until the clock state becomes ON.
+	 * Oscillators (XOSC, XOSC32K, DFLL48M, PLL) use extended timeout (2 seconds)
+	 * to allow for hardware startup time.
+	 * Peripheral clocks use the configured timeout (default 5ms).
+	 */
+	uint32_t timeout_limit = config->on_timeout_ms;
 
-	/* Wait until the clock state becomes ON. */
+	if ((subsys.bits.type == SUBSYS_TYPE_XOSC) || (subsys.bits.type == SUBSYS_TYPE_XOSC32K) ||
+	    (subsys.bits.type == SUBSYS_TYPE_DFLL48M) || (subsys.bits.type == SUBSYS_TYPE_DPLL) ||
+	    (subsys.bits.type == SUBSYS_TYPE_DPLL_OUT)) {
+		timeout_limit = 2000; /* 2 second timeout for oscillators */
+	}
 	while (1) {
 		/* For XOSC32K, need to wait for the oscillator to be on. get_status only
 		 * return if EN1K or EN32K is on, which does not indicate the status of
@@ -913,13 +935,13 @@ static int clock_mchp_on(const struct device *dev, clock_control_subsys_t sys)
 			}
 		}
 
-		if (on_timeout_ms < config->on_timeout_ms) {
+		if (on_timeout_ms < timeout_limit) {
 			/* Thread is not available while booting. */
 			if ((k_is_pre_kernel() == false) && (k_current_get() != NULL)) {
 				/* Sleep before checking again. */
 				k_sleep(K_MSEC(1));
 			} else {
-				WAIT_FOR(0, 1000, NULL);
+				k_busy_wait(1000); /* 1 ms */
 			}
 			on_timeout_ms++;
 		} else {
@@ -1212,7 +1234,17 @@ static int clock_mchp_get_rate(const struct device *dev, clock_control_subsys_t 
 		ret_val = clock_get_rate_gclkgen(dev, 0, CLOCK_MCHP_GCLK_SRC_MAX + 1,
 						 &gclkgen_src_freq);
 		if (ret_val == 0) {
-			mclk_div = (config->mclk_regs->MCLK_CLKDIV[inst] & MCLK_CLKDIV_DIV_Msk) >>
+			/*
+			 * MCLK peripheral IDs identify a peripheral, not an MCLK
+			 * divider. All peripheral clocks use the peripheral domain
+			 * divider (CLKDIV[1]).
+			 */
+			uint8_t mclk_domain = (subsys.bits.type == SUBSYS_TYPE_MCLKPERIPH)
+						      ? CLOCK_MCHP_MCLKDOMAIN_ID_PERIPH
+						      : inst;
+
+			mclk_div = (config->mclk_regs->MCLK_CLKDIV[mclk_domain] &
+				    MCLK_CLKDIV_DIV_Msk) >>
 				   MCLK_CLKDIV_DIV_Pos;
 			if (mclk_div != 0) {
 				*freq = gclkgen_src_freq / mclk_div;
@@ -1588,6 +1620,7 @@ void clock_dpll_out_init(const struct device *dev, struct clock_dpll_out_init *d
 
 	uint32_t val32, pos_postdiv;
 	int inst = dpll_out_init->subsys.bits.inst;
+	uint32_t subsys_id = dpll_out_init->subsys.val;
 	int pll;
 
 	/* Check if the DPLL_OUT is already on */
@@ -1613,16 +1646,21 @@ void clock_dpll_out_init(const struct device *dev, struct clock_dpll_out_init *d
 		return;
 	}
 
+	/* PLL1 outputs 0 and 1 feed the fractional dividers FRACDIV0 and FRACDIV1.
+	 * Written once the PLL is locked and the output is enabled: a FRACDIV write
+	 * stays pending until its source delivers a clock.
+	 */
 	/* Check if fractional dividers to be configured. */
-	if ((inst == CLOCK_MCHP_DPLL1_ID_OUT0) || (inst == CLOCK_MCHP_DPLL1_ID_OUT1)) {
-		/* same macro for both DPLL0 and DPLL1 */
-		val32 = *(&oscctrl_regs->OSCCTRL_FRACDIV0 + (pll * 2));
+	if ((subsys_id == CLOCK_MCHP_DPLL1_ID_OUT0) || (subsys_id == CLOCK_MCHP_DPLL1_ID_OUT1)) {
+		uint8_t regoffset = inst % 2;
+		/* same macro for both DPLL0 and DPLL1 */ val32 =
+			*(&oscctrl_regs->OSCCTRL_FRACDIV0 + (regoffset * 2));
 		val32 &= ~(OSCCTRL_FRACDIV0_INTDIV_Msk | OSCCTRL_FRACDIV0_REMDIV_Msk);
 		val32 |= OSCCTRL_FRACDIV0_INTDIV(dpll_out_init->fract_divider_int) |
 			 OSCCTRL_FRACDIV0_REMDIV(dpll_out_init->fract_divider_rem);
-		*(&oscctrl_regs->OSCCTRL_FRACDIV0 + (pll * 2)) = val32;
+		*(&oscctrl_regs->OSCCTRL_FRACDIV0 + (regoffset * 2)) = val32;
 		if (WAIT_FOR(((oscctrl_regs->OSCCTRL_SYNCBUSY &
-			       BIT(OSCCTRL_SYNCBUSY_FRACDIV0_Pos + pll)) == 0),
+			       BIT(OSCCTRL_SYNCBUSY_FRACDIV0_Pos + regoffset)) == 0),
 			     TIMEOUT_REG_SYNC, NULL) == false) {
 			LOG_ERR("%s: timeout on writing fractional divider", __func__);
 			return;
@@ -1796,9 +1834,9 @@ void clock_mclkdomain_init(const struct device *dev, uint32_t subsys_val, uint8_
 
 	val32 = config->mclk_regs->MCLK_CLKDIV[inst] & ~(MCLK_CLKDIV_DIV_Msk);
 	val32 |= MCLK_CLKDIV_DIV(mclk_div);
-	/* config->mclk_regs->MCLK_CLKDIV[inst] = val32;
-	 *todo, system halts if we program MCLK_CLKDIV register. To resolve..
-	 */
+	if (inst == 1U) {
+		config->mclk_regs->MCLK_CLKDIV[inst] = val32;
+	}
 
 	/* Wait for the Main Clock to be Ready */
 	if (WAIT_FOR(((MCLK_REGS->MCLK_INTFLAG & MCLK_INTFLAG_CKRDY_Msk) == MCLK_INTFLAG_CKRDY_Msk),
@@ -1875,7 +1913,7 @@ void clock_mclkperiph_init(const struct device *dev, uint32_t subsys_val, uint8_
 		dpll_init.subsys.val = DT_PROP(child, subsystem);                                  \
 		dpll_init.feedback_divider_factor = DT_PROP(child, dpll_feedback_divider_factor);  \
 		dpll_init.ref_division_factor = DT_PROP(child, dpll_ref_division_factor);          \
-		dpll_init.bandwidth_sel = DT_ENUM_IDX(child, dpll_bandwidth_sel);                  \
+		dpll_init.bandwidth_sel = DT_ENUM_IDX(child, dpll_bandwidth_sel) + 1;              \
 		dpll_init.src = DT_ENUM_IDX(child, dpll_src);                                      \
 		dpll_init.on_demand_en = DT_PROP(child, dpll_on_demand_en);                        \
 		dpll_init.enable = DT_PROP(child, dpll_en);                                        \
@@ -1953,11 +1991,18 @@ static int clock_mchp_init(const struct device *dev)
 	/* To avoid changing dfll48m, while gclk0 is driven by it. Else will affect CPU */
 	data->gclk0_src = CLOCK_MCHP_GCLK_SRC_DFLL48M;
 	for (int i = 0; i < CLOCK_INIT_ITERATION_COUNT; i++) {
-		DT_FOREACH_CHILD(DT_NODELABEL(gclkgen), CLOCK_MCHP_ITERATE_GCLKGEN);
-		CLOCK_MCHP_PROCESS_DFLL48M(DT_NODELABEL(dfll48m));
+		/* Process clock sources before consumers:
+		 * 1. DPLL/DPLL_OUT first (sources for GCLKGENs)
+		 * 2. DFLL48M (may source GCLKGENs or be sourced by them)
+		 * 3. GCLKGENs last (consumers of DPLL outputs)
+		 */
 		DT_FOREACH_CHILD(DT_NODELABEL(dpll), CLOCK_MCHP_ITERATE_DPLL);
 		DT_FOREACH_CHILD(DT_NODELABEL(dpll0), CLOCK_MCHP_ITERATE_DPLL_OUT);
 		DT_FOREACH_CHILD(DT_NODELABEL(dpll1), CLOCK_MCHP_ITERATE_DPLL_OUT);
+
+		CLOCK_MCHP_PROCESS_DFLL48M(DT_NODELABEL(dfll48m));
+
+		DT_FOREACH_CHILD(DT_NODELABEL(gclkgen), CLOCK_MCHP_ITERATE_GCLKGEN);
 	}
 
 	CLOCK_MCHP_PROCESS_RTC(DT_NODELABEL(rtcclock));

@@ -194,7 +194,7 @@
 
 		mclkperiph {
 			subsystem = <CLOCK_MCHP_MCLKDOMAIN_ID_PERIPH>;
-			mclk-div = <1>;
+			mclk-div = <2>;
 		};
 	};
 

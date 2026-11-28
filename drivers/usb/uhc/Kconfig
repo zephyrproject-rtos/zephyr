@@ -47,6 +47,7 @@ source "drivers/usb/uhc/Kconfig.dwc2"
 source "drivers/usb/uhc/Kconfig.max3421e"
 source "drivers/usb/uhc/Kconfig.virtual"
 source "drivers/usb/uhc/Kconfig.mcux"
+source "drivers/usb/uhc/Kconfig.musb"
 source "drivers/usb/uhc/Kconfig.renesas_ra"
 
 endif # UHC_DRIVER
