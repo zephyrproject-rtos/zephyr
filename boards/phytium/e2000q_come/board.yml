@@ -1,0 +1,8 @@
+board:
+  name: e2000q_come
+  full_name: Phytium E2000Q COM Express
+  vendor: phytium
+  socs:
+    - name: pe2204
+      variants:
+        - name: smp

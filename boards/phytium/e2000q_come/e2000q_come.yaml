@@ -1,0 +1,12 @@
+identifier: e2000q_come
+name: Phytium E2000Q COM Express
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 524288
+supported:
+  - uart
+  - pcie
+vendor: phytium

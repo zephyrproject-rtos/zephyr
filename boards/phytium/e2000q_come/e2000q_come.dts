@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2026 Process Mission
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <phytium/pe2204.dtsi>
+
+/ {
+	compatible = "phytium,e2000q-come", "phytium,pe2204";
+	model = "Phytium E2000Q COM Express";
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,sram = &sram0;
+		zephyr,pcie-controller = &pcie0;
+	};
+};
+
+&pcie0 {
+	status = "okay";
+};
+
+&uart1 {
+	current-speed = <115200>;
+	status = "okay";
+};

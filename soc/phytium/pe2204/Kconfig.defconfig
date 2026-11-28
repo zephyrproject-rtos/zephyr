@@ -1,0 +1,19 @@
+# Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_PE2204
+
+configdefault NUM_IRQS
+	# LPIs start at 8192 when the ITS is enabled
+	default 16384 if GIC_V3_ITS
+	# Highest SPI INTID documented for the SoC is 279
+	default 280
+
+configdefault GIC_V3_ITS
+	default y if PCIE_MSI
+
+configdefault KERNEL_VM_SIZE
+	# Leave room for the 256 MiB ECAM mapping and endpoint BARs
+	default 0x20000000 if PCIE
+
+endif

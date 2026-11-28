@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: e2000q_come/pe2204/smp
+name: Phytium E2000Q COM Express SMP
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 524288
+supported:
+  - smp
+  - uart
+  - pcie

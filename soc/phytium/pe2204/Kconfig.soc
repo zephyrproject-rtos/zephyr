@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_PE2204
+	bool
+	select SOC_FAMILY_PHYTIUM
+	help
+	  Phytium E2000Q (PE2204) SoC.
+
+config SOC
+	default "pe2204" if SOC_PE2204
