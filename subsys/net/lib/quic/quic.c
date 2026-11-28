@@ -3652,7 +3652,7 @@ static int quic_endpoint_unref(struct quic_endpoint *ep)
 	quic_key_update_destroy(&ep->crypto.ku);
 
 	if (ep->parent != NULL) {
-		/* The ref was taken in process_long_header() when we assigned
+		/* The ref was taken in quic_endpoint_create() when we assigned
 		 * the parent. Drop it after the locks below are released: if
 		 * it is the parent's final reference, releasing it cancels
 		 * the parent's PTO work synchronously, which can deadlock
@@ -5795,16 +5795,40 @@ static struct quic_endpoint *alloc_endpoint(struct quic_context *ctx,
 	return ep;
 }
 
-static struct quic_endpoint *quic_endpoint_create(struct quic_endpoint *ep,
-						  const struct net_sockaddr *remote_addr,
-						  net_socklen_t addrlen,
-						  uint8_t *peer_cid,
-						  uint8_t peer_cid_len,
-						  uint8_t *my_cid,
-						  uint8_t my_cid_len)
+/* Create a server connection endpoint for the listener ep. The new endpoint
+ * is returned in created with a reference that the caller must release.
+ * Returns -ESHUTDOWN if the listening socket of ep is closed and -ENOMEM if
+ * no endpoint is free.
+ */
+static int quic_endpoint_create(struct quic_endpoint *ep,
+				const struct net_sockaddr *remote_addr,
+				net_socklen_t addrlen,
+				uint8_t *peer_cid,
+				uint8_t peer_cid_len,
+				uint8_t *my_cid,
+				uint8_t my_cid_len,
+				struct quic_endpoint **created)
 {
 	struct quic_endpoint *new_ep;
 	struct quic_context *ctx;
+	int ret = 0;
+
+	/* Closing the listening context takes contexts_lock to remove the
+	 * endpoints on its list and drop their list references. Holding the
+	 * lock until the new endpoint is complete means that a close sees
+	 * either no endpoint or one with its parent and socket set. Before
+	 * that, the list reference is the only one on the new endpoint and
+	 * dropping it would free the endpoint under the caller.
+	 */
+	k_mutex_lock(&contexts_lock, K_FOREVER);
+
+	/* The close sets list_ref_dropped under contexts_lock. The caller
+	 * checks it too, but without the lock held until here.
+	 */
+	if (ep->list_ref_dropped) {
+		k_mutex_unlock(&contexts_lock);
+		return -ESHUTDOWN;
+	}
 
 	ctx = quic_find_context(ep);
 
@@ -5858,14 +5882,32 @@ static struct quic_endpoint *quic_endpoint_create(struct quic_endpoint *ep,
 		new_ep->rx_sl.open_uni = 0;
 
 		new_ep->sock = ep->sock;
+		new_ep->is_server = true;
+		new_ep->parent = ep;
+
+		/* The child holds its parent, and with it the shared UDP
+		 * socket, for as long as the child exists
+		 */
+		quic_endpoint_ref(ep);
+
+		/* The caller's own reference, so that a close after the
+		 * unlock below does not free the endpoint while the caller
+		 * still uses it
+		 */
+		quic_endpoint_ref(new_ep);
 
 		NET_DBG("[EP:%p/%d] Child endpoint inherits socket %d from parent %d [%p]",
 			new_ep, quic_get_by_ep(new_ep), new_ep->sock, quic_get_by_ep(ep), ep);
 	} else {
 		NET_DBG("[EP:%p/%d] Cannot allocate new endpoint", ep, quic_get_by_ep(ep));
+		ret = -ENOMEM;
 	}
 
-	return new_ep;
+	k_mutex_unlock(&contexts_lock);
+
+	*created = new_ep;
+
+	return ret;
 }
 
 static struct quic_endpoint *alloc_local_endpoint(struct quic_context *ctx,
@@ -8988,6 +9030,7 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 	uint8_t my_cid[MAX_CONN_ID_LEN];
 	struct quic_endpoint *existing_ep;
 	struct quic_endpoint *looked_up;
+	struct quic_endpoint *created = NULL;
 	struct quic_pkt *pkt;
 	enum quic_packet_type ptype;
 	int dst_conn_id_len;
@@ -9125,6 +9168,32 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 			goto out;
 		}
 
+		/* A listener whose listening socket is closed starts no new
+		 * connections. Nothing could accept them, and each one would
+		 * hold the listener, and so its address, until it times out.
+		 * The listener lives on only for the connections it had when
+		 * the socket was closed. The close sets list_ref_dropped
+		 * under contexts_lock. This check spares the Retry and the
+		 * token for a connection that cannot be accepted, and
+		 * quic_endpoint_create() checks again with the lock held
+		 * through the creation.
+		 */
+		if (ep->is_server && ep->parent == NULL) {
+			bool closed;
+
+			k_mutex_lock(&contexts_lock, K_FOREVER);
+			closed = ep->list_ref_dropped;
+			k_mutex_unlock(&contexts_lock);
+
+			if (closed) {
+				NET_DBG("[EP:%p/%d] Listener is closed, dropping Initial packet",
+					ep, quic_get_by_ep(ep));
+				QUIC_EP_STAT_INC(ep, drop_rx);
+				ret = 1;
+				goto out;
+			}
+		}
+
 		if (ptype == QUIC_PACKET_TYPE_INITIAL && ep->is_server) {
 			if (info->token_len == 0U) {
 				if (IS_ENABLED(CONFIG_QUIC_SERVER_RETRY)) {
@@ -9172,10 +9241,18 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 
 		NET_HEXDUMP_DBG(my_cid, my_cid_len, "Recipient generated CID:");
 
-		new_ep = quic_endpoint_create(ep, addr, addrlen,
-					      src_conn_id, src_conn_id_len,
-					      my_cid, my_cid_len);
-		if (new_ep == NULL) {
+		ret = quic_endpoint_create(ep, addr, addrlen,
+					   src_conn_id, src_conn_id_len,
+					   my_cid, my_cid_len, &new_ep);
+		if (ret == -ESHUTDOWN) {
+			NET_DBG("[EP:%p/%d] Listener is closed, dropping Initial packet",
+				ep, quic_get_by_ep(ep));
+			QUIC_EP_STAT_INC(ep, drop_rx);
+			ret = 1;
+			goto out;
+		}
+
+		if (ret < 0) {
 			NET_DBG("[EP:%p/%d] Cannot create new endpoint",
 				ep, quic_get_by_ep(ep));
 			QUIC_EP_STAT_INC(ep, alloc_failed);
@@ -9183,6 +9260,8 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 			ret = -ENOMEM;
 			goto out;
 		}
+
+		created = new_ep;
 
 		/* Save the original DCID as it is used during handshake process */
 		if (new_ep->peer_orig_dcid_len == 0) {
@@ -9205,16 +9284,9 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 
 		existing_ep = new_ep;
 
-		new_ep->parent = ep;
-		new_ep->is_server = true;
 #if defined(CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT)
 		new_ep->anti_amplification.validated = token_validated;
 #endif
-
-		/* Take a ref to parent endpoint to ensure it stays alive as long as this
-		 * child endpoint exists.
-		 */
-		quic_endpoint_ref(ep);
 
 		/* TODO: Recheck that the idle timeout checker is properly
 		 * running in all cases (where is it restarted after timeout?).
@@ -9288,12 +9360,15 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 
 	ret = 0;
 out:
-	/* Release the reference the lookup took, if it found an endpoint. A
-	 * newly created endpoint is tracked separately and is not released
-	 * here.
+	/* Release the reference the lookup took, if it found an endpoint, or
+	 * the one quic_endpoint_create() returned a new endpoint with
 	 */
 	if (looked_up != NULL) {
 		quic_endpoint_unref(looked_up);
+	}
+
+	if (created != NULL) {
+		quic_endpoint_unref(created);
 	}
 
 	return ret;
