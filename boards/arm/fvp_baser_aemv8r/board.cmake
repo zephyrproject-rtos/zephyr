@@ -1,4 +1,4 @@
-# Copyright (c) 2021 Arm Limited (or its affiliates). All rights reserved.
+# Copyright 2021, 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 set(SUPPORTED_EMU_PLATFORMS armfvp)
@@ -74,3 +74,5 @@ elseif(CONFIG_BOARD_FVP_BASER_AEMV8R_FVP_AEMV8R_AARCH32 OR
     -C cache_state_modelled=0
     )
 endif()
+
+list(APPEND ARMFVP_FLAGS -a "${APPLICATION_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME}")

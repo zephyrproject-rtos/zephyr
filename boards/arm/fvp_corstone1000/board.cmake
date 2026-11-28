@@ -29,6 +29,7 @@ find_program(ARMFVP
 # through the sysbuild cache to this image build.
 zephyr_get(CORSTONE1000_FIRMWARE_DIR)
 
+set(ARMFVP_SKIP_DEFAULT_ELF ON)
 set(ARMFVP_FLAGS
   # --- Firmware loading ---
   -C se.trustedBootROMloader.fname=${CORSTONE1000_FIRMWARE_DIR}/bl1.bin

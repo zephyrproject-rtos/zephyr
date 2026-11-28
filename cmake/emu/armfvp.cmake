@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, 2025 Arm Limited (or its affiliates). All rights reserved.
+# Copyright 2021-2022, 2025-2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_get(ARMFVP_BIN_PATH)
@@ -28,16 +28,17 @@ if(ARMFVP AND (DEFINED ARMFVP_MIN_VERSION))
   endif()
 endif()
 
-# Boards that don't assemble their own firmware args in ARMFVP_FLAGS fall back
-# to the generic "-a <elf>" application loading.  Boards that do assemble their
-# own firmware args (e.g. via CONFIG_BUILD_WITH_TFA or CONFIG_ARMV8_A_NS) must
-# populate ARMFVP_FLAGS before this file is processed.
+# Preserve implicit ELF loading for boards that relied on it before Zephyr 4.6.
 if(NOT "-a" IN_LIST ARMFVP_FLAGS
+   AND NOT ARMFVP_SKIP_DEFAULT_ELF
    AND NOT CONFIG_BUILD_WITH_TFA
    AND NOT CONFIG_ARMV8_A_NS)
-  set(ARMFVP_FLAGS ${ARMFVP_FLAGS}
-    -a ${APPLICATION_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME}
-    )
+  message(DEPRECATION
+    "armfvp: Implicit '-a <application ELF>' loading will be removed after two releases. "
+    "In board.cmake, add '-a <application ELF>' to ARMFVP_FLAGS or set "
+    "ARMFVP_SKIP_DEFAULT_ELF to ON if the board does not need '-a'."
+  )
+  list(APPEND ARMFVP_FLAGS -a "${APPLICATION_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME}")
 endif()
 
 if(CONFIG_ETH_SMSC91X)

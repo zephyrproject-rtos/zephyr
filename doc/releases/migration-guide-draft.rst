@@ -41,6 +41,21 @@ Build System
   :kconfig:option:`CONFIG_ROMSTART_DEPRECATED_SET` is set and old behaviour is
   preserved while indicating the deprecation. (:github:`114974`)
 
+* Implicit application ELF loading by the ``armfvp`` emulator is deprecated. For two releases,
+  boards that rely on the fallback will still get ``-a <application ELF>`` and a CMake
+  deprecation warning. To keep loading the ELF after the fallback is removed, add this to
+  :file:`board.cmake`:
+
+  .. code-block:: cmake
+
+     list(APPEND ARMFVP_FLAGS -a "${APPLICATION_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME}")
+
+  Configurations that already pass ``-a`` (for example, to load a merged TF-M image) need
+  no change. The fallback still excludes :kconfig:option:`CONFIG_BUILD_WITH_TFA` and
+  :kconfig:option:`CONFIG_ARMV8_A_NS`. For other configurations that must start without ``-a``,
+  such as boards that load firmware through ``--data`` or a flash loader, add
+  ``set(ARMFVP_SKIP_DEFAULT_ELF ON)`` to :file:`board.cmake`.
+
 Kernel
 ******
 
