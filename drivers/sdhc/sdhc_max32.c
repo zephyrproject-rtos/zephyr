@@ -49,7 +49,7 @@ static int convert_freq_to_divider(int freq);
 /* Application commands (SD Card) which are prefixed by CMD55 */
 #define MXC_SDHC_LIB_ACMD6  0x061B
 #define MXC_SDHC_LIB_ACMD41 0x2902
-#define MXC_SDHC_LIB_ACMD51 0x331B
+#define MXC_SDHC_LIB_ACMD51 0x331A
 
 /* todo: GCR dependent division might be 4 as well. if set to = 1 sdhcfrq. add support in msdk */
 #define SDHC_CLOCK (ADI_MAX32_CLK_IPO_FREQ / 2)
@@ -184,7 +184,7 @@ static int sdhc_max32_request(const struct device *dev, struct sdhc_command *cmd
 {
 	int ret = 0;
 	unsigned int mxc_cmd = 0;
-	mxc_sdhc_cmd_cfg_t sd_cmd_cfg;
+	mxc_sdhc_cmd_cfg_t sd_cmd_cfg = {0};
 	bool card_size_workaround = false;
 
 	if (data) {
@@ -193,30 +193,39 @@ static int sdhc_max32_request(const struct device *dev, struct sdhc_command *cmd
 		sd_cmd_cfg.block_count = data->blocks;
 	}
 
+	/*
+	 * The SD stack already puts the right address in the argument: a block
+	 * number for SDHC/SDXC cards, a byte address for SDSC cards.
+	 */
 	sd_cmd_cfg.arg_1 = cmd->arg;
 	sd_cmd_cfg.dma = true; /* todo: add config depending on config_dma etc. */
 
 	switch (cmd->opcode) {
-	case SD_READ_SINGLE_BLOCK:
-	case SD_READ_MULTIPLE_BLOCK:
-		sd_cmd_cfg.direction = MXC_SDHC_DIRECTION_READ;
-		sd_cmd_cfg.arg_1 = data->block_addr;
-		break;
 	case SD_WRITE_SINGLE_BLOCK:
 	case SD_WRITE_MULTIPLE_BLOCK:
 		sd_cmd_cfg.direction = MXC_SDHC_DIRECTION_WRITE;
-		sd_cmd_cfg.arg_1 = data->block_addr;
 		break;
 	case SD_SEND_CSD:
 		card_size_workaround = true;
-	default:
 		sd_cmd_cfg.direction = MXC_SDHC_DIRECTION_CFG;
+		break;
+	default:
+		/*
+		 * Besides block reads, some commands return data on the DAT
+		 * lines, e.g. ACMD51 (SCR) and CMD6 (SWITCH_FUNC status). Run
+		 * a data read for every command that comes with a data buffer.
+		 */
+		sd_cmd_cfg.direction = data ? MXC_SDHC_DIRECTION_READ : MXC_SDHC_DIRECTION_CFG;
 		break;
 	}
 
 	ret = cmd_opcode_converter(cmd->opcode, &mxc_cmd);
 	if (ret) {
 		return ret;
+	}
+	if (data) {
+		/* Tell the controller to expect a data phase for this command */
+		mxc_cmd |= MXC_F_SDHC_CMD_DATA_PRES_SEL;
 	}
 	sd_cmd_cfg.command = mxc_cmd;
 	sd_cmd_cfg.host_control_1 = MXC_SDHC_Get_Host_Cn_1();
@@ -389,11 +398,16 @@ static int convert_freq_to_divider(int freq)
 		return 0;
 	}
 
-	int divider = 0;
-	/* note: this causes a bit different speed than exact number. */
-	divider = SDHC_CLOCK / (2 * freq);
+	/* A divider of 0 runs the SD clock at SDHC_CLOCK, N > 0 at SDHC_CLOCK / (2 * N) */
+	if (freq >= SDHC_CLOCK) {
+		return 0;
+	}
 
-	return divider;
+	/*
+	 * Round up so the SD clock never exceeds the requested frequency. Rounding
+	 * down turned a 25 MHz default speed request into an undivided 48 MHz clock.
+	 */
+	return MIN(DIV_ROUND_UP(SDHC_CLOCK, 2 * freq), SDHC_SDHC_MAX_DIV_VAL);
 }
 
 #define DEFINE_SDHC_MAX32(_num)                                                                    \

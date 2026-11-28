@@ -23,5 +23,6 @@ supported:
   - feather_i2c
   - usbd
   - flash
+  - sdhc
 ram: 128
 flash: 1024
