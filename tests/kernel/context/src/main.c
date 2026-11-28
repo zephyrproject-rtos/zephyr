@@ -272,6 +272,7 @@ static void _test_kernel_cpu_idle(int atomic)
 				k_cpu_idle();
 			}
 		} while ((idle_loops++ < CONFIG_MAX_IDLE_WAKES) && (idle_timer_done == false));
+		irq_unlock(key);
 		zassert_true(idle_timer_done,
 			     "The CPU was waken spuriously too many times (%d > %d)",
 			     idle_loops, CONFIG_MAX_IDLE_WAKES);
@@ -300,6 +301,7 @@ static void _test_kernel_cpu_idle(int atomic)
 			unsigned int key = irq_lock();
 
 			k_cpu_atomic_idle(key);
+			irq_unlock(key);
 		} else {
 			k_cpu_idle();
 		}
