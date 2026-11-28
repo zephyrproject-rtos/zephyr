@@ -5,7 +5,6 @@ config SPI_MSPM0
 	bool "TI MSPM0 SPI"
 	default y
 	depends on DT_HAS_TI_MSPM0_SPI_ENABLED
-	select USE_MSPM0_DL_SPI
 	select PINCTRL
 	select GPIO
 	help
