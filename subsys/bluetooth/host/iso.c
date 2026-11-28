@@ -2631,6 +2631,7 @@ static void cleanup_big(struct bt_iso_big *big)
 	struct bt_iso_chan *bis, *tmp;
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&big->bis_channels, bis, tmp, node) {
+		bt_conn_reset_rx_state(bis->iso);
 		bt_iso_chan_del(bis);
 
 		sys_slist_remove(&big->bis_channels, NULL, &bis->node);

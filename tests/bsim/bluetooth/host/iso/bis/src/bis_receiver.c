@@ -9,10 +9,14 @@
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
+#include <zephyr/drivers/bluetooth.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 
 #include "babblekit/flags.h"
@@ -39,6 +43,8 @@ DEFINE_FLAG_STATIC(flag_pa_synced);
 DEFINE_FLAG_STATIC(flag_biginfo);
 
 static struct bt_iso_chan iso_chans[CONFIG_BT_ISO_MAX_CHAN];
+/* When set, the receiver does not set up an ISO data path, so the controller never sends data */
+static bool skip_data_path;
 static struct bt_le_scan_recv_info broadcaster_info;
 static bt_addr_le_t broadcaster_addr;
 static uint8_t broadcaster_num_bis;
@@ -158,6 +164,10 @@ static void iso_connected(struct bt_iso_chan *chan)
 		"Invalid BIS number 0x%02x", info.sync_receiver.bis_number);
 
 	SET_FLAG(flag_iso_connected);
+
+	if (skip_data_path) {
+		return;
+	}
 
 	err = bt_iso_setup_data_path(chan, BT_HCI_DATAPATH_DIR_CTLR_TO_HOST, &hci_path);
 	TEST_ASSERT(err == 0, "Failed to setup ISO RX data path: %d\n", err);
@@ -342,11 +352,122 @@ static void test_main(void)
 	TEST_PASS("Test passed");
 }
 
+/* Count the free buffers in the ISO RX pool by draining it and putting everything back */
+static size_t count_free_iso_rx_bufs(void)
+{
+	struct net_buf *bufs[CONFIG_BT_ISO_RX_BUF_COUNT];
+	size_t cnt = 0U;
+
+	while (cnt < ARRAY_SIZE(bufs)) {
+		bufs[cnt] = bt_buf_get_rx(BT_BUF_ISO_IN, K_NO_WAIT);
+		if (bufs[cnt] == NULL) {
+			break;
+		}
+		cnt++;
+	}
+
+	for (size_t i = 0U; i < cnt; i++) {
+		net_buf_unref(bufs[i]);
+	}
+
+	return cnt;
+}
+
+/* Inject the first fragment (PB_Flag = Start) of an SDU for the BIS, as if it came from the
+ * controller. The SDU is announced as `sdu_len` octets, but only `frag_len` octets are delivered,
+ * and the remaining fragments never arrive.
+ */
+static void inject_iso_start_fragment(const struct bt_iso_chan *chan, uint16_t sdu_len,
+				      uint8_t frag_len)
+{
+	const struct device *hci = DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_hci));
+	struct bt_hci_iso_hdr hdr;
+	struct bt_hci_iso_sdu_hdr sdu_hdr;
+	struct net_buf *buf;
+	uint16_t handle;
+	int ret;
+
+	buf = bt_buf_get_rx(BT_BUF_ISO_IN, K_NO_WAIT);
+	TEST_ASSERT(buf != NULL, "Failed to get ISO RX buffer");
+
+	ret = bt_hci_get_conn_handle(chan->iso, &handle);
+	TEST_ASSERT(ret == 0, "Failed to get ISO channel handle");
+
+	hdr.handle = sys_cpu_to_le16(bt_iso_handle_pack(handle, BT_ISO_START, 0));
+	hdr.len = sys_cpu_to_le16(sizeof(sdu_hdr) + frag_len);
+	sdu_hdr.sn = sys_cpu_to_le16(0U);
+	sdu_hdr.slen = sys_cpu_to_le16(bt_iso_pkt_len_pack(sdu_len, BT_ISO_DATA_VALID));
+
+	net_buf_add_mem(buf, &hdr, sizeof(hdr));
+	net_buf_add_mem(buf, &sdu_hdr, sizeof(sdu_hdr));
+	net_buf_add_mem(buf, mock_iso_data, frag_len);
+
+	bt_hci_recv(hci, buf);
+}
+
+/* Reproducer: a BIG sync ends while a BIS has a Start fragment in reassembly (iso->rx != NULL).
+ * cleanup_big() drops the last reference to the BIS conn without calling bt_conn_reset_rx_state(),
+ * so the ISO RX buffer is never returned to the pool.
+ */
+static void test_main_rx_start_leak(void)
+{
+	struct bt_le_per_adv_sync *sync;
+	struct bt_iso_big *big;
+	size_t free_before;
+	size_t free_after;
+
+	/* No data path: nothing but the injected fragment will reach the host RX path */
+	skip_data_path = true;
+
+	init();
+	scan_and_sync_pa(&sync);
+	WAIT_FOR_FLAG(flag_biginfo);
+	sync_big(sync, 1U, &big);
+
+	free_before = count_free_iso_rx_bufs();
+	LOG_INF("Free ISO RX buffers before injection: %zu", free_before);
+	TEST_ASSERT(free_before == CONFIG_BT_ISO_RX_BUF_COUNT, "Pool not full: %zu BUF_COUNT=%zu",
+			free_before, CONFIG_BT_ISO_RX_BUF_COUNT);
+
+	/* 10 of 50 octets: the Start fragment is kept in iso->rx waiting for the rest */
+	inject_iso_start_fragment(&iso_chans[0], 50U, 10U);
+
+	/* Let the host RX thread process it */
+	k_msleep(100);
+
+	free_after = count_free_iso_rx_bufs();
+	LOG_INF("Free ISO RX buffers with Start fragment in reassembly: %zu", free_after);
+	TEST_ASSERT(free_after == free_before - 1U,
+		    "Start fragment not held in reassembly (free %zu, expected %zu)", free_after,
+		    free_before - 1U);
+
+	/* Tell the broadcaster to terminate the BIG, and wait for the BIG sync to be lost */
+	bk_sync_send();
+	WAIT_FOR_FLAG_UNSET(flag_pa_synced);
+	WAIT_FOR_FLAG_UNSET(flag_iso_connected);
+
+	/* Give the host time to finish cleanup_big() and the RX thread to settle */
+	k_msleep(100);
+
+	free_after = count_free_iso_rx_bufs();
+	LOG_INF("Free ISO RX buffers after BIG sync lost: %zu", free_after);
+	TEST_ASSERT(free_after == free_before,
+		    "ISO RX buffer leaked on BIG sync lost: %zu of %zu buffers free", free_after,
+		    free_before);
+
+	TEST_PASS("Test passed");
+}
+
 static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "receiver",
 		.test_descr = "receiver",
 		.test_main_f = test_main,
+	},
+	{
+		.test_id = "receiver_rx_start_leak",
+		.test_descr = "receiver that checks for ISO RX buffer leak on BIG sync lost",
+		.test_main_f = test_main_rx_start_leak,
 	},
 	BSTEST_END_MARKER,
 };
