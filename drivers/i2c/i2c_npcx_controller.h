@@ -179,6 +179,60 @@ static inline void i2c_ctrl_bank_sel(const struct device *dev, int bank)
 	}
 }
 
+static inline void i2c_ctrl_stall_scl(const struct device *dev)
+{
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
+
+	/* Enable writing to SCL_LVL/SDA_LVL bit in SMBnCTL3 */
+	inst->SMBCTL4 |= BIT(NPCX_SMBCTL4_LVL_WE);
+	/* Force SCL bus to low and keep SDA floating */
+	inst->SMBCTL3 = (inst->SMBCTL3 & ~BIT(NPCX_SMBCTL3_SCL_LVL)) | BIT(NPCX_SMBCTL3_SDA_LVL);
+	/* Disable writing to them */
+	inst->SMBCTL4 &= ~BIT(NPCX_SMBCTL4_LVL_WE);
+}
+
+static inline void i2c_ctrl_free_scl(const struct device *dev)
+{
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
+
+	/* Enable writing to SCL_LVL/SDA_LVL bit in SMBnCTL3 */
+	inst->SMBCTL4 |= BIT(NPCX_SMBCTL4_LVL_WE);
+	/*
+	 * Release SCL bus. Then it might be still driven by module itself or
+	 * slave device.
+	 */
+	inst->SMBCTL3 |= BIT(NPCX_SMBCTL3_SCL_LVL) | BIT(NPCX_SMBCTL3_SDA_LVL);
+	/* Disable writing to them */
+	inst->SMBCTL4 &= ~BIT(NPCX_SMBCTL4_LVL_WE);
+}
+
+static inline void i2c_ctrl_stall_sda(const struct device *dev)
+{
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
+
+	/* Enable writing to SCL_LVL/SDA_LVL bit in SMBnCTL3 */
+	inst->SMBCTL4 |= BIT(NPCX_SMBCTL4_LVL_WE);
+	/* Force SDA bus to low and keep SCL floating */
+	inst->SMBCTL3 = (inst->SMBCTL3 & ~BIT(NPCX_SMBCTL3_SDA_LVL)) | BIT(NPCX_SMBCTL3_SCL_LVL);
+	/* Disable writing to them */
+	inst->SMBCTL4 &= ~BIT(NPCX_SMBCTL4_LVL_WE);
+}
+
+static inline void i2c_ctrl_free_sda(const struct device *dev)
+{
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
+
+	/* Enable writing to SCL_LVL/SDA_LVL bit in SMBnCTL3 */
+	inst->SMBCTL4 |= BIT(NPCX_SMBCTL4_LVL_WE);
+	/*
+	 * Release SDA bus. Then it might be still driven by module itself or
+	 * slave device.
+	 */
+	inst->SMBCTL3 |= BIT(NPCX_SMBCTL3_SDA_LVL) | BIT(NPCX_SMBCTL3_SCL_LVL);
+	/* Disable writing to them */
+	inst->SMBCTL4 &= ~BIT(NPCX_SMBCTL4_LVL_WE);
+}
+
 #if defined(CONFIG_I2C_NPCX_FIFO_DRIVEN)
 static inline void i2c_ctrl_fifo_clear_status(const struct device *dev)
 {
@@ -312,21 +366,27 @@ int npcx_i2c_ctrl_target_unregister(const struct device *i2c_dev,
 				    struct i2c_target_config *target_cfg, uint8_t port);
 
 /* Common public functions */
-bool i2c_ctrl_toggle_scls(const struct device *dev);
 size_t i2c_ctrl_calculate_msg_remains(const struct device *dev);
 void i2c_ctrl_handle_write_int_event(const struct device *dev);
 void i2c_ctrl_handle_read_int_event(const struct device *dev);
 void i2c_ctrl_stop(const struct device *dev);
-
-/* FIFO-Driven public functions */
-#if defined(CONFIG_I2C_NPCX_FIFO_DRIVEN)
-void i2c_ctrl_fifo_hold_bus(const struct device *dev, int stall);
-#endif
+void i2c_ctrl_hold_bus(const struct device *dev, int stall);
 
 /* DMA-Driven public functions */
 #if defined(CONFIG_I2C_NPCX_DMA_DRIVEN)
-size_t i2c_ctrl_dma_proceed_write(const struct device *dev);
-size_t i2c_ctrl_dma_proceed_read(const struct device *dev);
+/* How SCL is handled while the DMA is configured and enabled (armed) */
+enum npcx_i2c_dma_scl_hold {
+	/* Address phase: the bus is not clocked yet, no need to stall SCL */
+	NPCX_I2C_DMA_SCL_NO_HOLD,
+	/*
+	 * Transaction in progress: stall SCL until the DMA is armed, otherwise
+	 * the module could move a byte too early.
+	 */
+	NPCX_I2C_DMA_SCL_HOLD,
+};
+
+size_t i2c_ctrl_dma_proceed_write(const struct device *dev, enum npcx_i2c_dma_scl_hold scl_hold);
+size_t i2c_ctrl_dma_proceed_read(const struct device *dev, enum npcx_i2c_dma_scl_hold scl_hold);
 void i2c_ctrl_handle_write_dma_int_event(const struct device *dev);
 void i2c_ctrl_handle_read_dma_int_event(const struct device *dev);
 #endif

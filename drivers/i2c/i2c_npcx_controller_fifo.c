@@ -15,111 +15,6 @@
 #include "i2c_npcx_controller.h"
 LOG_MODULE_REGISTER(i2c_npcx_fifo, CONFIG_I2C_LOG_LEVEL);
 
-static inline void i2c_ctrl_fifo_stall_scl(const struct device *dev)
-{
-	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
-
-	/* Enable writing to SCL_LVL/SDA_LVL bit in SMBnCTL3 */
-	inst->SMBCTL4 |= BIT(NPCX_SMBCTL4_LVL_WE);
-	/* Force SCL bus to low and keep SDA floating */
-	inst->SMBCTL3 = (inst->SMBCTL3 & ~BIT(NPCX_SMBCTL3_SCL_LVL)) | BIT(NPCX_SMBCTL3_SDA_LVL);
-	/* Disable writing to them */
-	inst->SMBCTL4 &= ~BIT(NPCX_SMBCTL4_LVL_WE);
-}
-
-static inline void i2c_ctrl_fifo_free_scl(const struct device *dev)
-{
-	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
-
-	/* Enable writing to SCL_LVL/SDA_LVL bit in SMBnCTL3 */
-	inst->SMBCTL4 |= BIT(NPCX_SMBCTL4_LVL_WE);
-	/*
-	 * Release SCL bus. Then it might be still driven by module itself or
-	 * slave device.
-	 */
-	inst->SMBCTL3 |= BIT(NPCX_SMBCTL3_SCL_LVL) | BIT(NPCX_SMBCTL3_SDA_LVL);
-	/* Disable writing to them */
-	inst->SMBCTL4 &= ~BIT(NPCX_SMBCTL4_LVL_WE);
-}
-
-static inline void i2c_ctrl_fifo_stall_sda(const struct device *dev)
-{
-	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
-
-	/* Enable writing to SCL_LVL/SDA_LVL bit in SMBnCTL3 */
-	inst->SMBCTL4 |= BIT(NPCX_SMBCTL4_LVL_WE);
-	/* Force SDA bus to low and keep SCL floating */
-	inst->SMBCTL3 = (inst->SMBCTL3 & ~BIT(NPCX_SMBCTL3_SDA_LVL)) | BIT(NPCX_SMBCTL3_SCL_LVL);
-	/* Disable writing to them */
-	inst->SMBCTL4 &= ~BIT(NPCX_SMBCTL4_LVL_WE);
-}
-
-static inline void i2c_ctrl_fifo_free_sda(const struct device *dev)
-{
-	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
-
-	/* Enable writing to SCL_LVL/SDA_LVL bit in SMBnCTL3 */
-	inst->SMBCTL4 |= BIT(NPCX_SMBCTL4_LVL_WE);
-	/*
-	 * Release SDA bus. Then it might be still driven by module itself or
-	 * slave device.
-	 */
-	inst->SMBCTL3 |= BIT(NPCX_SMBCTL3_SDA_LVL) | BIT(NPCX_SMBCTL3_SCL_LVL);
-	/* Disable writing to them */
-	inst->SMBCTL4 &= ~BIT(NPCX_SMBCTL4_LVL_WE);
-}
-
-bool i2c_ctrl_toggle_scls(const struct device *dev)
-{
-	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
-
-	/* Drive the clock high. */
-	i2c_ctrl_fifo_free_scl(dev);
-	k_busy_wait(I2C_RECOVER_BUS_DELAY_US);
-	/*
-	 * Toggle SCL to generate 9 clocks. If the I2C target releases the SDA, we can stop
-	 * toggle the SCL and issue a STOP.
-	 */
-	for (int j = 0; j < 9; j++) {
-		if (IS_BIT_SET(inst->SMBCTL3, NPCX_SMBCTL3_SDA_LVL)) {
-			break;
-		}
-		i2c_ctrl_fifo_stall_scl(dev);
-		k_busy_wait(I2C_RECOVER_BUS_DELAY_US);
-		i2c_ctrl_fifo_free_scl(dev);
-		k_busy_wait(I2C_RECOVER_BUS_DELAY_US);
-	}
-	/* Drive the SDA line to issue STOP. */
-	i2c_ctrl_fifo_stall_sda(dev);
-	k_busy_wait(I2C_RECOVER_BUS_DELAY_US);
-	i2c_ctrl_fifo_free_sda(dev);
-	k_busy_wait(I2C_RECOVER_BUS_DELAY_US);
-	if (i2c_ctrl_is_scl_sda_both_high(dev)) {
-		return true;
-	}
-
-	return false;
-}
-
-/* I2C controller inline functions for 'FIFO' mode */
-/*
- * I2C local functions which touch the registers in 'Normal' bank. These
- * utilities will change bank back to FIFO mode when leaving themselves in case
- * the other utilities access the registers in 'FIFO' bank.
- */
-void i2c_ctrl_fifo_hold_bus(const struct device *dev, int stall)
-{
-	i2c_ctrl_bank_sel(dev, NPCX_I2C_BANK_NORMAL);
-
-	if (stall) {
-		i2c_ctrl_fifo_stall_scl(dev);
-	} else {
-		i2c_ctrl_fifo_free_scl(dev);
-	}
-
-	i2c_ctrl_bank_sel(dev, NPCX_I2C_BANK_FIFO);
-}
-
 static inline int i2c_ctrl_fifo_tx_avail(const struct device *dev)
 {
 	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
@@ -259,7 +154,7 @@ void i2c_ctrl_handle_read_int_event(const struct device *dev)
 			 * immediately after the driver start to read data from
 			 * FIFO. Then we might lose incoming data from device.
 			 */
-			i2c_ctrl_fifo_hold_bus(dev, 1);
+			i2c_ctrl_hold_bus(dev, 1);
 		}
 
 		/* Read data bytes from FIFO */
@@ -273,7 +168,7 @@ void i2c_ctrl_handle_read_int_event(const struct device *dev)
 			i2c_ctrl_fifo_rx_setup_threshold_nack(
 				dev, rx_remain, (data->msg->flags & I2C_MSG_STOP) != 0);
 			/* Release bus */
-			i2c_ctrl_fifo_hold_bus(dev, 0);
+			i2c_ctrl_hold_bus(dev, 0);
 			return;
 		}
 
@@ -294,7 +189,7 @@ void i2c_ctrl_handle_read_int_event(const struct device *dev)
 					i2c_ctrl_fifo_rx_setup_threshold_nack(
 						dev, msg->len, (msg->flags & I2C_MSG_STOP) != 0);
 					/* Release bus */
-					i2c_ctrl_fifo_hold_bus(dev, 0);
+					i2c_ctrl_hold_bus(dev, 0);
 					return;
 				}
 			}
