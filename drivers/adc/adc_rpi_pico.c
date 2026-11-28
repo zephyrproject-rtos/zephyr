@@ -62,6 +62,8 @@ struct adc_rpi_data {
 	uint16_t *repeat_buf;
 	/** Mask with channels that will be sampled */
 	uint32_t channels;
+	/** Mask with channels configured by adc_channel_setup() */
+	uint32_t configured_channels;
 };
 
 static inline void adc_start_once(void)
@@ -100,6 +102,7 @@ static int adc_rpi_channel_setup(const struct device *dev,
 				 const struct adc_channel_cfg *channel_cfg)
 {
 	const struct adc_rpi_config *config = dev->config;
+	struct adc_rpi_data *data = dev->data;
 
 	if (channel_cfg->channel_id >= config->num_channels) {
 		LOG_ERR("unsupported channel id '%d'", channel_cfg->channel_id);
@@ -120,6 +123,13 @@ static int adc_rpi_channel_setup(const struct device *dev,
 		LOG_ERR("Gain is not valid");
 		return -EINVAL;
 	}
+
+	if (channel_cfg->reference != ADC_REF_INTERNAL) {
+		LOG_ERR("Reference is not valid");
+		return -EINVAL;
+	}
+
+	data->configured_channels |= BIT(channel_cfg->channel_id);
 
 	return 0;
 }
@@ -166,8 +176,10 @@ static int adc_rpi_check_buffer_size(const struct device *dev,
  * @param sequence ADC sequence description
  *
  * @return 0 on success
- * @return -ENOTSUP if requested resolution or channel is out side of supported
- *         range
+ * @return -EINVAL if requested resolution is out of supported range,
+ *         oversampling is requested, no channel is selected or a selected
+ *         channel is not configured
+ * @return -ENOTSUP if requested channel is out side of supported range
  * @return -ENOMEM if buffer is not big enough
  *         (see @ref adc_rpi_check_buffer_size)
  * @return other error code returned by adc_context_wait_for_completion
@@ -182,13 +194,29 @@ static int adc_rpi_start_read(const struct device *dev,
 	if (sequence->resolution > ADC_RPI_MAX_RESOLUTION ||
 	    sequence->resolution == 0) {
 		LOG_ERR("unsupported resolution %d", sequence->resolution);
-		return -ENOTSUP;
+		return -EINVAL;
+	}
+
+	if (sequence->oversampling != 0U) {
+		LOG_ERR("oversampling is not supported");
+		return -EINVAL;
+	}
+
+	if (sequence->channels == 0U) {
+		LOG_ERR("no channels selected");
+		return -EINVAL;
 	}
 
 	if (find_msb_set(sequence->channels) > config->num_channels) {
 		LOG_ERR("unsupported channels in mask: 0x%08x",
 			sequence->channels);
 		return -ENOTSUP;
+	}
+
+	if ((sequence->channels & ~data->configured_channels) != 0U) {
+		LOG_ERR("channels not configured in mask: 0x%08x",
+			sequence->channels & ~data->configured_channels);
+		return -EINVAL;
 	}
 
 	err = adc_rpi_check_buffer_size(dev, sequence);
@@ -226,6 +254,9 @@ static void adc_rpi_isr(const struct device *dev)
 		adc_context_complete(&data->ctx, -EIO);
 		return;
 	}
+
+	/* The ADC always converts at 12 bits, scale down to the requested resolution. */
+	result >>= ADC_RPI_MAX_RESOLUTION - data->ctx.sequence.resolution;
 
 	/* Copy to buffer and mark this channel as completed to channels bitmap. */
 	*data->buf++ = result;
