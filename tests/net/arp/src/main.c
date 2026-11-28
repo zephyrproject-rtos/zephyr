@@ -1425,6 +1425,50 @@ ZTEST(arp_fn_tests, test_arp_req_send_ok_releases_caller_ref)
 	net_pkt_unref(pkt);
 }
 
+/* A pending entry keeps at most CONFIG_NET_ARP_PENDING_MAX packets and, as
+ * RFC 1122 section 2.3.2.2 asks, keeps the latest ones.
+ */
+ZTEST(arp_fn_tests, test_arp_pending_queue_keeps_latest)
+{
+	struct net_in_addr dst = { { { 192, 0, 2, 202 } } };
+	struct net_pkt *pkts[CONFIG_NET_ARP_PENDING_MAX + 2];
+	struct net_pkt *pkt_arp = NULL;
+	struct net_if *iface;
+	size_t first_kept;
+	int ret;
+
+	iface = arp_test_iface_setup();
+
+	pkts[0] = alloc_ipv4_pkt(iface, &dst);
+	ret = net_arp_prepare(pkts[0], &dst, NULL, &pkt_arp);
+	zassert_equal(ret, NET_ARP_PKT_REPLACED, "No ARP request (%d)", ret);
+	net_pkt_unref(pkt_arp);
+
+	for (size_t i = 1; i < ARRAY_SIZE(pkts); i++) {
+		pkts[i] = alloc_ipv4_pkt(iface, &dst);
+		pkt_arp = NULL;
+		ret = net_arp_prepare(pkts[i], &dst, NULL, &pkt_arp);
+		zexpect_equal(ret, NET_ARP_PKT_QUEUED, "Packet %zu not queued (%d)", i, ret);
+		zexpect_is_null(pkt_arp, "ARP request generated for packet %zu", i);
+	}
+
+	/* Only the latest packets still hold the reference taken by the queue. */
+	first_kept = ARRAY_SIZE(pkts) - CONFIG_NET_ARP_PENDING_MAX;
+
+	for (size_t i = 0; i < ARRAY_SIZE(pkts); i++) {
+		zexpect_equal(atomic_get(&pkts[i]->atomic_ref), i < first_kept ? 1 : 2,
+			      "Packet %zu ref %ld", i, atomic_get(&pkts[i]->atomic_ref));
+	}
+
+	zexpect_equal(net_arp_clear_pending(iface, &dst), 0);
+
+	for (size_t i = 0; i < ARRAY_SIZE(pkts); i++) {
+		zexpect_equal(atomic_get(&pkts[i]->atomic_ref), 1, "Packet %zu ref %ld", i,
+			      atomic_get(&pkts[i]->atomic_ref));
+		net_pkt_unref(pkts[i]);
+	}
+}
+
 static void arp_test_before(void *fixture)
 {
 	ARG_UNUSED(fixture);

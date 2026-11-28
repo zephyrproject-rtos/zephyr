@@ -133,6 +133,10 @@ Libraries / Subsystems
 
 * Networking
 
+  * ARP: the number of packets queued for an unresolved neighbour is now bounded by
+    :kconfig:option:`CONFIG_NET_ARP_PENDING_MAX` (default 3). When the queue is full,
+    the oldest queued packet is dropped, so an unreachable neighbour can no longer
+    exhaust the global TX net_pkt pool.
   * :kconfig:option:`CONFIG_NET_DHCPV6_START_ON_RA` starts the DHCPv6 client
     automatically from the M and O flags of received Router Advertisements, in
     stateful mode with the M flag and in stateless mode (Information-request

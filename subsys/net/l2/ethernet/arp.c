@@ -54,6 +54,7 @@ static void arp_entry_cleanup(struct arp_entry *entry, bool pending)
 
 		while (!k_fifo_is_empty(&entry->pending_queue)) {
 			pkt = k_fifo_get(&entry->pending_queue, K_FOREVER);
+			entry->pending_count--;
 			NET_DBG("Releasing pending pkt %p (ref %ld)",
 				pkt,
 				atomic_get(&pkt->atomic_ref) - 1);
@@ -345,6 +346,7 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 		if (!net_pkt_ipv4_acd(pkt)) {
 			net_pkt_ref(pending);
 			k_fifo_put(&entry->pending_queue, pending);
+			entry->pending_count++;
 		}
 
 		entry->iface = net_pkt_iface(pkt);
@@ -495,8 +497,22 @@ int net_arp_prepare(struct net_pkt *pkt,
 			 */
 			pkt = net_pkt_ref(pkt);
 			if (k_queue_unique_append(&entry->pending_queue._queue, pkt)) {
+				entry->pending_count++;
+
 				NET_DBG("Pending ARP request for %s, queuing pkt %p",
 					net_sprint_ipv4_addr(addr), pkt);
+
+				/* Keep the latest packets, RFC 1122 section 2.3.2.2 */
+				if (entry->pending_count > CONFIG_NET_ARP_PENDING_MAX) {
+					struct net_pkt *oldest =
+						k_fifo_get(&entry->pending_queue, K_NO_WAIT);
+
+					entry->pending_count--;
+					NET_DBG("Pending queue for %s full, dropping pkt %p",
+						net_sprint_ipv4_addr(addr), oldest);
+					net_pkt_unref(oldest);
+				}
+
 				k_mutex_unlock(&arp_mutex);
 				return NET_ARP_PKT_QUEUED;
 			}
@@ -818,6 +834,7 @@ void net_arp_update(struct net_if *iface,
 		int ret;
 
 		pkt = k_fifo_get(&entry->pending_queue, K_FOREVER);
+		entry->pending_count--;
 
 		/* Set the dst in the pending packet */
 		(void)net_linkaddr_set(net_pkt_lladdr_dst(pkt),
@@ -1161,6 +1178,7 @@ void net_arp_init(void)
 	for (i = 0; i < CONFIG_NET_ARP_TABLE_SIZE; i++) {
 		/* Inserting entry as free with initialised packet queue */
 		k_fifo_init(&arp_entries[i].pending_queue);
+		arp_entries[i].pending_count = 0;
 		sys_slist_prepend(&arp_free_entries, &arp_entries[i].node);
 	}
 

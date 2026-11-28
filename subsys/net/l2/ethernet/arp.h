@@ -81,6 +81,8 @@ struct arp_entry {
 	struct net_in_addr ip;
 	struct net_eth_addr eth;
 	struct k_fifo pending_queue;
+	/* Number of packets currently queued in pending_queue. */
+	uint8_t pending_count;
 	/* Entry was added by the user and is not removed by a cache flush
 	 * or overwritten by information learned from the network.
 	 */
