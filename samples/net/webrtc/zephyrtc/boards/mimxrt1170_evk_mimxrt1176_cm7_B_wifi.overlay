@@ -1,0 +1,38 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Meta Platforms, Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * MIMXRT1170-EVKB J54 M.2 Wi-Fi path for the Embedded Artists 2EL
+ * module (Murata LBES5PL2EL, NXP IW612). J54 shares USDHC1 with the
+ * microSD interface, so the Wi-Fi image disables the SD-card child.
+ */
+&lpspi1 {
+	status = "disabled";
+};
+
+&usdhc1 {
+	status = "okay";
+	non-removable;
+	no-3-3-v;
+	no-3-0-v;
+	/delete-property/ detect-dat3;
+	/delete-property/ pwr-gpios;
+	pinctrl-0 = <&pinmux_usdhc1>;
+	pinctrl-1 = <&pinmux_usdhc1>;
+	pinctrl-2 = <&pinmux_usdhc1>;
+	pinctrl-3 = <&pinmux_usdhc1>;
+	pinctrl-names = "default", "slow", "med", "fast";
+
+	sdmmc {
+		status = "disabled";
+	};
+
+	nxp_wifi {
+		compatible = "nxp,wifi";
+		sd-gpios = <&gpio9 15 GPIO_ACTIVE_LOW>;
+		pwr-gpios = <&gpio9 30 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+};

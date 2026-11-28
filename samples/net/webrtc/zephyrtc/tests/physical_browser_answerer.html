@@ -1,0 +1,389 @@
+<!doctype html>
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2026 Meta Platforms, Inc.
+SPDX-License-Identifier: Apache-2.0
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RT1170 WebRTC browser peer</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: system-ui, sans-serif;
+      background: #111827;
+      color: #f3f4f6;
+    }
+    body { margin: 0 auto; max-width: 1100px; padding: 24px; }
+    button {
+      background: #2563eb;
+      border: 0;
+      border-radius: 6px;
+      color: white;
+      font-size: 1rem;
+      padding: 10px 18px;
+    }
+    button:disabled { opacity: 0.5; }
+    .videos {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      margin-top: 16px;
+    }
+    figure { margin: 0; }
+    figcaption { color: #9ca3af; margin-bottom: 6px; }
+    video {
+      aspect-ratio: 4 / 3;
+      background: black;
+      border-radius: 8px;
+      object-fit: contain;
+      width: 100%;
+    }
+    #status {
+      background: #1f2937;
+      border-radius: 8px;
+      font-family: ui-monospace, monospace;
+      margin-top: 16px;
+      min-height: 5em;
+      padding: 12px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <h1>RT1170 WebRTC browser peer</h1>
+  <p>Chrome answers the board's H.264/PCMU offer over one-shot HTTP signaling.</p>
+  <button id="start">Arm browser peer</button>
+  <div class="videos">
+    <figure>
+      <figcaption>Browser camera</figcaption>
+      <video id="local" autoplay muted playsinline></video>
+    </figure>
+    <figure>
+      <figcaption>RT1170 camera</figcaption>
+      <video id="remote" autoplay playsinline></video>
+    </figure>
+  </div>
+  <div id="status">idle</div>
+  <script>
+    'use strict';
+    const startButton = document.getElementById('start');
+    const localVideo = document.getElementById('local');
+    const remoteVideo = document.getElementById('remote');
+    const statusBox = document.getElementById('status');
+    let peerConnection = null;
+    let localStream = null;
+    let remoteStream = null;
+    const errors = [];
+
+    function status(message) {
+      statusBox.textContent = message;
+      console.log(message);
+    }
+
+    function waitForIceComplete(pc, timeoutMs = 10000) {
+      if (pc.iceGatheringState === 'complete') return Promise.resolve();
+      return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => {
+          pc.removeEventListener('icegatheringstatechange', check);
+          reject(new Error('timed out waiting for ICE gathering'));
+        }, timeoutMs);
+        function check() {
+          if (pc.iceGatheringState === 'complete') {
+            clearTimeout(timer);
+            pc.removeEventListener('icegatheringstatechange', check);
+            resolve();
+          }
+        }
+        pc.addEventListener('icegatheringstatechange', check);
+      });
+    }
+
+    async function waitForOffer() {
+      for (;;) {
+        const response = await fetch('/pending-offer', {cache: 'no-store'});
+        if (response.status === 200) return response.text();
+        if (response.status !== 204) {
+          throw new Error(`offer poll returned ${response.status}`);
+        }
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+    }
+
+    function chooseCodecs(pc) {
+      const audioCodecs = RTCRtpReceiver.getCapabilities('audio').codecs.filter(
+        (codec) => codec.mimeType.toLowerCase() === 'audio/pcmu' &&
+                   codec.clockRate === 8000);
+      const videoCodecs = RTCRtpReceiver.getCapabilities('video').codecs.filter(
+        (codec) => codec.mimeType.toLowerCase() === 'video/h264');
+      if (audioCodecs.length !== 1 || videoCodecs.length === 0) {
+        throw new Error('browser lacks required PCMU or H.264 codec');
+      }
+      for (const transceiver of pc.getTransceivers()) {
+        if (transceiver.receiver.track.kind === 'audio') {
+          transceiver.setCodecPreferences(audioCodecs);
+        } else if (transceiver.receiver.track.kind === 'video') {
+          transceiver.setCodecPreferences(videoCodecs);
+        }
+      }
+    }
+
+    let encodedSequence = 0;
+    const captureUploads = new Set();
+
+    function captureSenderFrames(sender) {
+      if (typeof sender.createEncodedStreams !== 'function') {
+        throw new Error('encoded sender streams are unavailable');
+      }
+      const streams = sender.createEncodedStreams();
+      const transform = new TransformStream({
+        transform(frame, controller) {
+          const sequence = encodedSequence++;
+          const metadata = frame.getMetadata ? frame.getMetadata() : {};
+          const copy = frame.data.slice(0);
+          const upload = fetch('/encoded-frame', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/octet-stream',
+              'X-Frame-Sequence': String(sequence),
+              'X-Frame-Timestamp': String(frame.timestamp),
+              'X-Frame-Type': frame.type,
+              'X-Rtp-Timestamp': String(metadata.rtpTimestamp ?? ''),
+              'X-Payload-Type': String(metadata.payloadType ?? ''),
+              'X-Synchronization-Source': String(
+                metadata.synchronizationSource ?? ''),
+              'X-Frame-Id': String(metadata.frameId ?? ''),
+            },
+            body: copy,
+          }).then((response) => {
+            if (!response.ok) {
+              throw new Error(`encoded upload returned ${response.status}`);
+            }
+          }).catch((error) => errors.push(`encoded capture: ${error}`));
+          captureUploads.add(upload);
+          upload.finally(() => captureUploads.delete(upload));
+          controller.enqueue(frame);
+        },
+      });
+      streams.readable.pipeThrough(transform).pipeTo(streams.writable).catch(
+        (error) => errors.push(`encoded transform: ${error}`));
+    }
+
+    function passThroughEncodedFrames(endpoint, label) {
+      if (typeof endpoint.createEncodedStreams !== 'function') {
+        throw new Error(`${label} encoded streams are unavailable`);
+      }
+      const streams = endpoint.createEncodedStreams();
+      streams.readable.pipeTo(streams.writable).catch(
+        (error) => errors.push(`${label} encoded pass-through: ${error}`));
+    }
+
+    async function waitForCaptureUploads(timeoutMs = 5000) {
+      const deadline = performance.now() + timeoutMs;
+      while (captureUploads.size > 0 && performance.now() < deadline) {
+        await Promise.race([
+          Promise.allSettled(Array.from(captureUploads)),
+          new Promise((resolve) => setTimeout(resolve, 50)),
+        ]);
+      }
+      if (captureUploads.size > 0) {
+        errors.push(`${captureUploads.size} encoded uploads still pending`);
+      }
+      return {pending: captureUploads.size, captured: encodedSequence};
+    }
+
+    async function arm() {
+      startButton.disabled = true;
+      try {
+        status('requesting browser camera and microphone');
+        const query = new URLSearchParams(window.location.search);
+        const realMedia = query.get('real') === '1';
+        const captureEncoded = query.get('capture') === '1';
+        const videoFps = Number(query.get('fps') || '5');
+        if (!Number.isFinite(videoFps) || videoFps <= 0 || videoFps > 30) {
+          throw new Error(`invalid video fps: ${videoFps}`);
+        }
+        let constraints = {
+          audio: true,
+          video: {
+            width: {exact: 320},
+            height: {exact: 240},
+            frameRate: {exact: videoFps},
+          },
+        };
+        if (realMedia) {
+          const permissionProbe = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video: true,
+          });
+          permissionProbe.getTracks().forEach((track) => track.stop());
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          const cameras = devices.filter(
+            (device) => device.kind === 'videoinput');
+          const microphones = devices.filter(
+            (device) => device.kind === 'audioinput');
+          const camera = cameras.find(
+            (device) => device.label.includes('Logitech BRIO')) ||
+            cameras.find((device) => !device.label.includes('OBS')) ||
+            cameras[0];
+          const microphone = microphones.find(
+            (device) => device.label.includes('Logitech BRIO')) ||
+            microphones.find((device) => !device.label.includes('Monitor')) ||
+            microphones[0];
+          if (!camera || !microphone) {
+            throw new Error('no physical camera or microphone available');
+          }
+          console.log(`camera: ${camera.label}`);
+          console.log(`microphone: ${microphone.label}`);
+          constraints = {
+            audio: {deviceId: {exact: microphone.deviceId}},
+            video: {
+              deviceId: {exact: camera.deviceId},
+              width: {ideal: 320, max: 320},
+              height: {ideal: 240, max: 240},
+              frameRate: {ideal: videoFps, max: videoFps},
+            },
+          };
+        }
+        localStream = await navigator.mediaDevices.getUserMedia(constraints);
+        localVideo.srcObject = localStream;
+        status('waiting for RT1170 offer');
+        const offerSdp = await waitForOffer();
+
+        peerConnection = new RTCPeerConnection({
+          bundlePolicy: 'max-bundle',
+          iceServers: [],
+          encodedInsertableStreams: captureEncoded,
+        });
+        window.peerConnection = peerConnection;
+        remoteStream = new MediaStream();
+        remoteVideo.srcObject = remoteStream;
+        peerConnection.ontrack = (event) => {
+          if (!remoteStream.getTracks().some(
+              (track) => track.id === event.track.id)) {
+            remoteStream.addTrack(event.track);
+          }
+        };
+        const updateState = () => status(
+          `connection: ${peerConnection.connectionState}\n` +
+          `ice: ${peerConnection.iceConnectionState}`);
+        peerConnection.onconnectionstatechange = updateState;
+        peerConnection.oniceconnectionstatechange = updateState;
+
+        await peerConnection.setRemoteDescription({
+          type: 'offer',
+          sdp: offerSdp,
+        });
+        chooseCodecs(peerConnection);
+        for (const transceiver of peerConnection.getTransceivers()) {
+          const track = localStream.getTracks().find(
+            (candidate) => candidate.kind === transceiver.receiver.track.kind);
+          if (!track) throw new Error(`missing ${transceiver.receiver.track.kind} track`);
+          await transceiver.sender.replaceTrack(track);
+          if (captureEncoded) {
+            if (track.kind === 'video') {
+              captureSenderFrames(transceiver.sender);
+            } else {
+              passThroughEncodedFrames(
+                transceiver.sender, `${track.kind} sender`);
+            }
+            passThroughEncodedFrames(
+              transceiver.receiver, `${track.kind} receiver`);
+          }
+          transceiver.direction = 'sendrecv';
+        }
+        await peerConnection.setLocalDescription(
+          await peerConnection.createAnswer());
+        await waitForIceComplete(peerConnection);
+        const response = await fetch('/answer', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/sdp'},
+          body: peerConnection.localDescription.sdp,
+        });
+        if (!response.ok) {
+          throw new Error(`answer upload returned ${response.status}`);
+        }
+        status('answer delivered; waiting for media');
+      } catch (error) {
+        errors.push(String(error));
+        status(`error: ${error.message}`);
+      }
+    }
+
+    async function diagnostics() {
+      const counters = {
+        inboundAudioPackets: 0,
+        inboundAudioBytes: 0,
+        inboundVideoPackets: 0,
+        inboundVideoBytes: 0,
+        inboundVideoFramesDecoded: 0,
+        outboundAudioPackets: 0,
+        outboundAudioBytes: 0,
+        outboundVideoPackets: 0,
+        outboundVideoBytes: 0,
+        outboundVideoFramesEncoded: 0,
+        outboundVideoKeyFramesEncoded: 0,
+        outboundVideoPliCount: 0,
+      };
+      if (peerConnection) {
+        const report = await peerConnection.getStats();
+        report.forEach((row) => {
+          if (row.type === 'inbound-rtp' && !row.isRemote) {
+            if (row.kind === 'audio' || row.mediaType === 'audio') {
+              counters.inboundAudioPackets += row.packetsReceived || 0;
+              counters.inboundAudioBytes += row.bytesReceived || 0;
+            } else if (row.kind === 'video' || row.mediaType === 'video') {
+              counters.inboundVideoPackets += row.packetsReceived || 0;
+              counters.inboundVideoBytes += row.bytesReceived || 0;
+              counters.inboundVideoFramesDecoded += row.framesDecoded || 0;
+            }
+          }
+          if (row.type === 'outbound-rtp' && !row.isRemote) {
+            if (row.kind === 'audio' || row.mediaType === 'audio') {
+              counters.outboundAudioPackets += row.packetsSent || 0;
+              counters.outboundAudioBytes += row.bytesSent || 0;
+            } else if (row.kind === 'video' || row.mediaType === 'video') {
+              counters.outboundVideoPackets += row.packetsSent || 0;
+              counters.outboundVideoBytes += row.bytesSent || 0;
+              counters.outboundVideoFramesEncoded += row.framesEncoded || 0;
+              counters.outboundVideoKeyFramesEncoded +=
+                  row.keyFramesEncoded || 0;
+              counters.outboundVideoPliCount += row.pliCount || 0;
+            }
+          }
+        });
+      }
+      return {
+        armed: startButton.disabled,
+        status: statusBox.textContent,
+        errors,
+        connectionState: peerConnection?.connectionState || null,
+        iceConnectionState: peerConnection?.iceConnectionState || null,
+        offerSdp: peerConnection?.remoteDescription?.sdp || '',
+        answerSdp: peerConnection?.localDescription?.sdp || '',
+        localTracks: localStream?.getTracks().map(
+          (track) => ({
+            kind: track.kind,
+            label: track.label,
+            readyState: track.readyState,
+            settings: track.getSettings(),
+          })) || [],
+        remoteTracks: remoteStream?.getTracks().map(
+          (track) => ({kind: track.kind, readyState: track.readyState})) || [],
+        remoteVideo: {
+          readyState: remoteVideo.readyState,
+          width: remoteVideo.videoWidth,
+          height: remoteVideo.videoHeight,
+          currentTime: remoteVideo.currentTime,
+        },
+        counters,
+      };
+    }
+
+    window.collectTestDiagnostics = diagnostics;
+    window.waitForCaptureUploads = waitForCaptureUploads;
+    startButton.addEventListener('click', arm);
+  </script>
+</body>
+</html>

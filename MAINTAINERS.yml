@@ -7253,6 +7253,13 @@ West:
   labels:
     - "area: Storage"
 
+"West project: h264swdec":
+  status: maintained
+  maintainers:
+    - chemag
+  files:
+    - modules/h264swdec/
+
 "West project: hal_adi":
   status: maintained
   maintainers:
@@ -7701,6 +7708,13 @@ West:
   labels:
     - "area: AMP"
 
+"West project: libpeer":
+  status: maintained
+  maintainers:
+    - chemag
+  files:
+    - modules/libpeer/
+
 "West project: libsbc":
   status: maintained
   maintainers:
@@ -7795,6 +7809,13 @@ West:
   tests:
     - boot.with_mcumgr
     - bootloader.mcuboot
+
+"West project: minih264":
+  status: maintained
+  maintainers:
+    - chemag
+  files:
+    - modules/minih264/
 
 "West project: mipi-sys-t":
   status: odd fixes
