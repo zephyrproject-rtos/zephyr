@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Realtek Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Realtek RTS5817 RNG
+
+compatible: "realtek,rts5817-trng"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  ocotp:
+    type: phandle
+    required: true
+    description: |
+      Phandle to the OCOTP controller that owns the shared PUF/OTP domain.
