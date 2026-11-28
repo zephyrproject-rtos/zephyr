@@ -308,7 +308,7 @@ const struct shell_static_entry *z_shell_cmd_get(
 
 	if (parent->subcmd) {
 		if (is_dynamic_cmd(parent->subcmd)) {
-			dloc->args.remote_cmd = 0;
+			memset(dloc, 0, sizeof(*dloc));
 			parent->subcmd->dynamic_get(idx, dloc);
 			if (dloc->syntax != NULL) {
 				res = dloc;
