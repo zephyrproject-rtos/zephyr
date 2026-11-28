@@ -21,7 +21,7 @@ static ALWAYS_INLINE uint64_t div64_shr(uint64_t n, uint32_t s)
 	return ((uint64_t)hi << 32) | lo;
 }
 
-uint64_t z_div64_u32_recip(uint64_t n, uint64_t m, uint32_t flags)
+uint64_t z_div64_u32_recip(uint64_t n, uint64_t m, uint32_t flags) __nonblocking
 {
 	if ((flags & Z_DIV64_FLAG_SHIFT) == 0U) {
 		n = z_div64_mulhi(n, m, (flags & Z_DIV64_FLAG_BIAS) != 0U, false);
@@ -30,7 +30,7 @@ uint64_t z_div64_u32_recip(uint64_t n, uint64_t m, uint32_t flags)
 	return div64_shr(n, flags & Z_DIV64_SHIFT_MASK);
 }
 
-uint64_t z_div64_shared_div(uint64_t n, const struct sys_div64_recip *r)
+uint64_t z_div64_shared_div(uint64_t n, const struct sys_div64_recip *r) __nonblocking
 {
 	return z_div64_u32_recip(n, r->m, r->flags);
 }

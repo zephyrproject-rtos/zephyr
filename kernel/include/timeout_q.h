@@ -97,7 +97,7 @@ static inline bool z_is_inactive_timeout(const struct _timeout *to)
  *
  * @return Absolute tick value when timeout will expire.
  */
-k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t timeout);
+k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t timeout) __nonblocking;
 
 /* Attempt to abort a timeout. Safe to use for callers that need to be
  * certain the handler is not in flight (e.g. when about to free the
@@ -121,9 +121,9 @@ k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t tim
  * return the handler is not in flight on another CPU. Callers that only need
  * the timeout cancelled may ignore -EAGAIN.
  */
-int z_try_abort_timeout(struct _timeout *to);
+int z_try_abort_timeout(struct _timeout *to) __nonblocking;
 
-void z_timeout_wait_inflight_spin(const struct _timeout *to);
+void z_timeout_wait_inflight_spin(const struct _timeout *to) __nonblocking;
 
 /* Wait, holding no locks, until @to is no longer in flight on another CPU.
  *

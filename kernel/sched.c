@@ -98,7 +98,7 @@ static ALWAYS_INLINE void update_cache(int preempt_ok)
 #endif /* CONFIG_SMP */
 }
 
-static inline void ready_thread(struct k_thread *thread)
+static inline void ready_thread(struct k_thread *thread) __nonblocking
 {
 #ifdef CONFIG_KERNEL_COHERENCE
 	__ASSERT_NO_MSG(sys_cache_is_mem_coherent(thread));
@@ -117,7 +117,7 @@ static inline void ready_thread(struct k_thread *thread)
 	}
 }
 
-void z_ready_thread(struct k_thread *thread)
+void z_ready_thread(struct k_thread *thread) __nonblocking
 {
 	Z_SCHED_SPINLOCK {
 		if (z_smp_thread_active_elsewhere(thread) == NULL) {
@@ -126,7 +126,7 @@ void z_ready_thread(struct k_thread *thread)
 	}
 }
 
-void z_sched_ready_locked(struct k_thread *thread) ALIAS_OF(ready_thread);
+void z_sched_ready_locked(struct k_thread *thread) __nonblocking ALIAS_OF(ready_thread);
 
 static void unready_thread(struct k_thread *thread)
 {
@@ -226,10 +226,15 @@ static inline bool need_swap(void)
 #endif /* CONFIG_SMP */
 }
 
-static void reschedule(struct k_spinlock *lock, k_spinlock_key_t key)
+static void reschedule(struct k_spinlock *lock, k_spinlock_key_t key) __nonblocking
 {
 	if (resched(key.key) && need_swap()) {
+		/* Never in an ISR. _current stays ready and only yields to a
+		 * higher priority thread.
+		 */
+		TOOLCHAIN_DISABLE_NONBLOCKING_CHECK;
 		z_swap(lock, key);
+		TOOLCHAIN_ENABLE_NONBLOCKING_CHECK;
 	} else {
 		signal_pending_ipi();
 		k_spin_unlock(lock, key);
@@ -393,7 +398,7 @@ struct k_thread *z_unpend1_no_timeout(_wait_q_t *wait_q)
 	return thread;
 }
 
-void z_unpend_thread(struct k_thread *thread)
+void z_unpend_thread(struct k_thread *thread) __nonblocking
 {
 	k_spinlock_key_t key = z_sched_spinlock_lock();
 
@@ -467,7 +472,7 @@ bool z_thread_prio_set(struct k_thread *thread, int prio)
 	return need_sched;
 }
 
-void z_reschedule(struct k_spinlock *lock, k_spinlock_key_t key) ALIAS_OF(reschedule);
+void z_reschedule(struct k_spinlock *lock, k_spinlock_key_t key) __nonblocking ALIAS_OF(reschedule);
 
 void z_reschedule_locked(k_spinlock_key_t key) ALIAS_OF(reschedule_locked);
 

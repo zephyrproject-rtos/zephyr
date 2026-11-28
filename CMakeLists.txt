@@ -503,6 +503,13 @@ endif()
 zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,warning_base>>)
 zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,warning_base>>)
 
+if(CONFIG_FUNCTION_EFFECT_ANALYSIS)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,function_effect_analysis>>)
+  zephyr_compile_options(
+    $<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,function_effect_analysis>>
+  )
+endif()
+
 # ==========================================================================
 #
 # cmake -DW=... settings

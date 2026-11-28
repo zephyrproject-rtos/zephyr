@@ -24,7 +24,7 @@ static int z_held_spinlock_count[CONFIG_MP_MAX_NUM_CPUS];
  */
 const uint8_t z_spinlock_abort_sentinel;
 
-bool z_spin_lock_valid(struct k_spinlock *l)
+bool z_spin_lock_valid(struct k_spinlock *l) __nonblocking
 {
 	uintptr_t thread_cpu = l->thread_cpu;
 
@@ -44,7 +44,7 @@ EXPORT_SYMBOL(z_spin_lock_valid);
  * called from k_spin_lock() and k_spin_unlock() with the lock held, hence with
  * interrupts locked as _raw_current requires.
  */
-bool z_spin_unlock_valid(struct k_spinlock *l)
+bool z_spin_unlock_valid(struct k_spinlock *l) __nonblocking
 {
 	uint8_t cpu_id = _current_cpu->id;
 	uintptr_t tcpu = l->thread_cpu;
@@ -73,7 +73,7 @@ bool z_spin_unlock_valid(struct k_spinlock *l)
 }
 EXPORT_SYMBOL(z_spin_unlock_valid);
 
-void z_spin_lock_set_owner(struct k_spinlock *l)
+void z_spin_lock_set_owner(struct k_spinlock *l) __nonblocking
 {
 	uint8_t cpu_id = _current_cpu->id;
 
@@ -185,7 +185,7 @@ void z_assert_can_swap(unsigned int key, struct k_spinlock *swap_lock)
 }
 
 #ifdef CONFIG_KERNEL_COHERENCE
-bool z_spin_lock_mem_coherent(struct k_spinlock *l)
+bool z_spin_lock_mem_coherent(struct k_spinlock *l) __nonblocking
 {
 	return sys_cache_is_mem_coherent((void *)l);
 }

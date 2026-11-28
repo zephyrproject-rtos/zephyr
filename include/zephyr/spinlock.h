@@ -101,9 +101,9 @@ struct k_spinlock {
  * kernel code size, don't use on platforms known to be small.
  */
 #ifdef CONFIG_SPIN_VALIDATE
-bool z_spin_lock_valid(struct k_spinlock *l);
-bool z_spin_unlock_valid(struct k_spinlock *l);
-void z_spin_lock_set_owner(struct k_spinlock *l);
+bool z_spin_lock_valid(struct k_spinlock *l) __nonblocking;
+bool z_spin_unlock_valid(struct k_spinlock *l) __nonblocking;
+void z_spin_lock_set_owner(struct k_spinlock *l) __nonblocking;
 void z_spin_lock_transfer_owner(struct k_spinlock *l, struct k_thread *thread);
 void z_assert_can_swap(unsigned int key, struct k_spinlock *swap_lock);
 void z_spin_validate_reset(bool lock_held);
@@ -118,7 +118,7 @@ BUILD_ASSERT(CONFIG_MP_MAX_NUM_CPUS <= 4, "Too many CPUs for mask");
 #endif
 
 # ifdef CONFIG_KERNEL_COHERENCE
-bool z_spin_lock_mem_coherent(struct k_spinlock *l);
+bool z_spin_lock_mem_coherent(struct k_spinlock *l) __nonblocking;
 # endif /* CONFIG_KERNEL_COHERENCE */
 
 #endif /* CONFIG_SPIN_VALIDATE */
@@ -191,7 +191,7 @@ static ALWAYS_INLINE void z_spinlock_validate_post(struct k_spinlock *l)
  * @return A key value that must be passed to k_spin_unlock() when the
  *         lock is released.
  */
-static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
+static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock *l) __nonblocking
 {
 	ARG_UNUSED(l);
 	k_spinlock_key_t k;
@@ -243,7 +243,7 @@ static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
  * @see k_spin_lock
  * @see k_spin_unlock
  */
-static ALWAYS_INLINE int k_spin_trylock(struct k_spinlock *l, k_spinlock_key_t *k)
+static ALWAYS_INLINE int k_spin_trylock(struct k_spinlock *l, k_spinlock_key_t *k) __nonblocking
 {
 	int key = arch_irq_lock();
 
@@ -316,7 +316,7 @@ busy:
  *        acquired
  */
 static ALWAYS_INLINE void k_spin_unlock(struct k_spinlock *l,
-					k_spinlock_key_t key)
+					k_spinlock_key_t key) __nonblocking
 {
 	ARG_UNUSED(l);
 #ifdef CONFIG_SPIN_VALIDATE
@@ -381,7 +381,7 @@ static ALWAYS_INLINE bool z_spin_is_locked(struct k_spinlock *l)
 #endif /* defined(CONFIG_TEST) || defined(CONFIG_ASSERT) */
 
 /* Internal function: releases the lock, but leaves local interrupts disabled */
-static ALWAYS_INLINE void k_spin_release(struct k_spinlock *l)
+static ALWAYS_INLINE void k_spin_release(struct k_spinlock *l) __nonblocking
 {
 	ARG_UNUSED(l);
 #ifdef CONFIG_SPIN_VALIDATE

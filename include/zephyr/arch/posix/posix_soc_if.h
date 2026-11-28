@@ -14,6 +14,7 @@
  * or all its boards
  */
 
+#include <zephyr/toolchain.h>
 #include <zephyr/arch/posix/posix_trace.h>
 #include "soc_irq.h" /* Must exist and define _ARCH_IRQ/ISR_* macros */
 
@@ -28,8 +29,8 @@ void posix_irq_enable(unsigned int irq);
 void posix_irq_disable(unsigned int irq);
 int  posix_irq_is_enabled(unsigned int irq);
 int  posix_irq_is_pending(unsigned int irq);
-unsigned int posix_irq_lock(void);
-void posix_irq_unlock(unsigned int key);
+unsigned int posix_irq_lock(void) __nonblocking;
+void posix_irq_unlock(unsigned int key) __nonblocking;
 void posix_irq_full_unlock(void);
 int  posix_get_current_irq(void);
 void posix_sw_set_pending_IRQ(unsigned int IRQn);

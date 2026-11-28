@@ -89,7 +89,7 @@ extern "C" {
  *         or sys_clock_unlock().
  */
 #if defined(CONFIG_SMP) || defined(CONFIG_SPIN_VALIDATE)
-k_spinlock_key_t sys_clock_lock(void);
+k_spinlock_key_t sys_clock_lock(void) __nonblocking;
 #else
 /*
  * When actual spinlocks are not needed (UP without CONFIG_SPIN_VALIDATE),
@@ -97,7 +97,7 @@ k_spinlock_key_t sys_clock_lock(void);
  * ignored.  Inline this to avoid the overhead of an extra function
  * call for legacy drivers using sys_clock_announce().
  */
-static inline k_spinlock_key_t sys_clock_lock(void)
+static inline k_spinlock_key_t sys_clock_lock(void) __nonblocking
 {
 	k_spinlock_key_t key;
 
@@ -122,9 +122,9 @@ static inline k_spinlock_key_t sys_clock_lock(void)
  * @param key Lock key returned by sys_clock_lock().
  */
 #if defined(CONFIG_SMP) || defined(CONFIG_SPIN_VALIDATE)
-void sys_clock_unlock(k_spinlock_key_t key);
+void sys_clock_unlock(k_spinlock_key_t key) __nonblocking;
 #else
-static inline void sys_clock_unlock(k_spinlock_key_t key)
+static inline void sys_clock_unlock(k_spinlock_key_t key) __nonblocking
 {
 	arch_irq_unlock(key.key);
 }
@@ -141,7 +141,7 @@ static inline void sys_clock_unlock(k_spinlock_key_t key)
  *
  * @return true if the system clock lock is held.
  */
-bool sys_clock_is_locked(void);
+bool sys_clock_is_locked(void) __nonblocking;
 #endif
 
 /**
@@ -183,7 +183,7 @@ bool sys_clock_is_locked(void);
  *        whose fallback passes true here.  Scheduled for removal in a future
  *        release; new code must ignore it.
  */
-void sys_clock_set_timeout(uint32_t ticks, bool idle);
+void sys_clock_set_timeout(uint32_t ticks, bool idle) __nonblocking;
 
 /**
  * @brief Timer idle exit notification
@@ -247,7 +247,7 @@ static inline void sys_clock_announce(uint32_t ticks)
  * @note This function is called by the kernel with the system clock
  * lock held.
  */
-uint32_t sys_clock_elapsed(void);
+uint32_t sys_clock_elapsed(void) __nonblocking;
 
 /**
  * @brief Disable system timer.
@@ -284,7 +284,7 @@ void sys_clock_disable(void);
  * K_TICKS_FOREVER was here, so a driver that has not migrated and still keys
  * on that value stops its clock as it always did.
  */
-void sys_clock_no_timeout(void);
+void sys_clock_no_timeout(void) __nonblocking;
 
 /**
  * @brief Notify the timer driver that the CPU is entering low-power idle.

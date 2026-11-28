@@ -70,7 +70,7 @@ K_OBJ_TYPE_DEFINE_TYPE_ONLY(obj_type_thread, k_thread, K_OBJ_TYPE_THREAD_ID,
 #define _FOREACH_STATIC_THREAD(thread_data)              \
 	STRUCT_SECTION_FOREACH(_static_thread_data, thread_data)
 
-bool k_is_in_isr(void)
+bool k_is_in_isr(void) __nonblocking
 {
 	return arch_is_in_isr();
 }

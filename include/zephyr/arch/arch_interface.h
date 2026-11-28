@@ -1536,7 +1536,7 @@ bool arch_pcie_msi_vector_connect(msi_vector_t *vector,
  * arch_nop(). Architectures may implement this function to perform extra
  * checks or power management tricks if needed.
  */
-void arch_spin_relax(void);
+void arch_spin_relax(void) __nonblocking;
 
 /**
  * @defgroup arch-stackwalk Architecture-specific Stack Walk APIs

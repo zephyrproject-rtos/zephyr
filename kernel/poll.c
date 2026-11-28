@@ -493,7 +493,7 @@ static int signal_poll_event(struct k_poll_event *event, uint32_t state)
 	return retcode;
 }
 
-bool z_handle_obj_poll_events(sys_dlist_t *events, uint32_t state)
+bool z_handle_obj_poll_events(sys_dlist_t *events, uint32_t state) __nonblocking
 {
 	struct k_poll_event *poll_event;
 	k_spinlock_key_t key = k_spin_lock(&poll_lock);
@@ -639,8 +639,7 @@ static void triggered_work_handler(struct k_work *work)
 	twork->real_handler(work);
 }
 
-extern int z_work_submit_to_queue(struct k_work_q *queue,
-			 struct k_work *work);
+extern int z_work_submit_to_queue(struct k_work_q *queue, struct k_work *work) __nonblocking;
 
 static void triggered_work_expiration_handler(struct _timeout *timeout)
 {

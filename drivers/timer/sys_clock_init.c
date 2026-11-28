@@ -18,7 +18,7 @@
 
 /* Weak-linked noop defaults for optional driver interfaces*/
 
-void __weak sys_clock_set_timeout(uint32_t ticks, bool idle)
+void __weak sys_clock_set_timeout(uint32_t ticks, bool idle) __nonblocking
 {
 	ARG_UNUSED(ticks);
 	ARG_UNUSED(idle);
@@ -28,7 +28,7 @@ void __weak sys_clock_idle_exit(void)
 {
 }
 
-void __weak sys_clock_no_timeout(void)
+void __weak sys_clock_no_timeout(void) __nonblocking
 {
 	/* Ask for the longest wait the interface can express. UINT32_MAX is
 	 * numerically what K_TICKS_FOREVER was here, so a driver that has not
