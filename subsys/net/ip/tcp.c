@@ -116,6 +116,7 @@ void net_tcp_conn_accepted(struct net_context *child_ctx)
 }
 
 static uint8_t tcp_send_options_len(struct tcp *conn);
+static bool tcp_sack_in_recovery(struct tcp *conn);
 
 static uint32_t tcp_get_seq(struct net_buf *buf)
 {
@@ -123,12 +124,18 @@ static uint32_t tcp_get_seq(struct net_buf *buf)
 }
 
 /*
- * Out of order data is only held when the receive queue is enabled, and
- * without it there is never a block to report.
+ * SACK permitted is offered when either side uses SACK. Reporting received
+ * data needs the receive queue, since only it holds data out of order.
  */
 static inline bool tcp_sack_supported(void)
 {
-	return IS_ENABLED(CONFIG_NET_TCP_SACK);
+	return IS_ENABLED(CONFIG_NET_TCP_SACK_RECV) || IS_ENABLED(CONFIG_NET_TCP_SACK_SEND);
+}
+
+/* The SACK blocks of the peer are used for loss recovery */
+static inline bool tcp_sack_send_active(struct tcp *conn)
+{
+	return IS_ENABLED(CONFIG_NET_TCP_SACK_SEND) && conn->sack_perm;
 }
 
 /*
@@ -137,7 +144,8 @@ static inline bool tcp_sack_supported(void)
  */
 static bool tcp_sack_block(struct tcp *conn, uint32_t *left, uint32_t *right)
 {
-	if (!conn->sack_perm || conn->queue_recv_data == NULL) {
+	if (!IS_ENABLED(CONFIG_NET_TCP_SACK_RECV) || !conn->sack_perm ||
+	    (conn->queue_recv_data == NULL)) {
 		return false;
 	}
 
@@ -702,7 +710,7 @@ static void tcp_rtt_handshake_ack(struct tcp *conn, uint32_t ack)
 
 /* Implementation according to RFC6582 */
 
-static void tcp_new_reno_log(struct tcp *conn, char *step)
+static void tcp_new_reno_log(struct tcp *conn, const char *step)
 {
 	NET_DBG("[%p] ca %s, cwnd=%u, ssthres=%u, fast_pend=%u",
 		conn, step, conn->ca.cwnd, conn->ca.ssthresh,
@@ -735,6 +743,27 @@ static void tcp_new_reno_fast_retransmit(struct tcp *conn)
 		tcp_new_reno_log(conn, "fast_retransmit");
 	}
 }
+
+#ifdef CONFIG_NET_TCP_SACK_SEND
+/* SACK-based loss recovery, RFC 6675 step (4.2): the pipe algorithm takes
+ * the place of the window inflation.
+ */
+static void tcp_new_reno_sack_recovery(struct tcp *conn, uint32_t flight_size)
+{
+	uint32_t min_ssthresh = (uint32_t)conn_mss(conn) * 2U;
+
+	conn->ca.ssthresh = MAX(min_ssthresh, flight_size / 2U);
+	conn->ca.cwnd = conn->ca.ssthresh;
+	conn->ca.pending_fast_retransmit_bytes = 0;
+	tcp_new_reno_log(conn, "sack_recovery");
+}
+
+static void tcp_new_reno_recovery_end(struct tcp *conn)
+{
+	conn->ca.cwnd = conn->ca.ssthresh;
+	tcp_new_reno_log(conn, "recovery_end");
+}
+#endif /* CONFIG_NET_TCP_SACK_SEND */
 
 /* For every duplicate ack increment the cwnd by mss */
 static void tcp_new_reno_dup_ack(struct tcp *conn)
@@ -789,6 +818,23 @@ static void tcp_ca_fast_retransmit(struct tcp *conn)
 	tcp_new_reno_fast_retransmit(conn);
 }
 
+#ifdef CONFIG_NET_TCP_SACK_SEND
+static inline void tcp_ca_sack_recovery(struct tcp *conn, uint32_t flight_size)
+{
+	tcp_new_reno_sack_recovery(conn, flight_size);
+}
+
+static inline void tcp_ca_recovery_end(struct tcp *conn)
+{
+	tcp_new_reno_recovery_end(conn);
+}
+
+static inline uint32_t tcp_ca_cwnd(struct tcp *conn)
+{
+	return conn->ca.cwnd;
+}
+#endif /* CONFIG_NET_TCP_SACK_SEND */
+
 static void tcp_ca_dup_ack(struct tcp *conn)
 {
 	tcp_new_reno_dup_ack(conn);
@@ -807,6 +853,26 @@ static void tcp_ca_timeout(struct tcp *conn) { }
 
 #ifdef CONFIG_NET_TCP_FAST_RETRANSMIT
 static void tcp_ca_fast_retransmit(struct tcp *conn) { }
+
+#ifdef CONFIG_NET_TCP_SACK_SEND
+static inline void tcp_ca_sack_recovery(struct tcp *conn, uint32_t flight_size)
+{
+	ARG_UNUSED(conn);
+	ARG_UNUSED(flight_size);
+}
+
+static inline void tcp_ca_recovery_end(struct tcp *conn)
+{
+	ARG_UNUSED(conn);
+}
+
+static inline uint32_t tcp_ca_cwnd(struct tcp *conn)
+{
+	ARG_UNUSED(conn);
+
+	return NET_TCP_MAX_WINDOW;
+}
+#endif /* CONFIG_NET_TCP_SACK_SEND */
 
 static void tcp_ca_dup_ack(struct tcp *conn) { }
 #endif /* CONFIG_NET_TCP_FAST_RETRANSMIT */
@@ -1315,7 +1381,10 @@ static uint8_t *tcp_options_get(struct net_pkt *pkt, int tcp_options_len,
 	return buf;
 }
 
-static bool tcp_options_check(struct tcp_options *recv_options,
+/* Parse the options of a received segment. The SACK blocks are stored in
+ * sack when it is not NULL, otherwise SACK options are skipped.
+ */
+static bool tcp_options_check(struct tcp_options *recv_options, struct tcp_sack_blocks *sack,
 			      struct net_pkt *pkt, ssize_t len)
 {
 	uint8_t options_buf[40]; /* TCP header max options size is 40 */
@@ -1384,6 +1453,29 @@ static bool tcp_options_check(struct tcp_options *recv_options,
 			}
 
 			recv_options->sack_perm_found = true;
+			break;
+		case NET_TCP_SACK_OPT:
+			if (sack == NULL) {
+				break;
+			}
+
+			/* SACK is only advisory, so a SACK option that holds
+			 * no whole number of blocks is ignored.
+			 */
+			if ((opt_len < (2 + NET_TCP_SACK_BLOCK_SIZE)) ||
+			    (opt_len > (2 + (NET_TCP_SACK_MAX_BLOCKS * NET_TCP_SACK_BLOCK_SIZE))) ||
+			    (((opt_len - 2) % NET_TCP_SACK_BLOCK_SIZE) != 0)) {
+				NET_DBG("Ignoring SACK option of %u bytes", opt_len);
+				break;
+			}
+
+			sack->count = (opt_len - 2) / NET_TCP_SACK_BLOCK_SIZE;
+			for (uint8_t i = 0U; i < sack->count; i++) {
+				const uint8_t *edges = options + 2 + (i * NET_TCP_SACK_BLOCK_SIZE);
+
+				sack->block[i].left = sys_get_be32(edges);
+				sack->block[i].right = sys_get_be32(edges + 4);
+			}
 			break;
 		default:
 			continue;
@@ -2039,7 +2131,7 @@ static int tcp_out_ext(struct tcp *conn, uint8_t flags, size_t data_len, uint32_
 		 * consuming the send queue: the queued data is dropped
 		 * only when the peer acknowledges it.
 		 */
-		ret = tcp_pkt_peek(pkt, &conn->send_data, conn->unacked_len, data_len);
+		ret = tcp_pkt_peek(pkt, &conn->send_data, (size_t)(seq - conn->seq), data_len);
 		if (ret < 0) {
 			tcp_pkt_unref(pkt);
 			ret = -ENOBUFS;
@@ -2347,14 +2439,61 @@ static void tcp_setup_retransmission(struct tcp *conn)
 				    K_MSEC(tcp_cur_rto_ms(conn)));
 }
 
+/* Largest payload of a segment, after the options */
+static int tcp_send_seg_max(struct tcp *conn)
+{
+	return (int)conn_mss(conn) - (int)tcp_send_options_len(conn);
+}
+
+/* Send len bytes of the send queue from seq on, which must be at or after
+ * conn->seq. Data from send_max on is new, data below it was sent before.
+ */
+static int tcp_send_segment(struct tcp *conn, uint32_t seq, size_t len)
+{
+	uint32_t end_seq = seq + (uint32_t)len;
+	bool new_data = net_tcp_seq_cmp(seq, conn->send_max) >= 0;
+	int ret;
+
+	ret = tcp_out_ext(conn, PSH | ACK, len, seq);
+	if (ret < 0) {
+		if (ret == -ENOBUFS) {
+			NET_ERR("[%p] packet allocation failed, len=%zu", conn, len);
+		}
+
+		return ret;
+	}
+
+	/* Time one segment of new data at a time. Data below send_max
+	 * was sent before, so it is never timed (Karn's algorithm). In loss
+	 * recovery the ACK of new data also covers retransmitted data.
+	 */
+	if (new_data && !tcp_sack_in_recovery(conn)) {
+		tcp_rtt_start(conn, end_seq);
+	}
+	if (net_tcp_seq_cmp(end_seq, conn->send_max) > 0) {
+		conn->send_max = end_seq;
+	}
+
+	if (new_data) {
+		net_stats_update_tcp_sent(conn->iface, len);
+		net_stats_update_tcp_seg_sent(conn->iface);
+	} else {
+		net_stats_update_tcp_resent(conn->iface, len);
+		net_stats_update_tcp_seg_rexmit(conn->iface);
+	}
+
+	return 0;
+}
+
 /* Send one segment of at most max_len bytes after the unacknowledged data */
 static int tcp_send_data_max(struct tcp *conn, int max_len)
 {
+	int seg_max = tcp_send_seg_max(conn);
 	int ret = 0;
-	uint32_t seq;
 	int len;
 
-	len = MIN(tcp_unsent_len(conn), conn_mss(conn) - tcp_send_options_len(conn));
+	len = tcp_unsent_len(conn);
+	len = MIN(len, seg_max);
 	len = MIN(len, max_len);
 	if (len < 0) {
 		ret = len;
@@ -2366,32 +2505,9 @@ static int tcp_send_data_max(struct tcp *conn, int max_len)
 		goto out;
 	}
 
-	seq = conn->seq + (uint32_t)conn->unacked_len;
-	ret = tcp_out_ext(conn, PSH | ACK, (size_t)len, seq);
+	ret = tcp_send_segment(conn, conn->seq + (uint32_t)conn->unacked_len, (size_t)len);
 	if (ret == 0) {
-		uint32_t end_seq = seq + (uint32_t)len;
-
 		conn->unacked_len += len;
-
-		/* Time one segment of new data at a time. Data below send_max
-		 * was sent before, so it is never timed (Karn's algorithm).
-		 */
-		if (net_tcp_seq_cmp(seq, conn->send_max) >= 0) {
-			tcp_rtt_start(conn, end_seq);
-		}
-		if (net_tcp_seq_cmp(end_seq, conn->send_max) > 0) {
-			conn->send_max = end_seq;
-		}
-
-		if (conn->data_mode == TCP_DATA_MODE_RESEND) {
-			net_stats_update_tcp_resent(conn->iface, len);
-			net_stats_update_tcp_seg_rexmit(conn->iface);
-		} else {
-			net_stats_update_tcp_sent(conn->iface, len);
-			net_stats_update_tcp_seg_sent(conn->iface);
-		}
-	} else if (ret == -ENOBUFS) {
-		NET_ERR("[%p] packet allocation failed, len=%d", conn, len);
 	}
 
 	conn_send_data_dump(conn);
@@ -2405,6 +2521,503 @@ static int tcp_send_data(struct tcp *conn)
 	return tcp_send_data_max(conn, INT_MAX);
 }
 
+#ifdef CONFIG_NET_TCP_SACK_SEND
+
+static bool tcp_sack_in_recovery(struct tcp *conn)
+{
+	return conn->sack_recovery;
+}
+
+/* Largest segment for loss recovery, at least one byte */
+static uint32_t tcp_sack_seg_max(struct tcp *conn)
+{
+	int seg_max = tcp_send_seg_max(conn);
+
+	return (seg_max > 0) ? (uint32_t)seg_max : 1U;
+}
+
+/* Start of the hole below the scoreboard range idx */
+static uint32_t tcp_sack_hole_start(struct tcp *conn, uint8_t idx)
+{
+	return (idx == 0U) ? conn->seq : conn->sack_ranges[idx - 1U].right;
+}
+
+/* RFC 6675 IsLost() for the hole below range idx. Every octet of a hole has
+ * the same SACKed data above it, so the whole hole is lost or none of it:
+ * lost when DupThresh discontiguous ranges, or more than (DupThresh - 1) *
+ * SMSS octets, are SACKed above it.
+ */
+static bool tcp_sack_hole_lost(struct tcp *conn, uint8_t idx)
+{
+	uint32_t sacked = 0U;
+
+	if ((conn->sack_count - idx) >= DUPLICATE_ACK_RETRANSMIT_TRHESHOLD) {
+		return true;
+	}
+
+	for (uint8_t i = idx; i < conn->sack_count; i++) {
+		sacked += conn->sack_ranges[i].right - conn->sack_ranges[i].left;
+	}
+
+	return sacked > ((DUPLICATE_ACK_RETRANSMIT_TRHESHOLD - 1U) * (uint32_t)conn_mss(conn));
+}
+
+/* Forget the ranges the cumulative ACK una covers */
+static void tcp_sack_trim(struct tcp *conn, uint32_t una)
+{
+	uint8_t kept = 0U;
+
+	/* Keep sack_high between una and send_max, so that it compares
+	 * correctly across a sequence number wrap.
+	 */
+	if ((net_tcp_seq_cmp(conn->sack_high, una) < 0) ||
+	    (net_tcp_seq_cmp(conn->sack_high, conn->send_max) > 0)) {
+		conn->sack_high = una;
+	}
+
+	for (uint8_t i = 0U; i < conn->sack_count; i++) {
+		struct tcp_sack_block range = conn->sack_ranges[i];
+
+		if (net_tcp_seq_cmp(range.right, una) <= 0) {
+			continue;
+		}
+
+		if (net_tcp_seq_cmp(range.left, una) < 0) {
+			range.left = una;
+		}
+
+		conn->sack_ranges[kept] = range;
+		kept++;
+	}
+
+	conn->sack_count = kept;
+}
+
+/* Merge a block into the scoreboard. Returns true when the block reports
+ * octets that were not SACKed before, also when it does not fit.
+ */
+static bool tcp_sack_insert(struct tcp *conn, uint32_t left, uint32_t right)
+{
+	struct tcp_sack_block *ranges = conn->sack_ranges;
+	bool above_high = net_tcp_seq_cmp(right, conn->sack_high) > 0;
+	uint8_t i = 0U;
+	uint8_t j;
+
+	if (above_high) {
+		conn->sack_high = right;
+	}
+
+	/* Skip the ranges below the block, a range that touches it merges */
+	while ((i < conn->sack_count) && (net_tcp_seq_cmp(ranges[i].right, left) < 0)) {
+		i++;
+	}
+
+	if ((i < conn->sack_count) && (net_tcp_seq_cmp(ranges[i].left, left) <= 0) &&
+	    (net_tcp_seq_cmp(ranges[i].right, right) >= 0)) {
+		return false;
+	}
+
+	/* Ranges i up to j overlap or touch the block */
+	for (j = i; (j < conn->sack_count) && (net_tcp_seq_cmp(ranges[j].left, right) <= 0); j++) {
+		if (net_tcp_seq_cmp(ranges[j].left, left) < 0) {
+			left = ranges[j].left;
+		}
+
+		if (net_tcp_seq_cmp(ranges[j].right, right) > 0) {
+			right = ranges[j].right;
+		}
+	}
+
+	if (j > i) {
+		ranges[i].left = left;
+		ranges[i].right = right;
+		memmove(&ranges[i + 1U], &ranges[j], (conn->sack_count - j) * sizeof(ranges[0]));
+		conn->sack_count -= j - i - 1U;
+
+		return true;
+	}
+
+	/* A full scoreboard forgets its highest range. That data then counts
+	 * as in flight, so it is neither skipped nor resent early. A block
+	 * that is not recorded still counts as new information when it ends
+	 * above all octets SACKed so far (RFC 6675 section 2).
+	 */
+	if (conn->sack_count == ARRAY_SIZE(conn->sack_ranges)) {
+		if (i == conn->sack_count) {
+			return above_high;
+		}
+
+		conn->sack_count--;
+	}
+
+	memmove(&ranges[i + 1U], &ranges[i], (conn->sack_count - i) * sizeof(ranges[0]));
+	ranges[i].left = left;
+	ranges[i].right = right;
+	conn->sack_count++;
+
+	return true;
+}
+
+/* RFC 6675 Update(). Returns true when the blocks report octets that were
+ * not SACKed before, which makes the ACK a duplicate ACK in the sense of
+ * RFC 6675 section 2.
+ */
+static bool tcp_sack_update(struct tcp *conn, const struct tcp_sack_blocks *sack, uint32_t una)
+{
+	bool new_info = false;
+
+	for (uint8_t i = 0U; i < sack->count; i++) {
+		uint32_t left = sack->block[i].left;
+		uint32_t right = sack->block[i].right;
+
+		/* Only data that was sent and is not acknowledged yet. This
+		 * leaves out D-SACK blocks (RFC 2883) below una.
+		 */
+		if ((net_tcp_seq_cmp(left, una) < 0) ||
+		    (net_tcp_seq_cmp(right, conn->send_max) > 0) ||
+		    (net_tcp_seq_cmp(left, right) >= 0)) {
+			NET_DBG("[%p] Ignoring SACK block %u-%u (una %u, max %u)", conn, left,
+				right, una, conn->send_max);
+			continue;
+		}
+
+		if (tcp_sack_insert(conn, left, right)) {
+			new_info = true;
+		}
+	}
+
+	return new_info;
+}
+
+/* Process the SACK information of an ACK for una, before the cumulative ACK
+ * is applied (RFC 6675 section 5). dup_ack is set for a duplicate ACK in
+ * the sense of RFC 5681, which counts as one as well: the peer may send no
+ * SACK option (RFC 2018 section 4), or repeat a block when it drops data
+ * after a second hole. Returns true when the ACK starts loss recovery.
+ */
+static bool tcp_sack_ack(struct tcp *conn, const struct tcp_sack_blocks *sack, uint32_t una,
+			 bool dup_ack)
+{
+	bool new_info;
+
+	tcp_sack_trim(conn, una);
+	new_info = tcp_sack_update(conn, sack, una);
+
+	if (net_tcp_seq_cmp(una, conn->seq) > 0) {
+		conn->dup_ack_cnt = 0U;
+	}
+
+	if (conn->sack_rto_hold && (net_tcp_seq_cmp(una, conn->recovery_point) >= 0)) {
+		conn->sack_rto_hold = false;
+	}
+
+	if (conn->sack_recovery) {
+		if (net_tcp_seq_cmp(una, conn->recovery_point) >= 0) {
+			NET_DBG("[%p] SACK recovery done at %u", conn, una);
+			conn->sack_recovery = false;
+			tcp_ca_recovery_end(conn);
+		}
+
+		return false;
+	}
+
+	if ((new_info || dup_ack) && (conn->dup_ack_cnt < DUPLICATE_ACK_RETRANSMIT_TRHESHOLD)) {
+		conn->dup_ack_cnt++;
+	}
+
+	/* After an RTO, no recovery before the data sent until then is
+	 * acknowledged (RFC 6675 section 5.1).
+	 */
+	if (conn->sack_rto_hold || (conn->data_mode != TCP_DATA_MODE_SEND) ||
+	    (net_tcp_seq_cmp(conn->send_max, una) <= 0)) {
+		return false;
+	}
+
+	if ((conn->dup_ack_cnt < DUPLICATE_ACK_RETRANSMIT_TRHESHOLD) &&
+	    !tcp_sack_hole_lost(conn, 0U)) {
+		return false;
+	}
+
+	/* RFC 6675 steps (4.1) and (4.2) */
+	conn->sack_recovery = true;
+	conn->recovery_point = conn->send_max;
+	conn->high_rxt = una;
+	conn->rescue_rxt = una;
+	tcp_ca_sack_recovery(conn, conn->send_max - una);
+
+	NET_DBG("[%p] SACK recovery from %u to %u, %u ranges", conn, una, conn->recovery_point,
+		conn->sack_count);
+
+	return true;
+}
+
+/* RFC 6675 SetPipe(): the octets still in flight */
+static uint32_t tcp_sack_pipe(struct tcp *conn)
+{
+	uint32_t top = conn->seq;
+	uint32_t pipe = 0U;
+
+	for (uint8_t i = 0U; i < conn->sack_count; i++) {
+		uint32_t start = tcp_sack_hole_start(conn, i);
+		uint32_t end = conn->sack_ranges[i].left;
+
+		if (!tcp_sack_hole_lost(conn, i)) {
+			pipe += end - start;
+		}
+
+		/* Retransmitted octets count once more */
+		if (net_tcp_seq_cmp(conn->high_rxt, start) > 0) {
+			if (net_tcp_seq_cmp(conn->high_rxt, end) < 0) {
+				end = conn->high_rxt;
+			}
+
+			pipe += end - start;
+		}
+
+		top = conn->sack_ranges[i].right;
+	}
+
+	/* Data above the highest SACKed octet is never considered lost. Only
+	 * with no SACK information has some of it been retransmitted.
+	 */
+	if (net_tcp_seq_cmp(conn->send_max, top) > 0) {
+		pipe += conn->send_max - top;
+
+		if (net_tcp_seq_cmp(conn->high_rxt, top) > 0) {
+			pipe += conn->high_rxt - top;
+		}
+	}
+
+	return pipe;
+}
+
+/* New data that fits in the window of the peer, for NextSeg() rule (2) */
+static uint32_t tcp_sack_new_data_len(struct tcp *conn, uint32_t seg_max)
+{
+	uint32_t unacked = (uint32_t)conn->unacked_len;
+	uint32_t len;
+
+	if ((conn->send_data_total <= unacked) || (conn->send_win <= unacked)) {
+		return 0U;
+	}
+
+	len = (uint32_t)MIN(conn->send_data_total - unacked, conn->send_win - unacked);
+
+	/* Nagle's algorithm, as in tcp_send_queued_data() */
+	if (!conn->tcp_nodelay && (len < seg_max)) {
+		return 0U;
+	}
+
+	return MIN(len, seg_max);
+}
+
+/* NextSeg() rule (4): one segment that ends with the highest unSACKed octet */
+static uint32_t tcp_sack_rescue_seg(struct tcp *conn, uint32_t seg_max, uint32_t *seq)
+{
+	uint32_t start;
+	uint32_t end;
+	uint8_t i;
+
+	if (net_tcp_seq_cmp(conn->seq, conn->rescue_rxt) <= 0) {
+		return 0U;
+	}
+
+	start = (conn->sack_count > 0U) ? conn->sack_ranges[conn->sack_count - 1U].right
+					: conn->seq;
+	end = conn->send_max;
+
+	/* Nothing after the highest range, take the highest hole */
+	for (i = conn->sack_count; (i > 0U) && (net_tcp_seq_cmp(start, end) >= 0); i--) {
+		start = tcp_sack_hole_start(conn, i - 1U);
+		end = conn->sack_ranges[i - 1U].left;
+	}
+
+	if (net_tcp_seq_cmp(start, end) >= 0) {
+		return 0U;
+	}
+
+	if ((end - start) > seg_max) {
+		start = end - seg_max;
+	}
+
+	*seq = start;
+
+	return end - start;
+}
+
+/* RFC 6675 NextSeg(). Returns the length of the segment to send from *seq,
+ * or 0 when there is none. *rescue is set for a rescue retransmission.
+ */
+static uint32_t tcp_sack_next_seg(struct tcp *conn, uint32_t *seq, bool *rescue)
+{
+	uint32_t seg_max = tcp_sack_seg_max(conn);
+	uint32_t len;
+
+	*rescue = false;
+
+	/* Rule (1) on the first pass: the first lost hole above high_rxt.
+	 * Rule (3) on the second pass: the first hole above high_rxt.
+	 */
+	for (uint8_t pass = 0U; pass < 2U; pass++) {
+		for (uint8_t i = 0U; i < conn->sack_count; i++) {
+			uint32_t start = tcp_sack_hole_start(conn, i);
+			uint32_t end = conn->sack_ranges[i].left;
+
+			if (net_tcp_seq_cmp(start, conn->high_rxt) < 0) {
+				start = conn->high_rxt;
+			}
+
+			if ((net_tcp_seq_cmp(start, end) >= 0) ||
+			    ((pass == 0U) && !tcp_sack_hole_lost(conn, i))) {
+				continue;
+			}
+
+			*seq = start;
+
+			return MIN(end - start, seg_max);
+		}
+
+		/* Rule (2): new data */
+		if (pass == 0U) {
+			len = tcp_sack_new_data_len(conn, seg_max);
+			if (len > 0U) {
+				*seq = conn->seq + (uint32_t)conn->unacked_len;
+
+				return len;
+			}
+		}
+	}
+
+	len = tcp_sack_rescue_seg(conn, seg_max, seq);
+	if (len > 0U) {
+		*rescue = true;
+	}
+
+	return len;
+}
+
+/* Send what loss recovery allows after an ACK, once the cumulative ACK is
+ * applied: the first lost segment when the ACK started the recovery
+ * (step 4.3), then segments while cwnd - pipe allows one (step C).
+ */
+static int tcp_sack_recover(struct tcp *conn, bool started)
+{
+	uint32_t cwnd = tcp_ca_cwnd(conn);
+	uint32_t mss = conn_mss(conn);
+	uint32_t pipe;
+	int ret = 0;
+
+	if (!conn->sack_recovery) {
+		return 0;
+	}
+
+	if (started) {
+		uint32_t seg_max = tcp_sack_seg_max(conn);
+		uint32_t end = (conn->sack_count > 0U) ? conn->sack_ranges[0].left : conn->send_max;
+		uint32_t len = MIN(end - conn->seq, seg_max);
+
+		tcp_rtt_cancel(conn);
+
+		if (len > 0U) {
+			ret = tcp_send_segment(conn, conn->seq, len);
+			if (ret < 0) {
+				return ret;
+			}
+
+			conn->high_rxt = conn->seq + len;
+			conn->rescue_rxt = conn->high_rxt;
+		}
+	}
+
+	pipe = tcp_sack_pipe(conn);
+
+	while ((cwnd > pipe) && ((cwnd - pipe) >= mss)) {
+		uint32_t seq;
+		uint32_t len;
+		bool rescue;
+		bool new_data;
+
+		len = tcp_sack_next_seg(conn, &seq, &rescue);
+		if (len == 0U) {
+			break;
+		}
+
+		new_data = net_tcp_seq_cmp(seq, conn->send_max) >= 0;
+
+		ret = tcp_send_segment(conn, seq, len);
+		if (ret < 0) {
+			break;
+		}
+
+		if (new_data) {
+			conn->unacked_len += (int)len;
+		} else if (rescue) {
+			tcp_rtt_cancel(conn);
+			conn->rescue_rxt = conn->recovery_point;
+		} else {
+			tcp_rtt_cancel(conn);
+			conn->high_rxt = seq + len;
+		}
+
+		pipe += len;
+	}
+
+	return ret;
+}
+
+/* RFC 2018 section 5 and RFC 6675 section 5.1: after a timeout the SACK
+ * information is discarded and loss recovery ends.
+ */
+static void tcp_sack_rto(struct tcp *conn)
+{
+	if (!tcp_sack_send_active(conn)) {
+		return;
+	}
+
+	conn->sack_count = 0U;
+	conn->sack_high = conn->seq;
+	conn->sack_recovery = false;
+	conn->recovery_point = conn->send_max;
+	conn->sack_rto_hold = true;
+}
+
+#else
+
+static inline bool tcp_sack_in_recovery(struct tcp *conn)
+{
+	ARG_UNUSED(conn);
+
+	return false;
+}
+
+#ifdef CONFIG_NET_TCP_FAST_RETRANSMIT
+static inline bool tcp_sack_ack(struct tcp *conn, const struct tcp_sack_blocks *sack, uint32_t una,
+				bool dup_ack)
+{
+	ARG_UNUSED(conn);
+	ARG_UNUSED(sack);
+	ARG_UNUSED(una);
+	ARG_UNUSED(dup_ack);
+
+	return false;
+}
+#endif /* CONFIG_NET_TCP_FAST_RETRANSMIT */
+
+static inline int tcp_sack_recover(struct tcp *conn, bool started)
+{
+	ARG_UNUSED(conn);
+	ARG_UNUSED(started);
+
+	return 0;
+}
+
+static inline void tcp_sack_rto(struct tcp *conn)
+{
+	ARG_UNUSED(conn);
+}
+
+#endif /* CONFIG_NET_TCP_SACK_SEND */
+
 /* Send all queued but unsent data from the send_data packet by packet
  * until the receiver's window is full. */
 static int tcp_send_queued_data(struct tcp *conn)
@@ -2412,7 +3025,8 @@ static int tcp_send_queued_data(struct tcp *conn)
 	int ret = 0;
 	bool subscribe = false;
 
-	if (conn->data_mode == TCP_DATA_MODE_RESEND) {
+	/* Loss recovery chooses what to send */
+	if ((conn->data_mode == TCP_DATA_MODE_RESEND) || tcp_sack_in_recovery(conn)) {
 		goto out;
 	}
 
@@ -2508,6 +3122,7 @@ static void tcp_resend_data(struct k_work *work)
 			}
 		}
 
+		tcp_sack_rto(conn);
 		conn->data_mode = TCP_DATA_MODE_RESEND;
 		conn->unacked_len = 0;
 
@@ -3572,6 +4187,9 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 	struct net_pkt *recv_pkt;
 	void *recv_user_data;
 	struct k_fifo *recv_data_fifo;
+	struct tcp_sack_blocks sack;
+	bool sack_recovering = false;
+	bool sack_started = false;
 	size_t len;
 	int ret;
 	int close_status = 0;
@@ -3646,10 +4264,13 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 		goto out;
 	}
 
+	sack.count = 0U;
+
 	if (tcp_options_len > 0) {
 		struct tcp_options options = { 0 };
 
-		if (!tcp_options_check(&options, pkt, tcp_options_len)) {
+		if (!tcp_options_check(&options, tcp_sack_send_active(conn) ? &sack : NULL, pkt,
+				       tcp_options_len)) {
 			NET_DBG("[%p] DROP: Invalid TCP option list", conn);
 			net_tcp_reply_rst(pkt);
 			do_close = true;
@@ -3943,7 +4564,13 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 		keep_alive_timer_restart(conn);
 
 #ifdef CONFIG_NET_TCP_FAST_RETRANSMIT
-		if (net_tcp_seq_cmp(th_ack(th), conn->seq) == 0) {
+		if (tcp_sack_send_active(conn)) {
+			bool dup_ack = (len == 0) && (conn->unacked_len > 0) &&
+				       (net_tcp_seq_cmp(th_ack(th), conn->seq) == 0);
+
+			sack_recovering = tcp_sack_in_recovery(conn);
+			sack_started = tcp_sack_ack(conn, &sack, th_ack(th), dup_ack);
+		} else if (net_tcp_seq_cmp(th_ack(th), conn->seq) == 0) {
 			/* Only if there is pending data, increment the duplicate ack count */
 			if (conn->send_data_total > 0) {
 				/* There could be also payload, only without payload account them */
@@ -4007,11 +4634,21 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 			}
 
 #ifdef CONFIG_NET_TCP_FAST_RETRANSMIT
-			/* New segment, reset duplicate ack counter */
-			conn->dup_ack_cnt = 0;
+			/* New segment, reset duplicate ack counter. With SACK,
+			 * tcp_sack_ack() has counted this ACK already.
+			 */
+			if (!tcp_sack_send_active(conn)) {
+				conn->dup_ack_cnt = 0;
+			}
 #endif
 			tcp_rtt_ack(conn, th_ack(th));
-			tcp_ca_pkts_acked(conn, len_acked);
+
+			/* The pipe algorithm sets the pace in loss recovery, and
+			 * the ACK that ends it leaves cwnd at ssthresh.
+			 */
+			if (!sack_recovering && !tcp_sack_in_recovery(conn)) {
+				tcp_ca_pkts_acked(conn, len_acked);
+			}
 
 			conn->send_data_total -= len_acked;
 			if (conn->unacked_len < len_acked) {
@@ -4082,6 +4719,15 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 			if (tcp_window_full(conn)) {
 				(void)k_sem_take(&conn->tx_sem, K_NO_WAIT);
 			}
+		}
+
+		ret = tcp_sack_recover(conn, sack_started);
+		if (ret < 0 && ret != -ENOBUFS) {
+			net_tcp_reply_rst(pkt);
+			do_close = true;
+			close_status = ret;
+			verdict = NET_OK;
+			break;
 		}
 
 		if (th_seq(th) == conn->ack) {
