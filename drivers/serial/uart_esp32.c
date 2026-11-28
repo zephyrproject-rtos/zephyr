@@ -295,30 +295,26 @@ static void uart_esp32_poll_out(const struct device *dev, unsigned char c)
 static int uart_esp32_err_check(const struct device *dev)
 {
 	struct uart_esp32_data *data = dev->data;
-	uint32_t mask;
+	unsigned int key = irq_lock();
+	uint32_t raw_mask = uart_hal_get_intraw_mask(&data->hal) &
+			    UART_ESP32_ERR_INTR_MASK;
+	uint32_t mask = raw_mask;
 	int errors = 0;
 
 	/*
-	 * When the ISR is active, it saves error flags before clearing
-	 * hardware. Read the saved copy and also poll hardware for any
-	 * errors that arrived since the last ISR invocation. We always
-	 * need to poll the register since not all ISRs may be enabled.
-	 *
-	 * In pure polling mode (no ISR) read hardware directly.
+	 * The ISR clears enabled errors from hardware after saving them in
+	 * isr_error_flags, while disabled error interrupts remain latched only
+	 * in INT_RAW. Consume both under the lock and clear only the raw bits
+	 * sampled from hardware so a newly arriving error is not lost.
 	 */
 #if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API || CONFIG_PM
-	unsigned int key = irq_lock();
-
-	mask = data->isr_error_flags;
+	mask |= data->isr_error_flags;
 	data->isr_error_flags = 0;
-	mask |= uart_hal_get_intsts_mask(&data->hal) & UART_ESP32_ERR_INTR_MASK;
-	uart_hal_clr_intsts_mask(&data->hal, mask & UART_ESP32_ERR_INTR_MASK);
-
-	irq_unlock(key);
-#else
-	mask = uart_hal_get_intsts_mask(&data->hal);
-	uart_hal_clr_intsts_mask(&data->hal, mask & UART_ESP32_ERR_INTR_MASK);
 #endif
+	if (raw_mask != 0U) {
+		uart_hal_clr_intsts_mask(&data->hal, raw_mask);
+	}
+	irq_unlock(key);
 
 	if (mask & (UART_INTR_PARITY_ERR | UART_INTR_RS485_PARITY_ERR)) {
 		errors |= UART_ERROR_PARITY;
@@ -577,6 +573,19 @@ static int uart_esp32_configure(const struct device *dev, const struct uart_conf
 	if (inv_mask) {
 		uart_hal_inverse_signal(&data->hal, inv_mask);
 	}
+
+	/*
+	 * Resetting the RX FIFO and reconfiguring format/polarity can leave
+	 * stale error bits latched in INT_RAW; clear them so the first
+	 * uart_err_check() does not report discarded bytes.
+	 */
+	unsigned int key = irq_lock();
+
+#if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API || CONFIG_PM
+	data->isr_error_flags = 0;
+#endif
+	uart_hal_clr_intsts_mask(&data->hal, UART_ESP32_ERR_INTR_MASK);
+	irq_unlock(key);
 
 	return 0;
 }
