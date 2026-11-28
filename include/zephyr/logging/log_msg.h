@@ -189,51 +189,17 @@ enum z_log_msg_mode {
 	(IS_ENABLED(CONFIG_LOG_MSG_APPEND_RO_STRING_LOC) ? \
 	 CBPRINTF_PACKAGE_ADD_STRING_IDXS : 0))
 
-#ifdef CONFIG_LOG_USE_VLA
-#define Z_LOG_MSG_ON_STACK_ALLOC(ptr, len) \
-	long long _ll_buf[DIV_ROUND_UP(len, sizeof(long long))]; \
-	long double _ld_buf[DIV_ROUND_UP(len, sizeof(long double))]; \
-	(ptr) = (sizeof(long double) == Z_LOG_MSG_ALIGNMENT) ? \
-			(struct log_msg *)_ld_buf : (struct log_msg *)_ll_buf; \
-	if (IS_ENABLED(CONFIG_LOG_TEST_CLEAR_MESSAGE_SPACE)) { \
-		/* During test fill with 0's to simplify message comparison */ \
-		memset((ptr), 0, (len)); \
-	}
-#else /* Z_LOG_MSG_USE_VLA */
-/* When VLA cannot be used we need to trick compiler a bit and create multiple
- * fixed size arrays and take the smallest one that will fit the message.
- * Compiler will remove unused arrays and stack usage will be kept similar
- * to vla case, rounded to the size of the used buffer.
+/* Allocate space for the log message on the stack. Message length is known at compile time.
+ * Depending on the toolchain/configuration, VLA or a set of fixed size arrays is used (see
+ * FIXED_BUF_ON_STACK_ALLOC). With fixed size arrays, the longest supported message is 256 bytes.
+ * That is enough because it's allocated for cbprint package and it has limited number of arguments.
  */
 #define Z_LOG_MSG_ON_STACK_ALLOC(ptr, len) \
-	long long _ll_buf32[32 / sizeof(long long)]; \
-	long long _ll_buf48[48 / sizeof(long long)]; \
-	long long _ll_buf64[64 / sizeof(long long)]; \
-	long long _ll_buf128[128 / sizeof(long long)]; \
-	long long _ll_buf256[256 / sizeof(long long)]; \
-	long double _ld_buf32[32 / sizeof(long double)]; \
-	long double _ld_buf48[48 / sizeof(long double)]; \
-	long double _ld_buf64[64 / sizeof(long double)]; \
-	long double _ld_buf128[128 / sizeof(long double)]; \
-	long double _ld_buf256[256 / sizeof(long double)]; \
-	if (sizeof(long double) == Z_LOG_MSG_ALIGNMENT) { \
-		ptr = (len > 128) ? (struct log_msg *)_ld_buf256 : \
-			((len > 64) ? (struct log_msg *)_ld_buf128 : \
-			((len > 48) ? (struct log_msg *)_ld_buf64 : \
-			((len > 32) ? (struct log_msg *)_ld_buf48 : \
-				      (struct log_msg *)_ld_buf32)));\
-	} else { \
-		ptr = (len > 128) ? (struct log_msg *)_ll_buf256 : \
-			((len > 64) ? (struct log_msg *)_ll_buf128 : \
-			((len > 48) ? (struct log_msg *)_ll_buf64 : \
-			((len > 32) ? (struct log_msg *)_ll_buf48 : \
-				      (struct log_msg *)_ll_buf32)));\
-	} \
+	FIXED_BUF_ON_STACK_ALLOC(ptr, len, Z_LOG_MSG_ALIGNMENT); \
 	if (IS_ENABLED(CONFIG_LOG_TEST_CLEAR_MESSAGE_SPACE)) { \
 		/* During test fill with 0's to simplify message comparison */ \
 		memset((ptr), 0, (len)); \
 	}
-#endif /* Z_LOG_MSG_USE_VLA */
 
 #define Z_LOG_MSG_ALIGN_OFFSET \
 	offsetof(struct log_msg, data)

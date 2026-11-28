@@ -17,13 +17,15 @@ config LOG_TEST_CLEAR_MESSAGE_SPACE
 	  paddings.
 
 config LOG_USE_VLA
-	bool "Using variable length arrays"
-	default y if !MISRA_SANE
+	bool "[DEPRECATED] Using variable length arrays"
 	depends on TOOLCHAIN_SUPPORTS_VLA_IN_STATEMENTS
+	select DEPRECATED
 	help
 	  Using VLA slightly decreases stack usage in some cases it may not be
 	  supported. Note that VLA are used for arrays which size is resolved at
 	  compile time so at runtime arrays have fixed size.
+
+	  This option is deprecated and will be removed in the future.
 
 config LOG_SIMPLE_MSG_OPTIMIZE
 	bool "Optimize simple messages for size"
