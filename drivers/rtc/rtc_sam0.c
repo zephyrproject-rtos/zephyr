@@ -30,6 +30,12 @@ LOG_MODULE_REGISTER(rtc_sam0, CONFIG_RTC_LOG_LEVEL);
 	| RTC_ALARM_TIME_MASK_YEAR	\
 	)
 
+/*
+ * The hardware treats every YEAR value that is a multiple of 4 as a leap year, so
+ * YEAR = 0 must be a leap year: use 1996 (tm_year 96) as the reference year.
+ */
+#define RTC_SAM0_TM_YEAR_OFFSET		(96)
+
 #define RTC_SAM0_CALIBRATE_PPB_MAX	(127)
 #define RTC_SAM0_CALIBRATE_PPB_QUANTA	(1000)
 
@@ -101,7 +107,7 @@ static int rtc_sam0_set_time(const struct device *dev, const struct rtc_time *ti
 	datetime |= RTC_MODE2_CLOCK_HOUR(timeptr->tm_hour);
 	datetime |= RTC_MODE2_CLOCK_DAY(timeptr->tm_mday);
 	datetime |= RTC_MODE2_CLOCK_MONTH(timeptr->tm_mon + 1);
-	datetime |= RTC_MODE2_CLOCK_YEAR(timeptr->tm_year - 99);
+	datetime |= RTC_MODE2_CLOCK_YEAR(timeptr->tm_year - RTC_SAM0_TM_YEAR_OFFSET);
 
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
@@ -132,14 +138,14 @@ static int rtc_sam0_get_time(const struct device *dev, struct rtc_time *timeptr)
 	timeptr->tm_hour = calendar.bit.HOUR;
 	timeptr->tm_mday = calendar.bit.DAY;
 	timeptr->tm_mon = calendar.bit.MONTH - 1;
-	timeptr->tm_year = calendar.bit.YEAR + 99;
+	timeptr->tm_year = calendar.bit.YEAR + RTC_SAM0_TM_YEAR_OFFSET;
 	timeptr->tm_wday = -1;
 	timeptr->tm_yday = -1;
 	timeptr->tm_isdst = -1;
 	timeptr->tm_nsec = 0;
 
 	LOG_DBG("D/M/Y H:M:S %02d/%02d/%02d %02d:%02d:%02d",
-		timeptr->tm_mday, timeptr->tm_mon + 1, timeptr->tm_year - 99,
+		timeptr->tm_mday, timeptr->tm_mon + 1, timeptr->tm_year - RTC_SAM0_TM_YEAR_OFFSET,
 		timeptr->tm_hour, timeptr->tm_min, timeptr->tm_sec);
 
 	return 0;
@@ -172,7 +178,7 @@ static inline uint32_t rtc_sam0_datetime_from_tm(const struct rtc_time *timeptr,
 	}
 
 	if (mask & RTC_ALARM_TIME_MASK_YEAR) {
-		datetime |= RTC_MODE2_CLOCK_YEAR(timeptr->tm_year - 99);
+		datetime |= RTC_MODE2_CLOCK_YEAR(timeptr->tm_year - RTC_SAM0_TM_YEAR_OFFSET);
 	}
 
 	return datetime;
@@ -204,7 +210,7 @@ static inline void rtc_sam0_tm_from_datetime(struct rtc_time *timeptr, uint32_t 
 	}
 
 	if (mask & RTC_ALARM_TIME_MASK_YEAR) {
-		timeptr->tm_year = calendar.bit.YEAR + 99;
+		timeptr->tm_year = calendar.bit.YEAR + RTC_SAM0_TM_YEAR_OFFSET;
 	}
 
 	timeptr->tm_wday = -1;
