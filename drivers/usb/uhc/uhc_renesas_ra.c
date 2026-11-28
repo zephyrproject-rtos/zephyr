@@ -119,9 +119,10 @@ static int uhc_renesas_ra_data_send(const struct device *dev, struct uhc_transfe
 	struct net_buf *buf = xfer->buf;
 	int err;
 
-	err = R_USBH_XferStart(&priv->uhc_ctrl, xfer->udev->addr, xfer->ep, buf->data, buf->len);
+	err = R_USBH_XferStart(&priv->uhc_ctrl, xfer->udev->addr, xfer->ep->addr,
+			       buf->data, buf->len);
 	if (err != FSP_SUCCESS) {
-		LOG_ERR("ep 0x%02x state data error", xfer->ep);
+		LOG_ERR("ep 0x%02x state data error", xfer->ep->addr);
 		return -EIO;
 	}
 
@@ -136,9 +137,9 @@ static int uhc_renesas_ra_data_receive(const struct device *dev, struct uhc_tran
 	void *buffer_tail = net_buf_tail(buf);
 	int err;
 
-	err = R_USBH_XferStart(&priv->uhc_ctrl, xfer->udev->addr, xfer->ep, buffer_tail, len);
+	err = R_USBH_XferStart(&priv->uhc_ctrl, xfer->udev->addr, xfer->ep->addr, buffer_tail, len);
 	if (err != FSP_SUCCESS) {
-		LOG_ERR("ep 0x%02x state status error", xfer->ep);
+		LOG_ERR("ep 0x%02x state status error", xfer->ep->addr);
 		return -EIO;
 	}
 
@@ -147,7 +148,7 @@ static int uhc_renesas_ra_data_receive(const struct device *dev, struct uhc_tran
 
 static int uhc_renesas_ra_data_xfer(const struct device *dev, struct uhc_transfer *const xfer)
 {
-	if (USB_EP_DIR_IS_IN(xfer->ep)) {
+	if (USB_EP_DIR_IS_IN(xfer->ep->addr)) {
 		return uhc_renesas_ra_data_receive(dev, xfer);
 	}
 
@@ -164,7 +165,7 @@ static int uhc_renesas_ra_control_xfer(const struct device *dev, struct uhc_tran
 	case UHC_CONTROL_STAGE_SETUP:
 		err = R_USBH_SetupSend(&priv->uhc_ctrl, xfer->udev->addr, xfer->setup_pkt);
 		if (err != FSP_SUCCESS) {
-			LOG_ERR("ep 0x%02x state setup error", xfer->ep);
+			LOG_ERR("ep 0x%02x state setup error", xfer->ep->addr);
 			ret = -EIO;
 		}
 		break;
@@ -173,7 +174,7 @@ static int uhc_renesas_ra_control_xfer(const struct device *dev, struct uhc_tran
 		break;
 	case UHC_CONTROL_STAGE_STATUS:
 		err = R_USBH_XferStart(&priv->uhc_ctrl, xfer->udev->addr,
-				       (xfer->ep ^ USB_EP_DIR_MASK), NULL, 0);
+				       (xfer->ep->addr ^ USB_EP_DIR_MASK), NULL, 0);
 		if (err != FSP_SUCCESS) {
 			ret = -EIO;
 		}
@@ -213,12 +214,13 @@ static void uhc_renesas_ra_transfer_append(const struct device *dev,
 {
 	struct uhc_renesas_ra_data *priv = uhc_get_private(dev);
 
-	if (USB_EP_GET_IDX(xfer->ep) == 0) {
+	if (USB_EP_GET_IDX(xfer->ep->addr) == 0) {
 		sys_dlist_append(&priv->dcp.xfers_list, &xfer->node);
 		return;
 	}
 
-	sys_dlist_append(&priv->pipe[get_pipe_num(dev, xfer->udev->addr, xfer->ep)].xfers_list,
+	sys_dlist_append(&priv->pipe[get_pipe_num(dev, xfer->udev->addr,
+						  xfer->ep->addr)].xfers_list,
 			 &xfer->node);
 }
 
@@ -249,7 +251,7 @@ static int uhc_renesas_ra_schedule_xfer(const struct device *dev, uint8_t dev_ad
 		return -ENOMEM;
 	}
 
-	if (USB_EP_GET_IDX(xfer->ep) == 0) {
+	if (USB_EP_GET_IDX(xfer->ep->addr) == 0) {
 		/*
 		 * If there is a control xfer, the driver should update control xfer stage
 		 * properly to not corrupt the control transfer seq
@@ -268,21 +270,21 @@ static void uhc_control_stage_update(const struct device *dev, usbh_event_t *hal
 		if (xfer->buf != NULL) {
 			/* S-[in]-status or S-[out]-status */
 			xfer->stage = UHC_CONTROL_STAGE_DATA;
-			uhc_renesas_ra_xfer_request(dev, xfer->udev->addr, xfer->ep);
+			uhc_renesas_ra_xfer_request(dev, xfer->udev->addr, xfer->ep->addr);
 		} else {
 			/* S-[status] */
 			xfer->stage = UHC_CONTROL_STAGE_STATUS;
-			uhc_renesas_ra_xfer_request(dev, xfer->udev->addr, xfer->ep);
+			uhc_renesas_ra_xfer_request(dev, xfer->udev->addr, xfer->ep->addr);
 		}
 		break;
 	}
 	case UHC_CONTROL_STAGE_DATA:
 		/* S-in-[status] or S-out-[status] */
-		if (xfer->ep == USB_CONTROL_EP_IN) {
+		if (xfer->ep->addr == USB_CONTROL_EP_IN) {
 			net_buf_add(xfer->buf, hal_evt->complete.len);
 		}
 		xfer->stage = UHC_CONTROL_STAGE_STATUS;
-		uhc_renesas_ra_xfer_request(dev, xfer->udev->addr, xfer->ep);
+		uhc_renesas_ra_xfer_request(dev, xfer->udev->addr, xfer->ep->addr);
 		break;
 	case UHC_CONTROL_STAGE_STATUS:
 		/* Transfer is completed */
@@ -419,7 +421,7 @@ static int uhc_renesas_ra_open_dcp(const struct device *dev, struct uhc_transfer
 
 	get_hs_hub_addr_port(xfer->udev, &hub_addr, &hub_port);
 
-	err = R_USBH_PortOpen(&priv->uhc_ctrl, xfer->udev->addr, speed, xfer->mps, hub_addr,
+	err = R_USBH_PortOpen(&priv->uhc_ctrl, xfer->udev->addr, speed, xfer->ep->mps, hub_addr,
 			      hub_port);
 	if (err != FSP_SUCCESS) {
 		return -EIO;
@@ -438,7 +440,7 @@ static int uhc_renesas_ra_ep_enqueue(const struct device *dev, struct uhc_transf
 		return -ENOTSUP;
 	}
 
-	if (USB_EP_GET_IDX(xfer->ep) == 0) {
+	if (USB_EP_GET_IDX(xfer->ep->addr) == 0) {
 		ret = uhc_renesas_ra_open_dcp(dev, xfer);
 		if (ret != 0) {
 			return ret;
@@ -446,21 +448,21 @@ static int uhc_renesas_ra_ep_enqueue(const struct device *dev, struct uhc_transf
 	}
 
 	if (!is_configured_udev(dev, xfer->udev->addr)) {
-		ret = uhc_renesas_ra_configure_udev(dev, xfer->udev, xfer->mps);
+		ret = uhc_renesas_ra_configure_udev(dev, xfer->udev, xfer->ep->mps);
 		if (ret != 0) {
 			return ret;
 		}
 	}
 
-	if (!is_configured_ep(dev, xfer->udev->addr, xfer->ep)) {
+	if (!is_configured_ep(dev, xfer->udev->addr, xfer->ep->addr)) {
 		struct usb_ep_descriptor desc = {
-			.bEndpointAddress = xfer->ep,
-			.Attributes = {.transfer = xfer->type},
-			.wMaxPacketSize = xfer->mps,
+			.bEndpointAddress = xfer->ep->addr,
+			.Attributes = {.transfer = uhc_ep_type(xfer->ep)},
+			.wMaxPacketSize = xfer->ep->mps,
 			.bInterval = xfer->interval,
 		};
 
-		ret = uhc_renesas_ra_open_pipe(dev, xfer->udev->addr, xfer->ep, &desc);
+		ret = uhc_renesas_ra_open_pipe(dev, xfer->udev->addr, xfer->ep->addr, &desc);
 		if (ret != 0) {
 			return ret;
 		}
@@ -468,7 +470,7 @@ static int uhc_renesas_ra_ep_enqueue(const struct device *dev, struct uhc_transf
 
 	uhc_renesas_ra_transfer_append(dev, xfer);
 
-	return uhc_renesas_ra_xfer_request(dev, xfer->udev->addr, xfer->ep);
+	return uhc_renesas_ra_xfer_request(dev, xfer->udev->addr, xfer->ep->addr);
 }
 
 static int uhc_renesas_ra_ep_dequeue(const struct device *dev, struct uhc_transfer *const xfer)
@@ -477,7 +479,7 @@ static int uhc_renesas_ra_ep_dequeue(const struct device *dev, struct uhc_transf
 	struct uhc_renesas_ra_evt evt = {
 		.type = UHC_RENESAS_RA_EVT_DEQUEUE,
 		.dev_addr = xfer->udev->addr,
-		.ep = xfer->ep,
+		.ep = xfer->ep->addr,
 	};
 
 	uhc_lock_internal(dev, K_FOREVER);
@@ -554,12 +556,12 @@ static int uhc_renesas_ra_submit_xfer(const struct device *dev, struct uhc_renes
 		ret = -EAGAIN;
 		break;
 	case USB_XFER_RESULT_SUCCESS: {
-		if (USB_EP_GET_IDX(xfer->ep) == 0) {
+		if (USB_EP_GET_IDX(xfer->ep->addr) == 0) {
 			uhc_control_stage_update(dev, hal_evt, xfer);
 			return 0;
 		}
 
-		if (USB_EP_DIR_IS_IN(xfer->ep)) {
+		if (USB_EP_DIR_IS_IN(xfer->ep->addr)) {
 			size_t length = MIN(net_buf_tailroom(xfer->buf), hal_evt->complete.len);
 
 			if (length) {
@@ -595,7 +597,7 @@ static void uhc_renesas_ra_dequeue_pipe_cancelled(const struct device *dev, sys_
 
 		if (is_head) {
 			/* May already be in-flight in hardware, abort it first */
-			(void)R_USBH_XferAbort(&priv->uhc_ctrl, xfer->udev->addr, xfer->ep);
+			(void)R_USBH_XferAbort(&priv->uhc_ctrl, xfer->udev->addr, xfer->ep->addr);
 		}
 
 		uhc_xfer_return(dev, xfer, -ECONNRESET);
