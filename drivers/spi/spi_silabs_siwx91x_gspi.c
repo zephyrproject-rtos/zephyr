@@ -682,7 +682,7 @@ static int gspi_siwx91x_pm_action(const struct device *dev, enum pm_device_actio
 		break;
 	case PM_DEVICE_ACTION_TURN_OFF:
 		ret = clock_control_off(cfg->clock_dev, cfg->clock_subsys);
-		if (ret < 0 && ret != -EALREADY) {
+		if (ret != 0 && ret != -EALREADY && ret != -ENOTSUP) {
 			return ret;
 		}
 		break;
