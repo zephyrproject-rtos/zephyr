@@ -24,6 +24,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_QUIC_LOG_LEVEL);
 #include "quic_stats.h"
 #include "quic_test.h"
 #include "certificate.h"
+#include "certificate_chain.h"
 
 #if defined(CONFIG_QUIC_LOG_LEVEL_DBG)
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
@@ -304,6 +305,29 @@ static void setup_certs(void)
 				 client_private_key, sizeof(client_private_key));
 	if (ret < 0) {
 		LOG_ERR("Failed to register client private key: %d", ret);
+	}
+
+	ret = tls_credential_add(INTERMEDIATE_CERTIFICATE_TAG,
+				 TLS_CREDENTIAL_CA_CERTIFICATE,
+				 intermediate_certificate,
+				 sizeof(intermediate_certificate));
+	if (ret < 0) {
+		LOG_ERR("Failed to register intermediate CA certificate: %d", ret);
+	}
+
+	ret = tls_credential_add(CHAIN_SERVER_CERTIFICATE_TAG,
+				 TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
+				 chain_server_certificate,
+				 sizeof(chain_server_certificate));
+	if (ret < 0) {
+		LOG_ERR("Failed to register chain server public certificate: %d", ret);
+	}
+
+	ret = tls_credential_add(CHAIN_SERVER_CERTIFICATE_TAG,
+				 TLS_CREDENTIAL_PRIVATE_KEY,
+				 chain_server_private_key, sizeof(chain_server_private_key));
+	if (ret < 0) {
+		LOG_ERR("Failed to register chain server private key: %d", ret);
 	}
 
 	ret = tls_credential_add(QUIC_EXTERNAL_PSK_TAG, TLS_CREDENTIAL_PSK,
@@ -7084,6 +7108,7 @@ static void link_test_stream(struct quic_stream *stream, struct quic_context *ct
 	k_mutex_init(&stream->cond.data_available);
 	k_condvar_init(&stream->cond.recv);
 	k_poll_signal_init(&stream->recv.signal);
+	k_poll_signal_init(&stream->send.signal);
 	k_mutex_init(&stream->tx_lock);
 
 	sys_slist_append(&ctx->streams, &stream->node);
@@ -10073,6 +10098,393 @@ ZTEST(net_socket_quic, test_555_stream_open_honours_peer_stream_limit)
 	zassert_ok(ret, "Failed to close the client stream (%d)", -errno);
 
 	reset_test_disconnect(&peers);
+}
+
+ZTEST(net_socket_quic, test_566_stop_sending_stops_only_the_sending_part)
+{
+	const uint8_t data[] = "sent after the stop";
+	struct reset_test_peers peers;
+	struct quic_stream *stream;
+	struct zsock_pollfd pfd;
+	uint8_t buf[32];
+	int ret;
+
+	reset_test_connect(&peers, "127.0.0.1:54366", "127.0.0.1:19966");
+
+	/* The server asks the client to stop sending */
+	ret = zsock_shutdown(peers.server_stream, ZSOCK_SHUT_RD);
+	zassert_ok(ret, "Failed to shut the read half down (%d)", -errno);
+
+	stream = zvfs_get_fd_obj(peers.client_stream, NULL, 0);
+	zassert_not_null(stream, "No stream behind fd %d", peers.client_stream);
+
+	for (int i = 0; i < 100 && !stream->tx_reset; i++) {
+		k_msleep(10);
+	}
+
+	zassert_true(stream->tx_reset, "The client stream was not asked to stop sending");
+
+	/* The sending part of the client stream is done: a send fails, and
+	 * poll() reports that it does not block.
+	 */
+	wait_for_revents(peers.client_stream, ZSOCK_POLLOUT, "the stream to be writable");
+	ret = zsock_send(peers.client_stream, data, sizeof(data), 0);
+	zassert_equal(ret, -1, "send() on a stopped stream returned %d", ret);
+	zassert_equal(errno, EPIPE, "send() on a stopped stream set errno to %d", errno);
+
+	/* The receiving part is not: nothing is there to read yet, and what
+	 * the server sends afterwards is read (RFC 9000 ch. 3.5).
+	 */
+	pfd.fd = peers.client_stream;
+	pfd.events = ZSOCK_POLLIN;
+	pfd.revents = 0;
+	ret = zsock_poll(&pfd, 1, 0);
+	zassert_equal(ret, 0, "A stopped stream reads as ended (revents 0x%x)", pfd.revents);
+
+	ret = quic_test_send_all(peers.server_stream, data, sizeof(data));
+	zassert_ok(ret, "Failed to send on the server stream (%d)", ret);
+
+	wait_for_revents(peers.client_stream, ZSOCK_POLLIN, "the data");
+	ret = zsock_recv(peers.client_stream, buf, sizeof(buf), 0);
+	zassert_equal(ret, sizeof(data), "Received %d bytes after the stop (%d)", ret, errno);
+	zassert_mem_equal(buf, data, sizeof(data), "Wrong data after the stop");
+
+	/* It ends when the server ends the stream */
+	ret = zsock_close(peers.server_stream);
+	zassert_ok(ret, "Failed to close the server stream (%d)", -errno);
+
+	wait_for_revents(peers.client_stream, ZSOCK_POLLIN, "the end of the stream");
+	ret = zsock_recv(peers.client_stream, buf, sizeof(buf), 0);
+	zassert_equal(ret, 0, "Expected the end of the stream, got %d (%d)", ret, errno);
+
+	ret = zsock_close(peers.client_stream);
+	zassert_ok(ret, "Failed to close the client stream (%d)", -errno);
+
+	ret = quic_connection_close(peers.server_conn);
+	zassert_ok(ret, "Failed to close the server connection (%d)", ret);
+	ret = quic_connection_close(peers.client_sock);
+	zassert_ok(ret, "Failed to close the client connection (%d)", ret);
+	ret = quic_connection_close(peers.server_sock);
+	zassert_ok(ret, "Failed to close the server socket (%d)", ret);
+}
+
+ZTEST(net_socket_quic, test_567_handshake_payloads_that_ask_for_an_ack)
+{
+	static const uint8_t crypto[] = {
+		QUIC_FRAME_TYPE_CRYPTO, 0x00, 0x01, 0xaa,
+	};
+	static const uint8_t padded_ping[] = {
+		QUIC_FRAME_TYPE_PADDING, QUIC_FRAME_TYPE_PADDING, QUIC_FRAME_TYPE_PING,
+	};
+	static const uint8_t padding[] = {
+		QUIC_FRAME_TYPE_PADDING, QUIC_FRAME_TYPE_PADDING,
+	};
+	static const uint8_t ack[] = {
+		QUIC_FRAME_TYPE_ACK, 0x05, 0x00, 0x00, 0x00,
+	};
+	/* Two further ranges, each a gap and a length */
+	static const uint8_t ack_then_crypto[] = {
+		QUIC_FRAME_TYPE_ACK, 0x09, 0x00, 0x02, 0x00, 0x01, 0x00, 0x01, 0x00,
+		QUIC_FRAME_TYPE_CRYPTO, 0x00, 0x01, 0xaa,
+	};
+	/* One further range and the three ECN counts, one of them two bytes */
+	static const uint8_t ack_ecn_then_ping[] = {
+		QUIC_FRAME_TYPE_ACK_ECN, 0x09, 0x00, 0x01, 0x00, 0x01, 0x00,
+		0x00, 0x40, 0x01, 0x00,
+		QUIC_FRAME_TYPE_PING,
+	};
+	static const uint8_t ack_ecn[] = {
+		QUIC_FRAME_TYPE_ACK_ECN, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	};
+	static const uint8_t close[] = {
+		QUIC_FRAME_TYPE_CONNECTION_CLOSE_TRANSPORT, 0x0a, 0x00, 0x00,
+	};
+	/* The range count says more than the payload holds */
+	static const uint8_t short_ack[] = {
+		QUIC_FRAME_TYPE_ACK, 0x05, 0x00, 0x04, 0x00, 0x01,
+	};
+
+	zexpect_true(quic_handshake_payload_is_ack_eliciting(crypto, sizeof(crypto)),
+		     "CRYPTO asks for an acknowledgment");
+	zexpect_true(quic_handshake_payload_is_ack_eliciting(padded_ping, sizeof(padded_ping)),
+		     "PING after PADDING asks for an acknowledgment");
+	zexpect_true(quic_handshake_payload_is_ack_eliciting(ack_then_crypto,
+							     sizeof(ack_then_crypto)),
+		     "CRYPTO after an ACK asks for an acknowledgment");
+	zexpect_true(quic_handshake_payload_is_ack_eliciting(ack_ecn_then_ping,
+							     sizeof(ack_ecn_then_ping)),
+		     "PING after an ACK with ECN counts asks for an acknowledgment");
+
+	zexpect_false(quic_handshake_payload_is_ack_eliciting(padding, sizeof(padding)),
+		      "PADDING asks for no acknowledgment");
+	zexpect_false(quic_handshake_payload_is_ack_eliciting(ack, sizeof(ack)),
+		      "An ACK asks for no acknowledgment");
+	zexpect_false(quic_handshake_payload_is_ack_eliciting(ack_ecn, sizeof(ack_ecn)),
+		      "An ACK with ECN counts asks for no acknowledgment");
+	zexpect_false(quic_handshake_payload_is_ack_eliciting(close, sizeof(close)),
+		      "CONNECTION_CLOSE asks for no acknowledgment");
+	zexpect_false(quic_handshake_payload_is_ack_eliciting(short_ack, sizeof(short_ack)),
+		      "An ACK that is cut short asks for no acknowledgment");
+	zexpect_false(quic_handshake_payload_is_ack_eliciting(crypto, 0),
+		      "An empty payload asks for no acknowledgment");
+}
+
+ZTEST(net_socket_quic, test_574_handshake_ack_rides_on_a_reply)
+{
+	static const uint8_t ack_of_5[] = {
+		QUIC_FRAME_TYPE_ACK, 0x05, 0x00, 0x00, 0x00,
+	};
+	/* Packet number 300 takes two bytes */
+	static const uint8_t ack_of_300[] = {
+		QUIC_FRAME_TYPE_ACK, 0x41, 0x2c, 0x00, 0x00, 0x00,
+	};
+	static const uint8_t tls_data[] = { 0x01, 0x02, 0x03, 0x04 };
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	uint8_t buf[16];
+	size_t len;
+	int ret;
+
+	len = quic_take_handshake_ack(ep, QUIC_SECRET_LEVEL_INITIAL, buf, sizeof(buf));
+	zassert_equal(len, 0, "An acknowledgment was written with none pending (%zu)", len);
+
+	/* A pending acknowledgment is written once, at its own level */
+	ep->handshake_ack[QUIC_SECRET_LEVEL_INITIAL].pkt_num = 5;
+	ep->handshake_ack[QUIC_SECRET_LEVEL_INITIAL].pending = true;
+
+	len = quic_take_handshake_ack(ep, QUIC_SECRET_LEVEL_HANDSHAKE, buf, sizeof(buf));
+	zassert_equal(len, 0, "An acknowledgment was written at another level (%zu)", len);
+
+	len = quic_take_handshake_ack(ep, QUIC_SECRET_LEVEL_INITIAL, buf, sizeof(buf));
+	zassert_equal(len, sizeof(ack_of_5), "Unexpected ACK frame length %zu", len);
+	zassert_mem_equal(buf, ack_of_5, sizeof(ack_of_5), "Unexpected ACK frame");
+
+	len = quic_take_handshake_ack(ep, QUIC_SECRET_LEVEL_INITIAL, buf, sizeof(buf));
+	zassert_equal(len, 0, "An acknowledgment was written twice (%zu)", len);
+
+	/* One that does not fit stays pending, for a packet of its own */
+	ep->handshake_ack[QUIC_SECRET_LEVEL_HANDSHAKE].pkt_num = 300;
+	ep->handshake_ack[QUIC_SECRET_LEVEL_HANDSHAKE].pending = true;
+
+	len = quic_take_handshake_ack(ep, QUIC_SECRET_LEVEL_HANDSHAKE, buf,
+				      sizeof(ack_of_300) - 1);
+	zassert_equal(len, 0, "An acknowledgment was written past the buffer (%zu)", len);
+	zassert_true(ep->handshake_ack[QUIC_SECRET_LEVEL_HANDSHAKE].pending,
+		     "An acknowledgment that did not fit was dropped");
+
+	len = quic_take_handshake_ack(ep, QUIC_SECRET_LEVEL_HANDSHAKE, buf, sizeof(buf));
+	zassert_equal(len, sizeof(ack_of_300), "Unexpected ACK frame length %zu", len);
+	zassert_mem_equal(buf, ack_of_300, sizeof(ack_of_300), "Unexpected ACK frame");
+
+	/* Packets with the 1-RTT keys are acknowledged on their own path */
+	len = quic_take_handshake_ack(ep, QUIC_SECRET_LEVEL_APPLICATION, buf, sizeof(buf));
+	zassert_equal(len, 0, "An acknowledgment was written at the 1-RTT level (%zu)", len);
+
+	/* A reply that cannot be sent, here for want of keys, does not take
+	 * the acknowledgment with it.
+	 */
+	ep->handshake_ack[QUIC_SECRET_LEVEL_INITIAL].pkt_num = 7;
+	ep->handshake_ack[QUIC_SECRET_LEVEL_INITIAL].pending = true;
+
+	ret = quic_tls_send_callback(ep, QUIC_SECRET_LEVEL_INITIAL, tls_data, sizeof(tls_data));
+	zassert_true(ret < 0, "A reply without keys was sent (%d)", ret);
+	zassert_true(ep->handshake_ack[QUIC_SECRET_LEVEL_INITIAL].pending,
+		     "The acknowledgment was lost with a reply that was not sent");
+}
+
+ZTEST(net_socket_quic, test_568_handshake_packets_are_acknowledged)
+{
+	struct reset_test_peers peers;
+	struct quic_endpoint *client_ep;
+	struct quic_endpoint *server_ep;
+	int ret;
+
+	reset_test_connect(&peers, "127.0.0.1:54368", "127.0.0.1:19968");
+
+	client_ep = quic_test_sock_endpoint(peers.client_sock);
+	server_ep = quic_test_sock_endpoint(peers.server_conn);
+
+	/* The handshake itself takes one Handshake packet from the client,
+	 * its Finished. What it sent beyond that at this level is the
+	 * acknowledgment of the Handshake packets of the server that it had
+	 * nothing to answer with (RFC 9000 ch. 13.2.1).
+	 */
+	zexpect_true(client_ep->tx_pn.handshake >= 2,
+		     "The client acknowledged no Handshake packet (%" PRIu64 " sent)",
+		     client_ep->tx_pn.handshake);
+
+	/* The server answered the Initial packet of the client with its
+	 * ServerHello, which carries the acknowledgment: no packet of its
+	 * own was spent on it.
+	 */
+	zexpect_equal(server_ep->tx_pn.initial, 1,
+		      "The server sent %" PRIu64 " Initial packets", server_ep->tx_pn.initial);
+
+	ret = zsock_close(peers.client_stream);
+	zassert_ok(ret, "Failed to close the client stream (%d)", -errno);
+	ret = zsock_close(peers.server_stream);
+	zassert_ok(ret, "Failed to close the server stream (%d)", -errno);
+
+	ret = quic_connection_close(peers.server_conn);
+	zassert_ok(ret, "Failed to close the server connection (%d)", ret);
+	ret = quic_connection_close(peers.client_sock);
+	zassert_ok(ret, "Failed to close the client connection (%d)", ret);
+	ret = quic_connection_close(peers.server_sock);
+	zassert_ok(ret, "Failed to close the server socket (%d)", ret);
+}
+
+/* Open a server whose certificate an intermediate CA signed and a client
+ * that trusts the CA above that one only, and open a stream of the client,
+ * which runs the handshake. The server sends the certificate of the
+ * intermediate CA along with its own when asked to.
+ */
+static int open_stream_to_chain_server(int *server_sock, int *client_sock, const char *server,
+				       const char *client, bool send_intermediate)
+{
+	static const char * const alpn_list[] = {
+		"test-quic",
+		NULL
+	};
+	sec_tag_t server_sec_tags[] = {
+		CHAIN_SERVER_CERTIFICATE_TAG,
+	};
+	sec_tag_t client_sec_tags[] = {
+		CA_CERTIFICATE_TAG,
+	};
+	sec_tag_t intermediate = INTERMEDIATE_CERTIFICATE_TAG;
+	struct net_sockaddr_storage server_addr;
+	struct net_sockaddr_storage client_addr;
+	bool ok;
+	int ret;
+
+	ok = net_ipaddr_parse(server, strlen(server), (struct net_sockaddr *)&server_addr);
+	zassert_true(ok, "Failed to parse server address %s", server);
+	ok = net_ipaddr_parse(client, strlen(client), (struct net_sockaddr *)&client_addr);
+	zassert_true(ok, "Failed to parse client address %s", client);
+
+	prepare_quic_socket(server_sock, NULL, (const struct net_sockaddr *)&server_addr);
+	setup_quic_certs(*server_sock, server_sec_tags, ARRAY_SIZE(server_sec_tags));
+	setup_alpn(*server_sock, alpn_list, ARRAY_SIZE(alpn_list));
+
+	if (send_intermediate) {
+		ret = zsock_setsockopt(*server_sock, ZSOCK_SOL_QUIC, ZSOCK_QUIC_SO_CERT_CHAIN_ADD,
+				       &intermediate, sizeof(intermediate));
+		zassert_ok(ret, "Failed to add the intermediate certificate (%d)", -errno);
+	}
+
+	prepare_quic_socket(client_sock, (const struct net_sockaddr *)&server_addr,
+			    (const struct net_sockaddr *)&client_addr);
+	setup_quic_certs(*client_sock, client_sec_tags, ARRAY_SIZE(client_sec_tags));
+	setup_alpn(*client_sock, alpn_list, ARRAY_SIZE(alpn_list));
+
+	return quic_stream_open(*client_sock, QUIC_STREAM_CLIENT, QUIC_STREAM_BIDIRECTIONAL, 0);
+}
+
+ZTEST(net_socket_quic, test_569_server_certificate_chain_is_verified)
+{
+	int server_sock;
+	int client_sock;
+	int stream;
+	int ret;
+
+	/* The certificate of the intermediate CA comes with the one of the
+	 * server, and leads from it to the CA that the client trusts.
+	 */
+	stream = open_stream_to_chain_server(&server_sock, &client_sock, "127.0.0.1:54369",
+					     "127.0.0.1:19969", true);
+	zassert_true(stream >= 0, "Handshake with a certificate chain failed (%d)", stream);
+
+	ret = zsock_close(stream);
+	zassert_ok(ret, "Failed to close the stream (%d)", -errno);
+	ret = quic_connection_close(client_sock);
+	zassert_ok(ret, "Failed to close the client connection (%d)", ret);
+	ret = quic_connection_close(server_sock);
+	zassert_ok(ret, "Failed to close the server socket (%d)", ret);
+
+	/* Without it nothing leads there, and the handshake fails */
+	stream = open_stream_to_chain_server(&server_sock, &client_sock, "127.0.0.1:54370",
+					     "127.0.0.1:19970", false);
+	zassert_true(stream < 0, "Handshake passed without the intermediate certificate");
+
+	ret = quic_connection_close(client_sock);
+	zassert_ok(ret, "Failed to close the client connection (%d)", ret);
+	ret = quic_connection_close(server_sock);
+	zassert_ok(ret, "Failed to close the server socket (%d)", ret);
+}
+
+ZTEST(net_socket_quic, test_570_reconnect_after_a_failed_handshake)
+{
+	int bad_server;
+	int good_server;
+	int client_sock;
+	int stream;
+	int ret;
+
+	/* The handshake with a server that sends no intermediate certificate
+	 * fails. A connection opened right after it, to a server that does,
+	 * is not disturbed by what is left of the first one.
+	 */
+	stream = open_stream_to_chain_server(&bad_server, &client_sock, "127.0.0.1:54371",
+					     "127.0.0.1:19971", false);
+	zassert_true(stream < 0, "Handshake passed without the intermediate certificate");
+
+	ret = quic_connection_close(client_sock);
+	zassert_ok(ret, "Failed to close the client connection (%d)", ret);
+
+	stream = open_stream_to_chain_server(&good_server, &client_sock, "127.0.0.1:54372",
+					     "127.0.0.1:19972", true);
+	zassert_true(stream >= 0, "Handshake after a failed one failed (%d)", stream);
+
+	ret = zsock_close(stream);
+	zassert_ok(ret, "Failed to close the stream (%d)", -errno);
+	ret = quic_connection_close(client_sock);
+	zassert_ok(ret, "Failed to close the client connection (%d)", ret);
+	ret = quic_connection_close(good_server);
+	zassert_ok(ret, "Failed to close the server socket (%d)", ret);
+	ret = quic_connection_close(bad_server);
+	zassert_ok(ret, "Failed to close the server socket (%d)", ret);
+}
+
+ZTEST(net_socket_quic, test_575_failed_connection_is_over_with_its_socket_open)
+{
+	struct zsock_pollfd pfd = {
+		.events = ZSOCK_POLLIN,
+	};
+	struct test_config cfg;
+	int server_sock;
+	int client_sock;
+	int stream;
+	int ret;
+
+	stream = open_stream_to_chain_server(&server_sock, &client_sock, "127.0.0.1:54375",
+					     "127.0.0.1:19975", false);
+	zassert_true(stream < 0, "Handshake passed without the intermediate certificate");
+
+	/* The connection is over although the application has not closed its
+	 * socket: the endpoints of both ends are released, which leaves the
+	 * one of the listening socket, and the socket of the client hangs up.
+	 */
+	for (int i = 0; i < 100; i++) {
+		memset(&cfg, 0, sizeof(cfg));
+		quic_endpoint_foreach(test_endpoint_cb, &cfg);
+		if (cfg.endpoint_count == 1) {
+			break;
+		}
+
+		k_msleep(10);
+	}
+
+	zassert_equal(cfg.endpoint_count, 1, "%d endpoints after a failed handshake",
+		      cfg.endpoint_count);
+
+	pfd.fd = client_sock;
+	ret = zsock_poll(&pfd, 1, 0);
+	zassert_true(ret > 0 && (pfd.revents & ZSOCK_POLLHUP) != 0,
+		     "The failed connection did not hang up (revents 0x%x)", pfd.revents);
+
+	ret = quic_connection_close(client_sock);
+	zassert_ok(ret, "Failed to close the client connection (%d)", ret);
+	ret = quic_connection_close(server_sock);
+	zassert_ok(ret, "Failed to close the server socket (%d)", ret);
 }
 
 ZTEST_SUITE(net_socket_quic, NULL, setup, before, after, NULL);

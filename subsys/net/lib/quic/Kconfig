@@ -572,7 +572,10 @@ config QUIC_TLS_MAX_CERT_CHAIN_DEPTH
 	int "Maximum certificate chain depth"
 	default 3
 	help
-	  Maximum number of certificates in a certificate chain.
+	  Maximum number of certificates in a certificate chain, ours or
+	  the one of a peer, not counting the certificate of the endpoint
+	  itself: the intermediate certificates that lead from it to a
+	  trusted CA.
 
 config QUIC_TLS_MAX_CERT_SIZE
 	int "Maximum certificate size"

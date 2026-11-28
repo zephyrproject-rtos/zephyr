@@ -3425,6 +3425,25 @@ static bool quic_endpoint_is_used(struct quic_endpoint *ep)
 	return !!atomic_get(&ep->refcount);
 }
 
+/* Drop the reference that an endpoint has for being on the endpoint list of
+ * a context. The context that goes away, a timeout and a packet that ends
+ * the connection can each want to, and only the first of them does. The
+ * caller holds a reference of its own, so the endpoint is there to look at.
+ */
+static void quic_endpoint_drop_list_ref(struct quic_endpoint *ep)
+{
+	bool drop;
+
+	k_mutex_lock(&contexts_lock, K_FOREVER);
+	drop = !ep->list_ref_dropped;
+	ep->list_ref_dropped = true;
+	k_mutex_unlock(&contexts_lock);
+
+	if (drop) {
+		quic_endpoint_unref(ep);
+	}
+}
+
 #if defined(CONFIG_QUIC_LOG_LEVEL_DBG)
 static int quic_endpoint_ref_debug(struct quic_endpoint *ep, const char *caller, int line)
 #define quic_endpoint_ref(ep) quic_endpoint_ref_debug(ep, __func__, __LINE__)
@@ -6685,15 +6704,153 @@ ZTESTABLE_STATIC void quic_release_orphan_client_endpoints(const struct net_sock
 #include "quic_socket.c"
 #include "quic_packet.c"
 
+/* Skip a number of variable-length integers, false when the payload ends
+ * before the last of them
+ */
+static bool quic_skip_varints(const uint8_t *payload, size_t len, size_t *pos, uint64_t count)
+{
+	uint64_t value;
+	int ret;
+
+	for (uint64_t i = 0; i < count; i++) {
+		ret = quic_get_len(&payload[*pos], len - *pos, &value);
+		if (ret < 0) {
+			return false;
+		}
+
+		*pos += ret;
+	}
+
+	return true;
+}
+
+/* Whether the payload of an Initial or a Handshake packet asks for an
+ * acknowledgment, which every frame but PADDING, ACK and CONNECTION_CLOSE
+ * does (RFC 9000 ch. 13.2.1). A payload that cannot be read asks for none,
+ * the frame handling deals with it.
+ */
+ZTESTABLE_STATIC bool quic_handshake_payload_is_ack_eliciting(const uint8_t *payload, size_t len)
+{
+	size_t pos = 0;
+
+	while (pos < len) {
+		uint8_t type = payload[pos++];
+		uint64_t range_count;
+		uint64_t fields;
+		int ret;
+
+		if (type == QUIC_FRAME_TYPE_PADDING) {
+			continue;
+		}
+
+		if (type != QUIC_FRAME_TYPE_ACK && type != QUIC_FRAME_TYPE_ACK_ECN) {
+			return type != QUIC_FRAME_TYPE_CONNECTION_CLOSE_TRANSPORT &&
+			       type != QUIC_FRAME_TYPE_CONNECTION_CLOSE_APPLICATION;
+		}
+
+		/* Skip the ACK frame (ch. 19.3): the largest acknowledged and
+		 * the delay, then the range count.
+		 */
+		if (!quic_skip_varints(payload, len, &pos, 2)) {
+			return false;
+		}
+
+		ret = quic_get_len(&payload[pos], len - pos, &range_count);
+		if (ret < 0) {
+			return false;
+		}
+
+		pos += ret;
+
+		/* Each further range takes two bytes at least */
+		if (range_count > len / 2) {
+			return false;
+		}
+
+		/* The first range, a gap and a length for each further range,
+		 * and three ECN counts.
+		 */
+		fields = 1 + 2 * range_count;
+		if (type == QUIC_FRAME_TYPE_ACK_ECN) {
+			fields += 3;
+		}
+
+		if (!quic_skip_varints(payload, len, &pos, fields)) {
+			return false;
+		}
+	}
+
+	return false;
+}
+
+/* RFC 9000 ch. 13.2.1: an Initial or a Handshake packet that asks for an
+ * acknowledgment gets it at once. A peer may wait for it: a server that
+ * sent three times what it received goes on with the handshake only once
+ * it hears from the client again (ch. 8.1).
+ *
+ * The acknowledgment is noted before the frames of the packet are handled,
+ * so that what they make us send at that level carries it, as the
+ * ServerHello does for the packet with the ClientHello: no packet of its
+ * own is spent on it then, which counts for a server that may send only so
+ * much to an address it has not validated yet.
+ */
+static void quic_handshake_ack_arm(struct quic_endpoint *ep, enum quic_secret_level level,
+				   const uint8_t *payload, size_t payload_len,
+				   uint64_t pkt_num)
+{
+	if (!quic_handshake_payload_is_ack_eliciting(payload, payload_len)) {
+		return;
+	}
+
+	k_mutex_lock(&ep->send_lock, K_FOREVER);
+	ep->handshake_ack[level].pkt_num = pkt_num;
+	ep->handshake_ack[level].pending = true;
+	k_mutex_unlock(&ep->send_lock);
+}
+
+/* The frames of the packet are handled (RFC 9000 ch. 13.1). An
+ * acknowledgment that nothing has carried yet is sent on its own, unless
+ * the packet was not accepted or the keys of the level are gone, in which
+ * case the peer has no use for it.
+ */
+static void quic_handshake_ack_finish(struct quic_endpoint *ep, enum quic_secret_level level,
+				      bool handled)
+{
+	const struct quic_crypto_context *crypto = level == QUIC_SECRET_LEVEL_INITIAL ?
+						   &ep->crypto.initial : &ep->crypto.handshake;
+	uint64_t pkt_num;
+	bool pending;
+	int ret;
+
+	k_mutex_lock(&ep->send_lock, K_FOREVER);
+	pending = ep->handshake_ack[level].pending;
+	pkt_num = ep->handshake_ack[level].pkt_num;
+	ep->handshake_ack[level].pending = false;
+	k_mutex_unlock(&ep->send_lock);
+
+	if (!pending || !handled || crypto->discarded) {
+		return;
+	}
+
+	ret = quic_send_ack(ep, level, pkt_num);
+	if (ret < 0) {
+		NET_DBG("[EP:%p/%d] Failed to acknowledge packet %" PRIu64 " at level %d (%d)",
+			ep, quic_get_by_ep(ep), pkt_num, level, ret);
+	}
+}
+
 /*
  * Wrapper for Initial packets
  */
 static int handle_initial_packet(struct quic_endpoint *ep,
 				 const uint8_t *payload,
 				 size_t payload_len,
-				 size_t packet_len)
+				 size_t packet_len,
+				 uint64_t pkt_num)
 {
 	int ret;
+
+	quic_handshake_ack_arm(ep, QUIC_SECRET_LEVEL_INITIAL, payload, payload_len, pkt_num);
 
 	ret = handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_INITIAL,
 					 payload, payload_len, packet_len, NULL);
@@ -6704,6 +6861,8 @@ static int handle_initial_packet(struct quic_endpoint *ep,
 		QUIC_EP_STAT_INC(ep, drop_rx);
 	}
 
+	quic_handshake_ack_finish(ep, QUIC_SECRET_LEVEL_INITIAL, ret == 0);
+
 	return ret;
 }
 
@@ -6713,9 +6872,12 @@ static int handle_initial_packet(struct quic_endpoint *ep,
 static int handle_handshake_packet(struct quic_endpoint *ep,
 				   const uint8_t *payload,
 				   size_t payload_len,
-				   size_t packet_len)
+				   size_t packet_len,
+				   uint64_t pkt_num)
 {
 	int ret;
+
+	quic_handshake_ack_arm(ep, QUIC_SECRET_LEVEL_HANDSHAKE, payload, payload_len, pkt_num);
 
 	ret = handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_HANDSHAKE,
 					 payload, payload_len, packet_len, NULL);
@@ -6725,6 +6887,8 @@ static int handle_handshake_packet(struct quic_endpoint *ep,
 		QUIC_EP_STAT_INC(ep, invalid_handshake);
 		QUIC_EP_STAT_INC(ep, drop_rx);
 	}
+
+	quic_handshake_ack_finish(ep, QUIC_SECRET_LEVEL_HANDSHAKE, ret == 0);
 
 	return ret;
 }
@@ -8297,7 +8461,8 @@ static void process_pkt(struct quic_pkt *pkt)
 		ret = handle_initial_packet(pkt->ep,
 					    pkt->data,
 					    pkt->len,
-					    pkt->total_len);
+					    pkt->total_len,
+					    pkt->pkt_num);
 		if (ret < 0) {
 			NET_DBG("[EP:%p/%d] %s packet handling failure (%d)",
 				pkt->ep, quic_get_by_ep(pkt->ep), "Initial", ret);
@@ -8307,7 +8472,7 @@ static void process_pkt(struct quic_pkt *pkt)
 		} else if (ret == 1) {
 			NET_DBG("[EP:%p/%d] Connection closing after %s packet",
 				pkt->ep, quic_get_by_ep(pkt->ep), "Initial");
-			quic_endpoint_unref(pkt->ep);
+			quic_endpoint_drop_list_ref(pkt->ep);
 		}
 
 		if (ret == 0) {
@@ -8325,7 +8490,8 @@ static void process_pkt(struct quic_pkt *pkt)
 		ret = handle_handshake_packet(pkt->ep,
 					      pkt->data,
 					      pkt->len,
-					      pkt->total_len);
+					      pkt->total_len,
+					      pkt->pkt_num);
 		if (ret < 0) {
 			NET_DBG("[EP:%p/%d] %s packet handling failure (%d)",
 				pkt->ep, quic_get_by_ep(pkt->ep), "Handshake", ret);
@@ -8344,7 +8510,7 @@ static void process_pkt(struct quic_pkt *pkt)
 		} else if (ret == 1) {
 			NET_DBG("[EP:%p/%d] Connection closing after %s packet",
 				pkt->ep, quic_get_by_ep(pkt->ep), "Handshake");
-			quic_endpoint_unref(pkt->ep);
+			quic_endpoint_drop_list_ref(pkt->ep);
 		}
 
 		if (ret == 0) {
@@ -8372,7 +8538,7 @@ static void process_pkt(struct quic_pkt *pkt)
 		} else if (ret == 1) {
 			NET_DBG("[EP:%p/%d] Connection closing after %s packet",
 				pkt->ep, quic_get_by_ep(pkt->ep), "0-RTT");
-			quic_endpoint_unref(pkt->ep);
+			quic_endpoint_drop_list_ref(pkt->ep);
 		}
 		break;
 
@@ -8399,7 +8565,7 @@ static void process_pkt(struct quic_pkt *pkt)
 	}
 
 	if (ret < 0) {
-		quic_endpoint_unref(pkt->ep);
+		quic_endpoint_drop_list_ref(pkt->ep);
 	}
 }
 
@@ -8629,7 +8795,7 @@ static bool process_long_header_msg(struct quic_pkt *pkt)
 	return true;
 
 free_ep:
-	quic_endpoint_unref(ep);
+	quic_endpoint_drop_list_ref(ep);
 	return false;
 
 fail:
@@ -8711,15 +8877,21 @@ static void quic_service_thread(void *p1, void *p2, void *p3)
 
 		NET_DBG("Processing packet %p", pkt);
 
-		quic_endpoint_unref(pkt->ep);
-
-		if (!quic_endpoint_is_used(pkt->ep) || pkt->ep->sock < 0) {
+		/* The reference taken when the packet was queued is kept
+		 * until the packet is handled. Handling it can end the
+		 * connection and wake the application, which may close the
+		 * socket and open another one at once: without the reference
+		 * the endpoint could go away, or be handed out again for the
+		 * new connection, under the packet.
+		 */
+		if (pkt->ep->list_ref_dropped || pkt->ep->sock < 0) {
 			NET_DBG("Endpoint %p released while in queue",
 				pkt->ep);
 		} else {
 			process_one_msg(pkt);
 		}
 
+		quic_endpoint_unref(pkt->ep);
 		quic_pkt_unref(pkt);
 	}
 }

@@ -781,18 +781,15 @@ static int handle_stop_sending_frame(struct quic_endpoint *ep,
 		/* Send RESET_STREAM, our TX side is being abandoned */
 		quic_send_reset_stream(ep, stream_id, error_code, final_size);
 
-		/*
-		 * Wake any thread blocked in zsock_recv() or waiting on
-		 * POLLIN so the HTTP layer sees the stream is done and calls
-		 * zsock_close().  Reuse the fin_received flag so
-		 * quic_stream_recv() returns 0 (EOF) rather than blocking.
+		/* Only the sending part is stopped, the peer may go on
+		 * sending (RFC 9000 ch. 3.5), so the receiving part is left
+		 * alone. A sender that waits for room is woken up: its next
+		 * send fails.
 		 */
-		stream->rx_buf.fin_received = true;
-		k_poll_signal_raise(&stream->recv.signal, 0);
-		k_condvar_signal(&stream->cond.recv);
+		k_poll_signal_raise(&stream->send.signal, 0);
 
 		NET_DBG("[ST:%p/%d] STOP_SENDING: sent RESET_STREAM and woke "
-			"stream %" PRIu64,
+			"the sender of stream %" PRIu64,
 			stream, quic_get_by_stream(stream), stream_id);
 	}
 
@@ -2121,29 +2118,14 @@ static int quic_send_ack(struct quic_endpoint *ep,
 			 uint64_t largest_pn)
 {
 	uint8_t frame[32];
-	size_t pos = 0;
-	int n;
+	int len;
 
-	/* ACK frame type */
-	frame[pos++] = QUIC_FRAME_TYPE_ACK;
-
-	/* Largest Acknowledged */
-	n = quic_put_varint(&frame[pos], sizeof(frame) - pos, largest_pn);
-	if (n <= 0) {
-		return n < 0 ? n : -EINVAL;
+	len = quic_put_ack_frame(frame, sizeof(frame), largest_pn);
+	if (len < 0) {
+		return len;
 	}
-	pos += n;
 
-	/* ACK Delay (0 for now) */
-	frame[pos++] = 0;
-
-	/* ACK Range Count (0 = just one contiguous range) */
-	frame[pos++] = 0;
-
-	/* First ACK Range (acknowledging just this packet) */
-	frame[pos++] = 0;
-
-	return quic_send_packet(ep, level, frame, pos);
+	return quic_send_packet(ep, level, frame, len);
 }
 
 /*
@@ -2502,12 +2484,12 @@ close:
 
 	/* Connection closed by peer. Notify streams and release endpoint */
 	quic_endpoint_notify_streams_closed(ep);
-	quic_endpoint_unref(ep);
+	quic_endpoint_drop_list_ref(ep);
 	return ret;
 
 fail:
 	QUIC_EP_STAT_INC(ep, drop_rx);
-	quic_endpoint_unref(ep);
+	quic_endpoint_drop_list_ref(ep);
 	return ret;
 }
 

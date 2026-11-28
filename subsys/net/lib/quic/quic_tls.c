@@ -183,12 +183,68 @@ static int quic_tls_effective_verify_level(const struct quic_tls_context *ctx)
 	return MBEDTLS_SSL_VERIFY_NONE;
 }
 
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
+/* Add the certificates that follow the first one in the certificate list of
+ * a Certificate message to the chain of the peer: they are what leads from
+ * its certificate to a trusted one. The message was checked by
+ * parse_certificate(). The certificates are read in place, so the chain is
+ * freed before the message goes away. One that cannot be read ends the chain
+ * there, and the verification decides whether what there is will do.
+ */
+static void add_peer_chain_certificates(mbedtls_x509_crt *chain, const uint8_t *msg,
+					size_t msg_len)
+{
+	size_t pos = 1U + msg[0]; /* Request context */
+	size_t list_end;
+	int i = 0;
+
+	list_end = pos + 3U + sys_get_be24(&msg[pos]);
+	if (list_end > msg_len) {
+		return;
+	}
+
+	pos += 3U;
+
+	while (pos + 3U <= list_end) {
+		size_t cert_len = sys_get_be24(&msg[pos]);
+		int ret;
+
+		pos += 3U;
+		if (cert_len + 2U > list_end - pos) {
+			return;
+		}
+
+		/* The first certificate is the one of the peer itself, which
+		 * the limit does not count, as for a chain of our own.
+		 */
+		if (i > CONFIG_QUIC_TLS_MAX_CERT_CHAIN_DEPTH) {
+			NET_DBG("Peer certificate chain cut after %d certificates", i - 1);
+			return;
+		}
+
+		if (i > 0) {
+			ret = mbedtls_x509_crt_parse_der_nocopy(chain, &msg[pos], cert_len);
+			if (ret != 0) {
+				NET_DBG("Failed to parse certificate %d of the peer: -0x%04x",
+					i, -ret);
+				return;
+			}
+		}
+
+		pos += cert_len;
+		pos += 2U + sys_get_be16(&msg[pos]); /* Extensions */
+		i++;
+	}
+}
+#endif /* MBEDTLS_X509_CRT_PARSE_C */
+
 /*
  * Verify peer certificate using mbedtls
  * Called when processing Certificate message from peer
  */
 static int verify_peer_certificate(struct quic_tls_context *ctx,
-				   const uint8_t *cert_data, size_t cert_len)
+				   const uint8_t *cert_data, size_t cert_len,
+				   const uint8_t *msg, size_t msg_len)
 {
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 	mbedtls_x509_crt peer_crt;
@@ -209,6 +265,8 @@ static int verify_peer_certificate(struct quic_tls_context *ctx,
 		ret = -EINVAL;
 		goto out;
 	}
+
+	add_peer_chain_certificates(&peer_crt, msg, msg_len);
 
 	/* Verify against CA chain if available */
 	if (ctx->ca_cert) {
@@ -4947,7 +5005,8 @@ ZTESTABLE_STATIC int process_handshake_message(struct quic_tls_context *ctx,
 
 		/* Verify the peer certificate against CA chain if configured */
 		if (ctx->peer_cert_len > 0) {
-			ret = verify_peer_certificate(ctx, ctx->peer_cert, ctx->peer_cert_len);
+			ret = verify_peer_certificate(ctx, ctx->peer_cert, ctx->peer_cert_len,
+						      msg, msg_len);
 			if (ret != 0) {
 				NET_DBG("Peer certificate verification failed: %d", ret);
 				return ret;
@@ -5893,6 +5952,63 @@ int quic_flush_deferred_crypto(struct quic_endpoint *ep)
 }
 #endif /* CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT */
 
+/* Write an ACK frame for one packet (RFC 9000 ch. 19.3), returns its length */
+static int quic_put_ack_frame(uint8_t *buf, size_t size, uint64_t largest_pn)
+{
+	size_t pos = 0;
+	int n;
+
+	/* The type, and after the packet number the ACK delay, the range
+	 * count and the first range, all zero for this one packet.
+	 */
+	if (size < 1U + 3U) {
+		return -ENOBUFS;
+	}
+
+	buf[pos++] = QUIC_FRAME_TYPE_ACK;
+
+	n = quic_put_varint(&buf[pos], size - pos - 3U, largest_pn);
+	if (n <= 0) {
+		return n < 0 ? n : -ENOBUFS;
+	}
+
+	pos += n;
+	buf[pos++] = 0;
+	buf[pos++] = 0;
+	buf[pos++] = 0;
+
+	return (int)pos;
+}
+
+/* Write the acknowledgment that is pending at an Initial or a Handshake
+ * level, so that it goes out with what is being sent there. Returns the
+ * length of the frame, 0 when none is pending or it does not fit. Called
+ * with send_lock held.
+ */
+ZTESTABLE_STATIC size_t quic_take_handshake_ack(struct quic_endpoint *ep,
+						enum quic_secret_level level,
+						uint8_t *buf, size_t size)
+{
+	int len;
+
+	if (level != QUIC_SECRET_LEVEL_INITIAL && level != QUIC_SECRET_LEVEL_HANDSHAKE) {
+		return 0;
+	}
+
+	if (!ep->handshake_ack[level].pending) {
+		return 0;
+	}
+
+	len = quic_put_ack_frame(buf, size, ep->handshake_ack[level].pkt_num);
+	if (len <= 0) {
+		return 0;
+	}
+
+	ep->handshake_ack[level].pending = false;
+
+	return (size_t)len;
+}
+
 /*
  * Build CRYPTO frame directly into endpoint's TX buffer
  * Returns pointer to where TLS data should be written
@@ -6288,9 +6404,10 @@ static int quic_send_packet_with_pn(struct quic_endpoint *ep,
 static int quic_send_prepared_frame(struct quic_endpoint *ep,
 				    enum quic_secret_level level,
 				    size_t frame_header_len,
-				    size_t data_len)
+				    size_t data_len,
+				    size_t trailer_len)
 {
-	size_t total_frame_len = frame_header_len + data_len;
+	size_t total_frame_len = frame_header_len + data_len + trailer_len;
 	int ret;
 
 	ret = quic_send_packet_from_txbuf(ep, level, total_frame_len, 0U, false, false);
@@ -6312,12 +6429,14 @@ static int quic_send_prepared_frame(struct quic_endpoint *ep,
 }
 
 /* Updated TLS send callback, zero copy for TLS data */
-static int quic_tls_send_callback(void *user_data,
-				  enum quic_secret_level level,
-				  const uint8_t *data, size_t len)
+ZTESTABLE_STATIC int quic_tls_send_callback(void *user_data,
+					    enum quic_secret_level level,
+					    const uint8_t *data, size_t len)
 {
 	struct quic_endpoint *ep = user_data;
 	size_t frame_header_len;
+	size_t used;
+	size_t ack_len = 0;
 	uint8_t *dest;
 	int ret;
 
@@ -6344,8 +6463,25 @@ static int quic_tls_send_callback(void *user_data,
 	/* Copy TLS data into frame */
 	memcpy(dest, data, len);
 
+	/* A packet of the peer that waits for its acknowledgment at this
+	 * level gets it with this one. The frame follows the CRYPTO frame:
+	 * the first frame is what tells that the packet has to be
+	 * acknowledged in turn.
+	 */
+	used = frame_header_len + len;
+	if (used < sizeof(ep->crypto.tx_buffer)) {
+		ack_len = quic_take_handshake_ack(ep, level, dest + len,
+						  sizeof(ep->crypto.tx_buffer) - used);
+	}
+
 	/* Send */
-	ret = quic_send_prepared_frame(ep, level, frame_header_len, len);
+	ret = quic_send_prepared_frame(ep, level, frame_header_len, len, ack_len);
+	if (ret != 0 && ack_len > 0U) {
+		/* The packet was neither sent nor queued, so the
+		 * acknowledgment is pending again.
+		 */
+		ep->handshake_ack[level].pending = true;
+	}
 
 	k_mutex_unlock(&ep->send_lock);
 
@@ -7308,6 +7444,10 @@ static int quic_tls_clone(struct quic_tls_context *target_tls,
 
 	memcpy(&target_tls->options, &source_tls->options,
 	       sizeof(target_tls->options));
+
+	memcpy(target_tls->cert_chain_tags, source_tls->cert_chain_tags,
+	       sizeof(target_tls->cert_chain_tags));
+	target_tls->cert_chain_count = source_tls->cert_chain_count;
 
 	return 0;
 }
