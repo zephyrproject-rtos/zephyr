@@ -17,6 +17,7 @@ if SPI_RTS5817
 config SPI_RTS5817_INTERRUPT
 	bool "RTS5817 SPI interrupt mode"
 	default y
+	select SPI_HAS_INTERRUPT_DRIVEN
 	help
 	  Enables interrupt support for RTS5817 SPI controller wrapper driver.
 

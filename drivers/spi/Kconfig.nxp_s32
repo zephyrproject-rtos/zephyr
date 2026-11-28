@@ -15,6 +15,7 @@ if NXP_S32_SPI
 config NXP_S32_SPI_INTERRUPT
 	bool "NXP S32 SPI Interrupt Support"
 	default y
+	select SPI_HAS_INTERRUPT_DRIVEN
 	help
 	  Enable Interrupt support for SPI communication.
 

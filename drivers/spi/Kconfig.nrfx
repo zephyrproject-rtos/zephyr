@@ -28,6 +28,7 @@ config SPI_NRFX_SPIM_RTIO
 	depends on DT_HAS_NORDIC_NRF_SPIM_ENABLED
 	depends on SPI_RTIO
 	select NRFX_SPIM
+	select SPI_HAS_RTIO
 
 if SPI_NRFX_SPIM_RTIO
 

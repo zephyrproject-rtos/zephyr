@@ -27,6 +27,7 @@ config SPI_NXP_LPSPI_DMA
 	default y
 	select DMA
 	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_LPSPI),dmas)
+	select SPI_HAS_DMA
 	help
 	  Enable DMA-based transfers for LPSPI peripherals
 	  that have a dmas property specified in their DT node.
@@ -52,6 +53,7 @@ config SPI_NXP_LPSPI_CPU_RTIO
 	default y
 	depends on !SPI_NXP_LPSPI_DMA
 	depends on SPI_RTIO
+	select SPI_HAS_RTIO
 	help
 	  Enable native RTIO-based driver for LPSPI.
 	  This driver optimizes latency by starting/resuming transfers directly
@@ -63,6 +65,7 @@ config SPI_NXP_LPSPI_RTIO_DMA
 	default y
 	select DMA
 	depends on SPI_NXP_LPSPI_CPU_RTIO && $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_LPSPI),dmas)
+	select SPI_HAS_DMA
 	help
 	  Enable DMA-based transfers for RTIO transfers bigger then the DMA threshold.
 
