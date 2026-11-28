@@ -1,0 +1,28 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+&i2c0 {
+	status = "okay";
+
+	pmic: pmic@30 {
+		compatible = "ti,tps65214";
+		reg = <0x30>;
+		/* nINT is open-drain; the pull-up idles the emulated line high */
+		int-gpios = <&gpio0 5 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+
+		pmic_gpio: gpio {
+			compatible = "ti,tps6521x-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		power_button: power-button {
+			compatible = "ti,tps6521x-power-button";
+			zephyr,code = <INPUT_KEY_POWER>;
+		};
+	};
+};

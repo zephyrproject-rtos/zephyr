@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config INPUT_TPS6521X
+	bool "TI TPS65214/TPS65215 PMIC power button"
+	default y
+	depends on DT_HAS_TI_TPS6521X_POWER_BUTTON_ENABLED
+	select MFD
+	help
+	  Enable the power-button input driver of the TI TPS65214 and
+	  TPS65215 PMICs. It reports press and release events from the
+	  INT_PB register and needs int-gpios on the PMIC node.

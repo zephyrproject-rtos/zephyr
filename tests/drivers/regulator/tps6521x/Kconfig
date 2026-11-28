@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "TPS6521x regulator test"
+
+config TPS6521X_TEST_ID_MISMATCH
+	bool "Emulate the device ID of the other variant"
+	help
+	  The emulated PMIC reports the TI_DEV_ID of the variant the devicetree
+	  compatible does not name, so the MFD driver must refuse it.
+
+source "Kconfig.zephyr"

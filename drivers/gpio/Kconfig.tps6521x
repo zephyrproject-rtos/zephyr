@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_TPS6521X
+	bool "TI TPS65214/TPS65215 PMIC GPIO driver"
+	default y
+	depends on DT_HAS_TI_TPS6521X_GPIO_ENABLED
+	select MFD
+	help
+	  Enable the GPIO driver for the GPO and GPIO pins of the TI TPS65214
+	  and TPS65215 PMICs.
+
+config GPIO_TPS6521X_INIT_PRIORITY
+	int "TPS6521x GPIO driver init priority"
+	default 85
+	depends on GPIO_TPS6521X
+	help
+	  Init priority for the TPS6521x GPIO driver. It must be greater than
+	  MFD_INIT_PRIORITY.

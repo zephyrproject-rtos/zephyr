@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TI TPS65214/TPS65215 PMIC GPO and GPIO pins
+
+  The node is a child of a "ti,tps65214" or "ti,tps65215" node. Pin numbers
+  are the bit positions in GENERAL_CONFIG:
+    - 0: GPO (TPS65214), GPO1 (TPS65215)
+    - 1: GPO2 (TPS65215 only)
+    - 2: GPIO
+
+  All outputs are open-drain, so outputs must be configured with
+  GPIO_OPEN_DRAIN. The pin functions come from the PMIC NVM and are never
+  changed by the driver; a pin the NVM assigns to another function (VSEL,
+  nWAKEUP, multi-PMIC synchronisation) is refused. The TPS65215 GPIO pin
+  is an output in single-device mode and an input in multi-device mode.
+  The TPS65214 GPIO pin direction (GENERAL_CONFIG GPIO_CONFIG, 1 = output
+  per SLVSHK7A table 8-29) is owned by the NVM and never written: the pin
+  can be an output only if the NVM made it one. It can always be read.
+
+  Reading a GPO returns its output setting; only the GPIO pin has a
+  real-time level (MFP_CTRL GPIO_STATUS). The pins have no interrupts.
+
+compatible: "ti,tps6521x-gpio"
+
+include: gpio-controller.yaml
+
+gpio-cells:
+  - pin
+  - flags

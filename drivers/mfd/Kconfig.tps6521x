@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config MFD_TPS6521X
+	bool "TI TPS65214/TPS65215 PMIC multi-function device driver"
+	default y
+	depends on DT_HAS_TI_TPS65214_ENABLED || DT_HAS_TI_TPS65215_ENABLED
+	select I2C
+	help
+	  Enable the TI TPS65214 and TPS65215 PMIC multi-function device
+	  driver.
+
+config MFD_TPS6521X_INTERRUPT
+	bool
+	default y
+	depends on MFD_TPS6521X
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_TI_TPS65214),int-gpios) || \
+		$(dt_compat_any_has_prop,$(DT_COMPAT_TI_TPS65215),int-gpios)
+	depends on GPIO
+	help
+	  nINT interrupt demultiplexing, built when a PMIC node has the
+	  int-gpios property.

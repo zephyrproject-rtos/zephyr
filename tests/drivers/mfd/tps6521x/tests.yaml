@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - mfd
+    - gpio
+    - input
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+tests:
+  drivers.mfd.tps6521x.tps65214: {}
+  drivers.mfd.tps6521x.tps65215:
+    extra_args: EXTRA_DTC_OVERLAY_FILE=tps65215.overlay
+  drivers.mfd.tps6521x.tps65214.en_pin:
+    extra_args: EMUL_PIN_IS_EN=1
+  drivers.mfd.tps6521x.tps65215.en_pin:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=tps65215.overlay
+      - EMUL_PIN_IS_EN=1
