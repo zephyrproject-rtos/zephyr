@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config MFD_TPS6521X
+	bool "TI TPS65214/TPS65215 PMIC multi-function device driver"
+	default y
+	depends on DT_HAS_TI_TPS65214_ENABLED || DT_HAS_TI_TPS65215_ENABLED
+	select I2C
+	help
+	  Enable the TI TPS65214 and TPS65215 PMIC multi-function device
+	  driver.

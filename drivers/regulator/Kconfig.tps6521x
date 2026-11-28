@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config REGULATOR_TPS6521X
+	bool "TI TPS65214/TPS65215 PMIC regulator driver"
+	default y
+	depends on DT_HAS_TI_TPS6521X_REGULATOR_ENABLED
+	select MFD
+	help
+	  Enable the TI TPS65214 and TPS65215 PMIC regulator driver: three
+	  buck converters and two LDOs.
+
+if REGULATOR_TPS6521X
+
+config REGULATOR_TPS6521X_INIT_PRIORITY
+	int "TPS6521x regulator driver init priority"
+	default 86
+	help
+	  Init priority for the TPS6521x regulator driver. It must be greater
+	  than MFD_INIT_PRIORITY.
+
+endif

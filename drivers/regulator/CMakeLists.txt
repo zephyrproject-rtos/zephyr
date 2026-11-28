@@ -49,4 +49,5 @@ zephyr_library_sources_ifdef(CONFIG_REGULATOR_STPMIC1 regulator_stpmic1.c)
 zephyr_library_sources_ifdef(CONFIG_REGULATOR_TI_TPS6287X regulator_ti_tps6287x.c)
 zephyr_library_sources_ifdef(CONFIG_REGULATOR_TLE927X regulator_tle927x_vcc2.c)
 zephyr_library_sources_ifdef(CONFIG_REGULATOR_TPS55287 regulator_tps55287.c)
+zephyr_library_sources_ifdef(CONFIG_REGULATOR_TPS6521X regulator_tps6521x.c)
 # zephyr-keep-sorted-stop

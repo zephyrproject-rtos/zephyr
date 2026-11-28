@@ -1,0 +1,43 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	status = "okay";
+
+	pmic: pmic@30 {
+		compatible = "ti,tps65214";
+		reg = <0x30>;
+
+		regulators {
+			compatible = "ti,tps6521x-regulator";
+
+			buck1: BUCK1 {
+				regulator-always-on;
+			};
+
+			/* wider than the hardware, to reach the range edges */
+			buck2: BUCK2 {
+				regulator-min-microvolt = <500000>;
+				regulator-max-microvolt = <3500000>;
+			};
+
+			buck3: BUCK3 {
+				regulator-boot-on;
+				regulator-min-microvolt = <1100000>;
+				regulator-max-microvolt = <1100000>;
+				regulator-init-microvolt = <1100000>;
+			};
+
+			ldo1: LDO1 {
+				regulator-min-microvolt = <500000>;
+				regulator-max-microvolt = <3400000>;
+			};
+
+			ldo2: LDO2 {
+				regulator-min-microvolt = <600000>;
+				regulator-max-microvolt = <3400000>;
+			};
+		};
+	};
+};
