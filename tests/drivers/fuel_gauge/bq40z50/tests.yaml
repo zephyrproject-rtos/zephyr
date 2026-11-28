@@ -5,3 +5,11 @@ tests:
     filter: dt_compat_enabled("ti,bq40z50")
     platform_allow:
       - native_sim
+  drivers.fuel_gauge.bq40z50.split_read:
+    tags:
+      - fuel_gauge
+    filter: dt_compat_enabled("ti,bq40z50")
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_BQ40Z50_SPLIT_READ_DELAY_US=100
