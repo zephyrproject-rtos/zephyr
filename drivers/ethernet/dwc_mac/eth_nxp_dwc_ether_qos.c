@@ -81,9 +81,10 @@ DWMAC_ASSERT_BUFFER_ALIGNMENT(DATA_BUS_WIDTH);
 #error "Unsupported PHY connection type"
 #endif
 
-#if defined(CONFIG_SOC_SERIES_MCXE31X) || defined(CONFIG_SOC_SERIES_S32K3)
-/* MMC counters present in the controller */
-#define NXP_ETH_MMC_COUNTERS(X)                                                                    \
+#if defined(CONFIG_SOC_SERIES_MCXE31X) || defined(CONFIG_SOC_SERIES_S32K3) ||                      \
+	defined(CONFIG_SOC_SERIES_IMXRT11XX)
+/* MMC counters present in the controller of each of these series */
+#define NXP_ETH_MMC_COUNTERS_BASE(X)                                                               \
 	X(TX_OCTET_COUNT_GOOD_BAD)                                                                 \
 	X(TX_PACKET_COUNT_GOOD_BAD)                                                                \
 	X(TX_BROADCAST_PACKETS_GOOD)                                                               \
@@ -135,13 +136,66 @@ DWMAC_ASSERT_BUFFER_ALIGNMENT(DATA_BUS_WIDTH);
 	X(RX_VLAN_PACKETS_GOOD_BAD)                                                                \
 	X(RX_WATCHDOG_ERROR_PACKETS)                                                               \
 	X(RX_RECEIVE_ERROR_PACKETS)                                                                \
-	X(RX_CONTROL_PACKETS_GOOD)                                                                 \
+	X(RX_CONTROL_PACKETS_GOOD)
+
+/* Energy efficient Ethernet counters */
+#define NXP_ETH_MMC_COUNTERS_LPI(X)                                                                \
+	X(TX_LPI_USEC_CNTR)                                                                        \
+	X(TX_LPI_TRAN_CNTR)                                                                        \
+	X(RX_LPI_USEC_CNTR)                                                                        \
+	X(RX_LPI_TRAN_CNTR)
+
+/* Receive checksum offload counters */
+#define NXP_ETH_MMC_COUNTERS_IPC(X)                                                                \
+	X(RXIPV4_GOOD_PACKETS)                                                                     \
+	X(RXIPV4_HEADER_ERROR_PACKETS)                                                             \
+	X(RXIPV4_NO_PAYLOAD_PACKETS)                                                               \
+	X(RXIPV4_FRAGMENTED_PACKETS)                                                               \
+	X(RXIPV4_UDP_CHECKSUM_DISABLED_PACKETS)                                                    \
+	X(RXIPV6_GOOD_PACKETS)                                                                     \
+	X(RXIPV6_HEADER_ERROR_PACKETS)                                                             \
+	X(RXIPV6_NO_PAYLOAD_PACKETS)                                                               \
+	X(RXUDP_GOOD_PACKETS)                                                                      \
+	X(RXUDP_ERROR_PACKETS)                                                                     \
+	X(RXTCP_GOOD_PACKETS)                                                                      \
+	X(RXTCP_ERROR_PACKETS)                                                                     \
+	X(RXICMP_GOOD_PACKETS)                                                                     \
+	X(RXICMP_ERROR_PACKETS)                                                                    \
+	X(RXIPV4_GOOD_OCTETS)                                                                      \
+	X(RXIPV4_HEADER_ERROR_OCTETS)                                                              \
+	X(RXIPV4_NO_PAYLOAD_OCTETS)                                                                \
+	X(RXIPV4_FRAGMENTED_OCTETS)                                                                \
+	X(RXIPV4_UDP_CHECKSUM_DISABLE_OCTETS)                                                      \
+	X(RXIPV6_GOOD_OCTETS)                                                                      \
+	X(RXIPV6_HEADER_ERROR_OCTETS)                                                              \
+	X(RXIPV6_NO_PAYLOAD_OCTETS)                                                                \
+	X(RXUDP_GOOD_OCTETS)                                                                       \
+	X(RXUDP_ERROR_OCTETS)                                                                      \
+	X(RXTCP_GOOD_OCTETS)                                                                       \
+	X(RXTCP_ERROR_OCTETS)                                                                      \
+	X(RXICMP_GOOD_OCTETS)                                                                      \
+	X(RXICMP_ERROR_OCTETS)
+
+/* Frame preemption counters */
+#define NXP_ETH_MMC_COUNTERS_FPE(X)                                                                \
 	X(TX_FPE_FRAGMENT_CNTR)                                                                    \
 	X(TX_HOLD_REQ_CNTR)                                                                        \
 	X(RX_PACKET_ASSEMBLY_ERR_CNTR)                                                             \
 	X(RX_PACKET_SMD_ERR_CNTR)                                                                  \
 	X(RX_PACKET_ASSEMBLY_OK_CNTR)                                                              \
 	X(RX_FPE_FRAGMENT_CNTR)
+
+#if defined(CONFIG_SOC_SERIES_IMXRT11XX)
+#define NXP_ETH_MMC_COUNTERS(X)                                                                    \
+	NXP_ETH_MMC_COUNTERS_BASE(X)                                                               \
+	NXP_ETH_MMC_COUNTERS_LPI(X)                                                                \
+	NXP_ETH_MMC_COUNTERS_IPC(X)                                                                \
+	NXP_ETH_MMC_COUNTERS_FPE(X)
+#else
+#define NXP_ETH_MMC_COUNTERS(X)                                                                    \
+	NXP_ETH_MMC_COUNTERS_BASE(X)                                                               \
+	NXP_ETH_MMC_COUNTERS_FPE(X)
+#endif
 
 DWMAC_MMC_COUNTERS_DEFINE(nxp_eth_mmc, NXP_ETH_MMC_COUNTERS);
 #endif
@@ -390,7 +444,7 @@ static const struct dwmac_config dwmac_config = {
 	.ptp_clock = DEVICE_DT_GET(DT_INST_CHILD(0, ptp_clock)),
 	.ptp_clk = NXP_ETH_CLOCK_SUBSYS(ptp),
 #endif
-#if defined(CONFIG_SOC_SERIES_MCXE31X) || defined(CONFIG_SOC_SERIES_S32K3)
+#if defined(NXP_ETH_MMC_COUNTERS)
 	DWMAC_MMC_CONFIG_INIT(nxp_eth_mmc)
 #endif
 };
