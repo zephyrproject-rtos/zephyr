@@ -61,6 +61,18 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/gptp.h>
 #include <zephyr/irq.h>
 
+#if defined(CONFIG_DCACHE)
+/*
+ * Data buffers are invalidated around RX DMA: each one must cover whole cache
+ * lines, or the invalidate discards data the CPU wrote to a neighboring buffer.
+ */
+BUILD_ASSERT((CONFIG_NET_BUF_ALIGNMENT % CONFIG_DCACHE_LINE_SIZE) == 0 &&
+		     CONFIG_NET_BUF_ALIGNMENT != 0,
+	     "CONFIG_NET_BUF_ALIGNMENT must be a multiple of the data cache line size");
+BUILD_ASSERT((CONFIG_NET_BUF_DATA_SIZE % CONFIG_DCACHE_LINE_SIZE) == 0,
+	     "CONFIG_NET_BUF_DATA_SIZE must be a multiple of the data cache line size");
+#endif
+
 #if defined(__DCACHE_PRESENT) || defined(CONFIG_DCACHE)
 static bool dcache_enabled;
 
@@ -411,6 +423,9 @@ static int rx_descriptors_init(Gmac *gmac, struct gmac_queue *queue)
 
 		rx_frag_list[i] = rx_buf;
 
+		/* No dirty line of the buffer may be written back over DMA data */
+		dcache_invalidate((uint32_t)rx_buf->data, rx_buf->size);
+
 		rx_buf_addr = rx_buf->data;
 		__ASSERT(!((uint32_t)rx_buf_addr & ~GMAC_RXW0_ADDR),
 			 "Misaligned RX buffer address");
@@ -436,6 +451,9 @@ static void tx_descriptors_init(Gmac *gmac, struct gmac_queue *queue)
 
 	tx_desc_list->head = 0U;
 	tx_desc_list->tail = 0U;
+#if GMAC_MULTIPLE_TX_PACKETS == 1
+	queue->tx_frames_pending = 0U;
+#endif
 
 	for (int i = 0; i < tx_desc_list->len; i++) {
 		tx_desc_list->buf[i].w0 = 0U;
@@ -631,44 +649,47 @@ static void tx_completed(Gmac *gmac, struct gmac_queue *queue)
 			     queue_list[queue->que_idx]);
 #endif
 
-	__ASSERT(tx_desc_list->buf[tx_desc_list->tail].w1 & GMAC_TXW1_USED,
-		 "first buffer of a frame is not marked as own by GMAC");
+	/*
+	 * Several frames can complete before this interrupt is serviced, and
+	 * GMAC_ISR.TCOMP is then set only once: release every frame the GMAC
+	 * is done with, that is every frame handed to it whose first
+	 * descriptor has the used bit set again.
+	 */
+	while (queue->tx_frames_pending > 0U &&
+	       (tx_desc_list->buf[tx_desc_list->tail].w1 & GMAC_TXW1_USED)) {
+		queue->tx_frames_pending--;
 
-	while (tx_desc_list->tail != tx_desc_list->head) {
+		do {
+			tx_desc = &tx_desc_list->buf[tx_desc_list->tail];
+			MODULO_INC(tx_desc_list->tail, tx_desc_list->len);
+			k_sem_give(&queue->tx_desc_sem);
 
-		tx_desc = &tx_desc_list->buf[tx_desc_list->tail];
-		MODULO_INC(tx_desc_list->tail, tx_desc_list->len);
-		k_sem_give(&queue->tx_desc_sem);
-
-		/* Release net buffer to the buffer pool */
-		if (sys_ringq_get(&queue->tx_frag_list, &frag)) {
-			__ASSERT(false, "Failed to get frag from tx_frag_list ringq");
-		}
-		net_pkt_frag_unref(frag);
-		LOG_DBG("Dropping frag %p", frag);
-
-		if (tx_desc->w1 & GMAC_TXW1_LASTBUFFER) {
-#if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
-			/* Release net packet to the packet pool */
-			if (sys_ringq_get(&queue->tx_frames, &pkt)) {
-				__ASSERT(false, "Failed to get pkt from tx_frames ringq");
+			/* Release net buffer to the buffer pool */
+			if (sys_ringq_get(&queue->tx_frag_list, &frag)) {
+				__ASSERT(false, "Failed to get frag from tx_frag_list ringq");
 			}
+			net_pkt_frag_unref(frag);
+			LOG_DBG("Dropping frag %p", frag);
+		} while (!(tx_desc->w1 & GMAC_TXW1_LASTBUFFER));
+
+#if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
+		/* Release net packet to the packet pool */
+		if (sys_ringq_get(&queue->tx_frames, &pkt)) {
+			__ASSERT(false, "Failed to get pkt from tx_frames ringq");
+		}
 
 #if defined(CONFIG_NET_GPTP)
-			hdr = check_gptp_msg(get_iface(dev_data),
-					     pkt, true);
+		hdr = check_gptp_msg(get_iface(dev_data), pkt, true);
 
-			timestamp_tx_pkt(gmac, hdr, pkt);
+		timestamp_tx_pkt(gmac, hdr, pkt);
 
-			if (hdr && need_timestamping(hdr)) {
-				net_if_add_tx_timestamp(pkt);
-			}
-#endif
-			net_pkt_unref(pkt);
-			LOG_DBG("Dropping pkt %p", pkt);
-#endif
-			break;
+		if (hdr && need_timestamping(hdr)) {
+			net_if_add_tx_timestamp(pkt);
 		}
+#endif
+		net_pkt_unref(pkt);
+		LOG_DBG("Dropping pkt %p", pkt);
+#endif
 	}
 #endif
 }
@@ -1258,6 +1279,8 @@ static struct net_pkt *frame_get(struct gmac_queue *queue)
 				last_frag = frag;
 				frag = new_frag;
 				rx_frag_list[tail] = frag;
+				/* No dirty line may be written back over DMA data */
+				dcache_invalidate((uint32_t)frag->data, frag->size);
 			}
 		}
 
@@ -1484,6 +1507,8 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	tx_first_desc->w1 &= ~GMAC_TXW1_USED;
 
 #if GMAC_MULTIPLE_TX_PACKETS == 1
+	queue->tx_frames_pending++;
+
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 	/* Account for a sent frame */
 	if (sys_ringq_put(&queue->tx_frames, &pkt)) {
