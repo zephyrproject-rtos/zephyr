@@ -62,6 +62,19 @@ static inline uint8_t bytes_per_pixel(enum display_pixel_format pixel_format)
 	return 0;
 }
 
+static void verify_pixel_data(const uint8_t *expected, const uint8_t *actual, size_t size)
+{
+	if (cfg.current_pixel_format != PIXEL_FORMAT_XRGB_8888) {
+		zassert_mem_equal(expected, actual, size);
+		return;
+	}
+
+	/* XRGB8888 padding does not carry color information. */
+	for (size_t i = 0; i < size; i += 4U) {
+		zassert_mem_equal(expected + i, actual + i, 3U, "pixel %zu", i / 4U);
+	}
+}
+
 static void verify_bytes_of_area(uint8_t *data, int cmp_x, int cmp_y, size_t width, size_t height)
 {
 	struct display_buffer_descriptor desc = {
@@ -75,7 +88,7 @@ static void verify_bytes_of_area(uint8_t *data, int cmp_x, int cmp_y, size_t wid
 
 	zassert_ok(err, "display_read failed");
 
-	zassert_mem_equal(data, disp_buffer, buffer_size(width, height));
+	verify_pixel_data(data, disp_buffer, buffer_size(width, height));
 }
 
 static void verify_background_color(int x, int y, size_t width, size_t height, uint32_t color)
@@ -87,7 +100,6 @@ static void verify_background_color(int x, int y, size_t width, size_t height, u
 		.width = width,
 		.buf_size = buf_size,
 	};
-	uint32_t *buf32 = (void *)disp_buffer;
 	uint16_t *buf16 = (void *)disp_buffer;
 	uint8_t *buf8 = disp_buffer;
 	int err;
@@ -98,7 +110,8 @@ static void verify_background_color(int x, int y, size_t width, size_t height, u
 	for (size_t i = 0; i < width * height; i++) {
 		switch (bpp) {
 		case 4:
-			zassert_equal(buf32[i], color, "@%zu", i);
+		case 3:
+			verify_pixel_data((const uint8_t *)&color, &buf8[i * bpp], bpp);
 			break;
 		case 2:
 			zassert_equal(buf16[i], (uint16_t)color, "@%zu", i);
@@ -219,7 +232,7 @@ ZTEST(display_read_write, test_write_to_buffer_tail)
 	size_t area_bytes = buffer_size(width, height);
 	uint8_t *compare = disp_buffer + (total_bytes - area_bytes);
 
-	zassert_mem_equal(data, compare, area_bytes);
+	verify_pixel_data(data, compare, area_bytes);
 
 	/* check remaining region still black */
 	verify_background_color(0, 0, display_width, display_height - height, 0);
@@ -271,7 +284,7 @@ ZTEST(display_read_write, test_read_does_not_clear_existing_buffer)
 	size_t area_bytes = buffer_size(width, height);
 	uint8_t *compare = disp_buffer + (total_bytes - area_bytes);
 
-	zassert_mem_equal(data, compare, area_bytes);
+	verify_pixel_data(data, compare, area_bytes);
 
 	/* checking if the content written before reading is kept */
 	verify_bytes_of_area(data, 0, 0, width, height);
