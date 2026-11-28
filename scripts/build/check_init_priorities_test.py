@@ -85,6 +85,7 @@ class testZephyrInitLevels(unittest.TestCase):
 
         obj = check_init_priorities.ZephyrInitLevels("", None)
         obj._elf = mock_elf
+        obj._macho = None
         obj._relocatable = False
         obj._load_objects()
 
@@ -123,6 +124,7 @@ class testZephyrInitLevels(unittest.TestCase):
 
         obj = check_init_priorities.ZephyrInitLevels("", None)
         obj._elf = mock_elf
+        obj._macho = None
         obj._relocatable = True
         obj._load_objects()
 
@@ -172,6 +174,7 @@ class testZephyrInitLevels(unittest.TestCase):
 
         obj = check_init_priorities.ZephyrInitLevels("", None)
         obj._elf = mock_elf
+        obj._macho = None
         obj._relocatable = False
         obj._load_level_addr()
 
@@ -209,6 +212,7 @@ class testZephyrInitLevels(unittest.TestCase):
     def test_initlevel_pointer_32(self, mock_zilinit):
         obj = check_init_priorities.ZephyrInitLevels("", None)
         obj._elf = mock.Mock()
+        obj._macho = None
         obj._elf.elfclass = 32
         obj._relocatable = False
         mock_section = mock.Mock()
@@ -225,6 +229,7 @@ class testZephyrInitLevels(unittest.TestCase):
     def test_initlevel_pointer_64(self, mock_zilinit):
         obj = check_init_priorities.ZephyrInitLevels("", None)
         obj._elf = mock.Mock()
+        obj._macho = None
         obj._elf.elfclass = 64
         obj._relocatable = False
         mock_section = mock.Mock()
@@ -244,6 +249,7 @@ class testZephyrInitLevels(unittest.TestCase):
     def _relocatable_pointer_obj(self, elfclass, rela):
         obj = check_init_priorities.ZephyrInitLevels("", None)
         obj._elf = mock.Mock()
+        obj._macho = None
         obj._elf.elfclass = elfclass
         obj._relocatable = True
         obj._relocs = {}
@@ -315,6 +321,7 @@ class testZephyrInitLevels(unittest.TestCase):
     @mock.patch("check_init_priorities.ZephyrInitLevels.__init__", return_value=None)
     def test_process_initlevels(self, mock_zilinit, mock_ip, mock_on):
         obj = check_init_priorities.ZephyrInitLevels("", None)
+        obj._macho = None
         obj._relocatable = False
         obj._init_level_addr = {
             "EARLY": 0x00,
@@ -376,6 +383,7 @@ class testZephyrInitLevels(unittest.TestCase):
     @mock.patch("check_init_priorities.ZephyrInitLevels.__init__", return_value=None)
     def test_process_initlevels_relocatable(self, mock_zilinit, mock_ip, mock_on):
         obj = check_init_priorities.ZephyrInitLevels("", None)
+        obj._macho = None
         obj._relocatable = True
         obj._init_level_addr = {
             "EARLY": (7, 0x00),
@@ -431,6 +439,7 @@ class testZephyrInitLevels(unittest.TestCase):
     @mock.patch("check_init_priorities.ZephyrInitLevels.__init__", return_value=None)
     def test_process_initlevels_relocatable_split_section(self, mock_zilinit):
         obj = check_init_priorities.ZephyrInitLevels("", None)
+        obj._macho = None
         obj._relocatable = True
         obj._init_level_addr = dict.fromkeys(check_init_priorities._DEVICE_INIT_LEVELS, (7, 0x00))
         obj._init_level_end = (8, 0x00)
