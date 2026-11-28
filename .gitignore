@@ -100,6 +100,7 @@ DeviceAPI.txt
 DeviceMmioCheck.txt
 DevicetreeBindings.txt
 DevicetreeLinting.txt
+FirstStructMemberCheck.txt
 GitDiffCheck.txt
 Gitlint.txt
 ImageSize.txt
