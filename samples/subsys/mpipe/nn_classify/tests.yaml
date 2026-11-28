@@ -1,0 +1,39 @@
+sample:
+  name: Live classification sample
+
+tests:
+  sample.mpipe.nn_classify.fake:
+    tags:
+    - mpipe
+    - video
+    - samples
+    platform_allow:
+    - native_sim/native/64
+    integration_platforms:
+    - native_sim/native/64
+    extra_args:
+    - platform:native_sim/native/64:SNIPPET="video-sw-generator"
+    extra_configs:
+    - CONFIG_TEST=y
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+      - "end of stream"
+  sample.mpipe.nn_classify.tflm:
+    tags:
+    - mpipe
+    - video
+    - samples
+    - tensorflow
+    modules:
+    - tflite-micro
+    build_only: true
+    platform_allow:
+    - mimxrt1170_evk/mimxrt1176/cm7
+    - mimxrt1170_evk@B/mimxrt1176/cm7
+    integration_platforms:
+    - mimxrt1170_evk/mimxrt1176/cm7
+    extra_args:
+    - SHIELD="nxp_btb44_ov5640;rk055hdmipi4ma0"
+    - EXTRA_CONF_FILE=overlay-tflm.conf
