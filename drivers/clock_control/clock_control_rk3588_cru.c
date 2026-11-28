@@ -18,6 +18,8 @@
 LOG_MODULE_REGISTER(clock_control_rk3588_cru, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
 #define RK3588_CRU_CLKGATE_CON(n) ((n) * 4U + 0x800U)
+#define RK3588_PMU_CRU_BASE       0x30000U
+#define RK3588_PMU_CLKGATE_CON(n) ((n) * 4U + RK3588_PMU_CRU_BASE + 0x800U)
 
 struct clock_control_rk3588_config {
 	DEVICE_MMIO_ROM;
@@ -30,6 +32,54 @@ struct clock_control_rk3588_data {
 static bool rk3588_cru_clk_gate_lookup(uint16_t clk_id, uint32_t *gate_off, uint8_t *gate_shift)
 {
 	switch (clk_id) {
+	case PCLK_TOP_ROOT:
+		*gate_off = RK3588_CRU_CLKGATE_CON(1);
+		*gate_shift = 1;
+		return true;
+	case PCLK_GPIO1:
+		*gate_off = RK3588_CRU_CLKGATE_CON(16);
+		*gate_shift = 14;
+		return true;
+	case DBCLK_GPIO1:
+		*gate_off = RK3588_CRU_CLKGATE_CON(16);
+		*gate_shift = 15;
+		return true;
+	case PCLK_GPIO2:
+		*gate_off = RK3588_CRU_CLKGATE_CON(17);
+		*gate_shift = 0;
+		return true;
+	case DBCLK_GPIO2:
+		*gate_off = RK3588_CRU_CLKGATE_CON(17);
+		*gate_shift = 1;
+		return true;
+	case PCLK_GPIO3:
+		*gate_off = RK3588_CRU_CLKGATE_CON(17);
+		*gate_shift = 2;
+		return true;
+	case DBCLK_GPIO3:
+		*gate_off = RK3588_CRU_CLKGATE_CON(17);
+		*gate_shift = 3;
+		return true;
+	case PCLK_GPIO4:
+		*gate_off = RK3588_CRU_CLKGATE_CON(17);
+		*gate_shift = 4;
+		return true;
+	case DBCLK_GPIO4:
+		*gate_off = RK3588_CRU_CLKGATE_CON(17);
+		*gate_shift = 5;
+		return true;
+	case PCLK_PMU0_ROOT:
+		*gate_off = RK3588_PMU_CLKGATE_CON(5);
+		*gate_shift = 0;
+		return true;
+	case PCLK_GPIO0:
+		*gate_off = RK3588_PMU_CLKGATE_CON(5);
+		*gate_shift = 5;
+		return true;
+	case DBCLK_GPIO0:
+		*gate_off = RK3588_PMU_CLKGATE_CON(5);
+		*gate_shift = 6;
+		return true;
 	case MCLK_GMAC0_OUT:
 		*gate_off = RK3588_CRU_CLKGATE_CON(5);
 		*gate_shift = 3;
