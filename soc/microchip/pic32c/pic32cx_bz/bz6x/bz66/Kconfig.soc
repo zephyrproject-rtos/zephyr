@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_PIC32CX_BZ66
+	bool
+	select SOC_FAMILY_MICROCHIP_PIC32CX_BZ6
+	help
+	  Enable support for Microchip PIC32CX_BZ6 Cortex-M4F microcontrollers.
+
+config SOC_SERIES
+	default "bz66" if SOC_SERIES_PIC32CX_BZ66
+
+config SOC_PIC32CX2051BZ66048
+	bool
+	select SOC_SERIES_PIC32CX_BZ66
+
+config SOC
+	default "pic32cx2051bz66048" if SOC_PIC32CX2051BZ66048

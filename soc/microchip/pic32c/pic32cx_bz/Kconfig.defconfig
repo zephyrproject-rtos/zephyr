@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BUILD_OUTPUT_HEX
+	default y
+
+rsource "*/Kconfig.defconfig"

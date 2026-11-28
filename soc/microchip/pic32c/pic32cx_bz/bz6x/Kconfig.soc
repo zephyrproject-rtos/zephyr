@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_MICROCHIP_PIC32CX_BZ6
+	bool
+
+config SOC_FAMILY
+	default "microchip_pic32cx_bz6" if SOC_FAMILY_MICROCHIP_PIC32CX_BZ6
+
+config SOC_SERIES_REVISION_N
+	bool
+	depends on SOC_FAMILY_MICROCHIP_PIC32CX_BZ6
+
+config SOC_SERIES_REVISION
+	string
+	default "n" if SOC_SERIES_REVISION_N
+	default ""
+	depends on SOC_FAMILY_MICROCHIP_PIC32CX_BZ6
+
+rsource "*/Kconfig.soc"

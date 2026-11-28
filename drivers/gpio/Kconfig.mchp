@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 Microchip Technology Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 config GPIO_MCHP_PORT_G1
@@ -7,3 +7,10 @@ config GPIO_MCHP_PORT_G1
 	depends on DT_HAS_MICROCHIP_PORT_G1_GPIO_ENABLED
 	help
 	  This option enables GPIO driver for group (g1) of PORT peripherals.
+
+config GPIO_MCHP_GPIO_G1
+	bool "Microchip GPIO G1 GPIO driver"
+	default y
+	depends on DT_HAS_MICROCHIP_GPIO_G1_GPIO_ENABLED
+	help
+	  This option enables GPIO driver for group (g1) of GPIO peripherals.
