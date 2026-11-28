@@ -984,6 +984,10 @@ static int adv_start_legacy(struct bt_le_ext_adv *adv,
 		return -EAGAIN;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) && !BT_FEAT_LE(bt_dev.features)) {
+		return -ENOTSUP;
+	}
+
 	if (!valid_adv_param(param)) {
 		return -EINVAL;
 	}
@@ -1323,6 +1327,10 @@ static int adv_start_ext(struct bt_le_ext_adv *adv,
 		return -EAGAIN;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) && !BT_FEAT_LE(bt_dev.features)) {
+		return -ENOTSUP;
+	}
+
 	if (!valid_adv_param(param)) {
 		return -EINVAL;
 	}
@@ -1555,6 +1563,10 @@ int bt_le_ext_adv_create(const struct bt_le_adv_param *param,
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		return -EAGAIN;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) && !BT_FEAT_LE(bt_dev.features)) {
+		return -ENOTSUP;
 	}
 
 	if (out_adv == NULL) {

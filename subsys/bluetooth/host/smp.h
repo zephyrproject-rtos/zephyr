@@ -148,6 +148,7 @@ bool bt_smp_request_ltk(struct bt_conn *conn, uint64_t rand, uint16_t ediv,
 
 void bt_smp_update_keys(struct bt_conn *conn);
 
+bool bt_smp_br_supported(void);
 int bt_smp_br_send_pairing_req(struct bt_conn *conn);
 
 int bt_smp_init(void);

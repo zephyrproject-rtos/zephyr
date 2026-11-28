@@ -1346,7 +1346,8 @@ struct bt_le_per_adv_param {
  * @return Zero on success or (negative) error code otherwise.
  * @return -ENOMEM No free connection objects available for connectable
  *                 advertiser.
- * @retval -ENOTSUP @ref BT_LE_ADV_OPT_DIR_ADDR_RPA was used and the peer is
+ * @retval -ENOTSUP The Controller does not support LE, or
+ *                  @ref BT_LE_ADV_OPT_DIR_ADDR_RPA was used and the peer is
  *                  known not to support address resolution, as reported by
  *                  @ref bt_le_bond_addr_res_support.
  * @return -ECONNREFUSED When connectable advertising is requested and there
@@ -2798,8 +2799,9 @@ BUILD_ASSERT(BT_GAP_SCAN_FAST_WINDOW == BT_GAP_SCAN_FAST_INTERVAL_MIN,
  * @retval -EBUSY if the scanner is already being started in a different thread.
  * @retval -EINVAL if @ref BT_LE_SCAN_OPT_EXT_FILTER_POLICY is set and
  *         @kconfig{CONFIG_BT_SCAN_EXT_FILTER_POLICY} is disabled.
- * @retval -ENOTSUP if @ref BT_LE_SCAN_OPT_EXT_FILTER_POLICY is set and the Controller does
- *         not support the Extended Scanner Filter Policies.
+ * @retval -ENOTSUP if the Controller does not support LE, or if
+ *         @ref BT_LE_SCAN_OPT_EXT_FILTER_POLICY is set and the Controller does not support the
+ *         Extended Scanner Filter Policies.
  */
 int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb);
 
