@@ -151,11 +151,18 @@ as described below:
 
          pip install -U -r %HOMEPATH$\zephyrproject\zephyr\doc\requirements.txt
 
-      Open a ``cmd.exe`` window as **Administrator** and run the following command:
+      Open a ``cmd.exe`` window and run the following command:
 
       .. code-block:: console
 
-         choco install doxygen.install graphviz strawberryperl miktex rsvg-convert imagemagick
+         winget install DimitriVanHeesch.Doxygen Graphviz.Graphviz StrawberryPerl.StrawberryPerl MiKTeX.MiKTeX ImageMagick.ImageMagick
+
+      .. note::
+         ``rsvg-convert`` is not available through winget. It is only needed to
+         build the PDF documentation, which otherwise falls back to ImageMagick
+         for SVG conversion, with lower quality for some diagrams. To use it,
+         install it separately, for example from MSYS2
+         (``mingw-w64-x86_64-librsvg``), and add it to your ``PATH``.
 
       .. note::
          On Windows, the Sphinx executable ``sphinx-build.exe`` is placed in
