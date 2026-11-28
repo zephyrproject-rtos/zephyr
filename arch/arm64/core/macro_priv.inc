@@ -17,8 +17,9 @@
 
 .macro get_cpu_id xreg0
 	mrs	\xreg0, mpidr_el1
-	/* FIMXME: aff3 not taken into consideration */
-	ubfx	\xreg0, \xreg0, #0, #24
+	/* MPIDR_AFF_MASK is not a valid logical immediate, so clear in two steps */
+	and	\xreg0, \xreg0, #0xffffffffff
+	and	\xreg0, \xreg0, #0xffffffff00ffffff
 .endm
 
 /*
