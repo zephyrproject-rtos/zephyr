@@ -11,6 +11,7 @@
  * This driver provides clock control for Alif Semiconductor SoC families.
  */
 
+#include "zephyr/arch/common/sys_bitops.h"
 #define DT_DRV_COMPAT alif_clockctrl
 
 #include <zephyr/device.h>
@@ -255,7 +256,7 @@ static mem_addr_t alif_get_clk_reg_addr(const struct device *dev, uint32_t clk_i
  * @param clock_id Encoded clock ID from device tree
  * @return Clock frequency in Hz, or 0 if unknown
  */
-static uint32_t alif_get_clock_freq(uint32_t clock_id)
+static int alif_get_input_clock_freq(uint32_t clock_id)
 {
 	uint32_t parent_clk = ALIF_CLOCK_CFG_PARENT_CLK(clock_id);
 
@@ -427,6 +428,30 @@ static int alif_clock_control_off(const struct device *dev,
 	return 0;
 }
 
+/*
+ * Get a clock subsystem's divider mask and offset.
+ *
+ * @param clk_id Encoded clock ID from device tree
+ * @param div_mask Pointer to store the divider mask
+ * @param div_off Pointer to store the divider offset
+ * @return true if clock has divider, false otherwise
+ */
+static bool alif_clock_control_get_div_info(uint32_t clk_id,
+					    uint32_t *div_mask,
+					    uint32_t *div_off)
+{
+	switch (clk_id) {
+	case ALIF_CDC200_PIX_SYST_ACLK:
+	case ALIF_CDC200_PIX_400M_CLK:
+		*div_mask = GENMASK(24, 16);
+		*div_off = 16;
+		return true;
+	/* Add cases for specific clock IDs if needed */
+	default:
+		return false;
+	}
+}
+
 /**
  * @brief Get the clock rate for a peripheral clock
  *
@@ -442,11 +467,21 @@ static int alif_clock_control_get_rate(const struct device *dev,
 				uint32_t *rate)
 {
 	uint32_t clk_id = (uint32_t)sub_system;
+	int ret, clk_div = 1;
+	uint32_t div_mask, div_off;
 
-	ARG_UNUSED(dev);
+	ret = alif_get_input_clock_freq(clk_id);
+	if (ret < 0) {
+		return ret;
+	}
 
-	*rate = alif_get_clock_freq(clk_id);
-
+	if (alif_clock_control_get_div_info(clk_id, &div_mask, &div_off)) {
+		clk_div = (sys_read32(alif_get_clk_reg_addr(dev, clk_id)) & div_mask) >> div_off;
+	}
+	if (clk_div == 0) {
+		return -EINVAL;
+	}
+	*rate = ret / clk_div;
 	return 0;
 }
 
@@ -481,11 +516,50 @@ static enum clock_control_status
 	return CLOCK_CONTROL_STATUS_OFF;
 }
 
+static int alif_clock_set_rate(const struct device *dev,
+			       clock_control_subsys_t sub_system,
+			       clock_control_subsys_rate_t rate)
+{
+	uint32_t clk_id = (uint32_t)sub_system;
+	uint32_t req_rate = (uint32_t)rate;
+	uint32_t curr_rate = 0;
+	uint32_t input_clk, div_mask, div_off, clk_div, reg;
+	mem_addr_t reg_addr;
+
+	/*
+	 * Check current rate first. We ignore the return because
+	 * the divider might not be programmed at boot.
+	 */
+	alif_clock_control_get_rate(dev, sub_system, &curr_rate);
+
+	if (curr_rate == req_rate) {
+		return -EALREADY;
+	}
+
+	if (!alif_clock_control_get_div_info(clk_id, &div_mask, &div_off)) {
+		/* Clock does not have divider */
+		return -ENOTSUP;
+	}
+
+	reg_addr = alif_get_clk_reg_addr(dev, clk_id);
+	input_clk = alif_get_input_clock_freq(clk_id);
+
+	clk_div = DIV_ROUND_CLOSEST(input_clk, req_rate);
+	reg = sys_read32(reg_addr);
+	reg &= ~div_mask;
+	reg |= (clk_div << div_off) & div_mask;
+	sys_write32(reg, reg_addr);
+
+	return 0;
+}
+
+
 static DEVICE_API(clock_control, alif_clock_control_driver_api) = {
 	.on = alif_clock_control_on,
 	.off = alif_clock_control_off,
 	.get_rate = alif_clock_control_get_rate,
 	.get_status = alif_clock_control_get_status,
+	.set_rate = alif_clock_set_rate,
 };
 
 /**
