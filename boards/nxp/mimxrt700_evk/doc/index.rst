@@ -144,6 +144,33 @@ The CM33 CPU1 is responsible to boot the HiFi1 DSP.
 Usually boot process is that core responsible for booting the secondary core(s) will copy its firmware/image
 to the designated memory location and then release the secondary core from reset.
 
+Launching Images Targeting CPU1
+===============================
+
+If building targeting the CM33 CPU1 core, the CM33 CPU0 core must first run code to launch the
+CPU1 image, by copying it from flash into RAM and then releasing CPU1 from reset (the CPU1 image
+is built with :kconfig:option:`CONFIG_SECOND_CORE_MCUX` enabled for this purpose). When building
+using sysbuild targeting the CM33 CPU1 core, a minimal "launcher" image is built and flashed to the
+CM33 CPU0 core, which loads and kicks off the CPU1 core. Therefore when developing an application
+intended to run standalone on the CM33 CPU1 core, it is recommended to build with sysbuild, like
+so:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: mimxrt700_evk/mimxrt798s/cm33_cpu1
+   :west-args: --sysbuild
+   :goals: flash
+
+When flashing, the CPU1 image is written first and the CPU0 launcher image second. Sysbuild sets
+this image order automatically.
+
+The application output is printed on the UART19 console of the CPU1 core (see the pin table above).
+The launcher image itself only prints the Zephyr boot banner on the UART0 console of the CPU0 core.
+
+If desired, this behavior can be disabled by building with
+``-DSB_CONFIG_SECOND_CORE_MCUX_LAUNCHER=n``, in which case only the CPU1 image is built and the CPU0
+core must start it by other means.
+
 Programming and Debugging
 *************************
 

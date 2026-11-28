@@ -21,6 +21,7 @@
 		ambient-temp0 = &p3t1755;
 		rtc = &rtc1;
 		sram-ext = &psram;
+		dmic0 = &dmic_dev;
 	};
 
 	chosen {
@@ -110,6 +111,20 @@
 &acmp {
 	pinctrl-0 = <&pinmux_acmp>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+dmic_dev: &micfil {
+	pinctrl-0 = <&pinmux_micfil>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&channel0 {
+	status = "okay";
+};
+
+&channel1 {
 	status = "okay";
 };
 

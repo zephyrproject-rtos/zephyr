@@ -4,4 +4,7 @@
 if(SB_CONFIG_SOC_SERIES_IMXRT11XX)
   # Include RT11XX specific sysbuild
   include(${SOC_${SB_CONFIG_SOC}_DIR}/imxrt11xx/sysbuild.cmake OPTIONAL)
+elseif(SB_CONFIG_SOC_SERIES_IMXRT7XX)
+  # Include RT7XX specific sysbuild
+  include(${SOC_${SB_CONFIG_SOC}_DIR}/imxrt7xx/sysbuild.cmake OPTIONAL)
 endif()

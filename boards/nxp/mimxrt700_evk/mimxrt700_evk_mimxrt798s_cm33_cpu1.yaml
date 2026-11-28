@@ -18,6 +18,7 @@ supported:
   - gpio
   - uart
   - adc
+  - dmic
   - i3c
   - flash
   - memc
