@@ -19,6 +19,15 @@ config BT_H4
 	  Bluetooth H:4 UART driver. Requires hardware flow control
 	  lines to be available.
 
+config BT_H4_STARTUP_SYNC
+	bool "Synchronize H:4 reception on the startup Reset response"
+	depends on BT_H4 && BT_HCI_HOST
+	depends on !BT_WAIT_NOP && !BT_H4_VND_OPEN && !BT_HCI_SETUP
+	help
+	  Use the HCI Reset event to recover H:4 packet alignment at startup.
+	  Enable this when the controller stays active across host resets.
+	  Controllers with the no-reset quirk bypass synchronization.
+
 config BT_H4_VND_OPEN
 	bool
 	depends on BT_H4
