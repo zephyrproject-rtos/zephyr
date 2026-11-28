@@ -38,6 +38,29 @@ static sys_slist_t discovery_cbs = SYS_SLIST_STATIC_INIT(&discovery_cbs);
 
 static bt_br_conn_req_func_t br_conn_req_func;
 
+/* SCO and eSCO requests have a reject command of their own (Core Vol 4, Part E, 7.7.4) */
+static void reject_sync_conn(const bt_addr_t *bdaddr, uint8_t reason)
+{
+	struct bt_hci_cp_reject_sync_conn_req *cp;
+	struct net_buf *buf;
+	int err;
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (buf == NULL) {
+		LOG_WRN("No buffer to reject sync conn from %s", bt_addr_str(bdaddr));
+		return;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	bt_addr_copy(&cp->bdaddr, bdaddr);
+	cp->reason = reason;
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_REJECT_SYNC_CONN_REQ, buf, NULL);
+	if (err != 0) {
+		LOG_WRN("Failed to reject sync conn from %s (err %d)", bt_addr_str(bdaddr), err);
+	}
+}
+
 static int reject_conn(const bt_addr_t *bdaddr, uint8_t reason)
 {
 	struct bt_hci_cp_reject_conn_req *cp;
@@ -119,7 +142,7 @@ void bt_hci_conn_req(struct net_buf *buf)
 	if (evt->link_type != BT_HCI_ACL) {
 		err = bt_esco_conn_req(evt);
 		if (err != BT_HCI_ERR_SUCCESS) {
-			reject_conn(&evt->bdaddr, err);
+			reject_sync_conn(&evt->bdaddr, err);
 		}
 		return;
 	}
