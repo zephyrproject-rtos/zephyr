@@ -113,6 +113,10 @@ static int dfu_flash_write(void *const priv,
 
 	}
 
+	if (data->fi_ctx.flash_area == NULL) {
+		return -EINVAL;
+	}
+
 	ret = flash_img_buffered_write(&data->fi_ctx, buf, size, flush);
 	if (ret) {
 		return ret;
