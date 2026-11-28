@@ -31,7 +31,7 @@ config FLASH_MCUX_XSPI_XIP
 if FLASH_MCUX_XSPI_XIP
 
 config CODE_DATA_RELOCATION_SRAM
-	default y
+	default y if FLASH_MCUX_XSPI
 
 config FLASH_MCUX_XSPI_XIP_MEM
 	string

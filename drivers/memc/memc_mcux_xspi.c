@@ -211,13 +211,25 @@ static int memc_mcux_xspi_init(const struct device *dev)
 			0	\
 		}))
 
+#if defined(FSL_FEATURE_XSPI_HAS_END_CFG) && FSL_FEATURE_XSPI_HAS_END_CFG
+#define MCUX_XSPI_BYTE_ORDER(n) .byteOrder = DT_INST_PROP(n, byte_order),
+#else
+#define MCUX_XSPI_BYTE_ORDER(n)
+#endif
+
+#if defined(FSL_FEATURE_XSPI_HAS_DOZE_MODE) && FSL_FEATURE_XSPI_HAS_DOZE_MODE
+#define MCUX_XSPI_ENABLE_DOZE .enableDoze = false,
+#else
+#define MCUX_XSPI_ENABLE_DOZE
+#endif
+
 #define MCUX_XSPI_INIT(n)	\
 	PINCTRL_DT_INST_DEFINE(n);	\
 	static const struct memc_mcux_xspi_config memc_mcux_xspi_config_##n = {	\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),	\
 		.xspi_config = {	\
-			.byteOrder = DT_INST_PROP(n, byte_order),	\
-			.enableDoze = false,	\
+			MCUX_XSPI_BYTE_ORDER(n)	\
+			MCUX_XSPI_ENABLE_DOZE	\
 			.ptrAhbAccessConfig = &(xspi_ahb_access_config_t){	\
 				.ahbErrorPayload = {	\
 					.highPayload = 0x5A5A5A5A,	\
