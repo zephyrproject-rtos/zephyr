@@ -315,6 +315,7 @@ static int start_read(const struct device *dev,
 	const struct adc_sam0_cfg *const cfg = dev->config;
 	struct adc_sam0_data *data = dev->data;
 	Adc *const adc = cfg->regs;
+	uint8_t adjres;
 	int error;
 
 	if (sequence->oversampling > 10U) {
@@ -322,14 +323,7 @@ static int start_read(const struct device *dev,
 		return -EINVAL;
 	}
 
-	adc->AVGCTRL.reg = ADC_AVGCTRL_SAMPLENUM(sequence->oversampling);
-	if (sequence->oversampling < 4) {
-		adc->AVGCTRL.reg |= ADC_AVGCTRL_ADJRES(sequence->oversampling);
-	} else {
-		adc->AVGCTRL.reg |= ADC_AVGCTRL_ADJRES(4);
-	}
-
-	/* AVGCTRL is not synchronized */
+	adjres = MIN(sequence->oversampling, 4U);
 
 #ifdef CONFIG_SOC_SERIES_SAMD20
 	/*
@@ -337,9 +331,13 @@ static int start_read(const struct device *dev,
 	 * shifts in accumulation
 	 */
 	if (sequence->oversampling > 4U && DSU->DID.bit.REVISION < 3) {
-		adc->AVGCTRL.bit.ADJRES = sequence->oversampling - 4U;
+		adjres = sequence->oversampling - 4U;
 	}
 #endif
+
+	adc->AVGCTRL.reg = ADC_AVGCTRL_SAMPLENUM(sequence->oversampling) |
+			   ADC_AVGCTRL_ADJRES(adjres);
+	wait_synchronization(adc);
 
 	switch (sequence->resolution) {
 	case 8:
