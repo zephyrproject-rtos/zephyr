@@ -1,0 +1,34 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	ir_tx_pwm_default: ir_tx_pwm_default {
+		group1 {
+			pinmux = <GPIO12_PWM0_CH0P>;
+		};
+	};
+};
+
+&pwm0 {
+	pinctrl-0 = <&ir_tx_pwm_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&timer {
+	status = "okay";
+};
+
+&timer0 {
+	status = "okay";
+};
+
+/ {
+	rc-pwm-ir-transmitter {
+		compatible = "pwm-ir-transmitter";
+		pwms = <&pwm0 0 PWM_USEC(26) PWM_POLARITY_NORMAL>;
+		counter = <&timer0>;
+	};
+};

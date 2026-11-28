@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_RC_CALLBACKS
+	bool "Build the rc callback tests"
+	default y
+	help
+	  Disable to test a build without any rc callback.
+
+source "Kconfig.zephyr"
