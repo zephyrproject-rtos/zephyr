@@ -23,14 +23,22 @@
  * The states a node lists in zephyr,disabling-power-states are the ones that
  * stop it, and so the ones its driver locks while it is in use.
  */
-#define DISABLING_STATE(idx, node_id)                                                    \
-	PM_STATE_CONSTRAINT_INIT(DT_PHANDLE_BY_IDX(node_id, zephyr_disabling_power_states, idx))
+#define DISABLING_STATE(idx, node_id)                                                              \
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(                                                       \
+			    DT_PHANDLE_BY_IDX(node_id, zephyr_disabling_power_states, idx)),       \
+		    (PM_STATE_CONSTRAINT_INIT(                                                     \
+			     DT_PHANDLE_BY_IDX(node_id, zephyr_disabling_power_states, idx)),), ())
 
-#define DISABLING_STATES(node_id)                                                        \
-	{LISTIFY(DT_PROP_LEN_OR(node_id, zephyr_disabling_power_states, 0), DISABLING_STATE, \
-		 (,), node_id)}
+#define DISABLING_STATES(node_id)                                                                  \
+	{LISTIFY(DT_PROP_LEN_OR(node_id, zephyr_disabling_power_states, 0), DISABLING_STATE,       \
+		 (), node_id)}
 
-#define HAS_DISABLING_STATES(node_id) DT_NODE_HAS_PROP(node_id, zephyr_disabling_power_states)
+#define DISABLING_STATE_COUNT(idx, node_id)                                                        \
+	+DT_NODE_HAS_STATUS_OKAY(DT_PHANDLE_BY_IDX(node_id, zephyr_disabling_power_states, idx))
+
+#define HAS_DISABLING_STATES(node_id)                                                              \
+	(0 LISTIFY(DT_PROP_LEN_OR(node_id, zephyr_disabling_power_states, 0),                      \
+		   DISABLING_STATE_COUNT, (), node_id))
 
 /* What the capture side read off the line. A field the capture device cannot
  * measure stays at zero and is not compared.

@@ -1,0 +1,40 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/* Connect SCT0_OUT0 (PIO2_2 / J9-16) to PWM1_A0 (PIO2_6 / J3-15).
+ * The independent FlexPWM capture remains available while SCTimer is suspended.
+ */
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		pwms = <&sc_timer 0 0 PWM_POLARITY_NORMAL>,
+		       <&flexpwm1_pwm0 0 0 PWM_POLARITY_NORMAL>;
+	};
+};
+
+&pinctrl {
+	pinmux_pwm_pm_capture: pinmux_pwm_pm_capture {
+		group0 {
+			pinmux = <PWM1_A0_PIO2_6>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+			bias-pull-down;
+		};
+	};
+};
+
+&sc_timer {
+	status = "okay";
+};
+
+&flexpwm1_pwm0 {
+	pinctrl-0 = <&pinmux_pwm_pm_capture>;
+	pinctrl-names = "default";
+	status = "okay";
+};

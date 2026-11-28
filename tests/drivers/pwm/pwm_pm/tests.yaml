@@ -12,13 +12,17 @@ tests:
   drivers.pwm.pm:
     platform_allow:
       - frdm_mcxe247
+      - frdm_mcxn947/mcxn947/cpu0
     integration_platforms:
       - frdm_mcxe247
+      - frdm_mcxn947/mcxn947/cpu0
   drivers.pwm.pm.policy:
     platform_allow:
       - frdm_mcxe247
+      - frdm_mcxn947/mcxn947/cpu0
     integration_platforms:
       - frdm_mcxe247
+      - frdm_mcxn947/mcxn947/cpu0
     # Device-managed PM only: with the system-managed sweep enabled, every
     # entry into a low power state would suspend the capture instance behind
     # the test's back.
@@ -31,11 +35,14 @@ tests:
       - CONFIG_COUNTER=y
     extra_args:
       - platform:frdm_mcxe247:EXTRA_DTC_OVERLAY_FILE="boards/frdm_mcxe247_lptmr.overlay"
+      - platform:frdm_mcxn947/mcxn947/cpu0:EXTRA_DTC_OVERLAY_FILE="boards/frdm_mcxn947_mcxn947_cpu0_lptmr.overlay"
   drivers.pwm.pm.sysmanaged:
     platform_allow:
       - frdm_mcxe247
+      - frdm_mcxn947/mcxn947/cpu0
     integration_platforms:
       - frdm_mcxe247
+      - frdm_mcxn947/mcxn947/cpu0
     # The sweep that suspends devices before a low power state, with the
     # policy locks that are supposed to keep it away from a driving output.
     extra_configs:
@@ -47,6 +54,7 @@ tests:
       - platform:frdm_mcxe247:CONFIG_IDLE_STACK_SIZE=1024
     extra_args:
       - platform:frdm_mcxe247:EXTRA_DTC_OVERLAY_FILE="boards/frdm_mcxe247_lptmr.overlay"
+      - platform:frdm_mcxn947/mcxn947/cpu0:EXTRA_DTC_OVERLAY_FILE="boards/frdm_mcxn947_mcxn947_cpu0_lptmr.overlay"
   drivers.pwm.pm.esp:
     extra_dtc_overlay_files:
       - boards/espressif.overlay
