@@ -195,20 +195,33 @@ const struct net_buf_data_cb net_buf_fixed_cb = {
 
 #if (K_HEAP_MEM_POOL_SIZE > 0)
 
+/* k_malloc() is only pointer aligned, payloads may hold any type */
+#define HEAP_ALIGN(pool) MAX(GET_ALIGN(pool), __alignof__(z_max_align_t))
+
 static uint8_t *heap_data_alloc(struct net_buf *buf, size_t *size,
 			     k_timeout_t timeout)
 {
 	struct net_buf_pool *buf_pool = net_buf_pool_get(buf->pool_id);
 	atomic_t *ref_count;
 
-	ref_count = k_malloc(GET_ALIGN(buf_pool) + *size);
+	ref_count = k_aligned_alloc(HEAP_ALIGN(buf_pool),
+				    HEAP_ALIGN(buf_pool) + *size);
 	if (!ref_count) {
 		return NULL;
 	}
 
 	atomic_set(ref_count, 1);
 
-	return (uint8_t *)ref_count + GET_ALIGN(buf_pool);
+	return (uint8_t *)ref_count + HEAP_ALIGN(buf_pool);
+}
+
+static uint8_t *heap_data_ref(struct net_buf *buf, uint8_t *data)
+{
+	struct net_buf_pool *buf_pool = net_buf_pool_get(buf->pool_id);
+
+	atomic_inc((atomic_t *)(data - HEAP_ALIGN(buf_pool)));
+
+	return data;
 }
 
 static void heap_data_unref(struct net_buf *buf, uint8_t *data)
@@ -216,7 +229,7 @@ static void heap_data_unref(struct net_buf *buf, uint8_t *data)
 	struct net_buf_pool *buf_pool = net_buf_pool_get(buf->pool_id);
 	atomic_t *ref_count;
 
-	ref_count = (atomic_t *)(data - GET_ALIGN(buf_pool));
+	ref_count = (atomic_t *)(data - HEAP_ALIGN(buf_pool));
 	if (atomic_dec(ref_count) != 1) {
 		return;
 	}
@@ -226,7 +239,7 @@ static void heap_data_unref(struct net_buf *buf, uint8_t *data)
 
 static const struct net_buf_data_cb net_buf_heap_cb = {
 	.alloc = heap_data_alloc,
-	.ref   = generic_data_ref,
+	.ref   = heap_data_ref,
 	.unref = heap_data_unref,
 };
 
