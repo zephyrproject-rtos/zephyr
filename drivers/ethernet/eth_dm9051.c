@@ -36,6 +36,9 @@ LOG_MODULE_REGISTER(eth_dm9051, CONFIG_ETHERNET_LOG_LEVEL);
 /* DM9051 Product ID */
 #define DM9051_ID			0x9051
 
+/* DM9058 shares the DM9051 register map; only the PID differs */
+#define DM9058_ID			0x9058
+
 /* DM9051 PHY Address */
 #define DM9051_PHY_ADDR			1
 
@@ -323,7 +326,8 @@ static int eth_dm9051_check_id(const struct device *dev)
 	}
 
 	/* Check product ID */
-	if (sys_le16_to_cpu(pid) != DM9051_ID) {
+	if (sys_le16_to_cpu(pid) != DM9051_ID &&
+	    sys_le16_to_cpu(pid) != DM9058_ID) {
 		LOG_ERR("%s: Found ID: %04x, Expected ID: %04x\n", dev->name, pid, DM9051_ID);
 		return -EIO;
 	}
