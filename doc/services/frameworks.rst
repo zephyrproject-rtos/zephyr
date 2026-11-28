@@ -9,6 +9,7 @@ application logic, load code at runtime, stream media, and model sensors.
 .. toctree::
    :maxdepth: 1
 
+   applet/index.rst
    llext/index.rst
    mpipe/index.rst
    sensing/index.rst

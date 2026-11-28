@@ -1373,6 +1373,33 @@ ZTEST(mem_protect_kobj, test_thread_alloc_out_of_idx)
 		}
 	}
 
+	/*
+	 * A NULL return does not have to mean the index space is full:
+	 * dynamic_object_create() can run out of pool memory first, and
+	 * z_object_alloc() then correctly hands the index back, leaving a free
+	 * bit behind. Probe the pool the way tests/kernel/threads/
+	 * dynamic_thread does, so the bitmap is only checked when the indexes
+	 * really were the binding constraint.
+	 */
+	size_t ret = 1024 * 1024; /* sure-to-fail initial value */
+	struct k_object *probe;
+
+	switch (K_OBJ_THREAD) {
+/** @cond keep_doxygen_away */
+#include <zephyr/otype-to-size.h>
+		/** @endcond */
+	}
+
+	probe = k_object_create_dynamic_aligned(16, ret);
+	if (probe == NULL) {
+		for (int i = 0; i < cur_max; i++) {
+			if (thread[i]) {
+				k_object_free(thread[i]);
+			}
+		}
+		ztest_test_skip();
+	}
+
 	/** TESTPOINT: all the idx bits set to 1 */
 	for (int i = 0; i < CONFIG_MAX_THREAD_BYTES; i++) {
 		int idx = find_lsb_set(_thread_idx_map[i]);
@@ -1387,6 +1414,7 @@ ZTEST(mem_protect_kobj, test_thread_alloc_out_of_idx)
 			"mo more kobj[%d](0x%lx) shall be allocated"
 			, cur_max, (uintptr_t)thread[cur_max]);
 
+	k_object_free(probe->name);
 
 	for (int i = 0; i < cur_max; i++) {
 		if (thread[i]) {
