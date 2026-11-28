@@ -33,6 +33,18 @@ config DEVICE_DT_METADATA
 	  each device. This allows you to use device_get_by_dt_nodelabel(),
 	  device_get_dt_metadata(), etc.
 
+config DEVICE_DT_CLASS_CHECK
+	bool "Check the device class of devicetree devices at build time"
+	default y
+	help
+	  If enabled, defining a device for a devicetree node fails to build
+	  when the device uses the API of a device class that the binding of
+	  the node does not declare with "class:". Such a device is missing
+	  from DT_FOREACH_CLASS_STATUS_OKAY() for its class.
+
+	  Disable this to build devices whose bindings do not declare their
+	  class yet. Devices defined in C++ sources are not checked.
+
 config DEVICE_DEINIT_SUPPORT
 	bool "Support device de-initialization"
 	help

@@ -5,4 +5,4 @@ description: Test temperature sensor for CPUFreq thermal cap tests
 
 compatible: "vnd,cpu-freq-thermal-cap-sensor"
 
-include: base.yaml
+include: sensor-device.yaml

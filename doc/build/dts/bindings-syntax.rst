@@ -896,8 +896,9 @@ device classes, use ``class:`` to declare those classes:
    compatible: "manufacturer,adc"
    class: adc
 
-The value is a device class name or a list of names. Names use lowercase
-letters, digits, ``-`` and ``_``; malformed or duplicate names are rejected.
+The value is a device class name or a list of names. Names start with a
+lowercase letter and use lowercase letters, digits, ``-`` and ``_``; malformed
+or duplicate names are rejected.
 Each name should match a device API class registered with
 :c:macro:`DEVICE_API` (like ``adc``); lowercase-and-hyphens names are
 converted to lowercase-and-underscores C tokens the same way compatibles are.
@@ -917,6 +918,18 @@ example :zephyr_file:`dts/bindings/adc/adc-controller.yaml`) so that every
 binding including it inherits the class. When a binding and its included
 files declare classes, the values are unioned: a binding that includes
 several class base bindings belongs to all of their classes.
+
+As soon as any binding declares a class, every device that uses the API of
+that class must be defined for a node of the class: defining one for a node
+whose binding does not declare the class, for example with
+:c:macro:`DEVICE_DT_DEFINE`, is a build error. The device would otherwise be
+missing from the nodes of its class. The check can be disabled with
+:kconfig:option:`CONFIG_DEVICE_DT_CLASS_CHECK`. Devices defined in C++ sources
+are not checked.
+
+Declaring a class for the first time can therefore break the build of
+out-of-tree drivers of that class whose bindings do not declare it. A change
+that does so adds an entry to the migration guide.
 
 Class membership can be queried at build time with
 :c:macro:`DT_NODE_HAS_CLASS`, iterated with

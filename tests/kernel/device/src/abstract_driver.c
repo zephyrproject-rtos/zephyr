@@ -30,6 +30,13 @@ static DEVICE_API(abstract, my_driver_A_api_funcs) = {
 	.do_that = my_driver_A_do_that,
 };
 
+#if defined(CONFIG_DEVICE_DT_CLASS_CHECK) && TOOLCHAIN_HAS_C_GENERIC
+/* The device class check of devicetree devices relies on this predicate */
+BUILD_ASSERT(Z_DEVICE_API_IS_CLASS(abstract, &my_driver_A_api_funcs));
+BUILD_ASSERT(!Z_DEVICE_API_IS_CLASS(abstract_child, &my_driver_A_api_funcs));
+BUILD_ASSERT(!Z_DEVICE_API_IS_CLASS(abstract, NULL));
+#endif
+
 int common_driver_init(const struct device *dev)
 {
 	return 0;

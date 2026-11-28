@@ -1437,6 +1437,37 @@ device_get_dt_nodelabels(const struct device *dev)
 		}
 
 /**
+ * @brief Issue an error if a device uses the API of a device class that the
+ * binding of its devicetree node does not declare.
+ *
+ * Such a device would be missing from DT_FOREACH_CLASS_STATUS_OKAY() for the
+ * class. The classes checked are the ones that the devicetree bindings
+ * declare with "class:". The check is enabled with
+ * CONFIG_DEVICE_DT_CLASS_CHECK. It needs C11 generic selection, so devices
+ * defined in C++ sources are not checked.
+ *
+ * @param node_id Devicetree node identifier.
+ * @param api Reference to device API.
+ */
+#if !defined(CONFIG_DEVICE_DT_CLASS_CHECK) || defined(__cplusplus) || !TOOLCHAIN_HAS_C_GENERIC
+#define Z_DEVICE_DT_CLASS_CHECK(node_id, api)
+#else
+/* Whether api points to the API structure of the device class _class. */
+#define Z_DEVICE_API_IS_CLASS(_class, api)                                                         \
+	_Generic((api), default : 0, const struct Z_DEVICE_API_TYPE(_class) * : 1)
+
+/* A device using the API of _class requires a node of that class. */
+#define Z_DEVICE_DT_CLASS_CHECK_ONE(_class, node_id, api)                                          \
+	BUILD_ASSERT(!Z_DEVICE_API_IS_CLASS(_class, api) || DT_NODE_HAS_CLASS(node_id, _class),    \
+		     "Device for " DT_NODE_PATH(node_id) " uses the " STRINGIFY(_class)            \
+		     " API, but the binding of the node does not declare \"class: "                \
+		     STRINGIFY(_class) "\"");
+
+#define Z_DEVICE_DT_CLASS_CHECK(node_id, api)                                                      \
+	DT_FOREACH_CLASS_VARGS_HELPER(Z_DEVICE_DT_CLASS_CHECK_ONE, node_id, api)
+#endif
+
+/**
  * @brief Define a @ref device and all other required objects.
  *
  * This is the common macro used to define @ref device objects. It can be used
@@ -1461,6 +1492,9 @@ device_get_dt_nodelabels(const struct device *dev)
 #define Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, deinit_fn, flags, pm,   \
 			data, config, level, prio, api, state, ...)             \
 	Z_DEVICE_NAME_CHECK(name);                                              \
+                                                                                \
+	IF_ENABLED(DT_NODE_EXISTS(node_id),                                     \
+		   (Z_DEVICE_DT_CLASS_CHECK(node_id, api)))                     \
                                                                                 \
 	IF_ENABLED(CONFIG_DEVICE_DEPS,                                          \
 		   (Z_DEVICE_DEPS_DEFINE(node_id, dev_id, __VA_ARGS__);))       \

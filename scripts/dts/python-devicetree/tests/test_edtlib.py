@@ -454,10 +454,26 @@ def test_class_merge():
     assert binding.child_binding.classes == ['class-child-b', 'class-child-a']
 
     # Malformed names and duplicates are rejected.
-    for fname in ('class-bad-name.yaml', 'class-dup.yaml'):
+    for fname in ('class-bad-name.yaml', 'class-bad-start.yaml',
+                  'class-dup.yaml'):
         with from_here():
             with pytest.raises(edtlib.EDTError):
                 edtlib.Binding(f'test-bindings-include/{fname}', {})
+
+def test_declared_classes():
+    '''Test the list of the classes that the binding files declare.'''
+
+    # None of these bindings matches a node. The classes are collected
+    # from the top-level and child-binding 'class:' keys of all files,
+    # and malformed names are left out.
+    with from_here():
+        edt = edtlib.EDT("test-multidir.dts", ["test-bindings-include"])
+    assert edt.declared_classes == ['class-a', 'class-b', 'class-c',
+                                    'class-child-a', 'class-child-b']
+
+    with from_here():
+        edt = edtlib.EDT("test-multidir.dts", ["test-bindings-2"])
+    assert edt.declared_classes == []
 
 def test_include_filters():
     '''Test property-allowlist and property-blocklist in an include.'''
@@ -1945,6 +1961,7 @@ def test_deepcopy():
     assert edt_copy.dts_path == "test-multidir.dts"
     assert edt_copy.bindings_dirs == ["test-bindings", "test-bindings-2"]
     assert edt_copy.bindings_dirs is not edt.bindings_dirs
+    test_equal_but_not_same("declared_classes")
     assert not edt_copy._warn_reg_unit_address_mismatch
     assert not edt_copy._default_prop_types
     assert not edt_copy._fixed_partitions_no_bus

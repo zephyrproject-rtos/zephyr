@@ -537,11 +537,10 @@ class Binding:
                 _err(f"malformed 'class:' value in {self.path}, "
                      "expected string or list of strings")
             for elem in classes:
-                if not re.fullmatch(r"[a-z0-9][a-z0-9_-]*", elem):
+                if not _CLASS_NAME_FULLMATCH(elem):
                     _err(f"malformed device class name '{elem}' in "
                          f"{self.path}, expected lowercase letters, "
-                         "digits, '-' and '_', starting with a letter "
-                         "or digit")
+                         "digits, '-' and '_', starting with a letter")
             if len(set(classes)) != len(classes):
                 _err(f"duplicate device class names in 'class:' in "
                      f"{self.path}")
@@ -2482,6 +2481,11 @@ class EDT:
     bindings_dirs:
       The bindings directory paths passed to __init__()
 
+    declared_classes:
+      A sorted list of the device class names that the binding files in
+      bindings_dirs declare with 'class:'. Unlike Node.classes, this
+      includes the classes of bindings that no node uses.
+
     scc_order:
       A list of lists of Nodes. All elements of each list
       depend on each other, and the Nodes in any list do not depend
@@ -2573,6 +2577,7 @@ class EDT:
         self.dep_ord2node: dict[int, Node] = {}
         self.dts_path: str = dts # type: ignore
         self.bindings_dirs: list[str] = list(bindings_dirs)
+        self.declared_classes: list[str] = []
 
         # Saved kwarg values for internal use
         self._warn_reg_unit_address_mismatch: bool = warn_reg_unit_address_mismatch
@@ -2839,13 +2844,20 @@ class EDT:
             "|".join(re.escape(compat) for compat in dt_compats)
         ).search
 
+        declared_classes: set[str] = set()
+
         for binding_path in self._binding_paths:
             with open(binding_path, encoding="utf-8") as f:
                 contents = f.read()
 
             # As an optimization, skip parsing files that don't contain any of
-            # the .dts 'compatible' strings, which should be reasonably safe
-            if not dt_compats_search(contents):
+            # the .dts 'compatible' strings, which should be reasonably safe.
+            # Files with a 'class:' key are parsed as well: the classes are
+            # collected from all binding files, since the file declaring a
+            # class is usually a base binding without a compatible.
+            has_compat = dt_compats_search(contents)
+            has_class = _CLASS_KEY_SEARCH(contents)
+            if not has_compat and not has_class:
                 continue
 
             # Load the binding and check that it actually matches one of the
@@ -2861,6 +2873,9 @@ class EDT:
                         f"'{binding_path}' appears in binding directories "
                         f"but isn't valid YAML: {e}")
 
+            if has_class:
+                declared_classes.update(_declared_classes(raw))
+
             # Convert the raw data to a Binding object, erroring out
             # if necessary.
             binding = self._binding(raw, binding_path, dt_compats)
@@ -2871,6 +2886,8 @@ class EDT:
                 if binding.compatible:
                     self._register_binding(binding)
                 binding = binding.child_binding
+
+        self.declared_classes = sorted(declared_classes)
 
     def _binding(self,
                  raw: Optional[dict],
@@ -3146,6 +3163,23 @@ def _dt_compats(dt: DT) -> set[str]:
             for node in dt.node_iter()
             if "compatible" in node.props
             for compat in node.props["compatible"].to_strings()}
+
+
+def _declared_classes(raw: Any) -> list[str]:
+    # Returns the device class names that the 'class:' keys of a parsed
+    # binding file declare, at the top level and in its child bindings.
+    # Malformed values are skipped: they are reported when the binding is
+    # loaded for a node.
+
+    classes = []
+    while isinstance(raw, dict):
+        cls = raw.get("class")
+        for elem in cls if isinstance(cls, list) else [cls]:
+            if isinstance(elem, str) and _CLASS_NAME_FULLMATCH(elem):
+                classes.append(elem)
+        raw = raw.get("child-binding")
+
+    return classes
 
 
 def _binding_paths(bindings_dirs: list[str]) -> list[str]:
@@ -4101,6 +4135,12 @@ _LOG = logging.getLogger(__name__)
 
 # Regular expression for non-alphanumeric-or-underscore characters.
 _NOT_ALPHANUM_OR_UNDERSCORE = re.compile(r'\W', re.ASCII)
+
+# Matches a valid device class name
+_CLASS_NAME_FULLMATCH = re.compile(r'[a-z][a-z0-9_-]*').fullmatch
+
+# Matches a binding file with a 'class:' key at any nesting level
+_CLASS_KEY_SEARCH = re.compile(r'^\s*class\s*:', re.MULTILINE).search
 
 
 def str_as_token(val: str) -> str:

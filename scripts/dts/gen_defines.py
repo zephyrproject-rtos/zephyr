@@ -1277,6 +1277,15 @@ def write_global_macros(edt: edtlib.EDT):
     for macro, value in for_each_macros.items():
         out_define(macro, value)
 
+    out_comment("Macro for iterating over the device classes that bindings declare\n")
+    out_dt_define(
+        "FOREACH_CLASS_VARGS_HELPER(fn, ...)",
+        " ".join(
+            f"fn({cls}, __VA_ARGS__)"
+            for cls in sorted({str2ident(cls) for cls in edt.declared_classes})
+        ),
+    )
+
     class2okay: defaultdict = defaultdict(list)
     for node in edt.nodes:
         if node.status == "okay":
