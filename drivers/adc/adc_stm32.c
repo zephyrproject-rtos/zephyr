@@ -806,7 +806,8 @@ static void adc_stm32_calibration_start(const struct device *dev, __maybe_unused
 	defined(CONFIG_SOC_SERIES_STM32H5X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7RSX) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
-	defined(CONFIG_SOC_SERIES_STM32G4X)
+	defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32G5X)
 	LL_ADC_StartCalibration(adc, calib_type);
 #elif defined(CONFIG_SOC_SERIES_STM32C0X) || \
 	defined(CONFIG_SOC_SERIES_STM32F0X) || \
@@ -2333,10 +2334,6 @@ static int adc_stm32_set_clock(const struct adc_stm32_clk_cfg *clk_cfg)
 {
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
-	if (clock_control_on(clk, (clock_control_subsys_t)&clk_cfg->pclken) != 0) {
-		return -EIO;
-	}
-
 	/* Enable ADC clock source if applicable */
 	if (clk_cfg->has_pclken_ker &&
 	    clock_control_configure(clk, (clock_control_subsys_t)&clk_cfg->pclken_ker, NULL) != 0) {
@@ -2346,6 +2343,10 @@ static int adc_stm32_set_clock(const struct adc_stm32_clk_cfg *clk_cfg)
 	/* Configure ADC prescaler (at RCC level) if applicable */
 	if (clk_cfg->has_pclken_pre &&
 	    clock_control_configure(clk, (clock_control_subsys_t)&clk_cfg->pclken_pre, NULL) != 0) {
+		return -EIO;
+	}
+
+	if (clock_control_on(clk, (clock_control_subsys_t)&clk_cfg->pclken) != 0) {
 		return -EIO;
 	}
 
