@@ -1,0 +1,110 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon Delta-Sigma ADC (DSADC)
+
+  Delta-Sigma ADC found in the Programmable Analog Channel Sub-System
+  (PACSS) of the PSOC4 HVPA devices. The PACSS has two analog front-ends
+  (ACHAN) and four digital channels (DCHAN).
+
+  Each Zephyr ADC channel maps to the digital channel with the same index
+  (0 to 3). The analog front-end is selected by the driver: channels that
+  use the shunt inputs (RSH/RSL) are converted by ACHAN0 (current channel),
+  all other channels by ACHAN1 (voltage channel).
+
+  Channels are configured with the standard ADC channel properties:
+  - zephyr,gain: ADC_GAIN_1_2 to ADC_GAIN_128 in powers of two.
+  - zephyr,reference: ADC_REF_INTERNAL (1.2 V HPBGR), ADC_REF_VDD_1_3,
+    ADC_REF_VDD_1_4 or ADC_REF_EXTERNAL0. ADC_REF_EXTERNAL0 selects the
+    external temperature sensor reference (VTS_REF - VTS_RET) for ratiometric
+    thermistor measurements on the VTS input.
+  - zephyr,acquisition-time: ADC_ACQ_TIME_DEFAULT (16 modulator clocks) or
+    ADC_ACQ_TIME_TICKS (0 to 255 modulator clocks) channel select delay.
+  - zephyr,input-positive / zephyr,input-negative: values from
+    <zephyr/dt-bindings/adc/infineon-dsadc.h>. Single-ended channels are
+    measured against VSSA.
+  - zephyr,resolution: 8 to 20 bits. Results up to 16 bits are stored as
+    16-bit samples, larger results as 32-bit samples.
+  - zephyr,oversampling: 0 only.
+
+  The decimator uses the ModusToolbox current, voltage and temperature channel
+  settings, for which the factory calibration stored in SFLASH is scaled. The
+  driver scales the result to the requested resolution.
+
+  The modulator clock should be 3 MHz. With a 48 MHz HFCLK, use an integer
+  divider of 16.
+
+  Example:
+
+    &peri_clk_div1 {
+        clock-div = <16>;
+        status = "okay";
+    };
+
+    &adc0 {
+        status = "okay";
+        hpbgr-external-capacitor;
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        channel@0 {
+            reg = <0>;
+            zephyr,gain = "ADC_GAIN_1";
+            zephyr,reference = "ADC_REF_INTERNAL";
+            zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+            zephyr,input-positive = <IFX_DSADC_POS_GPIO3>;
+            zephyr,resolution = <16>;
+        };
+
+        channel@1 {
+            reg = <1>;
+            zephyr,gain = "ADC_GAIN_32";
+            zephyr,reference = "ADC_REF_INTERNAL";
+            zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+            zephyr,differential;
+            zephyr,input-positive = <IFX_DSADC_POS_RSH_0>;
+            zephyr,input-negative = <IFX_DSADC_NEG_RSL_0>;
+            zephyr,resolution = <20>;
+        };
+    };
+
+compatible: "infineon,dsadc"
+
+include:
+  - name: adc-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+    description: Base address of the PACSS registers
+
+  interrupts:
+    required: true
+    description: |
+      Digital channel 0 to 3 interrupts (pacss_interrupts_dch_0 to 3), in
+      channel order.
+
+  clocks:
+    required: true
+    description: Clock divider phandle for the delta-sigma modulator clock
+
+  clk-dst:
+    type: int
+    required: true
+    description: Peripheral clock destination for the delta-sigma modulator clock
+
+  "#io-channel-cells":
+    const: 1
+
+  hpbgr-external-capacitor:
+    type: boolean
+    description: |
+      Set if an external capacitor is connected to the high precision bandgap
+      reference (HPBGR) output. This selects the HPBGR buffer compensation.
+
+io-channel-cells:
+  - input
