@@ -117,6 +117,8 @@ static void vnd_ethernet_iface_init(struct net_if *iface)
 
 static int vnd_ethernet_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct vnd_ethernet_config *cfg = dev->config;
 	struct vnd_ethernet_data *data = dev->data;
 
