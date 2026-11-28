@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2026 Carlo Caione <ccaione@baylibre.com>
+ * Copyright (c) 2026 Giuseppe Fabiano <gfabiano40@gmail.com>
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -9,6 +10,7 @@
 #include <zephyr/drivers/lora.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/time_units.h>
 
 #include "lora_radio.h"
 
@@ -67,11 +69,15 @@ static void lora_radio_op_end(const struct device *dev, int status)
 	struct lora_radio_data *data = dev->data;
 	struct lora_radio_waiter *waiter = data->waiter;
 	struct k_poll_signal *async = data->tx_async_signal;
+	struct k_poll_signal *queued = data->queued_tx_signal;
 
 	data->waiter = NULL;
 	data->tx_async_signal = NULL;
+	data->queued_tx_signal = NULL;
 	data->rx_cb = NULL;
 	data->rx_cb_user_data = NULL;
+	data->cad_cb = NULL;
+	data->cad_cb_user_data = NULL;
 
 	config->ops->sleep(dev);
 	data->op = LORA_RADIO_OP_NONE;
@@ -79,6 +85,9 @@ static void lora_radio_op_end(const struct device *dev, int status)
 
 	if (async != NULL) {
 		k_poll_signal_raise(async, status);
+	}
+	if (queued != NULL) {
+		k_poll_signal_raise(queued, -ECANCELED);
 	}
 
 	if (waiter != NULL) {
@@ -122,7 +131,8 @@ static int lora_radio_wait(const struct device *dev, struct lora_radio_waiter *w
 		/* Still registered: the interrupt work has not ended it meanwhile */
 		if (data->waiter == waiter) {
 			lora_radio_op_abort(dev,
-					    data->op == LORA_RADIO_OP_TX ? -ETIMEDOUT : -EAGAIN);
+					    data->op == LORA_RADIO_OP_TX ||
+					    data->op == LORA_RADIO_OP_CAD ? -ETIMEDOUT : -EAGAIN);
 		}
 
 		k_mutex_unlock(&data->lock);
@@ -168,6 +178,7 @@ static void lora_radio_rx_done(const struct device *dev, uint32_t irq_status)
 	int16_t rssi = 0;
 	int8_t snr = 0;
 	int len;
+	bool rearmed = false;
 
 	len = config->ops->rx_read(dev, irq_status, data->rx_buf, sizeof(data->rx_buf),
 				   &rssi, &snr);
@@ -193,6 +204,14 @@ static void lora_radio_rx_done(const struct device *dev, uint32_t irq_status)
 	}
 
 	/* Async mode: deliver valid packets, drop errors silently */
+	if (len > 0 && data->op == LORA_RADIO_OP_RX) {
+		if (config->ops->rx_continuous) {
+			rearmed = true;
+		} else if (config->ops->rx_rearm_before_callback) {
+			lora_radio_rx_restart(dev);
+			rearmed = true;
+		}
+	}
 	if (len > 0) {
 		/* Unlocked: the callback may call back into the driver */
 		k_mutex_unlock(&data->lock);
@@ -200,8 +219,8 @@ static void lora_radio_rx_done(const struct device *dev, uint32_t irq_status)
 		k_mutex_lock(&data->lock, K_FOREVER);
 	}
 
-	/* Restart the reception unless the callback ended it, even to start another */
-	if (data->ops_ended == ended) {
+	/* Restart the reception unless it was rearmed or the callback ended it */
+	if (!rearmed && data->ops_ended == ended) {
 		lora_radio_rx_restart(dev);
 	}
 }
@@ -235,9 +254,46 @@ static void lora_radio_irq_work_handler(struct k_work *work)
 	}
 
 	switch (data->op) {
+	case LORA_RADIO_OP_CAD:
+		if ((irq_status & ops->irq_cad_done) != 0) {
+			lora_cad_cb cb = data->cad_cb;
+			void *user_data = data->cad_cb_user_data;
+			bool detected = (irq_status & ops->irq_cad_detected) != 0;
+
+			lora_radio_op_end(dev, detected ? 1 : 0);
+			if (cb != NULL) {
+				k_mutex_unlock(&data->lock);
+				cb(dev, detected, user_data);
+				k_mutex_lock(&data->lock, K_FOREVER);
+			}
+		}
+		break;
 	case LORA_RADIO_OP_TX:
 		if ((irq_status & ops->irq_tx_done) != 0) {
-			lora_radio_op_end(dev, 0);
+			if (data->queued_tx_signal != NULL && ops->tx_continue != NULL) {
+				ret = ops->tx_continue(dev);
+				if (ret == 0) {
+					struct k_poll_signal *done = data->tx_async_signal;
+					struct lora_radio_waiter *waiter = data->waiter;
+
+					data->tx_async_signal = data->queued_tx_signal;
+					data->queued_tx_signal = NULL;
+					data->waiter = NULL;
+					if (done != NULL) {
+						k_poll_signal_raise(done, 0);
+					}
+					if (waiter != NULL) {
+						waiter->status = 0;
+						k_sem_give(&waiter->done);
+					}
+				} else {
+					k_poll_signal_raise(data->queued_tx_signal, ret);
+					data->queued_tx_signal = NULL;
+					lora_radio_op_end(dev, 0);
+				}
+			} else {
+				lora_radio_op_end(dev, 0);
+			}
 		} else if ((irq_status & ops->irq_timeout) != 0) {
 			lora_radio_op_end(dev, -ETIMEDOUT);
 		}
@@ -277,7 +333,11 @@ void lora_radio_irq(const struct device *dev)
 {
 	struct lora_radio_data *data = dev->data;
 
-	k_work_submit(&data->irq_work);
+	if (data->irq_workq != NULL) {
+		k_work_submit_to_queue(data->irq_workq, &data->irq_work);
+	} else {
+		k_work_submit(&data->irq_work);
+	}
 }
 
 void lora_radio_init(const struct device *dev)
@@ -344,6 +404,14 @@ static int lora_radio_tx_start(const struct device *dev,
 			goto unlock;
 		}
 	}
+	if (data->op == LORA_RADIO_OP_TX && async != NULL &&
+	    config->ops->tx_enqueue != NULL && data->queued_tx_signal == NULL) {
+		ret = config->ops->tx_enqueue(dev, data_buf, data_len);
+		if (ret == 0) {
+			data->queued_tx_signal = async;
+		}
+		goto unlock;
+	}
 
 	ret = lora_radio_op_begin(dev, LORA_RADIO_OP_TX);
 	if (ret < 0) {
@@ -391,6 +459,67 @@ int lora_radio_send(const struct device *dev,
 	}
 
 	return ret;
+}
+
+static int lora_radio_cad_start(const struct device *dev, lora_cad_cb cb,
+				void *user_data, struct lora_radio_waiter *waiter)
+{
+	const struct lora_radio_config *config = dev->config;
+	struct lora_radio_data *data = dev->data;
+	int ret;
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+	if (!data->configured) {
+		ret = -EINVAL;
+		goto unlock;
+	}
+	if (config->ops->cad_start == NULL) {
+		ret = -ENOTSUP;
+		goto unlock;
+	}
+	ret = lora_radio_op_begin(dev, LORA_RADIO_OP_CAD);
+	if (ret < 0) {
+		goto unlock;
+	}
+	ret = config->ops->cad_start(dev);
+	if (ret < 0) {
+		lora_radio_op_end(dev, ret);
+		goto unlock;
+	}
+	data->cad_cb = cb;
+	data->cad_cb_user_data = user_data;
+	lora_radio_register_waiter(data, waiter);
+
+unlock:
+	k_mutex_unlock(&data->lock);
+	return ret;
+}
+
+int lora_radio_cad(const struct device *dev, k_timeout_t timeout)
+{
+	struct lora_radio_waiter waiter = {0};
+	int ret = lora_radio_cad_start(dev, NULL, NULL, &waiter);
+
+	if (ret < 0) {
+		return ret;
+	}
+	return lora_radio_wait(dev, &waiter, timeout);
+}
+
+int lora_radio_cad_async(const struct device *dev, lora_cad_cb cb, void *user_data)
+{
+	struct lora_radio_data *data = dev->data;
+
+	if (cb == NULL) {
+		k_mutex_lock(&data->lock, K_FOREVER);
+		if (data->op == LORA_RADIO_OP_CAD && data->cad_cb != NULL) {
+			data->cad_cb = NULL;
+			lora_radio_op_abort(dev, -ECANCELED);
+		}
+		k_mutex_unlock(&data->lock);
+		return 0;
+	}
+	return lora_radio_cad_start(dev, cb, user_data, NULL);
 }
 
 /*
@@ -610,4 +739,52 @@ uint32_t lora_radio_airtime(const struct device *dev, uint32_t data_len)
 	k_mutex_unlock(&data->lock);
 
 	return airtime;
+}
+
+uint32_t lora_radio_lora_airtime_ms(uint32_t bw_hz, uint8_t sf, uint8_t cr,
+				    uint32_t preamble_len, bool ldro, bool explicit_hdr,
+				    bool crc, uint32_t payload_len)
+{
+	uint64_t t_sym_us, t_preamble_us, t_payload_us;
+	uint32_t n_payload;
+	int32_t tmp;
+	int32_t de = ldro ? 1 : 0;
+	/* SF5 and SF6 add two symbols of fine synchronization to the preamble */
+	bool fine_sync = sf < 7;
+
+	/* Symbol time = 2^SF / BW */
+	t_sym_us = ((uint64_t)BIT(sf) * USEC_PER_SEC) / bw_hz;
+
+	/* Preamble time (4.25 extra symbols, 6.25 with fine synchronization) */
+	t_preamble_us = (uint64_t)(preamble_len + (fine_sync ? 6U : 4U)) * t_sym_us +
+			(t_sym_us / 4U);
+
+	/* Payload symbol count */
+	tmp = 8 * (int32_t)payload_len - 4 * sf + (fine_sync ? 0 : 8) + (explicit_hdr ? 20 : 0) +
+	      (crc ? 16 : 0);
+	if (tmp < 0) {
+		tmp = 0;
+	}
+
+	n_payload = 8U + (uint32_t)(((tmp + 4 * (sf - 2 * de) - 1) / (4 * (sf - 2 * de))) *
+				    (cr + 4));
+	t_payload_us = n_payload * t_sym_us;
+
+	return (uint32_t)((t_preamble_us + t_payload_us + 500U) / USEC_PER_MSEC);
+}
+
+uint32_t lora_radio_gfsk_airtime_ms(const struct lora_modem_config_gfsk *cfg,
+				    uint32_t data_len, uint32_t header_bits)
+{
+	uint32_t payload = cfg->fixed_len ? cfg->payload_len : data_len;
+	uint64_t bits;
+
+	bits = (uint64_t)(cfg->preamble_len + cfg->sync_word_len + payload +
+			  (cfg->packet_crc_disable ? 0U : 2U)) *
+	       BITS_PER_BYTE;
+	if (!cfg->fixed_len) {
+		bits += header_bits;
+	}
+
+	return (uint32_t)DIV_ROUND_UP(bits * MSEC_PER_SEC, cfg->bitrate);
 }

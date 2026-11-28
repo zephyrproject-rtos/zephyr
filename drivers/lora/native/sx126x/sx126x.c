@@ -1040,58 +1040,22 @@ static int sx126x_rx_prepare(const struct device *dev)
 static uint32_t sx126x_airtime(const struct device *dev, uint32_t data_len)
 {
 	struct sx126x_data *data = dev->data;
-	uint32_t t_preamble_us, t_payload_us, t_sym_us, n_payload, bw_hz;
-	uint8_t sf, cr, hdr_len;
-	int32_t tmp;
-	bool de, crc;
+	uint32_t bw_hz;
 	int ret;
 
 	if (IS_ENABLED(CONFIG_LORA_GFSK) && data->gfsk) {
-		/*
-		 * A GFSK frame is preamble, sync word, an optional length
-		 * byte, the payload and an optional CRC, all clocked out at
-		 * the configured bit rate.
-		 */
-		uint32_t pld_len =
-			data->gfsk_config.fixed_len ? data->gfsk_config.payload_len : data_len;
-		uint32_t bits = (data->gfsk_config.preamble_len + data->gfsk_config.sync_word_len +
-				 (data->gfsk_config.fixed_len ? 0 : 1) + pld_len +
-				 (data->gfsk_config.packet_crc_disable ? 0 : 2)) *
-				BITS_PER_BYTE;
-
-		return DIV_ROUND_UP(bits * MSEC_PER_SEC, data->gfsk_config.bitrate);
+		return lora_radio_gfsk_airtime_ms(&data->gfsk_config, data_len, 8U);
 	}
 
-	/* Calculate symbol time in microseconds */
 	ret = bandwidth_to_hz(data->config.bandwidth, &bw_hz);
 	__ASSERT_NO_MSG(ret == 0);
-	sf = data->config.datarate;
 
-	/* Symbol time = 2^SF / BW (seconds) */
-	/* In microseconds: (2^SF * 1000000) / BW */
-	t_sym_us = ((1UL << sf) * 1000000UL) / bw_hz;
-
-	/* Preamble time (4.25 extra symbols) */
-	t_preamble_us = (data->config.preamble_len + 4) * t_sym_us +
-			(t_sym_us / 4);
-
-	/* Payload symbol count calculation (from LoRa modem designer's guide) */
-	de = should_enable_ldro(sf, data->config.bandwidth, dev->config);
-	crc = !data->config.packet_crc_disable;
-	cr = data->config.coding_rate;
-	hdr_len = data->config.explicit_header_disable ? 0 : 20;
-
-	tmp = 8 * data_len - 4 * sf + 8 + hdr_len + 16 * crc;
-	if (tmp < 0) {
-		tmp = 0;
-	}
-
-	n_payload = 8 + (((tmp + 4 * (sf - 2 * de) - 1) /
-			  (4 * (sf - 2 * de))) * (cr + 4));
-	t_payload_us = n_payload * t_sym_us;
-
-	/* Total airtime in milliseconds */
-	return (t_preamble_us + t_payload_us + 500) / 1000;
+	return lora_radio_lora_airtime_ms(bw_hz, data->config.datarate,
+					data->config.coding_rate, data->config.preamble_len,
+					should_enable_ldro(data->config.datarate,
+							   data->config.bandwidth, dev->config),
+					!data->config.explicit_header_disable,
+					!data->config.packet_crc_disable, data_len);
 }
 
 static int sx126x_get_rssi_inst(const struct device *dev, int16_t *rssi)
