@@ -86,6 +86,10 @@ enum {
 	BT_CONN_PERIPHERAL_PARAM_SET,         /* If periph param were set from app */
 	BT_CONN_PERIPHERAL_PARAM_L2CAP,       /* If should force L2CAP for CPUP */
 	BT_CONN_FORCE_PAIR,                   /* Pairing even with existing keys. */
+	BT_CONN_LE_NON_PAIRED,                /* Non-paired security model: no SMP, TAK only */
+	BT_CONN_LE_TAK_PRESENT,               /* bt_conn.le.tak holds a key for the Central */
+	BT_CONN_LE_TAK_ENC_CLAIMED,           /* A TAK is being put to use, no result yet */
+	BT_CONN_LE_TAK_ENC_PENDING,           /* ... and an Encryption Change event will follow */
 #if defined(CONFIG_BT_GATT_CLIENT)
 	BT_CONN_ATT_MTU_EXCHANGED,            /* If ATT MTU has been exchanged. */
 #endif /* CONFIG_BT_GATT_CLIENT */
@@ -133,6 +137,10 @@ struct bt_conn_le {
 	uint8_t features[8];
 
 	struct bt_keys *keys;
+
+#if defined(CONFIG_BT_TAK) && defined(CONFIG_BT_PERIPHERAL)
+	uint8_t tak[BT_CONN_LE_TAK_SIZE];
+#endif /* CONFIG_BT_TAK && CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
 	struct bt_conn_le_phy_info phy;
@@ -242,11 +250,11 @@ struct bt_conn {
 	/* Which local identity address this connection uses */
 	uint8_t                    id;
 
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
+#if defined(CONFIG_BT_LE_ENCRYPTION) || defined(CONFIG_BT_CLASSIC)
 	bt_security_t		sec_level;
 	bt_security_t		required_sec_level;
 	uint8_t			encrypt;
-#endif /* CONFIG_BT_SMP || CONFIG_BT_CLASSIC */
+#endif /* CONFIG_BT_LE_ENCRYPTION || CONFIG_BT_CLASSIC */
 
 #if defined(CONFIG_BT_DF_CONNECTION_CTE_RX)
 	/**
@@ -576,6 +584,42 @@ bool bt_conn_ltk_present(const struct bt_conn *conn);
 /* rand and ediv should be in BT order */
 int bt_conn_le_start_encryption(struct bt_conn *conn, uint8_t rand[8],
 				uint8_t ediv[2], const uint8_t *ltk, size_t len);
+
+/* The connection uses the non-paired security model (Core Vol 3 Part C 10.6.2) */
+static inline bool bt_conn_le_non_paired(const struct bt_conn *conn)
+{
+	return IS_ENABLED(CONFIG_BT_TAK) && atomic_test_bit(conn->flags, BT_CONN_LE_NON_PAIRED);
+}
+
+/* The link is encrypted with a TAK */
+static inline bool bt_conn_le_tak_encrypted(const struct bt_conn *conn)
+{
+#if defined(CONFIG_BT_TAK)
+	return bt_conn_le_non_paired(conn) && conn->encrypt != 0U;
+#else
+	ARG_UNUSED(conn);
+
+	return false;
+#endif /* CONFIG_BT_TAK */
+}
+
+#if defined(CONFIG_BT_TAK)
+/* The encryption that bt_conn_le_tak_set() started, if there is one, has ended */
+void bt_conn_le_tak_enc_done(struct bt_conn *conn);
+#else
+static inline void bt_conn_le_tak_enc_done(struct bt_conn *conn)
+{
+	ARG_UNUSED(conn);
+}
+#endif /* CONFIG_BT_TAK */
+
+/* Peripheral: keep the key that bt_conn_le_tak_set() got until the Long Term Key Request */
+int bt_conn_le_tak_store(struct bt_conn *conn, const uint8_t tak[BT_CONN_LE_TAK_SIZE]);
+
+/* Peripheral: move the key for a Long Term Key Request out of the connection. False if there
+ * is none.
+ */
+bool bt_conn_le_tak_take(struct bt_conn *conn, uint8_t ltk[BT_CONN_LE_TAK_SIZE]);
 
 /* Notify higher layers that RPA was resolved */
 void bt_conn_identity_resolved(struct bt_conn *conn);

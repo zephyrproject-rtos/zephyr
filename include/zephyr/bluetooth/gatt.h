@@ -110,14 +110,30 @@ enum bt_gatt_perm {
 	/** @brief Attribute read permission with LE Secure Connection encryption.
 	 *
 	 *  If set, requires that LE Secure Connections is used for read access.
+	 *  The LE GATT Security Levels characteristic
+	 *  (@kconfig{CONFIG_BT_GAP_LE_GATT_SECURITY_LEVELS}) reports this as LE security
+	 *  mode 1 level 4, the lowest level that implies LE Secure Connections.
 	 */
 	BT_GATT_PERM_READ_LESC = BIT(7),
 
 	/** @brief Attribute write permission with LE Secure Connection encryption.
 	 *
 	 *  If set, requires that LE Secure Connections is used for write access.
+	 *  The LE GATT Security Levels characteristic
+	 *  (@kconfig{CONFIG_BT_GAP_LE_GATT_SECURITY_LEVELS}) reports this as LE security
+	 *  mode 1 level 4, the lowest level that implies LE Secure Connections.
 	 */
 	BT_GATT_PERM_WRITE_LESC = BIT(8),
+
+	/** @brief Attribute encryption and authentication permissions are met by a TAK.
+	 *
+	 *  If set, a link encrypted with a Transient Application Key satisfies the
+	 *  encryption, authentication and LE Secure Connections permissions of the
+	 *  attribute. Without it such a link is refused where one of them is set.
+	 *  The permission does not tell which application supplied the key: a profile
+	 *  that has to can check the connection in a @ref bt_gatt_authorization_cb.
+	 */
+	BT_GATT_PERM_TAK = BIT(9),
 };
 
 /**

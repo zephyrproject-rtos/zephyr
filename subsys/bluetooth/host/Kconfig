@@ -472,8 +472,15 @@ config BT_REMOTE_INFO
 	  established and the application will be notified when this information
 	  is available through the remote_info_available connection callback.
 
+config BT_LE_ENCRYPTION
+	bool
+	help
+	  Encryption of LE connections and the connection security level. Selected by the
+	  options that can provide a key.
+
 config BT_SMP
 	bool "Security Manager Protocol support"
+	select BT_LE_ENCRYPTION
 	select BT_CRYPTO
 	select BT_RPA
 	select BT_ECC if !BT_SMP_OOB_LEGACY_PAIR_ONLY
@@ -767,6 +774,16 @@ config BT_SMP_MIN_ENC_KEY_SIZE
 	  This option sets the minimum encryption key size accepted during pairing.
 
 endif # BT_SMP
+
+config BT_TAK
+	bool "Transient Application Key (TAK) encryption [EXPERIMENTAL]"
+	select BT_LE_ENCRYPTION
+	select EXPERIMENTAL
+	help
+	  Support for the non-paired security model, LE security mode 4 level 2:
+	  the application authenticates the peer with a protocol of its own and
+	  supplies the key that encrypts the connection, without pairing or
+	  bonding. See bt_conn_le_non_paired_set() and bt_conn_le_tak_set().
 
 rsource "Kconfig.l2cap"
 rsource "Kconfig.gatt"

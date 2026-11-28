@@ -75,4 +75,19 @@ endchoice  #BT_DEVICE_APPEARANCE_GATT_WRITABLE_SECURITY
 
 endif # BT_DEVICE_APPEARANCE_GATT_WRITABLE
 
+config BT_GAP_LE_GATT_SECURITY_LEVELS
+	bool "LE GATT Security Levels characteristic [EXPERIMENTAL]" if !BT_TAK
+	default y if BT_TAK
+	select EXPERIMENTAL
+	help
+	  Add the LE GATT Security Levels characteristic to the GAP service. Its
+	  value is the highest LE security mode 1 level that the permissions of
+	  the attributes in the database require, followed by LE security mode 4
+	  level 2 if BT_TAK is enabled and every attribute that requires security
+	  permits a Transient Application Key. An attribute that requires LE
+	  Secure Connections counts as mode 1 level 4, the lowest level that
+	  implies them, also when it does not require authentication. Always
+	  present in this GAP service with BT_TAK: a device that supports LE
+	  security mode 4 has to have the characteristic.
+
 endif #BT_GAP_SVC

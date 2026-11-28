@@ -102,6 +102,44 @@ static void tx_complete_work(struct k_work *work);
 
 void bt_tx_irq_raise(void);
 
+#if defined(CONFIG_BT_TAK)
+/* Protects the key that bt_conn_le_tak_set() stored (bt_conn.le.tak, BT_CONN_LE_TAK_PRESENT) and
+ * the state of an encryption with a TAK (BT_CONN_LE_TAK_ENC_CLAIMED, BT_CONN_LE_TAK_ENC_PENDING):
+ * the application sets them, hci_encrypt_change(), le_ltk_request() and the disconnection end
+ * them.
+ */
+static struct k_spinlock tak_lock;
+
+void bt_conn_le_tak_enc_done(struct bt_conn *conn)
+{
+	k_spinlock_key_t key = k_spin_lock(&tak_lock);
+
+	atomic_clear_bit(conn->flags, BT_CONN_LE_TAK_ENC_CLAIMED);
+	atomic_clear_bit(conn->flags, BT_CONN_LE_TAK_ENC_PENDING);
+
+	k_spin_unlock(&tak_lock, key);
+}
+#endif /* CONFIG_BT_TAK */
+
+#if defined(CONFIG_BT_TAK) && defined(CONFIG_BT_PERIPHERAL)
+/* Forget a key that bt_conn_le_tak_set() stored for the Central to use. */
+static void tak_discard(struct bt_conn *conn)
+{
+	k_spinlock_key_t key = k_spin_lock(&tak_lock);
+
+	if (atomic_test_and_clear_bit(conn->flags, BT_CONN_LE_TAK_PRESENT)) {
+		(void)memset(conn->le.tak, 0, sizeof(conn->le.tak));
+	}
+
+	k_spin_unlock(&tak_lock, key);
+}
+#else
+static void tak_discard(struct bt_conn *conn)
+{
+	ARG_UNUSED(conn);
+}
+#endif /* CONFIG_BT_TAK && CONFIG_BT_PERIPHERAL */
+
 /* Group Connected BT_CONN only in this */
 #if defined(CONFIG_BT_CONN)
 static void notify_recycled_conn_slot(void);
@@ -1489,6 +1527,11 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 
 		break;
 	case BT_CONN_DISCONNECTED:
+		if (bt_conn_is_le(conn)) {
+			tak_discard(conn);
+			bt_conn_le_tak_enc_done(conn);
+		}
+
 		/* The flag is not to carry over to the next connection on this
 		 * object, which is not always zeroed first: a central CIS keeps
 		 * its object.
@@ -2837,6 +2880,9 @@ void bt_conn_identity_resolved(struct bt_conn *conn)
 	}
 }
 
+#endif /* CONFIG_BT_SMP */
+
+#if defined(CONFIG_BT_LE_ENCRYPTION)
 int bt_conn_le_start_encryption(struct bt_conn *conn, uint8_t rand[8],
 				uint8_t ediv[2], const uint8_t *ltk, size_t len)
 {
@@ -2864,9 +2910,167 @@ int bt_conn_le_start_encryption(struct bt_conn *conn, uint8_t rand[8],
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_START_ENCRYPTION, net_buf_take_plain(&buf), NULL);
 }
-#endif /* CONFIG_BT_SMP */
+#endif /* CONFIG_BT_LE_ENCRYPTION */
 
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
+#if defined(CONFIG_BT_TAK)
+int bt_conn_le_non_paired_set(struct bt_conn *conn)
+{
+	int err = 0;
+
+	if (!bt_conn_is_le(conn)) {
+		return -EINVAL;
+	}
+
+	/* A Pairing Request or a disconnection handled between the checks and the flag would
+	 * leave SMP half way, or the flag on a connection that is gone.
+	 */
+	k_sched_lock();
+
+	/* Core Vol 3 Part C 10.6.2: not with a bonded peer, and SMP has to be out of use on the
+	 * connection from here on.
+	 */
+	if (conn->state != BT_CONN_CONNECTED) {
+		err = -ENOTCONN;
+	} else if (bt_conn_le_non_paired(conn)) {
+		/* Nothing to do */
+	} else if (conn->encrypt != 0U || conn->le.keys != NULL ||
+		   conn->required_sec_level > conn->sec_level ||
+		   bt_le_bond_exists(conn->id, &conn->le.dst)) {
+		err = -EPERM;
+	} else {
+		atomic_set_bit(conn->flags, BT_CONN_LE_NON_PAIRED);
+	}
+
+	k_sched_unlock();
+
+	return err;
+}
+
+#if defined(CONFIG_BT_PERIPHERAL)
+bool bt_conn_le_tak_take(struct bt_conn *conn, uint8_t ltk[BT_CONN_LE_TAK_SIZE])
+{
+	k_spinlock_key_t key = k_spin_lock(&tak_lock);
+	bool is_present = atomic_test_and_clear_bit(conn->flags, BT_CONN_LE_TAK_PRESENT);
+
+	if (is_present) {
+		(void)memcpy(ltk, conn->le.tak, sizeof(conn->le.tak));
+		(void)memset(conn->le.tak, 0, sizeof(conn->le.tak));
+
+		/* No further key until the Encryption Change event (hci_encrypt_change()), which
+		 * a request that needs encryption may wait for, see bt_conn_set_security().
+		 */
+		atomic_set_bit(conn->flags, BT_CONN_LE_TAK_ENC_CLAIMED);
+		atomic_set_bit(conn->flags, BT_CONN_LE_TAK_ENC_PENDING);
+	}
+
+	k_spin_unlock(&tak_lock, key);
+
+	return is_present;
+}
+
+int bt_conn_le_tak_store(struct bt_conn *conn, const uint8_t tak[BT_CONN_LE_TAK_SIZE])
+{
+	k_spinlock_key_t key = k_spin_lock(&tak_lock);
+	int err = 0;
+
+	/* Checked under the lock: tak_discard() runs after the state has changed, and
+	 * bt_conn_le_tak_take() sets the flag under it. hci_encrypt_change() records the
+	 * encryption before it clears the flag, hence the order of the last two.
+	 */
+	if (conn->state != BT_CONN_CONNECTED) {
+		err = -ENOTCONN;
+	} else if (atomic_test_bit(conn->flags, BT_CONN_LE_TAK_ENC_CLAIMED)) {
+		err = -EBUSY;
+	} else if (conn->encrypt != 0U) {
+		err = -EALREADY;
+	} else {
+		(void)memcpy(conn->le.tak, tak, sizeof(conn->le.tak));
+		atomic_set_bit(conn->flags, BT_CONN_LE_TAK_PRESENT);
+	}
+
+	k_spin_unlock(&tak_lock, key);
+
+	return err;
+}
+#endif /* CONFIG_BT_PERIPHERAL */
+
+static int tak_start_encryption(struct bt_conn *conn, const uint8_t tak[BT_CONN_LE_TAK_SIZE])
+{
+	uint8_t rand[8] = { 0 };
+	uint8_t ediv[2] = { 0 };
+	k_spinlock_key_t key;
+	int err;
+
+	if (atomic_test_and_set_bit(conn->flags, BT_CONN_LE_TAK_ENC_CLAIMED)) {
+		return -EBUSY;
+	}
+
+	/* hci_encrypt_change() records the encryption before it clears the flag, so a link that
+	 * an earlier key encrypted in the meantime shows here.
+	 */
+	if (conn->encrypt != 0U) {
+		err = -EALREADY;
+	} else {
+		err = bt_conn_le_start_encryption(conn, rand, ediv, tak, BT_CONN_LE_TAK_SIZE);
+	}
+
+	if (err != 0) {
+		atomic_clear_bit(conn->flags, BT_CONN_LE_TAK_ENC_CLAIMED);
+
+		return err;
+	}
+
+	/* From here on a request that needs encryption may wait for this one, see
+	 * bt_conn_set_security(): the Controller has taken the command, so an Encryption Change
+	 * event will end the wait. Unless hci_encrypt_change() has seen it already.
+	 */
+	key = k_spin_lock(&tak_lock);
+
+	if (atomic_test_bit(conn->flags, BT_CONN_LE_TAK_ENC_CLAIMED)) {
+		atomic_set_bit(conn->flags, BT_CONN_LE_TAK_ENC_PENDING);
+	}
+
+	k_spin_unlock(&tak_lock, key);
+
+	return 0;
+}
+
+int bt_conn_le_tak_set(struct bt_conn *conn, const uint8_t tak[BT_CONN_LE_TAK_SIZE])
+{
+	/* All zeros is a buffer that no key derivation wrote to, and the key of opportunistic
+	 * encryption (Core Vol 6 Part B 5.1.3.1.3).
+	 */
+	static const uint8_t zero_tak[BT_CONN_LE_TAK_SIZE];
+
+	if (!bt_conn_is_le(conn) || util_memeq(tak, zero_tak, sizeof(zero_tak))) {
+		return -EINVAL;
+	}
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+	if (!bt_conn_le_non_paired(conn)) {
+		return -EPERM;
+	}
+
+	if (conn->encrypt != 0U) {
+		return -EALREADY;
+	}
+
+	if (!BT_FEAT_LE_ENCR(bt_dev.le.features)) {
+		return -ENOTSUP;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn->role == BT_HCI_ROLE_PERIPHERAL) {
+		return bt_conn_le_tak_store(conn, tak);
+	}
+
+	return tak_start_encryption(conn, tak);
+}
+#endif /* CONFIG_BT_TAK */
+
+#if defined(CONFIG_BT_LE_ENCRYPTION) || defined(CONFIG_BT_CLASSIC)
 uint8_t bt_conn_enc_key_size(const struct bt_conn *conn)
 {
 	if (!bt_conn_is_le(conn) && !bt_conn_is_br(conn)) {
@@ -2883,6 +3087,10 @@ uint8_t bt_conn_enc_key_size(const struct bt_conn *conn)
 		return conn->br.link_key ? conn->br.link_key->enc_key_size : 0;
 	}
 #endif /* CONFIG_BT_CLASSIC */
+
+	if (bt_conn_le_tak_encrypted(conn)) {
+		return BT_CONN_LE_TAK_SIZE;
+	}
 
 	if (IS_ENABLED(CONFIG_BT_SMP)) {
 		return conn->le.keys ? conn->le.keys->enc_size : 0;
@@ -2972,6 +3180,24 @@ int bt_conn_set_security(struct bt_conn *conn, bt_security_t sec)
 	force_pair = sec & BT_SECURITY_FORCE_PAIR;
 	sec &= ~BT_SECURITY_FORCE_PAIR;
 
+	/* Core Vol 3 Part C 10.3.4: no pairing, and bt_conn_le_tak_set() puts a TAK to use as
+	 * soon as it gets one, so there is nothing to start. A request for encryption waits
+	 * for one that is in progress, as it does for a pairing.
+	 */
+	if (bt_conn_le_non_paired(conn)) {
+		/* Read before the level: hci_encrypt_change() raises the level first and ends
+		 * the pending state second.
+		 */
+		bool is_pending = atomic_test_bit(conn->flags, BT_CONN_LE_TAK_ENC_PENDING);
+
+		if (!force_pair &&
+		    ((is_pending && sec <= BT_SECURITY_L2) || conn->sec_level >= sec)) {
+			return 0;
+		}
+
+		return -EPERM;
+	}
+
 	if (IS_ENABLED(CONFIG_BT_SMP_SC_ONLY)) {
 		sec = BT_SECURITY_L4;
 	}
@@ -3019,7 +3245,7 @@ bt_security_t bt_conn_get_security(const struct bt_conn *conn)
 {
 	return BT_SECURITY_L1;
 }
-#endif /* CONFIG_BT_SMP */
+#endif /* CONFIG_BT_LE_ENCRYPTION || CONFIG_BT_CLASSIC */
 
 #if defined(CONFIG_BT_CONN_DYNAMIC_CALLBACKS)
 
@@ -3082,10 +3308,10 @@ struct bt_conn *bt_conn_add_le(uint8_t id, const bt_addr_le_t *peer)
 
 	conn->id = id;
 	bt_addr_le_copy(&conn->le.dst, peer);
-#if defined(CONFIG_BT_SMP)
+#if defined(CONFIG_BT_LE_ENCRYPTION)
 	conn->sec_level = BT_SECURITY_L1;
 	conn->required_sec_level = BT_SECURITY_L1;
-#endif /* CONFIG_BT_SMP */
+#endif /* CONFIG_BT_LE_ENCRYPTION */
 	conn->type = BT_CONN_TYPE_LE;
 	conn->tx_data_pull = l2cap_data_pull;
 	conn->get_and_clear_cb = acl_get_and_clear_cb;
@@ -3268,11 +3494,11 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 	info->state = conn_internal_to_public_state(conn->state);
 	info->security.flags = 0;
 	info->security.level = bt_conn_get_security(conn);
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
+#if defined(CONFIG_BT_LE_ENCRYPTION) || defined(CONFIG_BT_CLASSIC)
 	info->security.enc_key_size = bt_conn_enc_key_size(conn);
 #else
 	info->security.enc_key_size = 0;
-#endif /* CONFIG_BT_SMP || CONFIG_BT_CLASSIC */
+#endif /* CONFIG_BT_LE_ENCRYPTION || CONFIG_BT_CLASSIC */
 
 	switch (conn->type) {
 	case BT_CONN_TYPE_LE:
@@ -3305,6 +3531,9 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 		}
 		if (conn->le.keys && (conn->le.keys->flags & BT_KEYS_OOB)) {
 			info->security.flags |= BT_SECURITY_FLAG_OOB;
+		}
+		if (bt_conn_le_tak_encrypted(conn)) {
+			info->security.flags |= BT_SECURITY_FLAG_TAK;
 		}
 		return 0;
 #if defined(CONFIG_BT_CLASSIC)

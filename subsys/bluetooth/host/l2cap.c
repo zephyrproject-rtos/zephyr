@@ -1731,6 +1731,23 @@ static uint16_t l2cap_check_security(struct bt_conn *conn,
 		return BT_L2CAP_LE_SUCCESS;
 	}
 
+	/* Core Vol 3 Part C 10.3.3: a TAK meets a requirement only where the profile permits it */
+	if (bt_conn_le_non_paired(conn) && server->sec_level > BT_SECURITY_L1) {
+		if (!bt_conn_le_tak_encrypted(conn)) {
+			return BT_L2CAP_LE_ERR_ENCRYPTION;
+		}
+
+		if (server->tak) {
+			return BT_L2CAP_LE_SUCCESS;
+		}
+
+		if (server->sec_level > BT_SECURITY_L2) {
+			return BT_L2CAP_LE_ERR_AUTHENTICATION;
+		}
+
+		return BT_L2CAP_LE_ERR_ENCRYPTION;
+	}
+
 	if (conn->sec_level >= server->sec_level) {
 		return BT_L2CAP_LE_SUCCESS;
 	}
