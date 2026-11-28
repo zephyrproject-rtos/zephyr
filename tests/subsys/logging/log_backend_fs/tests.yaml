@@ -24,3 +24,21 @@ tests:
   logging.backend.fs.automounted: {}
   logging.backend.fs.manualmounted:
     extra_args: EXTRA_DTC_OVERLAY_FILE="automount.overlay"
+  logging.backend.fs.startup.partial:
+    extra_args: LOG_BACKEND_FS_TEST_REMAINING_SPACE=16
+  logging.backend.fs.startup.partial.automounted:
+    extra_args:
+      - LOG_BACKEND_FS_TEST_REMAINING_SPACE=16
+      - EXTRA_DTC_OVERLAY_FILE="automount.overlay"
+  logging.backend.fs.startup.nearly_full:
+    extra_args: LOG_BACKEND_FS_TEST_REMAINING_SPACE=1
+  logging.backend.fs.startup.nearly_full.automounted:
+    extra_args:
+      - LOG_BACKEND_FS_TEST_REMAINING_SPACE=1
+      - EXTRA_DTC_OVERLAY_FILE="automount.overlay"
+  logging.backend.fs.startup.full:
+    extra_args: LOG_BACKEND_FS_TEST_REMAINING_SPACE=0
+  logging.backend.fs.startup.full.automounted:
+    extra_args:
+      - LOG_BACKEND_FS_TEST_REMAINING_SPACE=0
+      - EXTRA_DTC_OVERLAY_FILE="automount.overlay"
