@@ -1233,6 +1233,14 @@
 		status = "disabled";
 	};
 
+	usb0_uhc: usbh@dd000 {
+		compatible = "nxp,uhc-khci";
+		reg = <0xdd000 0x1000>;
+		interrupts = <50 1>;
+		interrupt-names = "usbfs0";
+		status = "disabled";
+	};
+
 	flexio0: flexio@105000 {
 		compatible = "nxp,flexio";
 		reg = <0x105000 0x1000>;
@@ -1300,8 +1308,16 @@
 		compatible = "nxp,ehci";
 		reg = <0x10b000 0x1000>;
 		interrupts = <67 0>;
-		interrupt-names = "usb_otg";
+		interrupt-names = "usbhs1";
 		num-bidir-endpoints = <8>;
+		status = "disabled";
+	};
+
+	usb1_uhc: usbh@10b000 {
+		compatible = "nxp,uhc-ehci";
+		reg = <0x10b000 0x1000>;
+		interrupts = <67 0>;
+		interrupt-names = "usbhs1";
 		status = "disabled";
 	};
 

@@ -217,6 +217,23 @@ zephyr_udc0: &usb1 {
 	status = "okay";
 };
 
+/*
+ * Host role of the USB1 EHCI controller. Shares registers and IRQ with
+ * zephyr_udc0; only one USB1 role can be active at a time.
+ */
+zephyr_uhc0: &usb1_uhc {
+	phy-handle = <&usbphy1>;
+	status = "okay";
+};
+
+/*
+ * Host role of the USB FS/KHCI controller. Shares registers and IRQ with
+ * usb0; applications must use only one role at a time.
+ */
+zephyr_uhc1: &usb0_uhc {
+	status = "okay";
+};
+
 &usbphy1 {
 	tx-d-cal = <4>;
 	tx-cal-45-dp-ohms = <7>;
