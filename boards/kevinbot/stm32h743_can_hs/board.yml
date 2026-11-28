@@ -1,0 +1,6 @@
+board:
+  name: stm32h743_can_hs
+  full_name: STM32H743 CAN + USB-HS Dev Board
+  vendor: kevinbot
+  socs:
+    - name: stm32h743xx
