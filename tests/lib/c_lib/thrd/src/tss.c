@@ -9,6 +9,8 @@
 #include <stdint.h>
 #include <threads.h>
 
+#include <zephyr/kernel.h>
+#include <zephyr/sys/slist.h>
 #include <zephyr/ztest.h>
 
 static tss_t key;
@@ -46,6 +48,60 @@ ZTEST(libc_tss, test_tss_create_delete)
 	tss_delete(BIOS_FOOD);
 
 	/* happy path tested in before() / after() */
+}
+
+ZTEST(libc_tss, test_tss_create_exhaustion)
+{
+	tss_t keys[CONFIG_POSIX_THREAD_KEYS_MAX];
+	size_t count;
+	int ret = thrd_success;
+
+	/* before() already holds one key, so this must exhaust the key pool. */
+	for (count = 0; count < ARRAY_SIZE(keys); ++count) {
+		ret = tss_create(&keys[count], NULL);
+		if (ret != thrd_success) {
+			break;
+		}
+	}
+
+	for (size_t i = 0; i < count; ++i) {
+		tss_delete(keys[i]);
+	}
+
+	zassert_equal(thrd_error, ret, "unexpected status %d", ret);
+}
+
+static int tss_set_with_exhausted_heap(void *arg)
+{
+	sys_slist_t allocations = SYS_SLIST_STATIC_INIT(&allocations);
+	sys_snode_t *node;
+	int ret;
+
+	for (node = k_malloc(sizeof(*node)); node != NULL; node = k_malloc(sizeof(*node))) {
+		sys_slist_prepend(&allocations, node);
+	}
+
+	ret = tss_set(key, arg);
+
+	for (node = sys_slist_get(&allocations); node != NULL; node = sys_slist_get(&allocations)) {
+		k_free(node);
+	}
+
+	zassert_equal(tss_set(key, arg), thrd_success);
+	zassert_equal_ptr(tss_get(key), arg);
+
+	return ret;
+}
+
+ZTEST(libc_tss, test_tss_set_exhaustion)
+{
+	int32_t value = FORTY_TWO;
+	thrd_t thread;
+	int ret;
+
+	zassert_equal(thrd_create(&thread, tss_set_with_exhausted_heap, &value), thrd_success);
+	zassert_equal(thrd_join(thread, &ret), thrd_success);
+	zassert_equal(ret, thrd_error, "unexpected status %d", ret);
 }
 
 static int thread_fn(void *arg)
