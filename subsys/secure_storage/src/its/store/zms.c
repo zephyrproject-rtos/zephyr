@@ -31,7 +31,7 @@ static int init_zms(void)
 	}
 	return ret;
 }
-SYS_INIT(init_zms, APPLICATION, CONFIG_SECURE_STORAGE_INIT_PRIORITY);
+SYS_INIT(init_zms, SECURE_STORAGE_INIT_LEVEL, CONFIG_SECURE_STORAGE_INIT_PRIORITY);
 
 #ifdef CONFIG_ZMS_ID_64BIT
 #define ZMS_ID_FMT "%#llx"

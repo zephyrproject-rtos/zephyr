@@ -5,7 +5,12 @@
 #define SECURE_STORAGE_COMMON_H
 
 /** @file zephyr/secure_storage/common.h Common definitions of the secure storage subsystem. */
+#include <zephyr/sys/util_macro.h>
 #include <stdint.h>
+
+/** SYS_INIT level of the components that are initialized at boot time. */
+#define SECURE_STORAGE_INIT_LEVEL                                                                  \
+	COND_CODE_1(CONFIG_SECURE_STORAGE_INIT_LEVEL_POST_KERNEL, (POST_KERNEL), (APPLICATION))
 
 /** A size-optimized version of `psa_storage_create_flags_t`. Used for storing `create_flags`. */
 typedef uint8_t secure_storage_packed_create_flags_t;

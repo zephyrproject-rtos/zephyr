@@ -25,8 +25,8 @@ static int erase_flash(void)
 	return 0;
 }
 
-/* Low priority to ensure we run after any flash drivers are initialized */
-SYS_INIT(erase_flash, POST_KERNEL, 100);
+/* After the flash drivers, before a store that initializes at the POST_KERNEL level. */
+SYS_INIT(erase_flash, POST_KERNEL, 60);
 
 #endif /* !CONFIG_BUILD_WITH_TFM && CONFIG_FLASH_PAGE_LAYOUT && storage_partition */
 
