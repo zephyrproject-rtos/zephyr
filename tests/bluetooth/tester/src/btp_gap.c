@@ -56,6 +56,7 @@ struct bt_conn_auth_cb cb;
 static uint8_t oob_legacy_tk[16] = { 0 };
 
 static bool filter_list_in_use;
+static uint8_t sec_mode3_level;
 
 static struct bt_le_oob oob_sc_local = { 0 };
 static struct bt_le_oob oob_sc_remote = { 0 };
@@ -2806,22 +2807,47 @@ static struct bt_iso_chan_io_qos iso_broadcaster_qos = DEFAULT_IO_QOS;
 
 static struct bt_iso_big *iso_broadcaster_big;
 
+static uint8_t big_sec_level(uint8_t encryption)
+{
+	switch (encryption) {
+	case BTP_GAP_CREATE_BIG_ENC_ENABLE_AUTH:
+		return BTP_GAP_SEC_MODE_3_LEVEL_3;
+	case BTP_GAP_CREATE_BIG_ENC_ENABLE:
+		return BTP_GAP_SEC_MODE_3_LEVEL_2;
+	default:
+		return BTP_GAP_SEC_MODE_3_LEVEL_1;
+	}
+}
+
 static uint8_t create_big(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
 	int err;
 	const struct btp_gap_create_big_cmd *cp = cmd;
 	struct bt_iso_big_create_param param = {0};
 	struct bt_le_ext_adv *ext_adv = tester_gap_ext_adv_get(0);
+	bool encrypted;
 
-	if ((cmd_len < sizeof(*cp)) ||
-	    (cmd_len != (sizeof(*cp) + sizeof(param.bcode) * cp->encryption))) {
+	if (cmd_len < sizeof(*cp)) {
 		LOG_ERR("Invalid cmd len");
 		return BTP_STATUS_FAILED;
 	}
 
 	if (!(cp->encryption == BTP_GAP_CREATE_BIG_ENC_DISABLE ||
-	      cp->encryption == BTP_GAP_CREATE_BIG_ENC_ENABLE)) {
+	      cp->encryption == BTP_GAP_CREATE_BIG_ENC_ENABLE ||
+	      cp->encryption == BTP_GAP_CREATE_BIG_ENC_ENABLE_AUTH)) {
 		LOG_ERR("Invalid encryption %u", cp->encryption);
+		return BTP_STATUS_FAILED;
+	}
+
+	encrypted = cp->encryption != BTP_GAP_CREATE_BIG_ENC_DISABLE;
+
+	if (cmd_len != (sizeof(*cp) + (encrypted ? sizeof(param.bcode) : 0U))) {
+		LOG_ERR("Invalid cmd len");
+		return BTP_STATUS_FAILED;
+	}
+
+	if (sec_mode3_level != 0U && big_sec_level(cp->encryption) != sec_mode3_level) {
+		LOG_ERR("BIG does not match LE Security Mode 3 level %u", sec_mode3_level);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2850,7 +2876,7 @@ static uint8_t create_big(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t
 	param.framing = cp->framing;
 	param.latency = sys_le16_to_cpu(cp->latency);
 
-	param.encryption = cp->encryption == BTP_GAP_CREATE_BIG_ENC_ENABLE;
+	param.encryption = encrypted;
 	if (param.encryption) {
 		memcpy(param.bcode, cp->broadcast_code, sizeof(param.bcode));
 	}
@@ -3039,6 +3065,43 @@ static uint8_t send_subrate_request(const void *cmd, uint16_t cmd_len, void *rsp
 	return BTP_STATUS_SUCCESS;
 }
 #endif /* defined(CONFIG_BT_SUBRATING) */
+
+static uint8_t configure_security_mode(const void *cmd, uint16_t cmd_len, void *rsp,
+				       uint16_t *rsp_len)
+{
+	const struct btp_gap_configure_security_mode_cmd *cp = cmd;
+
+	LOG_DBG("mode %u level %u", cp->mode, cp->level);
+
+	switch (cp->mode) {
+	case BTP_GAP_SEC_MODE_1:
+		if (cp->level == BT_SECURITY_L4 && !IS_ENABLED(CONFIG_BT_SMP_SC_ONLY)) {
+			return BTP_STATUS_FAILED;
+		}
+
+		if (cp->level == BT_SECURITY_L3 && !IS_ENABLED(CONFIG_BT_SMP_ENFORCE_MITM)) {
+			return BTP_STATUS_FAILED;
+		}
+
+		if ((cp->flags & BTP_GAP_SEC_MODE_FLAG_SC_ONLY) &&
+		    !IS_ENABLED(CONFIG_BT_SMP_SC_PAIR_ONLY)) {
+			return BTP_STATUS_FAILED;
+		}
+
+		return BTP_STATUS_SUCCESS;
+	case BTP_GAP_SEC_MODE_3:
+		if (cp->level < BTP_GAP_SEC_MODE_3_LEVEL_1 ||
+		    cp->level > BTP_GAP_SEC_MODE_3_LEVEL_3) {
+			return BTP_STATUS_FAILED;
+		}
+
+		sec_mode3_level = cp->level;
+
+		return BTP_STATUS_SUCCESS;
+	default:
+		return BTP_STATUS_FAILED;
+	}
+}
 
 static const struct btp_handler handlers[] = {
 	{
@@ -3290,6 +3353,11 @@ static const struct btp_handler handlers[] = {
 		.func = ead_decrypt_data,
 	},
 #endif /* defined(CONFIG_BT_EAD) */
+	{
+		.opcode = BTP_GAP_CONFIGURE_SECURITY_MODE,
+		.expect_len = sizeof(struct btp_gap_configure_security_mode_cmd),
+		.func = configure_security_mode,
+	},
 };
 
 uint8_t tester_init_gap(void)
