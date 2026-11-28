@@ -115,6 +115,16 @@ config STACK_USAGE
 	  Generate an extra file that specifies the maximum amount of stack used,
 	  on a per-function basis.
 
+config SYSCALL_TRAP_STACK_OVERHEAD
+	int "Constant syscall trap handler stack overhead (bytes)"
+	default 64
+	depends on USERSPACE && STACK_USAGE
+	help
+	  Constant number of bytes pushed onto the privilege elevation stack by
+	  the architecture syscall trap entry/exit handler before invoking the
+	  z_mrsh_<name> marshalling function. Added to each syscall's static
+	  call-graph stack usage in the syscall_stack_report build target.
+	  
 config CALLGRAPH_INFO
 	bool "Generate call graph information"
 	help
