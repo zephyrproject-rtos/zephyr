@@ -1,0 +1,64 @@
+/*
+ * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test_mbox: mailbox {
+		compatible = "vnd,mbox";
+		#mbox-cells = <1>;
+	};
+
+	single_mapping: single-mapping {
+		compatible = "zephyr,metal-io";
+		region = <&mapped_memory>;
+		/* Same cell as 0x90000000; must not sign-extend on 64-bit targets. */
+		physmap = <(-1879048192)>;
+	};
+
+	paged_mapping: paged-mapping {
+		compatible = "zephyr,metal-io";
+		region = <&paged_memory>;
+		physmap = <0x90000000 0xa0000000>;
+		page-shift = <12>;
+		mem-flags = <0x1234>;
+	};
+
+	remote_mapping: remote-mapping {
+		compatible = "zephyr,metal-io";
+		region = <&remote_memory>;
+		physmap = <0x90000000>;
+	};
+
+	ordinary: ipc-ordinary {
+		compatible = "zephyr,ipc-openamp-static-vrings";
+		role = "host";
+		memory-region = <&ordinary_memory>;
+		mboxes = <&test_mbox 0>, <&test_mbox 1>;
+		mbox-names = "tx", "rx";
+	};
+
+	mapped: ipc-mapped {
+		compatible = "zephyr,ipc-openamp-static-vrings";
+		role = "host";
+		memory-region = <&single_mapping>;
+		mboxes = <&test_mbox 2>, <&test_mbox 3>;
+		mbox-names = "tx", "rx";
+	};
+
+	paged: ipc-paged {
+		compatible = "zephyr,ipc-openamp-static-vrings";
+		role = "host";
+		memory-region = <&paged_mapping>;
+		mboxes = <&test_mbox 4>, <&test_mbox 5>;
+		mbox-names = "tx", "rx";
+	};
+
+	remote: ipc-remote {
+		compatible = "zephyr,ipc-openamp-static-vrings";
+		role = "remote";
+		memory-region = <&remote_mapping>;
+		mboxes = <&test_mbox 6>, <&test_mbox 7>;
+		mbox-names = "tx", "rx";
+	};
+};

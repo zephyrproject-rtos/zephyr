@@ -1,0 +1,31 @@
+/*
+ * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	/* Keep test storage below the temporary boot stack at the top of SRAM. */
+	reserved-memory {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		ordinary_memory: memory@203f0000 {
+			reg = <0x203f0000 0x2000>;
+		};
+
+		mapped_memory: memory@203f2000 {
+			reg = <0x203f2000 0x2000>;
+		};
+
+		paged_memory: memory@203f4000 {
+			reg = <0x203f4000 0x2000>;
+		};
+
+		remote_memory: memory@203f6000 {
+			reg = <0x203f6000 0x2000>;
+		};
+	};
+};
+
+#include "../mapping.dtsi"

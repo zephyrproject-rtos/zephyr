@@ -1,0 +1,41 @@
+/*
+ * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm64.h>
+
+/ {
+	/* Keep test storage below the temporary boot stack at the top of SRAM. */
+	reserved-memory {
+		ordinary_memory: memory@47ff0000 {
+			compatible = "zephyr,memory-region";
+			reg = <0 0x47ff0000 0 0x2000>;
+			zephyr,memory-region = "IPC_ORDINARY";
+			zephyr,memory-attr = <DT_MEM_ARM64_MMU_NORMAL_NC>;
+		};
+
+		mapped_memory: memory@47ff2000 {
+			compatible = "zephyr,memory-region";
+			reg = <0 0x47ff2000 0 0x2000>;
+			zephyr,memory-region = "IPC_MAPPED";
+			zephyr,memory-attr = <DT_MEM_ARM64_MMU_NORMAL_NC>;
+		};
+
+		paged_memory: memory@47ff4000 {
+			compatible = "zephyr,memory-region";
+			reg = <0 0x47ff4000 0 0x2000>;
+			zephyr,memory-region = "IPC_PAGED";
+			zephyr,memory-attr = <DT_MEM_ARM64_MMU_NORMAL_NC>;
+		};
+
+		remote_memory: memory@47ff6000 {
+			compatible = "zephyr,memory-region";
+			reg = <0 0x47ff6000 0 0x2000>;
+			zephyr,memory-region = "IPC_REMOTE";
+			zephyr,memory-attr = <DT_MEM_ARM64_MMU_NORMAL_NC>;
+		};
+	};
+};
+
+#include "../mapping.dtsi"

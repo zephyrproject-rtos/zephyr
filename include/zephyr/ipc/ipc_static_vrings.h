@@ -8,6 +8,7 @@
 #define ZEPHYR_INCLUDE_IPC_IPC_STATIC_VRINGS_H_
 
 #include <zephyr/ipc/ipc_service.h>
+#include <zephyr/metal/metal_io.h>
 #include <openamp/open_amp.h>
 
 #ifdef __cplusplus
@@ -53,6 +54,12 @@ struct ipc_static_vrings {
 
 	/** SHM physmap. */
 	metal_phys_addr_t shm_physmap[1];
+
+	/** Optional mapping of the entire backing region, including the status header.
+	 *  The specification and its physmap must outlive this instance.
+	 *  NULL preserves the identity mapping of shm_addr.
+	 */
+	const struct metal_io_dt_spec *io;
 
 	/** SHM and addresses. */
 	uintptr_t status_reg_addr;
