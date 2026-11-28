@@ -359,7 +359,6 @@ docutils==0.22.4 \
     #   sphinx-rtd-theme
     #   sphinx-tabs
     #   sphinx-togglebutton
-    #   sphinxcontrib-programoutput
     #   strictdoc
 doxmlparser==1.18.0 \
     --hash=sha256:ade561ed7153a53b6f4f7c20d4d66d774e40a3a14170b4d3b700b191e5248865
@@ -1493,7 +1492,6 @@ sphinx==9.1.1 ; python_full_version < '3.13' \
     #   sphinx-togglebutton
     #   sphinxcontrib-jquery
     #   sphinxcontrib-mermaid
-    #   sphinxcontrib-programoutput
     #   sphinxcontrib-svg2pdfconverter
 sphinx==9.2.0 ; python_full_version >= '3.13' \
     --hash=sha256:4c3ec13b612712c0d3ce4cbdd9e3eb91e68577e07a8e31f32f21cf178453578c \
@@ -1510,7 +1508,6 @@ sphinx==9.2.0 ; python_full_version >= '3.13' \
     #   sphinx-togglebutton
     #   sphinxcontrib-jquery
     #   sphinxcontrib-mermaid
-    #   sphinxcontrib-programoutput
     #   sphinxcontrib-svg2pdfconverter
 sphinx-autobuild==2025.8.25 \
     --hash=sha256:9cf5aab32853c8c31af572e4fecdc09c997e2b8be5a07daf2a389e270e85b213 \
@@ -1571,10 +1568,6 @@ sphinxcontrib-jsmath==2.0.0 \
 sphinxcontrib-mermaid==2.1.1 \
     --hash=sha256:3b9ac1a8e0b5154dec3c0acf9b5c54dd9ba58540e416f20858c300814c25648f \
     --hash=sha256:f8d7f1b2f0ad69b7ebdd5cbf532fb4ee107893b5373bc2d0e9634089c0b2cfee
-    # via -r requirements.in
-sphinxcontrib-programoutput==0.20 \
-    --hash=sha256:5c4282c1c7fc9b5a23febe16ae038b6392d7ce068d186ad4870ba22e74db0711 \
-    --hash=sha256:f473f9e7992879358efdeb9962fbec2103f6ba1cb6a738eb7f81dae554bc5ec7
     # via -r requirements.in
 sphinxcontrib-qthelp==2.0.0 \
     --hash=sha256:4fe7d0ac8fc171045be623aba3e2a8f613f8682731f9153bb2e40ece16b9bbab \
