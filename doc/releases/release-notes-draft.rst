@@ -59,6 +59,10 @@ Libraries / Subsystems
 
   * Added a HID Service server (:kconfig:option:`CONFIG_BT_HIDS`), the service
     the HID Device role of the HID over GATT Profile is built on.
+  * Added the HID Host of the HID over GATT Profile
+    (:kconfig:option:`CONFIG_BT_HOGP_HOST`), for now part of the Report Host
+    role: it discovers the HID Service of a HID Device, receives its Input
+    Reports and reads and writes its Reports.
   * :c:func:`bt_addr_matches_irk` is now public, so a scanner can check whether a
     resolvable private address was generated from an IRK it holds.
   * PACS exposes the audio locations through :c:func:`bt_pacs_get_location` and

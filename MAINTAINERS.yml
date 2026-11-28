@@ -789,6 +789,7 @@ Bluetooth Host:
     - subsys/bluetooth/crypto/
     - subsys/bluetooth/host/
     - subsys/bluetooth/lib/
+    - subsys/bluetooth/profiles/
     - subsys/bluetooth/services/
     - subsys/bluetooth/CMakeLists.txt
     - subsys/bluetooth/Kconfig*
