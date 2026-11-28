@@ -1,0 +1,13 @@
+shields:
+  - name: mikroe_ammonia_click
+    full_name: Ammonia Click (AN)
+    vendor: mikroe
+    supported_features:
+      - regulator
+
+  - name: mikroe_ammonia_click_spi
+    full_name: Ammonia Click (SPI)
+    vendor: mikroe
+    supported_features:
+      - adc
+      - regulator
