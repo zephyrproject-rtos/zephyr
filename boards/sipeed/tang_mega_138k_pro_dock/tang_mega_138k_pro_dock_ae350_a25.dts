@@ -63,6 +63,7 @@
 
 &cpu0 {
 	clock-frequency = <DT_FREQ_M(800)>;
+	riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei", "xandes";
 };
 
 &dram {
