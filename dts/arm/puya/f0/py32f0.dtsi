@@ -1,0 +1,135 @@
+/*
+ * Copyright (c) 2017 RnDity Sp. z o.o.
+ * Copyright (c) 2019 Centaur Analytics, Inc
+ * Copyright (c) 2024 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv6-m.dtsi>
+#include <zephyr/dt-bindings/clock/puya_py32f0_clock.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/reset/puya_py32f0_reset.h>
+#include <freq.h>
+
+/ {
+	chosen {
+		zephyr,flash-controller = &flash;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-m0+";
+			reg = <0>;
+			device_type = "cpu";
+		};
+	};
+
+	clocks {
+		clk_hsi: clk-hsi {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(24)>;
+			status = "okay";
+		};
+	};
+
+	soc {
+		i2c1: i2c@40005400 {
+			compatible = "puya,py32-i2c";
+			reg = <0x40005400 0x400>;
+			clocks = <&rcc PY32_CLOCK(APB1, 21)>;
+			resets = <&rctl PY32_RESET(APB1, 21)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		adc1: adc@40012400 {
+			compatible = "puya,py32-adc";
+			reg = <0x40012400 0x100>, <0x40012708 0x4>;
+			reg-names = "adc", "common";
+			interrupts = <12 0>;
+			clocks = <&rcc PY32_CLOCK(APB2, 20)>;
+			resets = <&rctl PY32_RESET(APB2, 20)>;
+			#io-channel-cells = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		usart1: serial@40013800 {
+			compatible = "puya,py32-uart";
+			reg = <0x40013800 0x400>;
+			interrupts = <27 0>;
+			clocks = <&rcc PY32_CLOCK(APB2, 14)>;
+			resets = <&rctl PY32_RESET(APB2, 14)>;
+			status = "disabled";
+		};
+
+		rcc: rcc@40021000 {
+			compatible = "puya,py32f0-rcc";
+			reg = <0x40021000 0x400>;
+			#clock-cells = <2>;
+			status = "okay";
+
+			rctl: reset-controller {
+				compatible = "puya,py32-rcc-rctl";
+				#reset-cells = <1>;
+			};
+		};
+
+		exti: interrupt-controller@40021800 {
+			compatible = "puya,py32-exti";
+			reg = <0x40021800 0x400>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			#address-cells = <1>;
+			num-lines = <16>;
+			interrupts = <5 0>, <6 0>, <7 0>;
+			interrupt-names = "line0-1", "line2-3", "line4-15";
+			line-ranges = <0 2>, <2 2>, <4 12>;
+		};
+
+		flash: flash-controller@40022000 {
+			compatible = "puya,py32f0-flash-controller";
+			reg = <0x40022000 0x400>;
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@8000000 {
+				compatible = "soc-nv-flash";
+				erase-block-size = <128>;
+				write-block-size = <128>;
+			};
+		};
+
+		pinctrl: pin-controller@50000000 {
+			compatible = "puya,py32-pinctrl";
+			reg = <0x50000000 0x2000>;
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			gpioa: gpio@50000000 {
+				compatible = "puya,py32-gpio";
+				reg = <0x50000000 0x400>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				clocks = <&rcc PY32_CLOCK(IOP, 0U)>;
+			};
+		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <2>;
+};

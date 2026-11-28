@@ -1,0 +1,25 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/puya_py32_pinctrl.h>
+
+&pinctrl {
+	i2c1_sda_pa2: i2c1_sda_pa2 {
+		pinmux = <PY32_PINMUX('A', 2, AF12)>;
+		drive-open-drain;
+	};
+
+	i2c1_scl_pa3: i2c1_scl_pa3 {
+		pinmux = <PY32_PINMUX('A', 3, AF12)>;
+		drive-open-drain;
+	};
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_sda_pa2 &i2c1_scl_pa3>;
+	pinctrl-names = "default";
+	clock-frequency = <100000>;
+	status = "okay";
+};

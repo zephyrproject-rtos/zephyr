@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: Puya PY32 UART with polling and interrupt-driven 8N1 operation
+
+compatible: "puya,py32-uart"
+
+include:
+  - name: uart-controller.yaml
+    property-blocklist:
+      - hw-flow-control
+      - clock-frequency
+  - pinctrl-device.yaml
+  - reset-device.yaml
+
+properties:
+  reg:
+    required: true
+  clocks:
+    required: true
+  resets:
+    required: true
+  interrupts:
+    required: true
+  pinctrl-0:
+    required: true
+  pinctrl-names:
+    required: true
+  current-speed:
+    default: 115200
+  parity:
+    const: "none"
+  data-bits:
+    default: 8
+    const: 8
+  stop-bits:
+    default: "1"
+    const: "1"

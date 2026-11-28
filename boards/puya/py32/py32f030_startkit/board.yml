@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: py32f030_startkit
+  full_name: PY32F030 Start Kit Board
+  vendor: puya
+  socs:
+    - name: py32f030x6
