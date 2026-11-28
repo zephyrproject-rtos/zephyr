@@ -12,6 +12,7 @@ zephyr_library_sources_ifdef(CONFIG_PTP_CLOCK_NXP_ENET ptp_clock_nxp_enet.c)
 zephyr_library_sources_ifdef(CONFIG_PTP_CLOCK_NXP_ENET ptp_clock_nxp_enet_rate_math.c)
 zephyr_library_sources_ifdef(CONFIG_PTP_CLOCK_NXP_ENET_QOS ptp_clock_nxp_enet_qos.c)
 zephyr_library_sources_ifdef(CONFIG_PTP_CLOCK_NXP_NETC ptp_clock_nxp_netc.c)
+zephyr_library_sources_ifdef(CONFIG_PTP_CLOCK_RENESAS_RA_GPTP ptp_clock_renesas_ra_gptp.c)
 # zephyr-keep-sorted-stop
 
 if(CONFIG_PTP_CLOCK_NATIVE)

@@ -20,6 +20,10 @@
 #include "r_layer3_switch.h"
 #include "eth.h"
 
+#if defined(CONFIG_ETH_RENESAS_RA_PTP)
+#include <zephyr/drivers/ptp_clock.h>
+#endif /* CONFIG_ETH_RENESAS_RA_PTP */
+
 LOG_MODULE_REGISTER(eth_renesas_ra, CONFIG_ETHERNET_LOG_LEVEL);
 
 /* At this time , HAL only support single descriptor, set fixed buffer length */
@@ -82,6 +86,9 @@ struct eth_renesas_ra_data {
 	ether_cfg_t fsp_cfg;
 	ether_callback_args_t fsp_cb;
 	bool phy_link_up;
+#if defined(CONFIG_ETH_RENESAS_RA_PTP)
+	rmac_timestamp_t rx_timestamp;
+#endif /* CONFIG_ETH_RENESAS_RA_PTP */
 };
 
 struct eth_renesas_ra_config {
@@ -89,6 +96,11 @@ struct eth_renesas_ra_config {
 	uint8_t phy_conn_type;
 	const struct pinctrl_dev_config *pin_cfg;
 	const struct device *phy_dev;
+#if defined(CONFIG_ETH_RENESAS_RA_PTP)
+	const struct device *ptp_clock;
+	/* gPTP timer number of ptp_clock */
+	uint8_t ptp_timer;
+#endif /* CONFIG_ETH_RENESAS_RA_PTP */
 };
 
 extern void layer3_switch_gwdi_isr(void);
@@ -144,6 +156,12 @@ static void phy_link_cb(const struct device *phy_dev, struct phy_link_state *sta
 		LOG_DBG("Phy link speed is not supported");
 		break;
 	}
+
+#if defined(CONFIG_ETH_RENESAS_RA_PTP)
+	/* RX timestamp timer, MTRC is only writable in CONFIG mode */
+	data->fsp_ctrl.p_reg_rmac->MTRC_b.DTN =
+		((const struct eth_renesas_ra_config *)dev->config)->ptp_timer;
+#endif /* CONFIG_ETH_RENESAS_RA_PTP */
 
 	/* Change ETHA to operate mode */
 	r_rmac_phy_set_operation_mode(data->fsp_cfg.channel, RENESAS_RA_ETHA_DISABLE_MODE);
@@ -231,6 +249,137 @@ static enum ethernet_hw_caps eth_renesas_ra_get_capabilities(const struct device
 	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE | ETHERNET_LINK_1000BASE;
 }
 
+#if defined(CONFIG_ETH_RENESAS_RA_PTP)
+static const struct device *eth_renesas_ra_get_ptp_dev(const struct device *dev,
+							 struct net_if *iface __unused)
+{
+	const struct eth_renesas_ra_config *config = dev->config;
+
+	return config->ptp_clock;
+}
+
+/* The timestamp has only the lower 32 bits of seconds, take the upper bits from now */
+static void eth_renesas_ra_ptp_time(const rmac_timestamp_t *ts, const struct net_ptp_time *now,
+				    struct net_ptp_time *tm)
+{
+	uint64_t second = (now->second & ~(uint64_t)UINT32_MAX) | ts->sec_lower;
+
+	if ((second > now->second) && (second > UINT32_MAX)) {
+		second -= (uint64_t)UINT32_MAX + 1U;
+	}
+
+	tm->second = second;
+	tm->nanosecond = ts->ns;
+}
+
+static void eth_renesas_ra_timestamp_rx_pkt(const struct device *dev, struct net_pkt *pkt)
+{
+	const struct eth_renesas_ra_config *config = dev->config;
+	struct eth_renesas_ra_data *data = dev->data;
+	const rmac_timestamp_t *ts = &data->rx_timestamp;
+	struct net_ptp_time now;
+	struct net_ptp_time tm;
+
+	/* FSP returns 0 when the descriptor has no valid timestamp */
+	if ((config->ptp_clock == NULL) || ((ts->sec_lower == 0U) && (ts->ns == 0U))) {
+		return;
+	}
+
+	if (ptp_clock_get(config->ptp_clock, &now) != 0) {
+		return;
+	}
+
+	eth_renesas_ra_ptp_time(ts, &now, &tm);
+	net_pkt_set_timestamp(pkt, &tm);
+	net_pkt_set_rx_timestamping(pkt, true);
+}
+
+/*
+ * Free this port's stale TX timestamps.
+ * The ts queue is shared with the other port on the same gPTP timer.
+ */
+static void eth_renesas_ra_tx_timestamp_flush(const struct device *dev)
+{
+	struct eth_renesas_ra_data *data = dev->data;
+	const rmac_extended_cfg_t *ext_cfg = data->fsp_cfg.p_extend;
+	const layer3_switch_descriptor_queue_cfg_t *queue_cfg = &ext_cfg->p_ts_queue->queue_cfg;
+
+	/* Skip the last descriptor, it is the LINKFIX */
+	for (uint32_t i = 0U; i < (queue_cfg->array_length - 1U); i++) {
+		struct st_ts_reception_descriptor_result *result =
+			&queue_cfg->p_ts_descriptor_array[i].ts_reception_descriptor_result;
+
+		if ((result->dt != LAYER3_SWITCH_DESCRIPTOR_TYPE_FEMPTY_ND) &&
+		    (result->dpn == data->fsp_cfg.channel)) {
+			LOG_DBG("Drop stale TX timestamp, tsun %u", result->tsun);
+			result->dt = LAYER3_SWITCH_DESCRIPTOR_TYPE_FEMPTY_ND;
+		}
+	}
+}
+
+static int eth_renesas_ra_tx_timestamp_request(const struct device *dev, bool enable)
+{
+	struct eth_renesas_ra_data *data = dev->data;
+	rmac_write_cfg_t write_cfg = {
+		.tx_timestamp_enable = enable ? 1U : 0U,
+	};
+
+	return (R_RMAC_SetWriteConfig(&data->fsp_ctrl, &write_cfg) == FSP_SUCCESS) ? 0 : -EIO;
+}
+
+/* FSP polls for the TX timestamp in R_RMAC_Write() */
+static void eth_renesas_ra_tx_timestamp(const struct device *dev, struct net_pkt *pkt)
+{
+	const struct eth_renesas_ra_config *config = dev->config;
+	struct eth_renesas_ra_data *data = dev->data;
+	rmac_timestamp_t ts = {0};
+	struct net_ptp_time now;
+	struct net_ptp_time tm;
+
+	/* FSP returns 0 when no timestamp was found */
+	if ((R_RMAC_GetTxTimestamp(&data->fsp_ctrl, &ts) != FSP_SUCCESS) ||
+	    ((ts.sec_lower == 0U) && (ts.ns == 0U))) {
+		LOG_DBG("No TX timestamp");
+		return;
+	}
+
+	if (ptp_clock_get(config->ptp_clock, &now) != 0) {
+		return;
+	}
+
+	eth_renesas_ra_ptp_time(&ts, &now, &tm);
+	net_pkt_set_timestamp(pkt, &tm);
+	net_if_add_tx_timestamp(pkt);
+}
+
+/* Returns true when a TX timestamp was requested for pkt */
+static bool eth_renesas_ra_tx_timestamp_start(const struct device *dev, struct net_pkt *pkt)
+{
+	const struct eth_renesas_ra_config *config = dev->config;
+
+	if ((config->ptp_clock == NULL) || !net_pkt_is_tx_timestamping(pkt)) {
+		return false;
+	}
+
+	eth_renesas_ra_tx_timestamp_flush(dev);
+
+	return eth_renesas_ra_tx_timestamp_request(dev, true) == 0;
+}
+
+static void eth_renesas_ra_tx_timestamp_end(const struct device *dev, struct net_pkt *pkt,
+					    bool sent)
+{
+	/* FSP only clears the request when R_RMAC_Write() starts the TX queue */
+	if (eth_renesas_ra_tx_timestamp_request(dev, false) != 0) {
+		LOG_DBG("Failed to clear TX timestamp request");
+	}
+
+	if (sent) {
+		eth_renesas_ra_tx_timestamp(dev, pkt);
+	}
+}
+#endif /* CONFIG_ETH_RENESAS_RA_PTP */
+
 static bool renesas_ra_eth_rx(const struct device *dev)
 {
 	struct eth_renesas_ra_data *data = dev->data;
@@ -240,6 +389,12 @@ static bool renesas_ra_eth_rx(const struct device *dev)
 	int ret = 0;
 	uint8_t *rx_buf;
 	bool rx_buf_held = false;
+
+#if defined(CONFIG_ETH_RENESAS_RA_PTP)
+	data->rx_timestamp = (rmac_timestamp_t){0};
+	/* This function just saves the pointer, so R_RMAC_Read() can store the timestamp */
+	(void)R_RMAC_GetRxTimestamp(&data->fsp_ctrl, &data->rx_timestamp);
+#endif /* CONFIG_ETH_RENESAS_RA_PTP */
 
 	fsp_err = R_RMAC_Read(&data->fsp_ctrl, &rx_buf, (uint32_t *)&len);
 
@@ -280,6 +435,10 @@ static bool renesas_ra_eth_rx(const struct device *dev)
 	if (fsp_err != FSP_SUCCESS) {
 		LOG_DBG("Failed to release RX buffer");
 	}
+
+#if defined(CONFIG_ETH_RENESAS_RA_PTP)
+	eth_renesas_ra_timestamp_rx_pkt(dev, pkt);
+#endif /* CONFIG_ETH_RENESAS_RA_PTP */
 
 	ret = net_recv_data(net_pkt_iface(pkt), pkt);
 	if (ret < 0) {
@@ -366,6 +525,9 @@ static int eth_renesas_ra_tx(const struct device *dev, struct net_pkt *pkt)
 	fsp_err_t fsp_err = FSP_ERR_NOT_INITIALIZED;
 	int ret = 0;
 	uint8_t *tx_buf;
+#if defined(CONFIG_ETH_RENESAS_RA_PTP)
+	bool tx_ts = false;
+#endif /* CONFIG_ETH_RENESAS_RA_PTP */
 
 	tx_buf = data->tx_buf_header[data->tx_buf_idx].buf;
 	data->tx_buf_idx = (data->tx_buf_idx + 1) % (data->tx_buf_num);
@@ -385,6 +547,10 @@ static int eth_renesas_ra_tx(const struct device *dev, struct net_pkt *pkt)
 		LOG_DBG("TX packet too large");
 		goto tx_end;
 	}
+
+#if defined(CONFIG_ETH_RENESAS_RA_PTP)
+	tx_ts = eth_renesas_ra_tx_timestamp_start(dev, pkt);
+#endif /* CONFIG_ETH_RENESAS_RA_PTP */
 
 	fsp_err = R_RMAC_Write(&data->fsp_ctrl, tx_buf, (uint32_t)len);
 	if (fsp_err != FSP_SUCCESS) {
@@ -407,6 +573,13 @@ tx_end:
 		}
 	}
 #endif
+
+#if defined(CONFIG_ETH_RENESAS_RA_PTP)
+	if (tx_ts) {
+		eth_renesas_ra_tx_timestamp_end(dev, pkt, ret == 0);
+	}
+#endif /* CONFIG_ETH_RENESAS_RA_PTP */
+
 	return ret;
 }
 
@@ -517,6 +690,9 @@ static DEVICE_API(ethernet, eth_renesas_ra_api) = {
 	.get_capabilities = eth_renesas_ra_get_capabilities,
 	.get_phy = eth_renesas_ra_get_phy,
 	.send = eth_renesas_ra_tx,
+#if defined(CONFIG_ETH_RENESAS_RA_PTP)
+	.get_ptp_clock = eth_renesas_ra_get_ptp_dev,
+#endif /* CONFIG_ETH_RENESAS_RA_PTP */
 };
 
 #define DT_DRV_COMPAT renesas_ra_eswm
@@ -524,6 +700,18 @@ static DEVICE_API(ethernet, eth_renesas_ra_api) = {
 #define ETH_USE_INTERNAL_PHY_CLK(id)                                                               \
 	UTIL_AND(DT_NODE_HAS_COMPAT(id, renesas_ra_ethernet_rmac),                                 \
 		 DT_ENUM_HAS_VALUE(id, phy_clock_type, internal))
+
+/* gPTP timer number from the ptp-clock property, 0 if there is none */
+#define ETH_PTP_TIMER_OF_CLOCK(clock_id)                                                           \
+	COND_CODE_1(DT_NODE_HAS_COMPAT(clock_id, renesas_ra_gptp_timer), (DT_REG_ADDR(clock_id)),  \
+		    (0))
+#define ETH_NODE_PTP_TIMER(id)                                                                     \
+	COND_CODE_1(DT_NODE_HAS_PROP(id, ptp_clock),                                               \
+		    (ETH_PTP_TIMER_OF_CLOCK(DT_PHANDLE(id, ptp_clock))), (0))
+
+#define ETH_GPTP_TIMER_NUMBER_ENTRY(id)                                                            \
+	IF_ENABLED(DT_NODE_HAS_COMPAT(id, renesas_ra_ethernet_rmac),                               \
+		   ([DT_PROP(id, channel)] = ETH_NODE_PTP_TIMER(id),))
 
 PINCTRL_DT_INST_DEFINE(0);
 
@@ -540,6 +728,7 @@ static layer3_switch_extended_cfg_t eswm_ext_cfg = {
 	.p_ether_phy_instances = {NULL, NULL},
 	.fowarding_target_port_masks = {LAYER3_SWITCH_PORT_BITMASK_PORT2,
 					LAYER3_SWITCH_PORT_BITMASK_PORT2},
+	.gptp_timer_numbers = {DT_INST_FOREACH_CHILD_STATUS_OKAY(0, ETH_GPTP_TIMER_NUMBER_ENTRY)},
 };
 static layer3_switch_instance_ctrl_t eswm_ctrl = {0};
 static ether_switch_cfg_t eswm_cfg = {
@@ -591,6 +780,25 @@ DEVICE_DT_INST_DEFINE(0, renesas_ra_eswm_init, NULL, &eswm_data, &eswm_config, P
 	(ETH_TX_QUEUE_NUM(n) * (ETH_TX_QUEUE_LEN(n) - 1) +                                         \
 	 (ETH_RX_QUEUE_NUM(n) * (ETH_RX_QUEUE_LEN(n) - 1)))
 
+#define ETH_PTP_CLOCK_NODE(n) DT_INST_PHANDLE(n, ptp_clock)
+
+#define ETH_PTP_CLOCK_DEV(n)                                                                       \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, ptp_clock),                                           \
+		    (DEVICE_DT_GET_OR_NULL(ETH_PTP_CLOCK_NODE(n))), (NULL))
+
+/* ptp-clock must point to a gPTP timer of the parent ESWM */
+#define ETH_PTP_CLOCK_CHECK_ESWM(n)                                                                \
+	BUILD_ASSERT(DT_SAME_NODE(DT_PARENT(DT_PARENT(ETH_PTP_CLOCK_NODE(n))), DT_INST_PARENT(n)), \
+		     "ptp-clock must be a gPTP timer of the same ESWM");
+
+#define ETH_PTP_CLOCK_CHECK_COMPAT(n)                                                              \
+	COND_CODE_1(DT_NODE_HAS_COMPAT(ETH_PTP_CLOCK_NODE(n), renesas_ra_gptp_timer),              \
+		    (ETH_PTP_CLOCK_CHECK_ESWM(n)),                                                 \
+		    (BUILD_ASSERT(0, "ptp-clock must point to a renesas,ra-gptp-timer node");))
+
+#define ETH_PTP_CLOCK_CHECK(n)                                                                     \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, ptp_clock), (ETH_PTP_CLOCK_CHECK_COMPAT(n)), ())
+
 #define ETH_PHY_CLOCK_TYPE(n)                                                                      \
 	DT_INST_ENUM_HAS_VALUE(n, phy_clock_type, xtal) ? ETH_PHY_REF_CLK_XTAL                     \
 							: ETH_PHY_REF_CLK_INTERNAL
@@ -611,6 +819,53 @@ DEVICE_DT_INST_DEFINE(0, renesas_ra_eswm_init, NULL, &eswm_data, &eswm_config, P
 	static layer3_switch_descriptor_t                                                          \
 		eth##n##_rx_desc_array##idx[ETH_RX_BUF_NUM(n)] __eth_renesas_desc;
 
+/* GWCA descriptor parts, see the GWDCCi.EDE and GWDCCi.ETS descriptor formats */
+#define ETH_DESC_BASIC_SIZE 8U /* DIE, DT, DS, INFO0, PTR */
+#define ETH_DESC_EXT_SIZE   8U /* INFO1, GWDCCi.EDE = 1 */
+#define ETH_DESC_TS_SIZE    8U /* TSNS, TSS, GWDCCi.ETS = 1 */
+
+/* LAYER3_SWITCH_CFG_GPTP_ENABLE makes descriptors 24 bytes, which needs GWDCCi.ETS on all queues */
+#if defined(CONFIG_ETH_RENESAS_RA_PTP)
+#define ETH_TIMESTAMP_STORAGE LAYER3_SWITCH_RX_TIMESTAMP_STORAGE_ENABLE
+#define ETH_DESC_SIZE         (ETH_DESC_BASIC_SIZE + ETH_DESC_EXT_SIZE + ETH_DESC_TS_SIZE)
+#else
+#define ETH_TIMESTAMP_STORAGE LAYER3_SWITCH_RX_TIMESTAMP_STORAGE_DISABLE
+#define ETH_DESC_SIZE         (ETH_DESC_BASIC_SIZE + ETH_DESC_EXT_SIZE)
+#endif /* CONFIG_ETH_RENESAS_RA_PTP */
+
+BUILD_ASSERT(sizeof(layer3_switch_descriptor_t) == ETH_DESC_SIZE,
+	     "descriptor size does not match the GWDCCi.ETS setting");
+
+#if defined(CONFIG_ETH_RENESAS_RA_PTP)
+/* TX timestamp queue length, including the LINKFIX descriptor */
+#define ETH_TS_QUEUE_LEN 8
+
+/* TX timestamp descriptors per gPTP timer, shared by the ports using that timer */
+static layer3_switch_ts_reception_process_descriptor_t
+	eth_ts_desc_array[BSP_FEATURE_ESWM_GPTP_TIMER_NUM][ETH_TS_QUEUE_LEN] __eth_renesas_desc;
+
+BUILD_ASSERT((sizeof(eth_ts_desc_array[0]) % 32U) == 0U,
+	     "TX timestamp queue size must be a multiple of 32 bytes");
+#endif /* CONFIG_ETH_RENESAS_RA_PTP */
+
+/* For a TX timestamp queue, FSP ignores type and p_descriptor_array */
+#define ETH_TS_QUEUE_DECLARE(n)                                                                    \
+	BUILD_ASSERT(ETH_NODE_PTP_TIMER(DT_DRV_INST(n)) < BSP_FEATURE_ESWM_GPTP_TIMER_NUM,         \
+		     "ptp-clock is not a gPTP timer of this device");                              \
+	static rmac_queue_info_t eth##n##_ts_queue = {                                             \
+		.queue_cfg =                                                                       \
+			{                                                                          \
+				.array_length = ETH_TS_QUEUE_LEN,                                  \
+				.p_descriptor_array = NULL,                                        \
+				.p_ts_descriptor_array =                                           \
+					eth_ts_desc_array[ETH_NODE_PTP_TIMER(DT_DRV_INST(n))],     \
+				.ports = BIT(DT_INST_PROP(n, channel)),                            \
+				.type = LAYER3_SWITCH_QUEUE_TYPE_RX,                               \
+				.descriptor_format =                                               \
+					LAYER3_SWITCH_DISCRIPTOR_FORMTAT_TX_TIMESTAMP,             \
+			},                                                                         \
+	};
+
 /* Queues declare */
 #define ETH_TX_QUEUE_DECLARE(idx, n)                                                               \
 	{                                                                                          \
@@ -623,8 +878,7 @@ DEVICE_DT_INST_DEFINE(0, renesas_ra_eswm_init, NULL, &eswm_data, &eswm_config, P
 				.type = LAYER3_SWITCH_QUEUE_TYPE_TX,                               \
 				.write_back_mode = LAYER3_SWITCH_WRITE_BACK_MODE_FULL,             \
 				.descriptor_format = LAYER3_SWITCH_DISCRIPTOR_FORMTAT_EXTENDED,    \
-				.rx_timestamp_storage =                                            \
-					LAYER3_SWITCH_RX_TIMESTAMP_STORAGE_DISABLE,                \
+				.rx_timestamp_storage = ETH_TIMESTAMP_STORAGE,                     \
 			},                                                                         \
 	}
 #define ETH_RX_QUEUE_DECLARE(idx, n)                                                               \
@@ -638,8 +892,7 @@ DEVICE_DT_INST_DEFINE(0, renesas_ra_eswm_init, NULL, &eswm_data, &eswm_config, P
 				.type = LAYER3_SWITCH_QUEUE_TYPE_RX,                               \
 				.write_back_mode = LAYER3_SWITCH_WRITE_BACK_MODE_FULL,             \
 				.descriptor_format = LAYER3_SWITCH_DISCRIPTOR_FORMTAT_EXTENDED,    \
-				.rx_timestamp_storage =                                            \
-					LAYER3_SWITCH_RX_TIMESTAMP_STORAGE_DISABLE,                \
+				.rx_timestamp_storage = ETH_TIMESTAMP_STORAGE,                     \
 			},                                                                         \
 	}
 
@@ -664,6 +917,7 @@ DEVICE_DT_INST_DEFINE(0, renesas_ra_eswm_init, NULL, &eswm_data, &eswm_config, P
 			(LAYER3_SWITCH_CFG_AVAILABLE_QUEUE_NUM < BSP_FEATURE_ESWM_MAX_QUEUE_NUM),  \
 		"invalid queue settings");                                                         \
 	BUILD_ASSERT(ETH_DESC_NUM(n) <= ETH_BUF_NUM(n), "invalid buffer settings");                \
+	ETH_PTP_CLOCK_CHECK(n)                                                                     \
                                                                                                    \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	LISTIFY(ETH_RX_BUF_NUM(n), ETH_RX_BUF_DECLARE, (), n);                                     \
@@ -683,9 +937,11 @@ DEVICE_DT_INST_DEFINE(0, renesas_ra_eswm_init, NULL, &eswm_data, &eswm_config, P
 	};                                                                                         \
 	static rmac_buffer_node_t eth##n##_buffer_node_list[ETH_BUF_NUM(n)];                       \
 	ETH_RENESAS_RA_DATA_BUF_DECLARE(n);                                                        \
+	IF_ENABLED(CONFIG_ETH_RENESAS_RA_PTP, (ETH_TS_QUEUE_DECLARE(n)))                           \
                                                                                                    \
 	static rmac_extended_cfg_t eth##n##_ext_cfg = {                                            \
 		.p_ether_switch = &eswm_inst,                                                      \
+		IF_ENABLED(CONFIG_ETH_RENESAS_RA_PTP, (.p_ts_queue = &eth##n##_ts_queue,))         \
 		.tx_queue_num = ETH_TX_QUEUE_NUM(n),                                               \
 		.rx_queue_num = ETH_RX_QUEUE_NUM(n),                                               \
 		.p_tx_queue_list = eth##n##_tx_queue_list,                                         \
@@ -718,6 +974,9 @@ DEVICE_DT_INST_DEFINE(0, renesas_ra_eswm_init, NULL, &eswm_data, &eswm_config, P
 		.phy_conn_type = DT_INST_ENUM_IDX(n, phy_connection_type),                         \
 		.pin_cfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                      \
 		.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle)),                          \
+		IF_ENABLED(CONFIG_ETH_RENESAS_RA_PTP,                                              \
+			   (.ptp_clock = ETH_PTP_CLOCK_DEV(n),                                     \
+			    .ptp_timer = ETH_NODE_PTP_TIMER(DT_DRV_INST(n)),))                     \
 	};                                                                                         \
 	ETH_NET_DEVICE_DT_INST_DEFINE(n, renesas_ra_eth_init, NULL, &eth##n##_renesas_ra_data,     \
 				      &eth##n##_renesas_ra_config, CONFIG_ETH_INIT_PRIORITY,       \

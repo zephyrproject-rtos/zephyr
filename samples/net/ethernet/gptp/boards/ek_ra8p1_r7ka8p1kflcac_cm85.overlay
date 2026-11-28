@@ -1,0 +1,12 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&gptp {
+	status = "okay";
+};
+
+&gptp_timer0 {
+	status = "okay";
+};
