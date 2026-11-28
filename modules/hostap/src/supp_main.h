@@ -55,6 +55,8 @@ struct wpa_supplicant *zephyr_get_handle_by_ifname(const char *ifname);
 struct hapd_interfaces *zephyr_get_default_hapd_context(void);
 #endif
 
+struct iface_notify_done;
+
 struct wpa_supplicant_event_msg {
 #ifdef CONFIG_WIFI_NM_HOSTAPD_AP
 	int hostapd;
@@ -63,6 +65,17 @@ struct wpa_supplicant_event_msg {
 	void *ctx;
 	unsigned int event;
 	void *data;
+	/* Optional: signaled once this message has been dispatched, so a
+	 * caller can wait for completion without having to re-read any
+	 * state the dispatch may have freed (e.g. a removed wpa_s).
+	 * Heap-allocated and refcounted (see struct iface_notify_done in
+	 * supp_main.c): the sender and event_socket_handler() each hold a
+	 * reference and may run in either order, so whichever side is done
+	 * with it last is the one that frees it. Must not be stack-allocated
+	 * here, since a sender that times out waiting on it must not free
+	 * memory event_socket_handler() may still touch afterwards.
+	 */
+	struct iface_notify_done *done;
 };
 int zephyr_wifi_send_event(const struct wpa_supplicant_event_msg *msg);
 #endif /* __SUPP_MAIN_H_ */

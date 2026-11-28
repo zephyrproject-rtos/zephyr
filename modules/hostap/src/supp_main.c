@@ -10,6 +10,7 @@ LOG_MODULE_REGISTER(wifi_supplicant, CONFIG_WIFI_NM_WPA_SUPPLICANT_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
+#include <zephyr/sys/atomic.h>
 #include <poll.h>
 #include <zephyr/zvfs/eventfd.h>
 
@@ -63,6 +64,16 @@ static K_KERNEL_STACK_DEFINE(iface_wq_stack, CONFIG_WIFI_NM_WPA_SUPPLICANT_WQ_ST
 #include "hostapd.h"
 #include "hapd_main.h"
 #endif
+
+/* Backing store for struct wpa_supplicant_event_msg::done. Heap-allocated
+ * with a 2-reference refcount (sender + event_socket_handler()): whichever
+ * side drops the last reference frees it, so a sender that times out can
+ * never free memory the other side is still about to touch.
+ */
+struct iface_notify_done {
+	struct k_sem sem;
+	atomic_t refcount;
+};
 
 static const struct wifi_mgmt_ops mgmt_ops = {
 	.get_version = supplicant_get_version,
@@ -141,6 +152,8 @@ struct supplicant_context {
 	char if_name[CONFIG_NET_INTERFACE_NAME_LEN + 1];
 	struct k_fifo fifo;
 	int sock;
+	struct k_fifo nan_fifo;
+	int nan_sock;
 	struct k_work iface_work;
 	struct k_work_q iface_wq;
 	int (*iface_handler)(struct supplicant_context *ctx, struct net_if *iface);
@@ -453,6 +466,14 @@ static int wpa_supplicant_set_default_dev_name(struct wpa_supplicant *wpa_s)
 	return 0;
 }
 
+static int zephyr_nan_add_iface(struct supplicant_context *ctx, struct net_if *iface)
+{
+	if (ctx->nan_sock < 0) {
+		return -1;
+	}
+	return send_data(&ctx->nan_fifo, ctx->nan_sock, (const char *)&iface, sizeof(iface), 0);
+}
+
 static int add_interface(struct supplicant_context *ctx, struct net_if *iface)
 {
 	struct wpa_supplicant *wpa_s;
@@ -467,8 +488,13 @@ static int add_interface(struct supplicant_context *ctx, struct net_if *iface)
 
 	LOG_DBG("Adding interface %s [%d] (%p)", ifname, net_if_get_by_iface(iface), iface);
 
-	ret = zephyr_wpa_cli_global_cmd_v("interface_add %s %s %s %s",
-					  ifname, "zephyr", "zephyr", "zephyr");
+	if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN_MGMT_IFACE) &&
+	    IS_BIT_SET(get_iface_caps(iface), WIFI_TYPE_NAN)) {
+		ret = zephyr_nan_add_iface(ctx, iface);
+	} else {
+		ret = zephyr_wpa_cli_global_cmd_v("interface_add %s %s %s %s",
+						  ifname, "zephyr", "zephyr", "zephyr");
+	}
 	if (ret) {
 		LOG_ERR("Failed to add interface %s", ifname);
 		goto out;
@@ -531,7 +557,9 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 	struct wpa_supplicant_event_msg msg;
 	struct wpa_supplicant *wpa_s;
 	union wpa_event_data *event = NULL;
-	int ret, retry = 0, count = IFACE_NOTIFY_TIMEOUT_MS / IFACE_NOTIFY_RETRY_MS;
+	struct iface_notify_done *done;
+	bool nan_mgmt;
+	int ret;
 	char ifname[IFNAMSIZ + 1] = { 0 };
 
 	ret = net_if_get_name(iface, ifname, sizeof(ifname) - 1);
@@ -556,6 +584,14 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 		goto free;
 	}
 
+	nan_mgmt = IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN_MGMT_IFACE) && wpa_s->nan_mgmt;
+
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+#if defined(CONFIG_WIFI_MGMT_PMKSA_IMPORT) && defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_PMKSA_CACHE)
+	supplicant_pmksa_flush_external_locked(wpa_s, NULL);
+#endif
+	zephyr_wpa_ctrl_deinit(wpa_s);
+	k_mutex_unlock(&wpa_supplicant_mutex);
 	supplicant_generate_state_event(ifname, NET_EVENT_SUPPLICANT_CMD_IFACE_REMOVING, 0);
 
 	if (sizeof(event->interface_status.ifname) < strlen(ifname)) {
@@ -567,44 +603,64 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 	os_memcpy(event->interface_status.ifname, ifname, strlen(ifname));
 	event->interface_status.ievent = EVENT_INTERFACE_REMOVED;
 
+	done = os_zalloc(sizeof(*done));
+	if (done == NULL) {
+		ret = -ENOMEM;
+		LOG_ERR("Failed to allocate interface notify done");
+		goto free;
+	}
+	k_sem_init(&done->sem, 0, 1);
+	/* One reference for us, one for event_socket_handler(). */
+	atomic_set(&done->refcount, 2);
+
 	msg.global = true;
 	msg.ctx = ctx->supplicant;
 	msg.event = EVENT_INTERFACE_STATUS;
 	msg.data = event;
+	msg.done = done;
 
 	ret = send_event(&msg);
 	if (ret) {
 		/* We failed notify WPA supplicant about interface removal.
 		 * There is not much we can do, interface is still registered
 		 * with WPA supplicant so we cannot unregister NM etc.
+		 * The message was never handed off, so event_socket_handler()
+		 * will never see it or drop its reference - free outright.
 		 */
 		wpa_printf(MSG_ERROR, "Failed to send event: %d", ret);
+		os_free(done);
 		goto free;
 	}
 
-	while (retry++ < count && wpa_s->wpa_state != WPA_INTERFACE_DISABLED) {
-		k_sleep(K_MSEC(IFACE_NOTIFY_RETRY_MS));
+	ret = k_sem_take(&done->sem, K_MSEC(IFACE_NOTIFY_TIMEOUT_MS));
+	/* Drop our reference now, whether or not the wait succeeded. If
+	 * event_socket_handler() already dropped its own reference (ran
+	 * to completion before us), this is the one that frees done. If it
+	 * hasn't yet (e.g. we timed out), it still holds a reference, so
+	 * done stays alive until it drops its own - no use-after-free.
+	 */
+	if (atomic_dec(&done->refcount) == 1) {
+		os_free(done);
 	}
-
-	if (wpa_s->wpa_state != WPA_INTERFACE_DISABLED) {
+	if (ret != 0) {
 		LOG_ERR("Failed to notify remove interface %s", ifname);
 		supplicant_generate_state_event(ifname, NET_EVENT_SUPPLICANT_CMD_IFACE_REMOVED, -1);
 		goto out;
 	}
 
-	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
-#if defined(CONFIG_WIFI_MGMT_PMKSA_IMPORT) && defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_PMKSA_CACHE)
-	supplicant_pmksa_flush_external_locked(wpa_s, NULL);
-#endif
-	zephyr_wpa_ctrl_deinit(wpa_s);
-	k_mutex_unlock(&wpa_supplicant_mutex);
-
-	ret = zephyr_wpa_cli_global_cmd_v("interface_remove %s", ifname);
-	if (ret) {
-		LOG_ERR("Failed to remove interface %s", ifname);
-		supplicant_generate_state_event(ifname, NET_EVENT_SUPPLICANT_CMD_IFACE_REMOVED,
-					  -EINVAL);
-		goto out;
+	/* For a NAN management interface, hostap already removed and freed
+	 * wpa_s as part of handling EVENT_INTERFACE_REMOVED above, so there
+	 * is no interface left for interface_remove to act on.
+	 */
+	if (!nan_mgmt) {
+		ret = zephyr_wpa_cli_global_cmd_v("interface_remove %s", ifname);
+		if (ret) {
+			LOG_ERR("Failed to remove interface %s", ifname);
+			supplicant_generate_state_event(ifname,
+							NET_EVENT_SUPPLICANT_CMD_IFACE_REMOVED,
+							-EINVAL);
+			goto out;
+		}
 	}
 
 	ret = wifi_nm_unregister_mgd_iface(wifi_nm_get_instance("wifi_supplicant"), iface);
@@ -794,6 +850,15 @@ static void event_socket_handler(int sock, void *eloop_ctx, void *user_data)
 			wpa_supplicant_event(event_msg.ctx, event_msg.event, event_msg.data);
 		}
 
+		if (event_msg.done != NULL) {
+			k_sem_give(&event_msg.done->sem);
+			/* Drop our reference; free if the sender already
+			 * dropped its own (e.g. it timed out waiting).
+			 */
+			if (atomic_dec(&event_msg.done->refcount) == 1) {
+				os_free(event_msg.done);
+			}
+		}
 		if (event_msg.data) {
 			union wpa_event_data *data = event_msg.data;
 
@@ -862,6 +927,76 @@ static int register_supplicant_event_socket(struct supplicant_context *ctx)
 	return 0;
 }
 
+/*
+ * wpa_supplicant_add_iface() and the rest of wpa_supplicant's core state are
+ * only ever touched from the hostap_handler thread (inside eloop, driven by
+ * wpa_supplicant_run()). add_interface() itself runs on whichever thread
+ * raised the net_if admin-up event, so the request to add a NAN management
+ * interface has to be marshaled onto the hostap_handler thread the same way
+ * driver events are (event_socket_handler() above), instead of calling
+ * wpa_supplicant_add_iface() directly from add_interface().
+ */
+static void nan_add_handler(int sock, void *eloop_ctx, void *user_data)
+{
+	struct supplicant_context *ctx = user_data;
+	struct zephyr_msg *msg;
+	zvfs_eventfd_t value;
+
+	ARG_UNUSED(eloop_ctx);
+
+	do {
+		zvfs_eventfd_read(sock, &value);
+
+		msg = k_fifo_get(&ctx->nan_fifo, K_NO_WAIT);
+		if (msg == NULL) {
+			return;
+		}
+
+		if (msg->data != NULL && msg->len == sizeof(struct net_if *)) {
+			struct net_if *iface;
+			struct wpa_interface wpa_iface = { 0 };
+			char ifname[IFNAMSIZ + 1] = { 0 };
+
+			memcpy(&iface, msg->data, sizeof(iface));
+
+			if (net_if_get_name(iface, ifname, sizeof(ifname) - 1) >= 0 &&
+			    wpa_supplicant_get_iface(ctx->supplicant, ifname) == NULL) {
+				wpa_iface.ifname = ifname;
+				wpa_iface.driver = "zephyr";
+				wpa_iface.ctrl_interface = "zephyr";
+				wpa_iface.nan_mgmt = true;
+
+				if (wpa_supplicant_add_iface(ctx->supplicant,
+							     &wpa_iface, NULL) == NULL) {
+					LOG_ERR("Failed to add NAN iface %s", ifname);
+				}
+			}
+		}
+
+		os_free(msg->data);
+		os_free(msg);
+	} while (!k_fifo_is_empty(&ctx->nan_fifo));
+}
+
+static int register_nan_add_socket(struct supplicant_context *ctx)
+{
+	int ret;
+
+	ret = zvfs_eventfd(0, ZVFS_EFD_NONBLOCK);
+	ctx->nan_sock = ret;
+	if (ret < 0) {
+		ret = -errno;
+		LOG_ERR("Failed to initialize NAN add socket (%d)", ret);
+		return ret;
+	}
+
+	k_fifo_init(&ctx->nan_fifo);
+
+	eloop_register_read_sock(ctx->nan_sock, nan_add_handler, NULL, ctx);
+
+	return 0;
+}
+
 static void handler(void)
 {
 	struct supplicant_context *ctx;
@@ -880,6 +1015,7 @@ static void handler(void)
 #endif
 
 	ctx = get_default_context();
+	ctx->nan_sock = -1;
 
 	k_work_queue_init(&ctx->iface_wq);
 	k_work_queue_start(&ctx->iface_wq, iface_wq_stack,
@@ -915,6 +1051,10 @@ static void handler(void)
 
 	register_supplicant_event_socket(ctx);
 
+	if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN_MGMT_IFACE)) {
+		register_nan_add_socket(ctx);
+	}
+
 	submit_iface_work(ctx, NULL, setup_interface_monitoring);
 
 #ifdef CONFIG_WIFI_NM_HOSTAPD_AP
@@ -928,6 +1068,10 @@ static void handler(void)
 
 	eloop_unregister_read_sock(ctx->sock);
 
+	if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN_MGMT_IFACE)) {
+		eloop_unregister_read_sock(ctx->nan_sock);
+	}
+
 	zephyr_global_wpa_ctrl_deinit();
 
 	fst_global_deinit();
@@ -936,6 +1080,10 @@ out:
 	wpa_supplicant_deinit(ctx->supplicant);
 
 	close(ctx->sock);
+
+	if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN_MGMT_IFACE) && ctx->nan_sock >= 0) {
+		close(ctx->nan_sock);
+	}
 
 err:
 	os_free(params.pid_file);

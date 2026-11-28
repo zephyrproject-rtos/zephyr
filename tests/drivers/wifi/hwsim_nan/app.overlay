@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	sta: wifi-sta {
+		compatible = "zephyr,wifi-hwsim";
+		radio-index = <0>;
+		local-mac-address = [02 00 00 00 00 01];
+	};
+
+	nan: wifi-nan {
+		compatible = "zephyr,wifi-hwsim";
+		radio-index = <1>;
+		local-mac-address = [02 00 00 00 00 02];
+		nan-management;
+	};
+};

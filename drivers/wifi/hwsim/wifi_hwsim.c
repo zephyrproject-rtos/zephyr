@@ -13,6 +13,7 @@
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/wifi_mgmt.h>
+#include <zephyr/net/wifi_nm.h>
 #include <zephyr/net/wifi_utils.h>
 #include <zephyr/random/random.h>
 #include <string.h>
@@ -22,6 +23,12 @@
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT
 #include <drivers/driver_zephyr.h>
 extern const struct zep_wpa_supp_dev_ops hwsim_wpa_supp_ops;
+#ifdef CONFIG_WIFI_HWSIM_NAN
+extern const struct zep_wpa_supp_dev_ops hwsim_nan_wpa_supp_ops;
+#ifdef CONFIG_WIFI_HWSIM_NAN_SHARED_IFACE
+extern const struct zep_wpa_supp_dev_ops hwsim_shared_wpa_supp_ops;
+#endif
+#endif
 #endif
 
 LOG_MODULE_REGISTER(wifi_hwsim, CONFIG_WIFI_HWSIM_LOG_LEVEL);
@@ -37,15 +44,17 @@ __weak void hwsim_supp_mgmt_rx(struct hwsim_radio *radio, const uint8_t *data,
 	ARG_UNUSED(rssi_dbm);
 }
 
-struct hwsim_config {
-	uint8_t radio_index;
-	struct net_eth_mac_config mac;
-};
-
 static int hwsim_dev_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	return 0;
+}
+
+struct net_if *hwsim_get_secondary_iface(const struct device *dev)
+{
+	const struct hwsim_config *cfg = (const struct hwsim_config *)dev->config;
+
+	return cfg->secondary_iface;
 }
 
 static void hwsim_rx_thread(void *p1, void *p2, void *p3);
@@ -69,9 +78,35 @@ static void hwsim_iface_init(struct net_if *iface)
 		mac[0] |= 0x02U;  /* locally administered */
 	}
 
+	if (cfg->secondary_iface != NULL && iface == cfg->secondary_iface) {
+		/*
+		 * Shared-device NAN role: distinct link address from the primary
+		 * role, no data-plane resources (mirrors the nan_management
+		 * shortcut below). Does not own radio->iface -- the primary role
+		 * keeps the rx thread/medium registration/mgmt event target.
+		 */
+		mac[HWSIM_ETH_ALEN - 1]++;
+		net_if_set_link_addr(iface, mac, sizeof(mac), NET_LINK_ETHERNET);
+		net_if_carrier_on(iface);
+		((struct ethernet_context *)net_if_l2_data(iface))->eth_if_type =
+			L2_ETH_IF_TYPE_WIFI;
+		ethernet_init(iface);
+		return;
+	}
+
 	net_if_set_link_addr(iface, mac, sizeof(mac), NET_LINK_ETHERNET);
 
 	radio->iface = iface;
+	if (cfg->nan_management) {
+		/* Lifecycle-only NAN interfaces do not consume frame-relay resources. */
+		radio->idx = cfg->radio_index;
+		net_if_carrier_on(iface);
+		((struct ethernet_context *)net_if_l2_data(iface))->eth_if_type =
+			L2_ETH_IF_TYPE_WIFI;
+		ethernet_init(iface);
+		return;
+	}
+
 	if (hwsim_medium_register(radio, cfg->radio_index) != 0) {
 		LOG_ERR("hwsim medium register failed");
 		return;
@@ -322,17 +357,116 @@ static DEVICE_API(wifi_native, hwsim_api) = {
 #endif
 };
 
+#ifdef CONFIG_WIFI_HWSIM_NAN
+static uint32_t hwsim_nan_iface_caps(const struct device *dev, struct net_if *iface)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(iface);
+
+	return BIT(WIFI_TYPE_NAN);
+}
+
+static int hwsim_nan_send(const struct device *dev, struct net_pkt *pkt)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(pkt);
+
+	return -ENOTSUP;
+}
+
+static const struct wifi_mgmt_ops hwsim_nan_mgmt_ops = {
+	.get_iface_caps = hwsim_nan_iface_caps,
+};
+
+static DEVICE_API(wifi_native, hwsim_nan_api) = {
+	.wifi_iface = {
+		.iface_api.init = hwsim_iface_init,
+		.send = hwsim_nan_send,
+	},
+	.wifi_mgmt_api = &hwsim_nan_mgmt_ops,
+	.wifi_drv_ops = &hwsim_nan_wpa_supp_ops,
+};
+#endif /* CONFIG_WIFI_HWSIM_NAN */
+
+#ifdef CONFIG_WIFI_HWSIM_NAN_SHARED_IFACE
+static uint32_t hwsim_shared_iface_caps(const struct device *dev, struct net_if *iface)
+{
+	const struct hwsim_config *cfg = (const struct hwsim_config *)dev->config;
+
+	if (cfg->secondary_iface != NULL && iface == cfg->secondary_iface) {
+		return BIT(WIFI_TYPE_NAN);
+	}
+	return BIT(WIFI_TYPE_STA);
+}
+
+static int hwsim_shared_send(const struct device *dev, struct net_pkt *pkt)
+{
+	const struct hwsim_config *cfg = (const struct hwsim_config *)dev->config;
+
+	if (cfg->secondary_iface != NULL && net_pkt_iface(pkt) == cfg->secondary_iface) {
+		/* NAN role: no data-plane resources, see hwsim_iface_init(). */
+		return -ENOTSUP;
+	}
+	return hwsim_send(dev, pkt);
+}
+
+static const struct wifi_mgmt_ops hwsim_shared_mgmt_ops = {
+	.scan           = hwsim_mgmt_scan,
+	.connect        = hwsim_mgmt_connect,
+	.disconnect     = hwsim_mgmt_disconnect,
+	.ap_enable      = hwsim_mgmt_ap_enable,
+	.ap_disable     = hwsim_mgmt_ap_disable,
+	.iface_status   = hwsim_mgmt_iface_status,
+	.get_iface_caps = hwsim_shared_iface_caps,
+};
+
+static DEVICE_API(wifi_native, hwsim_shared_api) = {
+	.wifi_iface = {
+		.iface_api.init = hwsim_iface_init,
+		.send = hwsim_shared_send,
+	},
+	.wifi_mgmt_api = &hwsim_shared_mgmt_ops,
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT
+	.wifi_drv_ops = &hwsim_shared_wpa_supp_ops,
+#endif
+};
+#endif /* CONFIG_WIFI_HWSIM_NAN_SHARED_IFACE */
+
 #define HWSIM_INIT(n)							\
+	BUILD_ASSERT(!DT_INST_PROP(n, nan_management) ||			\
+		     IS_ENABLED(CONFIG_WIFI_HWSIM_NAN),			\
+		     "nan-management requires CONFIG_WIFI_HWSIM_NAN");	\
 	static struct hwsim_radio hwsim_radio_##n = { };		\
+	IF_ENABLED(CONFIG_WIFI_HWSIM_NAN_SHARED_IFACE, (			\
+		static struct hwsim_radio hwsim_shared_radio_##n = {	\
+			/* +1 to match the separate-device topology's dedicated NAN node */ \
+			.idx = DT_INST_PROP(n, radio_index) + 1,	\
+			.is_secondary = true,				\
+		};							\
+		NET_IF_DT_INST_DECLARE(n, 1);				\
+	))								\
 	static const struct hwsim_config hwsim_cfg_##n = {		\
 		.radio_index = DT_INST_PROP(n, radio_index),		\
 		.mac = NET_ETH_MAC_DT_INST_CONFIG_INIT(n),		\
+		.nan_management = DT_INST_PROP(n, nan_management),	\
+		IF_ENABLED(CONFIG_WIFI_HWSIM_NAN_SHARED_IFACE, (	\
+			.secondary_iface = NET_IF_DT_INST_GET(n, 1),	\
+			.secondary_radio = &hwsim_shared_radio_##n,	\
+		))							\
 	};								\
 	NET_DEVICE_DT_INST_DEFINE(n, hwsim_dev_init, NULL,		\
 				  &hwsim_radio_##n, &hwsim_cfg_##n,	\
-				  CONFIG_WIFI_INIT_PRIORITY, &hwsim_api,	\
+				  CONFIG_WIFI_INIT_PRIORITY,		\
+				  COND_CODE_1(IS_ENABLED(CONFIG_WIFI_HWSIM_NAN_SHARED_IFACE), \
+					(&hwsim_shared_api),		\
+					(COND_CODE_1(DT_INST_PROP(n, nan_management), \
+						      (&hwsim_nan_api), (&hwsim_api)))), \
 				  ETHERNET_L2,				\
 				  NET_L2_GET_CTX_TYPE(ETHERNET_L2),	\
-				  NET_ETH_MTU);
+				  NET_ETH_MTU);				\
+	IF_ENABLED(CONFIG_WIFI_HWSIM_NAN_SHARED_IFACE, (		\
+		NET_DEVICE_DT_INST_ADD_IFACE(n, ETHERNET_L2,		\
+			NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU, 1); \
+	))
 
 DT_INST_FOREACH_STATUS_OKAY(HWSIM_INIT)

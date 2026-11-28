@@ -27,6 +27,36 @@ config WIFI_HWSIM_NUM_RADIOS
 	help
 	  Each radio becomes one net_if. Minimum 2 (one AP, one STA).
 
+menuconfig WIFI_HWSIM_NAN
+	bool "NAN lifecycle simulation"
+	depends on WIFI_NM_WPA_SUPPLICANT_NAN_MGMT_IFACE
+	help
+	  Enable dedicated NAN management nodes marked with nan-management in
+	  devicetree. Simulate start, an asynchronous cluster notification, and
+	  stop. These nodes do not participate in the frame relay and do not
+	  implement discovery, synchronization, data paths, or pairing.
+
+if WIFI_HWSIM_NAN
+
+config WIFI_HWSIM_NAN_CLUSTER_EVENT_DELAY_MS
+	int "Cluster notification delay (ms)"
+	default 1
+	range 1 1000
+	help
+	  Delay between an accepted NAN start and the modeled cluster event.
+	  Stop or interface removal cancels a pending notification.
+
+config WIFI_HWSIM_NAN_SHARED_IFACE
+	bool "Share one device between the STA and NAN roles"
+	help
+	  Alternate topology where a single hwsim device exposes both the
+	  station and NAN roles as two net_ifs of the same devicetree
+	  instance, instead of two separate nodes. Mutually exclusive in
+	  practice with nan-management, which stays meaningful only for the
+	  separate-device topology.
+
+endif # WIFI_HWSIM_NAN
+
 config WIFI_HWSIM_DEFAULT_CHANNEL
 	int "Default channel (2.4 GHz)"
 	default 6

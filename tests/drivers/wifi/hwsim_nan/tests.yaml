@@ -1,0 +1,53 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.wifi.hwsim_nan.lifecycle:
+    platform_allow:
+      - native_sim
+    tags:
+      - wifi
+      - hwsim
+      - networking
+      - drivers
+    timeout: 60
+    harness: ztest
+    harness_config:
+      type: one_line
+      regex:
+        - "PROJECT EXECUTION SUCCESSFUL"
+  drivers.wifi.hwsim_nan.lifecycle.asan:
+    platform_allow:
+      - native_sim/native/64
+    tags:
+      - wifi
+      - hwsim
+      - networking
+      - drivers
+    timeout: 60
+    harness: ztest
+    harness_config:
+      type: one_line
+      regex:
+        - "PROJECT EXECUTION SUCCESSFUL"
+    extra_configs:
+      - CONFIG_ASAN=y
+      - CONFIG_SYS_HEAP_SANITIZER_ASAN=y
+  drivers.wifi.hwsim_nan.shared_iface:
+    platform_allow:
+      - native_sim
+    tags:
+      - wifi
+      - hwsim
+      - networking
+      - drivers
+    timeout: 60
+    harness: ztest
+    harness_config:
+      type: one_line
+      regex:
+        - "PROJECT EXECUTION SUCCESSFUL"
+    extra_configs:
+      - CONFIG_WIFI_HWSIM_NAN_SHARED_IFACE=y
+    extra_args:
+      - "DTC_OVERLAY_FILE=shared_iface.overlay"

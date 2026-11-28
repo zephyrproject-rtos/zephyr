@@ -88,6 +88,10 @@ tests:
   wifi.build.nan:
     extra_configs:
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN=y
+  wifi.build.nan_mgmt_iface:
+    extra_configs:
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN=y
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN_MGMT_IFACE=y
   net.wifi.build.print_pmk:
     extra_configs:
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_PRINT_PMK=y
