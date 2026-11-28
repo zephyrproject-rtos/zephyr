@@ -1,0 +1,25 @@
+/*
+ * SPDX-FileCopyrightText: Copyright Alif Semiconductor
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Enable mikroBUS GPIO ports used by Gyro 2 Click (board DTS defines
+ * the connector and pinmux; I2C is mikrobus_i2c on i2c1).
+ */
+
+&gpio0 {
+	pinctrl-0 = <&gpio0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&gpio7 {
+	pinctrl-0 = <&gpio7_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&gpio8 {
+	pinctrl-0 = <&gpio8_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
