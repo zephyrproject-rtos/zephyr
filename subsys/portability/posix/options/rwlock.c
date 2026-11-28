@@ -11,6 +11,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/posix/pthread.h>
+#include <zephyr/sys/barrier.h>
 #include <zephyr/sys/bitarray.h>
 #include <zephyr/sys/sem.h>
 
@@ -83,23 +84,52 @@ static struct posix_rwlock *get_posix_rwlock(pthread_rwlock_t rwlock)
 struct posix_rwlock *to_posix_rwlock(pthread_rwlock_t *rwlock)
 {
 	size_t bit;
-	struct posix_rwlock *rwl;
+	pthread_rwlock_t handle;
+	struct posix_rwlock *rwl = NULL;
 
-	if (*rwlock != PTHREAD_RWLOCK_INITIALIZER) {
-		return get_posix_rwlock(*rwlock);
-	}
-
-	/* Try and automatically associate a posix_rwlock */
-	if (sys_bitarray_alloc(&posix_rwlock_bitarray, 1, &bit) < 0) {
-		LOG_DBG("Unable to allocate pthread_rwlock_t");
+	if (rwlock == NULL) {
 		return NULL;
 	}
 
-	/* Record the associated posix_rwlock in rwl and mark as initialized */
-	*rwlock = mark_pthread_obj_initialized(bit);
+	handle = *(volatile pthread_rwlock_t *)rwlock;
+	if (handle != PTHREAD_RWLOCK_INITIALIZER) {
+		/* Pairs with the fence before the handle is published below */
+		barrier_dmem_fence_full();
+		return get_posix_rwlock(handle);
+	}
 
-	/* Initialize the posix_rwlock */
-	rwl = &posix_rwlock_pool[bit];
+	/*
+	 * Auto-associate a posix_rwlock. Only this lazy-init path needs to
+	 * be serialized, so two racing threads do not allocate separate slots.
+	 */
+	SYS_SEM_LOCK(&posix_rwlock_lock) {
+		if (*rwlock != PTHREAD_RWLOCK_INITIALIZER) {
+			/* lost race; slot already associated */
+			rwl = get_posix_rwlock(*rwlock);
+			SYS_SEM_LOCK_BREAK;
+		}
+
+		if (sys_bitarray_alloc(&posix_rwlock_bitarray, 1, &bit) < 0) {
+			LOG_DBG("Unable to allocate pthread_rwlock_t");
+			SYS_SEM_LOCK_BREAK;
+		}
+
+		rwl = &posix_rwlock_pool[bit];
+
+		atomic_set(&rwl->rd_count, 0);
+		sys_sem_init(&rwl->wr_sem, 1, 1);
+		sys_sem_init(&rwl->reader_active, 1, 1);
+		rwl->wr_owner = NULL;
+
+		/*
+		 * Make the initialized slot visible to other CPUs before publishing its handle,
+		 * since the fast path above reads the handle without taking posix_rwlock_lock.
+		 */
+		barrier_dmem_fence_full();
+
+		/* Record posix_rwlock in rwlock and mark as initialized */
+		*rwlock = mark_pthread_obj_initialized(bit);
+	}
 
 	return rwl;
 }
@@ -115,17 +145,16 @@ int pthread_rwlock_init(pthread_rwlock_t *rwlock,
 	struct posix_rwlock *rwl;
 
 	ARG_UNUSED(attr);
+	if (rwlock == NULL) {
+		return EINVAL;
+	}
+
 	*rwlock = PTHREAD_RWLOCK_INITIALIZER;
 
 	rwl = to_posix_rwlock(rwlock);
 	if (rwl == NULL) {
 		return ENOMEM;
 	}
-
-	atomic_set(&rwl->rd_count, 0);
-	sys_sem_init(&rwl->wr_sem, 1, 1);
-	sys_sem_init(&rwl->reader_active, 1, 1);
-	rwl->wr_owner = NULL;
 
 	LOG_DBG("Initialized rwlock %p", rwl);
 
@@ -174,7 +203,7 @@ int pthread_rwlock_rdlock(pthread_rwlock_t *rwlock)
 {
 	struct posix_rwlock *rwl;
 
-	rwl = get_posix_rwlock(*rwlock);
+	rwl = to_posix_rwlock(rwlock);
 	if (rwl == NULL) {
 		return EINVAL;
 	}
@@ -201,7 +230,7 @@ int pthread_rwlock_timedrdlock(pthread_rwlock_t *rwlock,
 		return EINVAL;
 	}
 
-	rwl = get_posix_rwlock(*rwlock);
+	rwl = to_posix_rwlock(rwlock);
 	if (rwl == NULL) {
 		return EINVAL;
 	}
@@ -222,7 +251,7 @@ int pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock)
 {
 	struct posix_rwlock *rwl;
 
-	rwl = get_posix_rwlock(*rwlock);
+	rwl = to_posix_rwlock(rwlock);
 	if (rwl == NULL) {
 		return EINVAL;
 	}
@@ -242,7 +271,7 @@ int pthread_rwlock_wrlock(pthread_rwlock_t *rwlock)
 {
 	struct posix_rwlock *rwl;
 
-	rwl = get_posix_rwlock(*rwlock);
+	rwl = to_posix_rwlock(rwlock);
 	if (rwl == NULL) {
 		return EINVAL;
 	}
@@ -269,7 +298,7 @@ int pthread_rwlock_timedwrlock(pthread_rwlock_t *rwlock,
 		return EINVAL;
 	}
 
-	rwl = get_posix_rwlock(*rwlock);
+	rwl = to_posix_rwlock(rwlock);
 	if (rwl == NULL) {
 		return EINVAL;
 	}
@@ -293,7 +322,7 @@ int pthread_rwlock_trywrlock(pthread_rwlock_t *rwlock)
 {
 	struct posix_rwlock *rwl;
 
-	rwl = get_posix_rwlock(*rwlock);
+	rwl = to_posix_rwlock(rwlock);
 	if (rwl == NULL) {
 		return EINVAL;
 	}
