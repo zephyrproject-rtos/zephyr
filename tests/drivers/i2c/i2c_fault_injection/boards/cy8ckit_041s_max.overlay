@@ -1,0 +1,37 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * CY8CKIT-041S-MAX for the I2C fault injection suite.
+ *
+ * Controller under test: SCB0 on P1[0] SCL and P1[1] SDA, the Arduino I2C
+ * pins.  Built with SHIELD=cy15framkit_001 and the shield fitted, its
+ * FM24W256 is the known-good device.
+ *
+ * i2c_bus_fault fixture (kit guide 002-32436 Rev. *D, Table 1):
+ *   - J2.6 (P1[4]) to J3.10 (SCL)
+ *   - J2.8 (P1[5]) to J3.9 (SDA)
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		i2c-dut = &i2c0;
+	};
+
+	zephyr,user {
+		scl-gpios = <&gpio_prt1 4 GPIO_ACTIVE_HIGH>;
+		sda-gpios = <&gpio_prt1 5 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+/* Enables CONFIG_I2C_INFINEON_BUS_RECOVERY for the recovery tests. */
+&i2c0 {
+	scl-gpios = <&gpio_prt1 0 GPIO_OPEN_DRAIN>;
+	sda-gpios = <&gpio_prt1 1 GPIO_OPEN_DRAIN>;
+};
