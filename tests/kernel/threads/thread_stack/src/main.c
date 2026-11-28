@@ -207,12 +207,13 @@ void stack_buffer_scenarios(void)
 
 		/*
 		 * The reserved area, when it exists, is dropped at run time
-		 * when transitioning to user mode on RISC-V. Reinstate that
-		 * reserved area here for the next tests to work properly
-		 * with a static non-zero K_THREAD_STACK_RESERVED definition.
+		 * when transitioning to user mode on RISC-V and Hexagon.
+		 * Reinstate that reserved area here for the next tests to work
+		 * properly with a static non-zero K_THREAD_STACK_RESERVED
+		 * definition.
 		 */
-		if (IS_ENABLED(CONFIG_RISCV) &&
-		    IS_ENABLED(CONFIG_GEN_PRIV_STACKS) &&
+		if (((IS_ENABLED(CONFIG_RISCV) && IS_ENABLED(CONFIG_GEN_PRIV_STACKS)) ||
+		     IS_ENABLED(CONFIG_HEXAGON)) &&
 		    K_THREAD_STACK_RESERVED != 0) {
 			stack_start += reserved;
 			stack_size -= reserved;
