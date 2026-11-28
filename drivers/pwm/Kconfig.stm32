@@ -13,3 +13,14 @@ config PWM_STM32
 	  This option enables the PWM driver for STM32 family of
 	  processors. Say y if you wish to use PWM port on STM32
 	  MCU.
+
+config PWM_STM32_LPTIM
+	bool "STM32 MCU LPTIM PWM driver"
+	default y
+	depends on DT_HAS_ST_STM32_LPTIM_PWM_ENABLED
+	select RESET
+	select PINCTRL
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_LPTIM_PWM),channel-gpios)
+	help
+	  This option enables the PWM driver for low power timers
+	  on STM32 family of processors.

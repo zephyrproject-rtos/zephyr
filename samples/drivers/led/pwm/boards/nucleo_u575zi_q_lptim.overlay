@@ -1,0 +1,22 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Drive the green LED (PC7) with the LPTIM2 PWM of the board instead of TIM3. */
+
+&pwm3 {
+	status = "disabled";
+};
+
+&lptim2 {
+	status = "okay";
+};
+
+&lptim2_pwm {
+	status = "okay";
+};
+
+&pwm_led_1 {
+	pwms = <&lptim2_pwm 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+};

@@ -365,13 +365,17 @@
 		lptim2: timers@40009400 {
 			compatible = "st,stm32u5-lptim", "st,stm32-lptim";
 			reg = <0x40009400 0x400>;
-			#address-cells = <1>;
-			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK(APB1_2, 5)>;
 			resets = <&rctl STM32_RESET(APB1H, 5)>;
 			interrupts = <68 0>;
 			interrupt-names = "global";
 			status = "disabled";
+
+			pwm {
+				compatible = "st,stm32-lptim-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
 		};
 
 		fdcan1: can@4000a400 {
@@ -772,37 +776,49 @@
 		lptim1: timers@40044400 {
 			compatible = "st,stm32u5-lptim", "st,stm32-lptim";
 			reg = <0x40044400 0x400>;
-			#address-cells = <1>;
-			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK(APB3, 11)>;
 			resets = <&rctl STM32_RESET(APB3, 11)>;
 			interrupts = <67 0>;
 			interrupt-names = "global";
 			status = "disabled";
+
+			pwm {
+				compatible = "st,stm32-lptim-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
 		};
 
 		lptim3: timers@40044800 {
 			compatible = "st,stm32u5-lptim", "st,stm32-lptim";
 			reg = <0x40044800 0x400>;
-			#address-cells = <1>;
-			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK(APB3, 12)>;
 			resets = <&rctl STM32_RESET(APB3, 12)>;
 			interrupts = <98 0>;
 			interrupt-names = "global";
 			status = "disabled";
+
+			pwm {
+				compatible = "st,stm32-lptim-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
 		};
 
 		lptim4: timers@40044c00 {
 			compatible = "st,stm32u5-lptim", "st,stm32-lptim";
 			reg = <0x40044c00 0x400>;
-			#address-cells = <1>;
-			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK(APB3, 13)>;
 			resets = <&rctl STM32_RESET(APB3, 13)>;
 			interrupts = <110 0>;
 			interrupt-names = "global";
 			status = "disabled";
+
+			pwm {
+				compatible = "st,stm32-lptim-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
 		};
 
 		pinctrl: pin-controller@42020000 {

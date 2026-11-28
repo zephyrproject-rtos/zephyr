@@ -363,11 +363,15 @@
 			reg = <0x40009400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1_2, 5)>;
 			resets = <&rctl STM32_RESET(APB1H, 5)>;
-			#address-cells = <1>;
-			#size-cells = <0>;
 			interrupts = <70 0>;
 			interrupt-names = "wakeup";
 			status = "disabled";
+
+			pwm {
+				compatible = "st,stm32-lptim-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
 		};
 
 		fdcan1: can@4000a400 {
@@ -701,11 +705,15 @@
 			reg = <0x44004400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB3, 11)>;
 			resets = <&rctl STM32_RESET(APB3, 11)>;
-			#address-cells = <1>;
-			#size-cells = <0>;
 			interrupts = <64 0>;
 			interrupt-names = "wakeup";
 			status = "disabled";
+
+			pwm {
+				compatible = "st,stm32-lptim-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
 		};
 
 		rtc: rtc@44007800 {

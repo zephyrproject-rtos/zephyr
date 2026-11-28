@@ -20,6 +20,12 @@
 
 		lptim2: timers@40009400 {
 			interrupts = <46 0>;
+
+			pwm {
+				compatible = "st,stm32-lptim-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
 		};
 
 		usart1: serial@40013800 {
@@ -84,6 +90,12 @@
 
 		lptim1: timers@46004400 {
 			interrupts = <45 0>;
+
+			pwm {
+				compatible = "st,stm32-lptim-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
 		};
 
 		adc4_common: adc@46021000 {
