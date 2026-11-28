@@ -100,27 +100,24 @@ static void spi_disable(const struct mchp_spi_reg_config *spi_reg_cfg)
 	spi_wait_sync(spi_reg_cfg, SERCOM_SPI_SYNCBUSY_ENABLE_Msk);
 }
 
-/*Set the BAUD Rate value for SPI peripheral*/
+/*
+ * Set the BAUD value for the SPI peripheral.
+ *
+ * SCK = f_GCLK / (2 * (BAUD + 1)). The requested frequency is a maximum, so pick the
+ * smallest BAUD whose SCK does not exceed it. A request at or above f_GCLK / 2 gets
+ * the fastest SCK, and a request below the slowest SCK gets the slowest one.
+ */
 static void spi_set_baudrate(const struct mchp_spi_reg_config *spi_reg_cfg,
 			     const struct spi_config *config, uint32_t clk_freq_hz)
 {
-	uint32_t divisor = 2U * config->frequency;
-
-	/* Use the requested or next highest possible frequency */
-	uint32_t baud_value = (clk_freq_hz / divisor) - 1;
-
 	sercom_spi_registers_t *spi = SPI_GET_BASE_ADDR(spi_reg_cfg->regs, SPI_OP_MODE_CONTROLLER);
+	uint32_t baud_value = 0U;
 
-	if ((clk_freq_hz % divisor) >= (divisor / 2U)) {
-		/* Round up the baud_value to ensures SPI clock is as close as possible to
-		 * the requested frequency
-		 */
-		baud_value += 1U;
+	if (config->frequency < (clk_freq_hz / 2U)) {
+		baud_value = DIV_ROUND_UP(clk_freq_hz, 2U * config->frequency) - 1U;
 	}
 
-	baud_value = CLAMP(baud_value, 0, UINT8_MAX);
-
-	spi->SERCOM_BAUD = baud_value;
+	spi->SERCOM_BAUD = MIN(baud_value, UINT8_MAX);
 }
 
 /*Write Data into DATA register*/
@@ -297,14 +294,17 @@ static int spi_configure(const struct device *dev, const struct spi_config *conf
 			SERCOM_SPIM_CTRLC_ICSPACE(CONFIG_SPI_MCHP_INTER_CHARACTER_SPACE);
 #endif /* CONFIG_SPI_MCHP_INTER_CHARACTER_SPACE */
 
-		clock_control_get_rate(cfg->spi_clock.clock_dev, cfg->spi_clock.gclk_sys,
-				       &clock_rate);
+		retval = clock_control_get_rate(cfg->spi_clock.clock_dev, cfg->spi_clock.gclk_sys,
+						&clock_rate);
+		if (retval < 0) {
+			return retval;
+		}
 
-		if ((config->frequency != 0) && (clock_rate >= (2 * config->frequency))) {
-			spi_set_baudrate(spi_reg_cfg, config, clock_rate);
-		} else {
+		if ((config->frequency == 0U) || (clock_rate == 0U)) {
 			return -ENOTSUP;
 		}
+
+		spi_set_baudrate(spi_reg_cfg, config, clock_rate);
 
 		/* Clear the MODE bit field and set it to SPI Controller mode */
 		spi->SERCOM_CTRLA = (spi->SERCOM_CTRLA & ~SERCOM_SPI_CTRLA_MODE_Msk) |
