@@ -54,6 +54,10 @@ char otbr_model_name[] = OTBR_MODEL_NAME;
 static void openthread_border_router_process(struct k_work *work);
 K_WORK_DEFINE(openthread_border_router_work, openthread_border_router_process);
 
+static void ot_iface_up_work_handler(struct k_work *work);
+static K_WORK_DEFINE(ot_iface_up_work, ot_iface_up_work_handler);
+static struct openthread_state_changed_callback ot_state_changed_cb;
+
 /* FIFO used for queuing up messages sent for Border Router. */
 static K_FIFO_DEFINE(border_router_msg_rx_fifo);
 
@@ -381,8 +385,39 @@ static void ot_bbr_multicast_listener_handler(void *context,
 	}
 }
 
+static void ot_iface_up_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	(void)net_if_up(openthread_get_default_context()->iface);
+}
+
+static void ot_state_changed_handler(uint32_t flags, void *context)
+{
+	struct openthread_context *ot_context = context;
+
+	if ((flags & OT_CHANGED_THREAD_NETIF_STATE) == 0U) {
+		return;
+	}
+
+	/* The OpenThread interface is normally brought up when the backbone
+	 * interface comes up (see ail_connection_handler()). Without backbone
+	 * link the Border Router still has to work as a Thread-only device, so
+	 * also bring it up once OpenThread enables IPv6. This is done from a
+	 * work item as this callback runs with the OpenThread lock held.
+	 */
+	if (otIp6IsEnabled(openthread_get_default_instance()) &&
+	    !net_if_is_admin_up(ot_context->iface)) {
+		k_work_submit(&ot_iface_up_work);
+	}
+}
+
 void openthread_border_router_init(struct openthread_context *ot_ctx)
 {
+	ot_state_changed_cb.otCallback = ot_state_changed_handler;
+	ot_state_changed_cb.user_data = (void *)ot_ctx;
+	(void)openthread_state_changed_callback_register(&ot_state_changed_cb);
+
 	udp_plat_init_sockfd();
 	openthread_set_bbr_multicast_listener_cb(ot_bbr_multicast_listener_handler, (void *)ot_ctx);
 	(void)infra_if_start_icmp6_listener();
