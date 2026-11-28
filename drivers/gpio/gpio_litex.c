@@ -17,7 +17,7 @@
 #include <string.h>
 #include <zephyr/logging/log.h>
 
-#include <soc.h>
+#include <zephyr/arch/cpu.h>
 
 #define GPIO_LITEX_ALL_HAS_IRQ DT_ALL_INST_HAS_PROP_STATUS_OKAY(interrupts)
 #define GPIO_LITEX_ANY_HAS_IRQ DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts)
@@ -72,16 +72,16 @@ struct gpio_litex_data {
 
 static inline void set_bit(mem_addr_t reg_addr, uint32_t bit, bool val)
 {
-	uint32_t reg = litex_read32(reg_addr);
+	uint32_t reg = sys_read32(reg_addr);
 
 	WRITE_BIT(reg, bit, val);
 
-	litex_write32(reg, reg_addr);
+	sys_write32(reg, reg_addr);
 }
 
 static inline uint32_t get_port_out(const struct gpio_litex_cfg *gpio_config)
 {
-	return (litex_read32(gpio_config->out_addr) & gpio_config->common.port_pin_mask);
+	return (sys_read32(gpio_config->out_addr) & gpio_config->common.port_pin_mask);
 }
 
 static inline void set_oe(const struct gpio_litex_cfg *gpio_config, gpio_pin_t pin, bool val)
@@ -134,7 +134,7 @@ static int gpio_litex_port_get_raw(const struct device *dev, gpio_port_value_t *
 	const struct gpio_litex_cfg *gpio_config = DEV_GPIO_CFG(dev);
 
 	*value = GPIO_LITEX_HAS_IN(gpio_config)
-			 ? (litex_read32(gpio_config->in_addr) & gpio_config->common.port_pin_mask)
+			 ? (sys_read32(gpio_config->in_addr) & gpio_config->common.port_pin_mask)
 			 : 0;
 
 	return 0;
@@ -150,7 +150,7 @@ static int gpio_litex_port_set_masked_raw(const struct device *dev,
 	if (GPIO_LITEX_HAS_OUT(gpio_config)) {
 		port_val = get_port_out(gpio_config);
 		port_val = (port_val & ~mask) | (value & mask);
-		litex_write32(port_val, gpio_config->out_addr);
+		sys_write32(port_val, gpio_config->out_addr);
 	}
 
 	return 0;
@@ -165,7 +165,7 @@ static int gpio_litex_port_set_bits_raw(const struct device *dev,
 	if (GPIO_LITEX_HAS_OUT(gpio_config)) {
 		port_val = get_port_out(gpio_config);
 		port_val |= pins;
-		litex_write32(port_val, gpio_config->out_addr);
+		sys_write32(port_val, gpio_config->out_addr);
 	}
 
 	return 0;
@@ -180,7 +180,7 @@ static int gpio_litex_port_clear_bits_raw(const struct device *dev,
 	if (GPIO_LITEX_HAS_OUT(gpio_config)) {
 		port_val = get_port_out(gpio_config);
 		port_val &= ~pins;
-		litex_write32(port_val, gpio_config->out_addr);
+		sys_write32(port_val, gpio_config->out_addr);
 	}
 	return 0;
 }
@@ -194,7 +194,7 @@ static int gpio_litex_port_toggle_bits(const struct device *dev,
 	if (GPIO_LITEX_HAS_OUT(gpio_config)) {
 		port_val = get_port_out(gpio_config);
 		port_val ^= pins;
-		litex_write32(port_val, gpio_config->out_addr);
+		sys_write32(port_val, gpio_config->out_addr);
 	}
 
 	return 0;
@@ -206,11 +206,11 @@ static void gpio_litex_irq_handler(const struct device *dev)
 	const struct gpio_litex_cfg *gpio_config = DEV_GPIO_CFG(dev);
 	struct gpio_litex_data *data = dev->data;
 
-	uint32_t int_status = litex_read32(gpio_config->ev_pending_addr);
-	uint32_t ev_enabled = litex_read32(gpio_config->ev_enable_addr);
+	uint32_t int_status = sys_read32(gpio_config->ev_pending_addr);
+	uint32_t ev_enabled = sys_read32(gpio_config->ev_enable_addr);
 
 	/* clear events */
-	litex_write32(int_status, gpio_config->ev_pending_addr);
+	sys_write32(int_status, gpio_config->ev_pending_addr);
 
 	gpio_fire_callbacks(&data->cb, dev, int_status & ev_enabled);
 }
@@ -237,43 +237,43 @@ static int gpio_litex_pin_interrupt_configure(const struct device *dev,
 	}
 
 	if (GPIO_LITEX_HAS_OE(gpio_config) &&
-	    IS_BIT_SET(litex_read32(gpio_config->oe_addr), pin)) {
+	    IS_BIT_SET(sys_read32(gpio_config->oe_addr), pin)) {
 		return -EINVAL;
 	}
 
-	ev_enabled = litex_read32(gpio_config->ev_enable_addr);
+	ev_enabled = sys_read32(gpio_config->ev_enable_addr);
 
 	if (mode == GPIO_INT_MODE_EDGE) {
-		ev_mode = litex_read32(gpio_config->ev_mode_addr);
-		ev_edge = litex_read32(gpio_config->ev_edge_addr);
+		ev_mode = sys_read32(gpio_config->ev_mode_addr);
+		ev_edge = sys_read32(gpio_config->ev_edge_addr);
 
 		WRITE_BIT(ev_mode, pin, (trig == GPIO_INT_TRIG_BOTH));
 
-		litex_write32(ev_mode, gpio_config->ev_mode_addr);
+		sys_write32(ev_mode, gpio_config->ev_mode_addr);
 
 		switch (trig & GPIO_INT_TRIG_BOTH) {
 		case GPIO_INT_TRIG_HIGH:
 			/* Rising edge */
-			litex_write32(ev_edge & ~BIT(pin), gpio_config->ev_edge_addr);
+			sys_write32(ev_edge & ~BIT(pin), gpio_config->ev_edge_addr);
 			break;
 		case GPIO_INT_TRIG_LOW:
 			/* Falling edge */
-			litex_write32(ev_edge | BIT(pin), gpio_config->ev_edge_addr);
+			sys_write32(ev_edge | BIT(pin), gpio_config->ev_edge_addr);
 			break;
 		default:
 			break;
 		}
 
 		/* Clear any pending events for this pin, before enabling it */
-		litex_write32(BIT(pin), gpio_config->ev_pending_addr);
+		sys_write32(BIT(pin), gpio_config->ev_pending_addr);
 
-		litex_write32(ev_enabled | BIT(pin), gpio_config->ev_enable_addr);
+		sys_write32(ev_enabled | BIT(pin), gpio_config->ev_enable_addr);
 
 		return 0;
 	}
 
 	if (mode == GPIO_INT_DISABLE) {
-		litex_write32(ev_enabled & ~BIT(pin), gpio_config->ev_enable_addr);
+		sys_write32(ev_enabled & ~BIT(pin), gpio_config->ev_enable_addr);
 		return 0;
 	}
 
@@ -293,7 +293,7 @@ static int gpio_litex_port_get_direction(const struct device *dev, gpio_port_pin
 	if (!GPIO_LITEX_HAS_OE(gpio_config)) {
 		oe_reg = GPIO_LITEX_HAS_OUT(gpio_config) ? UINT32_MAX : 0;
 	} else {
-		oe_reg = litex_read32(gpio_config->oe_addr);
+		oe_reg = sys_read32(gpio_config->oe_addr);
 	}
 
 	if (inputs != NULL) {

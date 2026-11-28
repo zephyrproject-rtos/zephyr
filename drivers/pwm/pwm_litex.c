@@ -10,7 +10,7 @@
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/types.h>
 
-#include <soc.h>
+#include <zephyr/arch/cpu.h>
 
 #define REG_EN_ENABLE             0x1
 #define REG_EN_DISABLE            0x0
@@ -28,7 +28,7 @@ int pwm_litex_init(const struct device *dev)
 {
 	const struct pwm_litex_cfg *cfg = dev->config;
 
-	litex_write8(REG_EN_ENABLE, cfg->reg_en);
+	sys_write8(REG_EN_ENABLE, cfg->reg_en);
 	return 0;
 }
 
@@ -42,10 +42,10 @@ int pwm_litex_set_cycles(const struct device *dev, uint32_t channel,
 		return -EINVAL;
 	}
 
-	litex_write8(REG_EN_DISABLE, cfg->reg_en);
-	litex_write32(pulse_cycles, cfg->reg_width);
-	litex_write32(period_cycles, cfg->reg_period);
-	litex_write8(REG_EN_ENABLE, cfg->reg_en);
+	sys_write8(REG_EN_DISABLE, cfg->reg_en);
+	sys_write32(pulse_cycles, cfg->reg_width);
+	sys_write32(period_cycles, cfg->reg_period);
+	sys_write8(REG_EN_ENABLE, cfg->reg_en);
 
 	return 0;
 }

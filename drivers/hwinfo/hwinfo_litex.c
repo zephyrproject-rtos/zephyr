@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT litex_dna0
 
 #include <zephyr/drivers/hwinfo.h>
-#include <soc.h>
+#include <zephyr/arch/cpu.h>
 #include <string.h>
 #include <zephyr/device.h>
 #include <zephyr/sys/util.h>
@@ -18,7 +18,7 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 	ssize_t end = MIN(length, DT_INST_REG_SIZE(0));
 
 	for (int i = 0; i < end; i++) {
-		buffer[i] = (uint8_t)(litex_read32(addr) >> (addr % 4 * 8));
+		buffer[i] = (uint8_t)(sys_read32(addr) >> (addr % 4 * 8));
 		addr += 1;
 	}
 	return end;

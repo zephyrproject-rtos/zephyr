@@ -11,7 +11,7 @@
 #include <zephyr/sys/clock.h>
 
 #include "spi_context.h"
-#include <soc.h>
+#include <zephyr/arch/cpu.h>
 
 static inline uint8_t get_dfs_value(const struct spi_config *config)
 {

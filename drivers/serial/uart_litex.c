@@ -14,7 +14,6 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/types.h>
 
-#include <soc.h>
 
 #if DT_ANY_INST_HAS_BOOL_STATUS_OKAY(rx_fifo_rx_we)
 #define USES_RX_FIFO_RX_WE 1
@@ -61,10 +60,10 @@ static void uart_litex_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct uart_litex_device_config *config = dev->config;
 	/* wait for space */
-	while (litex_read8(config->txfull_addr)) {
+	while (sys_read8(config->txfull_addr)) {
 	}
 
-	litex_write8(c, config->rxtx_addr);
+	sys_write8(c, config->rxtx_addr);
 }
 
 /**
@@ -79,13 +78,13 @@ static int uart_litex_poll_in(const struct device *dev, unsigned char *c)
 {
 	const struct uart_litex_device_config *config = dev->config;
 
-	if (!litex_read8(config->rxempty_addr)) {
-		*c = litex_read8(config->rxtx_addr);
+	if (!sys_read8(config->rxempty_addr)) {
+		*c = sys_read8(config->rxtx_addr);
 #ifndef USES_RX_FIFO_RX_WE
 		/* refresh UART_RXEMPTY by writing UART_EV_RX
 		 * to UART_EV_PENDING
 		 */
-		litex_write8(UART_EV_RX, config->ev_pending_addr);
+		sys_write8(UART_EV_RX, config->ev_pending_addr);
 #endif
 		return 0;
 	}
@@ -103,9 +102,9 @@ static void uart_litex_irq_tx_enable(const struct device *dev)
 {
 	const struct uart_litex_device_config *config = dev->config;
 
-	uint8_t enable = litex_read8(config->ev_enable_addr);
+	uint8_t enable = sys_read8(config->ev_enable_addr);
 
-	litex_write8(enable | UART_EV_TX, config->ev_enable_addr);
+	sys_write8(enable | UART_EV_TX, config->ev_enable_addr);
 }
 
 /**
@@ -117,9 +116,9 @@ static void uart_litex_irq_tx_disable(const struct device *dev)
 {
 	const struct uart_litex_device_config *config = dev->config;
 
-	uint8_t enable = litex_read8(config->ev_enable_addr);
+	uint8_t enable = sys_read8(config->ev_enable_addr);
 
-	litex_write8(enable & ~(UART_EV_TX), config->ev_enable_addr);
+	sys_write8(enable & ~(UART_EV_TX), config->ev_enable_addr);
 }
 
 /**
@@ -131,9 +130,9 @@ static void uart_litex_irq_rx_enable(const struct device *dev)
 {
 	const struct uart_litex_device_config *config = dev->config;
 
-	uint8_t enable = litex_read8(config->ev_enable_addr);
+	uint8_t enable = sys_read8(config->ev_enable_addr);
 
-	litex_write8(enable | UART_EV_RX, config->ev_enable_addr);
+	sys_write8(enable | UART_EV_RX, config->ev_enable_addr);
 }
 
 /**
@@ -145,9 +144,9 @@ static void uart_litex_irq_rx_disable(const struct device *dev)
 {
 	const struct uart_litex_device_config *config = dev->config;
 
-	uint8_t enable = litex_read8(config->ev_enable_addr);
+	uint8_t enable = sys_read8(config->ev_enable_addr);
 
-	litex_write8(enable & ~(UART_EV_RX), config->ev_enable_addr);
+	sys_write8(enable & ~(UART_EV_RX), config->ev_enable_addr);
 }
 
 /**
@@ -161,7 +160,7 @@ static int uart_litex_irq_tx_ready(const struct device *dev)
 {
 	const struct uart_litex_device_config *config = dev->config;
 
-	uint8_t val = litex_read8(config->txfull_addr);
+	uint8_t val = sys_read8(config->txfull_addr);
 
 	return !val;
 }
@@ -178,7 +177,7 @@ static int uart_litex_irq_rx_ready(const struct device *dev)
 	const struct uart_litex_device_config *config = dev->config;
 	uint8_t pending;
 
-	pending = litex_read8(config->ev_pending_addr);
+	pending = sys_read8(config->ev_pending_addr);
 
 	return (pending & UART_EV_RX) > 0;
 }
@@ -198,8 +197,8 @@ static int uart_litex_fifo_fill(const struct device *dev,
 	const struct uart_litex_device_config *config = dev->config;
 	int i;
 
-	for (i = 0; i < size && !litex_read8(config->txfull_addr); i++) {
-		litex_write8(tx_data[i], config->rxtx_addr);
+	for (i = 0; i < size && !sys_read8(config->txfull_addr); i++) {
+		sys_write8(tx_data[i], config->rxtx_addr);
 	}
 
 	return i;
@@ -220,13 +219,13 @@ static int uart_litex_fifo_read(const struct device *dev,
 	const struct uart_litex_device_config *config = dev->config;
 	int i;
 
-	for (i = 0; i < size && !litex_read8(config->rxempty_addr); i++) {
-		rx_data[i] = litex_read8(config->rxtx_addr);
+	for (i = 0; i < size && !sys_read8(config->rxempty_addr); i++) {
+		rx_data[i] = sys_read8(config->rxtx_addr);
 #ifndef USES_RX_FIFO_RX_WE
 		/* refresh UART_RXEMPTY by writing UART_EV_RX
 		 * to UART_EV_PENDING
 		 */
-		litex_write8(UART_EV_RX, config->ev_pending_addr);
+		sys_write8(UART_EV_RX, config->ev_pending_addr);
 #endif
 	}
 
@@ -250,8 +249,8 @@ static int uart_litex_irq_is_pending(const struct device *dev)
 	const struct uart_litex_device_config *config = dev->config;
 	uint8_t pending;
 
-	pending = litex_read8(config->ev_pending_addr);
-	pending &= litex_read8(config->ev_enable_addr);
+	pending = sys_read8(config->ev_pending_addr);
+	pending &= sys_read8(config->ev_enable_addr);
 	pending &= UART_EV_RX | UART_EV_TX;
 
 	return pending > 0;
@@ -310,7 +309,7 @@ static int uart_litex_init(const struct device *dev)
 {
 	const struct uart_litex_device_config *config = dev->config;
 
-	litex_write8(0, config->ev_enable_addr);
+	sys_write8(0, config->ev_enable_addr);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	config->config_func(dev);

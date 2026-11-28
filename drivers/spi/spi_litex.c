@@ -45,7 +45,7 @@ static void spi_set_frequency(const struct device *dev, const struct spi_config 
 
 	uint16_t divisor = DIV_ROUND_UP(sys_clock_hw_cycles_per_sec(), config->frequency);
 
-	litex_write16(divisor, dev_config->clk_divider_addr);
+	sys_write16(divisor, dev_config->clk_divider_addr);
 }
 
 /* Helper Functions */
@@ -101,9 +101,9 @@ static int spi_config(const struct device *dev, const struct spi_config *config,
 	}
 
 	/* Set Loopback */
-	if (!litex_read8(dev_config->loopback_addr) != !(config->operation & SPI_MODE_LOOP)) {
-		litex_write8(((config->operation & SPI_MODE_LOOP) ? 0x1 : 0x0),
-			     dev_config->loopback_addr);
+	if (!sys_read8(dev_config->loopback_addr) != !(config->operation & SPI_MODE_LOOP)) {
+		sys_write8(((config->operation & SPI_MODE_LOOP) ? 0x1 : 0x0),
+			   dev_config->loopback_addr);
 	}
 	/* Set word size */
 	*control = (uint16_t) (SPI_WORD_SIZE_GET(config->operation)
@@ -112,7 +112,7 @@ static int spi_config(const struct device *dev, const struct spi_config *config,
 	dev_data->dfs = get_dfs_value(config);
 
 	/* Write configurations */
-	litex_write16(*control, dev_config->control_addr);
+	sys_write16(*control, dev_config->control_addr);
 
 	spi_set_frequency(dev, config);
 
@@ -124,11 +124,11 @@ static void spi_litex_send(const struct device *dev, uint32_t frame,
 {
 	const struct spi_litex_cfg *dev_config = dev->config;
 	/* Write frame to register */
-	litex_write32(frame, dev_config->mosi_addr);
+	sys_write32(frame, dev_config->mosi_addr);
 	/* Start the transfer */
-	litex_write16(control | BIT(0), dev_config->control_addr);
+	sys_write16(control | BIT(0), dev_config->control_addr);
 	/* Wait until the transfer ends */
-	while (!(litex_read8(dev_config->status_addr) & BIT(0))) {
+	while (!(sys_read8(dev_config->status_addr) & BIT(0))) {
 		;/* Wait */
 	}
 }
@@ -138,7 +138,7 @@ static uint32_t spi_litex_recv(const struct device *dev)
 	const struct spi_litex_cfg *dev_config = dev->config;
 
 	/* Return data inside SDI register */
-	return litex_read32(dev_config->miso_addr);
+	return sys_read32(dev_config->miso_addr);
 }
 
 static void spi_litex_xfer(const struct device *dev,
@@ -151,7 +151,7 @@ static void spi_litex_xfer(const struct device *dev,
 	uint32_t txd, rxd;
 
 	/* Set CS */
-	litex_write16(BIT(config->peripheral), dev_config->cs_addr);
+	sys_write16(BIT(config->peripheral), dev_config->cs_addr);
 
 	do {
 		/* Send a frame */
@@ -180,7 +180,7 @@ static void spi_litex_xfer(const struct device *dev,
 	spi_context_complete(ctx, dev, 0);
 
 	/* Clear CS */
-	litex_write16(0, dev_config->cs_addr);
+	sys_write16(0, dev_config->cs_addr);
 }
 
 /* API Functions */
@@ -216,7 +216,7 @@ static int spi_litex_release(const struct device *dev, const struct spi_config *
 {
 	const struct spi_litex_cfg *dev_config = dev->config;
 
-	if (!(litex_read8(dev_config->status_addr) & BIT(0))) {
+	if (!(sys_read8(dev_config->status_addr) & BIT(0))) {
 		return -EBUSY;
 	}
 	return 0;
