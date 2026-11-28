@@ -62,6 +62,15 @@ Serial Port
 This board configuration uses a single serial communication channel with the
 CPU's UART1 for Cortex-A55, and UART8 for Cortex-M33.
 
+Watchdog
+--------
+
+The ``watchdog0`` devicetree alias selects WDOG7 for
+``imx943_evk/mimx94398/m33``, WDOG5 for ``imx943_evk/mimx94398/m7_0``,
+and WDOG6 for ``imx943_evk/mimx94398/m7_1``. These board targets enable
+their respective watchdog instances for use with the
+:zephyr:code-sample:`watchdog` sample.
+
 Ethernet
 --------
 

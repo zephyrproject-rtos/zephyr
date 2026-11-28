@@ -15,6 +15,7 @@ toolchain:
   - gnuarmemb
 supported:
   - uart
+  - watchdog
 testing:
   binaries:
     - flash.bin
