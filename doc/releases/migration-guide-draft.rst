@@ -52,6 +52,13 @@ Kernel
 * ``z_clock_hw_cycles_per_sec`` can no longer be assigned. Timer drivers and SoC code that set the
   system timer frequency at run time must call ``z_sys_clock_hw_cycles_per_sec_set()`` instead.
 
+* An explicit :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE` below a subsystem minimum
+  requirement is now automatically raised to meet the required size, and the value in ``.config``
+  is no longer the built stack size. If an explicitly configured stack size is raised, a build
+  warning is emitted. To force the configured :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE`
+  to be used without adjustment, enable
+  :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE_IGNORE_MIN`. (:github:`124231`)
+
 Boards
 ******
 

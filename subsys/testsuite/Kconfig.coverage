@@ -63,6 +63,10 @@ config COVERAGE_GCOV_HEAP_SIZE
 
 if COVERAGE_GCOV
 
+config SYSTEM_WORKQUEUE_MIN_STACK_SIZE_COVERAGE_GCOV
+	int
+	default 4096
+
 choice COVERAGE_DUMP_METHOD
 	prompt "Method to dump coverage data"
 	default COVERAGE_DUMP

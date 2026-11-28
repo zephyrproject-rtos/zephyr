@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Priyanshu Singh <singhpriyanshu9838@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "System Workqueue Stack Size Aggregation Test"
+
+source "Kconfig.zephyr"
+
+config TEST_SYSWORKQ_MIN_2048
+	bool "Enable dummy 2048-byte subsystem requirement"
+	default y
+
+config SYSTEM_WORKQUEUE_MIN_STACK_SIZE_TEST_A
+	int
+	default 2048 if TEST_SYSWORKQ_MIN_2048
+
+config TEST_ENABLE_SUBSYS_B
+	bool "Enable dummy 3072-byte subsystem requirement"
+	default n
+
+config SYSTEM_WORKQUEUE_MIN_STACK_SIZE_TEST_B
+	int
+	default 3072 if TEST_ENABLE_SUBSYS_B
+
+config TEST_EXPECTED_STACK_SIZE
+	int "Expected compiled system workqueue stack size"
+	default 2048
