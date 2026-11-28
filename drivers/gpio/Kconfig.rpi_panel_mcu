@@ -1,0 +1,23 @@
+# Copyright (c) 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GPIO_RPI_PANEL_MCU
+	bool "Raspberry Pi Touch Display 2 panel-regulator MCU GPIO driver"
+	default y
+	depends on DT_HAS_RASPBERRYPI_TOUCHSCREEN_PANEL_REGULATOR_V2_ENABLED
+	select I2C
+	help
+	  Enable the GPIO controller + backlight driver for the on-board MCU
+	  found on the Raspberry Pi Touch Display 2 (compatible:
+	  raspberrypi,touchscreen-panel-regulator-v2). Used to sequence the
+	  panel and touch-controller reset lines and drive the backlight.
+
+if GPIO_RPI_PANEL_MCU
+
+config GPIO_RPI_PANEL_MCU_INIT_PRIORITY
+	int "Init priority"
+	default I2C_INIT_PRIORITY
+	help
+	  Device driver initialization priority.
+
+endif
