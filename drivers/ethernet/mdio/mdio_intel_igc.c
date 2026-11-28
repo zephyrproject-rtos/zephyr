@@ -61,6 +61,8 @@ static int intel_igc_mdio(const struct device *dev, uint32_t command)
 static int intel_igc_mdio_read(const struct device *dev, uint8_t prtad, uint8_t regad,
 			       uint16_t *user_data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int ret = 0;
 	uint32_t command = FIELD_PREP(INTEL_IGC_MDIC_PHY_MASK, prtad) |
 			   FIELD_PREP(INTEL_IGC_MDIC_REG_MASK, regad) |
@@ -79,6 +81,8 @@ static int intel_igc_mdio_read(const struct device *dev, uint8_t prtad, uint8_t 
 static int intel_igc_mdio_write(const struct device *dev, uint8_t prtad, uint8_t regad,
 				uint16_t user_data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int ret;
 
 	uint32_t command = FIELD_PREP(INTEL_IGC_MDIC_PHY_MASK, prtad) |
@@ -124,6 +128,8 @@ static int intel_igc_mdio_post_handle_c45(const struct device *dev, uint8_t prta
 static int intel_igc_mdio_read_c45(const struct device *dev, uint8_t prtad, uint8_t devnum,
 				   uint16_t regad, uint16_t *user_data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int ret = intel_igc_mdio_pre_handle_c45(dev, prtad, devnum, regad);
 
 	if (ret < 0) {
@@ -142,6 +148,8 @@ static int intel_igc_mdio_read_c45(const struct device *dev, uint8_t prtad, uint
 static int intel_igc_mdio_write_c45(const struct device *dev, uint8_t prtad, uint8_t devnum,
 				    uint16_t regad, uint16_t user_data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int ret = intel_igc_mdio_pre_handle_c45(dev, prtad, devnum, regad);
 
 	if (ret < 0) {
