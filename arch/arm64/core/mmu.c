@@ -778,6 +778,56 @@ static int globalize_page_range(struct arm_mmu_ptables *dst_pt, struct arm_mmu_p
 	return ret;
 }
 
+/*
+ * Clear EL0 access in place over the given range of dst_table, without
+ * allocating a table. A subtable dst_table shares with src_table holds the
+ * kernel's own entries and is left alone; src_table may be NULL when the
+ * kernel has no table at this level. A private block extending past the
+ * range loses EL0 access as a whole, as there is no table to split it into.
+ */
+static void revoke_user_table(uint64_t *dst_table, uint64_t *src_table, uintptr_t virt,
+			      size_t size, unsigned int level)
+{
+	size_t step, level_size = 1ULL << LEVEL_TO_VA_SIZE_SHIFT(level);
+	unsigned int i;
+
+	for ( ; size; virt += step, size -= step) {
+		step = level_size - (virt & (level_size - 1));
+		if (step > size) {
+			step = size;
+		}
+		i = XLAT_TABLE_VA_IDX(virt, level);
+
+		uint64_t src_desc = (src_table != NULL) ? src_table[i] : 0U;
+
+		if (is_free_desc(dst_table[i]) || dst_table[i] == src_desc) {
+			continue;
+		}
+
+		if (is_table_desc(dst_table[i], level)) {
+			revoke_user_table(pte_desc_table(dst_table[i]),
+					  is_table_desc(src_desc, level) ? pte_desc_table(src_desc)
+									 : NULL,
+					  virt, step, level + 1);
+			continue;
+		}
+
+		dst_table[i] &= ~PTE_BLOCK_DESC_AP_ELx;
+		debug_show_pte(&dst_table[i], level);
+	}
+}
+
+static void revoke_user_range(struct arm_mmu_ptables *dst_pt, struct arm_mmu_ptables *src_pt,
+			      uintptr_t virt, size_t size)
+{
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&xlat_lock);
+	revoke_user_table(dst_pt->base_xlat_table, src_pt->base_xlat_table, virt, size,
+			  BASE_XLAT_LEVEL);
+	k_spin_unlock(&xlat_lock, key);
+}
+
 #endif /* CONFIG_USERSPACE */
 
 static uint64_t get_region_desc(uint32_t attrs)
@@ -1745,18 +1795,20 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 	if (is_migration) {
 		/*
 		 * The thread now runs on the new tables, so the move is done
-		 * even if this fails. The old domain then still maps the stack
-		 * for user access: revoke it in place, since the private
-		 * entries already cover the stack exactly and no table has to
-		 * be split.
+		 * even if this fails. Globalizing may need tables to split a
+		 * kernel block and can stop part way through, with some of
+		 * the stack still mapped for user access in the old domain.
+		 * Take that access away in place, which needs no table.
 		 */
-		if (reset_map(old_ptables, __func__, thread->stack_info.start,
-			      thread->stack_info.size) != 0) {
-			(void)private_map(old_ptables, "thread_stack",
-					  thread->stack_info.start,
-					  thread->stack_info.size,
-					  MT_P_RW_U_NA | MT_NORMAL);
+		ret = globalize_page_range(old_ptables, &kernel_ptables, thread->stack_info.start,
+					   thread->stack_info.size, __func__, false);
+		if (ret != 0) {
+			MMU_LOG_ERR("stack %#lx not globalized (%d), revoking in place",
+				    thread->stack_info.start, ret);
+			revoke_user_range(old_ptables, &kernel_ptables, thread->stack_info.start,
+					  thread->stack_info.size);
 		}
+		invalidate_tlb_all();
 	}
 
 	return 0;
