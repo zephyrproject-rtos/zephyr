@@ -32,7 +32,15 @@ const int32_t z_sys_timer_irq_for_test = DT_IRQN(DT_INST(0, xlnx_ttcps));
  * method, and there is room for improvement.
  */
 #define CYCLES_NEXT_MIN		(10000)
+/*
+ * update_match() also re-arms when the counter read back after the write is
+ * less than CYCLES_READBACK_MARGIN cycles short of the match: the counter
+ * could step onto a match that close before the new value reaches the
+ * comparator.
+ */
+#define CYCLES_READBACK_MARGIN	(100U)
 #define CYCLES_NEXT_MAX		(XTTC_MAX_INTERVAL_COUNT)
+#define MAX_TICKS		((XTTC_MAX_INTERVAL_COUNT / 4U) / CYCLES_PER_TICK)
 
 BUILD_ASSERT(TIMER_CLOCK_FREQUECY ==
 			CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
@@ -60,6 +68,7 @@ static uint32_t read_count(void)
 static void update_match(uint32_t cycles, uint32_t match)
 {
 	uint32_t delta = match - cycles;
+	uint32_t now;
 
 	/* Ensure that the match value meets the minimum timing requirements */
 	if (delta < CYCLES_NEXT_MIN) {
@@ -68,10 +77,27 @@ static void update_match(uint32_t cycles, uint32_t match)
 
 	/* Write counter match value for interrupt generation */
 	sys_write32(match, TIMER_BASE_ADDR + XTTCPS_MATCH_0_OFFSET);
+
+	/* The match interrupt fires only when the counter steps onto the match
+	 * value. If anything held this path up for CYCLES_NEXT_MIN cycles, the
+	 * counter can already be at or past the value just written, and the next
+	 * timer interrupt would come only after the 32-bit counter wraps (42.9 s
+	 * at 100 MHz). Read the counter back after the write and move the match
+	 * ahead until it is at least CYCLES_READBACK_MARGIN cycles in front of
+	 * the counter.
+	 */
+	now = read_count();
+	while ((now - cycles) >= ((match - cycles) - CYCLES_READBACK_MARGIN)) {
+		cycles = now;
+		match = now + CYCLES_NEXT_MIN;
+		sys_write32(match, TIMER_BASE_ADDR + XTTCPS_MATCH_0_OFFSET);
+		now = read_count();
+	}
 }
 
 static void ttc_isr(const void *arg)
 {
+	k_spinlock_key_t key;
 	uint32_t cycles;
 	uint32_t ticks;
 
@@ -79,6 +105,15 @@ static void ttc_isr(const void *arg)
 
 	/* Acknowledge interrupt */
 	sys_read32(TIMER_BASE_ADDR + XTTCPS_ISR_OFFSET);
+
+	/*
+	 * Hold the system clock lock from reading the counter until the
+	 * kernel has taken the ticks. A timeout started by an interrupt
+	 * that preempts this ISR after last_cycles has moved, but before
+	 * the ticks are announced, would be timed from a curr_tick short
+	 * by those ticks and expire early.
+	 */
+	key = sys_clock_lock();
 
 	/* Read counter value */
 	cycles = read_count();
@@ -88,7 +123,7 @@ static void ttc_isr(const void *arg)
 	ticks = (cycles - last_cycles) / CYCLES_PER_TICK;
 
 	/* Update last cycles count */
-	last_cycles = cycles;
+	last_cycles += ticks * CYCLES_PER_TICK;
 #else
 	/* Update counter match value for the next interrupt */
 	update_match(cycles, cycles + CYCLES_PER_TICK);
@@ -97,8 +132,8 @@ static void ttc_isr(const void *arg)
 	ticks = 1;
 #endif
 
-	/* Announce to the kernel*/
-	sys_clock_announce(ticks);
+	/* Announce to the kernel, which releases the lock */
+	sys_clock_announce_locked(ticks, key);
 }
 
 void sys_clock_set_timeout(uint32_t ticks, bool idle)
@@ -106,12 +141,26 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 #ifdef CONFIG_TICKLESS_KERNEL
 	uint32_t cycles;
 	uint32_t next_cycles;
+	uint32_t elapsed;
 
 	/* Read counter value */
 	cycles = read_count();
 
-	/* Calculate timeout counter value, clamped to the hardware max */
-	next_cycles = cycles + MIN((uint32_t)ticks * CYCLES_PER_TICK, CYCLES_NEXT_MAX);
+	/* Clamp so the next announcement is at most MAX_TICKS after the last
+	 * one, not after now: when every timeout is re-armed before it
+	 * expires, the match must still be hit before the 32-bit distance
+	 * from last_cycles wraps (42.9 s), or elapsed time is lost.
+	 */
+	elapsed = (cycles - last_cycles) / CYCLES_PER_TICK;
+	ticks = MAX(ticks, 1U);
+	if (elapsed >= MAX_TICKS) {
+		ticks = 1U;
+	} else if (ticks > (MAX_TICKS - elapsed)) {
+		ticks = MAX_TICKS - elapsed;
+	}
+
+	/* Next announcement on a tick boundary counted from the last one */
+	next_cycles = last_cycles + (elapsed + ticks) * CYCLES_PER_TICK;
 
 	/* Set match value for the next interrupt */
 	update_match(cycles, next_cycles);
@@ -163,6 +212,12 @@ static int sys_clock_driver_init(void)
 	sys_write32(0, TIMER_BASE_ADDR + XTTCPS_MATCH_2_OFFSET);
 	sys_write32(0, TIMER_BASE_ADDR + XTTCPS_IER_OFFSET);
 	sys_write32(XTTCPS_IXR_ALL_MASK, TIMER_BASE_ADDR + XTTCPS_ISR_OFFSET);
+	/*
+	 * The interrupt register clears on read, as the ISR relies on. The
+	 * write above does not clear a match latched before init, which would
+	 * raise one timer interrupt as soon as the interrupt is enabled.
+	 */
+	(void)sys_read32(TIMER_BASE_ADDR + XTTCPS_ISR_OFFSET);
 
 	/* Reset counter value */
 	reg_val = sys_read32(TIMER_BASE_ADDR + XTTCPS_CNT_CNTRL_OFFSET);

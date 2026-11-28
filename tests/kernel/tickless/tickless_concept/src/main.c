@@ -132,6 +132,83 @@ ZTEST(tickless_concept, test_tickless_slice)
 	k_sched_time_slice_set(0, K_PRIO_PREEMPT(0));
 }
 
+/* Independent hardware-time reference for the drift check below. */
+static inline uint64_t drift_hw_cycles(void)
+{
+#ifdef CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER
+	return k_cycle_get_64();
+#else
+	return k_cycle_get_32();
+#endif
+}
+
+static void drift_timer_fn(struct k_timer *timer)
+{
+	ARG_UNUSED(timer);
+}
+static K_TIMER_DEFINE(drift_timer, drift_timer_fn, NULL);
+
+/**
+ * @brief Uptime must track the hardware clock under late tick announcements
+ *
+ * @details With a periodic timer running, keep the CPU busy in interrupt-
+ * locked bursts so several ticks elapse between announcements. A tickless
+ * driver that drops the sub-tick remainder when it advances its last-
+ * announced cycle count makes k_uptime_get() fall behind the free-running
+ * hardware counter. Compare the two over a fixed window of hardware time and
+ * require them to agree. Platforms whose uptime and cycle counter share one
+ * time base see no drift and pass; the check only bites a driver that loses
+ * cycles on every late interrupt.
+ */
+ZTEST(tickless_concept, test_tickless_clock_tracks_hw)
+{
+	const uint32_t hz = sys_clock_hw_cycles_per_sec();
+	const uint64_t window = (uint64_t)hz * 2U; /* ~2 s of hardware time */
+	uint32_t lcg = 0x1234567U;
+	uint32_t prev;
+	uint64_t cyc_elapsed = 0U;
+	int64_t up0, up_ms, real_ms, diff_ms, tol_ms;
+
+	k_timer_start(&drift_timer, K_MSEC(1), K_MSEC(1));
+
+	up0 = k_uptime_get();
+	prev = (uint32_t)drift_hw_cycles();
+
+	do {
+		unsigned int key;
+		uint32_t now;
+
+		key = irq_lock();
+		lcg = lcg * 1103515245U + 12345U;
+		/* 1..3 ms locked: every burst crosses at least one tick so a
+		 * driver that drops the sub-tick remainder loses cycles here.
+		 */
+		k_busy_wait(1000U + (lcg >> 16) % 2000U);
+		irq_unlock(key);
+
+		now = (uint32_t)drift_hw_cycles();
+		cyc_elapsed += (uint32_t)(now - prev); /* wrap-safe per burst */
+		prev = now;
+	} while (cyc_elapsed < window);
+
+	up_ms = k_uptime_get() - up0;
+	k_timer_stop(&drift_timer);
+
+	real_ms = (int64_t)(cyc_elapsed * 1000U / hz);
+	diff_ms = up_ms - real_ms;
+	if (diff_ms < 0) {
+		diff_ms = -diff_ms;
+	}
+	tol_ms = real_ms * 3 / 100; /* 3 % */
+
+	TC_PRINT("uptime=%lld ms, hw=%lld ms, drift=%lld ms (tolerance %lld ms)\n",
+		 (long long)up_ms, (long long)real_ms, (long long)diff_ms, (long long)tol_ms);
+
+	zassert_true(diff_ms <= tol_ms,
+		     "k_uptime drifted %lld ms from the hardware clock over %lld ms",
+		     (long long)diff_ms, (long long)real_ms);
+}
+
 /**
  * @}
  */
