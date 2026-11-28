@@ -812,26 +812,37 @@ int hawkbit_default_config_data_cb(const char *device_id, uint8_t *buffer,
 #ifdef CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME
 int hawkbit_set_config(struct hawkbit_runtime_config *config)
 {
+	/* Checked before taking probe_sem, so a rejected value cannot leave it taken */
+	if (config->server_addr != NULL &&
+	    strnlen(config->server_addr, sizeof(hb_cfg.server_addr)) ==
+		    sizeof(hb_cfg.server_addr)) {
+		LOG_ERR("%s too long: %s", "hawkbit/server_addr", config->server_addr);
+		return -EINVAL;
+	}
+#ifdef CONFIG_HAWKBIT_USE_DOMAIN_NAME
+	if (config->server_domain != NULL &&
+	    strnlen(config->server_domain, sizeof(hb_cfg.server_domain)) ==
+		    sizeof(hb_cfg.server_domain)) {
+		LOG_ERR("%s too long: %s", "hawkbit/server_domain", config->server_domain);
+		return -EINVAL;
+	}
+#endif /* CONFIG_HAWKBIT_USE_DOMAIN_NAME */
+	/* A longer token would be left unterminated and cut the CRLF off its header */
+	if (config->auth_token != NULL &&
+	    strnlen(config->auth_token, sizeof(hb_cfg.ddi_security_token)) ==
+		    sizeof(hb_cfg.ddi_security_token)) {
+		LOG_ERR("%s too long", "hawkbit/ddi_token");
+		return -EINVAL;
+	}
+
 	if (k_sem_take(&probe_sem, HAWKBIT_SET_SERVER_TIMEOUT) == 0) {
 		if (config->server_addr != NULL) {
-			if (strnlen(config->server_addr, sizeof(hb_cfg.server_addr)) ==
-			    sizeof(hb_cfg.server_addr)) {
-				LOG_ERR("%s too long: %s", "hawkbit/server_addr",
-					config->server_addr);
-				return -EINVAL;
-			}
 			strncpy(hb_cfg.server_addr, config->server_addr,
 				sizeof(hb_cfg.server_addr));
 			LOG_DBG("configured %s: %s", "hawkbit/server_addr", hb_cfg.server_addr);
 		}
 #ifdef CONFIG_HAWKBIT_USE_DOMAIN_NAME
 		if (config->server_domain != NULL) {
-			if (strnlen(config->server_domain, CONFIG_HAWKBIT_DOMAIN_NAME_MAX_LEN + 1)
-			    > CONFIG_HAWKBIT_DOMAIN_NAME_MAX_LEN) {
-				LOG_ERR("%s too long: %s", "hawkbit/server_domain",
-					config->server_domain);
-				return -EINVAL;
-			}
 			strncpy(hb_cfg.server_domain, config->server_domain,
 				sizeof(hb_cfg.server_domain));
 			LOG_DBG("configured %s: %s", "hawkbit/server_domain",
