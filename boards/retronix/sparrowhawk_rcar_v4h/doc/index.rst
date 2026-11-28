@@ -44,6 +44,99 @@ Here is information about serial ports provided on Sparrow Hawk board :
    The A76 Zephyr console uses HSCIF0. The R52 Zephyr console uses HSCIF1.
    Both use 921600 8N1 without hardware flow control in the Zephyr board definitions.
 
+Pins Configuration
+------------------
+
+The below table describes the pin layout and the supported function of Sparrow Hawk board.
+
++--------------------------+-----+-----+------------------------+
+|      Pin function        | Pin number|      Pin function      |
++==========================+=====+=====+========================+
+|          3.3V            |  1  |  2  |          5V            |
++--------------------------+-----+-----+------------------------+
+|                          |  3  |  4  |          5V            |
++--------------------------+-----+-----+------------------------+
+|                          |  5  |  6  |          GND           |
++--------------------------+-----+-----+------------------------+
+|                          |  7  |  8  |                        |
++--------------------------+-----+-----+------------------------+
+|                          |  9  | 10  |                        |
++--------------------------+-----+-----+------------------------+
+|         GPIO 17          | 11  | 12  |        PWM3            |
++--------------------------+-----+-----+------------------------+
+|         GPIO 27          | 13  | 14  |                        |
++--------------------------+-----+-----+------------------------+
+|         GPIO 22          | 15  | 16  |        GPIO 23         |
++--------------------------+-----+-----+------------------------+
+|                          | 17  | 18  |        GPIO 24         |
++--------------------------+-----+-----+------------------------+
+|                          | 19  | 20  |                        |
++--------------------------+-----+-----+------------------------+
+|                          | 21  | 22  |        GPIO 25         |
++--------------------------+-----+-----+------------------------+
+|                          | 23  | 24  |                        |
++--------------------------+-----+-----+------------------------+
+|                          | 25  | 26  |                        |
++--------------------------+-----+-----+------------------------+
+|                          | 27  | 28  |                        |
++--------------------------+-----+-----+------------------------+
+|                          | 29  | 30  |        PWM0            |
++--------------------------+-----+-----+------------------------+
+|         GPIO 6           | 31  | 32  |                        |
++--------------------------+-----+-----+------------------------+
+|         PWM1             | 33  | 34  |                        |
++--------------------------+-----+-----+------------------------+
+|                          | 35  | 36  |        GPIO 16         |
++--------------------------+-----+-----+------------------------+
+|         GPIO 26          | 37  | 38  |                        |
++--------------------------+-----+-----+------------------------+
+|                          | 39  | 40  |                        |
++--------------------------+-----+-----+------------------------+
+
+GPIO
+----
+
+There are 9 pins can be used as GPIO. Available pin names are listed in the
+Pins Configuration section.
+
+**Supported features:**
+
+* GPIO Output: Push-pull, open-drain with internal pull-up resistor.
+  Active high and active low polarity.
+* GPIO Input: Only input with internal pull-up. Active high and active low polarity.
+* Input interrupt with level and edge trigger.
+
+To use GPIO, you must activate GPIO nodes ``gpio0``, ``gpio1``, ``gpio2`` in Devivetree overlay.
+Below is the mapping table for GPIO devices and pin names:
+
++-------+---------------------------------------------+
+| GPIO  |                Pin name                     |
++=======+=============================================+
+| gpio0 | GPIO 6                                      |
++-------+---------------------------------------------+
+| gpio1 | GPIO 24, GPIO 25, GPIO 26                   |
++-------+---------------------------------------------+
+| gpio2 | GPIO 16, GPIO 17, GPIO 22, GPIO 23, GPIO 27 |
++-------+---------------------------------------------+
+
+The pins are also labeled for convenience. Check the DT node labels in
+:file:`boards/retronix/sparrowhawk_rcar_v4h/sparrowhawk_rcar_v4h_r8a779g0_r52.dts`
+
+Pulse Width Modulation (PWM)
+----------------------------
+
+V4H Sparrow Hawk provides 3 pins for PWM function with the node labels:
+``pwm0``, ``pwm1``, ``pwm3``.
+
+When using API functions with device instance and channel (like ``pwm_set_cycles()``,
+``pwm_set()``), ensure that the PWM pin is mapped with the SoC PWM channel as follows:
+
+* PWM0: Channel 6
+* PWM1: Channel 7
+* PWM3: Channel 1
+
+Using incorrect channel does not generate any output.
+
 Programming and Debugging
 *************************
 
@@ -127,7 +220,7 @@ For Cortex-R52:
    => setenv ipaddr <board.ip>
    => setenv serverip <tftp.server.ip>
    => tftp 0x40040000 zephyr.bin
-   => rproc init; rproc load 0:3 0x40040000 0x200000; rproc start 0
+   => rproc init; rproc load 0 0x40040000 0x200000; rproc start 0
 
 For Cortex-A76:
 
@@ -152,7 +245,7 @@ For Cortex-R52:
    (Transfer zephyr.bin after this line)
    ## Total Size      = 0x00009f2c = 40748 Bytes
    ## Start Addr      = 0x40040000
-   => rproc init; rproc load 0:3 0x40040000 0x200000; rproc start 0
+   => rproc init; rproc load 0 0x40040000 0x200000; rproc start 0
 
 For Cortex-A76:
 
