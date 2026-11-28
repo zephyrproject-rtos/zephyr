@@ -7,6 +7,10 @@
 /dts-v1/;
 #include <st/f4/stm32f405Xg.dtsi>
 #include <st/f4/stm32f405rgtx-pinctrl.dtsi>
+
+#include <zephyr/dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/dma/stm32_dma.h>
+
 #include "feather_connector.dtsi"
 
 / {
@@ -30,9 +34,27 @@
 		};
 	};
 
+	led_strip: ws2812 {
+		status = "okay";
+		compatible = "worldsemi,ws2812-pulse-io";
+		pulse-ios = <&pulseio0 0>;
+		chain-length = <1>;
+		color-mapping = <LED_COLOR_ID_GREEN
+				 LED_COLOR_ID_RED
+				 LED_COLOR_ID_BLUE>;
+		reset-delay = <300>;
+	};
+
 	aliases {
 		led0 = &led;
+		led-strip = &led_strip;
 	};
+};
+
+&pulseio0 {
+	status = "okay";
+	/* PC0 = on-board NeoPixel data line */
+	gpios = <&gpioc 0 GPIO_ACTIVE_HIGH>;
 };
 
 &clk_lsi {
