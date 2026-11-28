@@ -11,6 +11,7 @@
 #include <zephyr/net/ethernet.h>
 
 #include <eth.h>
+#include <ethernet/eth_stats.h>
 
 #include <zephyr/usb/usbd.h>
 #include <zephyr/usb/usb_ch9.h>
@@ -90,6 +91,9 @@ struct cdc_ecm_eth_data {
 
 	struct k_sem sync_sem;
 	atomic_t state;
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+	struct net_stats_eth stats;
+#endif
 };
 
 static uint8_t cdc_ecm_get_ctrl_if(struct cdc_ecm_eth_data *const data)
@@ -260,11 +264,13 @@ static int cdc_ecm_acl_out_cb(struct usbd_class_data *const c_data,
 					   NET_AF_UNSPEC, 0, K_FOREVER);
 	if (!pkt) {
 		LOG_ERR("No memory for net_pkt");
+		eth_stats_update_errors_rx(data->iface);
 		goto restart_out_transfer;
 	}
 
 	if (net_pkt_write(pkt, buf->data, buf->len)) {
 		LOG_ERR("Unable to write into pkt");
+		eth_stats_update_errors_rx(data->iface);
 		net_pkt_unref(pkt);
 		goto restart_out_transfer;
 	}
@@ -272,6 +278,7 @@ static int cdc_ecm_acl_out_cb(struct usbd_class_data *const c_data,
 	LOG_DBG("Received packet len %zu", net_pkt_get_len(pkt));
 	if (net_recv_data(data->iface, pkt) < 0) {
 		LOG_ERR("Packet %p dropped by network stack", pkt);
+		eth_stats_update_errors_rx(data->iface);
 		net_pkt_unref(pkt);
 	}
 
@@ -578,6 +585,16 @@ static enum ethernet_hw_caps cdc_ecm_get_capabilities(const struct device *dev _
 	return ETHERNET_LINK_10BASE | ETHERNET_PROMISC_MODE;
 }
 
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+static struct net_stats_eth *cdc_ecm_get_stats(const struct device *dev,
+					       struct net_if *iface __unused)
+{
+	struct cdc_ecm_eth_data *data = dev->data;
+
+	return &data->stats;
+}
+#endif
+
 static int cdc_ecm_iface_start(const struct device *dev, struct net_if *iface)
 {
 	struct cdc_ecm_eth_data *data = dev->data;
@@ -660,6 +677,9 @@ static DEVICE_API(ethernet, cdc_ecm_eth_api) = {
 	.set_config = cdc_ecm_set_config,
 	.get_capabilities = cdc_ecm_get_capabilities,
 	.send = cdc_ecm_send,
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+	.get_stats = cdc_ecm_get_stats,
+#endif
 	.start = cdc_ecm_iface_start,
 	.stop = cdc_ecm_iface_stop,
 };

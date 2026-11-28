@@ -10,6 +10,7 @@
 #include <zephyr/net/ethernet.h>
 
 #include <eth.h>
+#include <ethernet/eth_stats.h>
 
 #include <zephyr/usb/usbd.h>
 #include <zephyr/usb/usb_ch9.h>
@@ -233,6 +234,9 @@ struct cdc_ncm_eth_data {
 	struct k_sem sync_sem;
 
 	struct k_work_delayable notif_work;
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+	struct net_stats_eth stats;
+#endif
 };
 
 static uint8_t cdc_ncm_get_ctrl_if(struct cdc_ncm_eth_data *const data)
@@ -526,6 +530,7 @@ static int cdc_ncm_acl_out_cb(struct usbd_class_data *const c_data,
 	ret = check_frame(data, buf);
 	if (ret < 0) {
 		LOG_ERR("check frame failed (%d)", ret);
+		eth_stats_update_errors_rx(data->iface);
 		goto restart_out_transfer;
 	}
 
@@ -535,6 +540,7 @@ static int cdc_ncm_acl_out_cb(struct usbd_class_data *const c_data,
 	src = net_pkt_rx_alloc(K_NO_WAIT);
 	if (src == NULL) {
 		LOG_ERR("src packet alloc fail");
+		eth_stats_update_errors_rx(data->iface);
 		goto restart_out_transfer;
 	}
 
@@ -572,6 +578,7 @@ static int cdc_ncm_acl_out_cb(struct usbd_class_data *const c_data,
 		pkt = net_pkt_rx_alloc_with_buffer(data->iface, len, NET_AF_UNSPEC, 0, K_NO_WAIT);
 		if (!pkt) {
 			LOG_ERR("No memory for net_pkt");
+			eth_stats_update_errors_rx(data->iface);
 			goto unref_packet;
 		}
 
@@ -580,6 +587,7 @@ static int cdc_ncm_acl_out_cb(struct usbd_class_data *const c_data,
 		ret = net_pkt_skip(src, start);
 		if (ret < 0) {
 			LOG_ERR("Cannot advance pkt by %u bytes (%d)", start, ret);
+			eth_stats_update_errors_rx(data->iface);
 			net_pkt_unref(pkt);
 			goto unref_packet;
 		}
@@ -587,6 +595,7 @@ static int cdc_ncm_acl_out_cb(struct usbd_class_data *const c_data,
 		ret = net_pkt_copy(pkt, src, len);
 		if (ret < 0) {
 			LOG_ERR("Cannot copy data (%d)", ret);
+			eth_stats_update_errors_rx(data->iface);
 			net_pkt_unref(pkt);
 			goto unref_packet;
 		}
@@ -595,6 +604,7 @@ static int cdc_ncm_acl_out_cb(struct usbd_class_data *const c_data,
 
 		if (net_recv_data(data->iface, pkt) < 0) {
 			LOG_ERR("Packet %p dropped by network stack", pkt);
+			eth_stats_update_errors_rx(data->iface);
 			net_pkt_unref(pkt);
 		}
 	}
@@ -1152,6 +1162,16 @@ static enum ethernet_hw_caps cdc_ncm_get_capabilities(const struct device *dev _
 	return ETHERNET_LINK_10BASE | ETHERNET_PROMISC_MODE;
 }
 
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+static struct net_stats_eth *cdc_ncm_get_stats(const struct device *dev,
+					       struct net_if *iface __unused)
+{
+	struct cdc_ncm_eth_data *data = dev->data;
+
+	return &data->stats;
+}
+#endif
+
 static int cdc_ncm_iface_start(const struct device *dev, struct net_if *iface)
 {
 	struct cdc_ncm_eth_data *data = dev->data;
@@ -1233,6 +1253,9 @@ static DEVICE_API(ethernet, cdc_ncm_eth_api) = {
 	.set_config = cdc_ncm_set_config,
 	.get_capabilities = cdc_ncm_get_capabilities,
 	.send = cdc_ncm_send,
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+	.get_stats = cdc_ncm_get_stats,
+#endif
 	.start = cdc_ncm_iface_start,
 	.stop = cdc_ncm_iface_stop,
 };
