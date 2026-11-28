@@ -81,6 +81,11 @@ struct pac_keys {
 
 struct _thread_arch {
 
+#ifdef CONFIG_KERNEL_COHERENCE
+	/* CPU which last saved this context, or UINT32_MAX before its first run. */
+	uint32_t last_cpu;
+#endif
+
 #ifndef _ARM_M_SWITCH
 	/* interrupt locking key */
 	uint32_t basepri;
