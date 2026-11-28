@@ -75,6 +75,13 @@
 			clocks = <&rcc STM32_CLOCK(AHB2, 18)>,
 				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 		};
+
+		fmc: memory-controller@a0000000 {
+			compatible = "st,stm32-fmc";
+			reg = <0xa0000000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB3, 0)>;
+			status = "disabled";
+		};
 	};
 
 	die_temp: dietemp {
