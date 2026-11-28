@@ -21,7 +21,7 @@ ZTEST(zassert_deprecated, test_assert_fail_fires)
 {
 	HARNESS_EXPECT(__ASSERT(1 == 2, "boom"));
 
-	switch (CONFIG_ASSERT_MODULE_DEFAULT_LEVEL) {
+	switch (CONFIG_ASSERT_MODULE_UNNAMED_LEVEL) {
 	case ZASSERT_LEVEL_OFF:
 		zassert_false(harness_fired(), "OFF must be compiled out");
 		zassert_false(harness_printed(), "OFF must not print");
@@ -49,7 +49,7 @@ ZTEST(zassert_deprecated, test_assert_fail_message_args)
 {
 	HARNESS_EXPECT(__ASSERT(1 == 2, "boom %d", harness_counting_arg()));
 
-	if (CONFIG_ASSERT_MODULE_DEFAULT_LEVEL == ZASSERT_LEVEL_VERBOSE) {
+	if (CONFIG_ASSERT_MODULE_UNNAMED_LEVEL == ZASSERT_LEVEL_VERBOSE) {
 		zassert_true(harness_contains("boom 1"), "message not printed at VERBOSE");
 		zassert_equal(harness_arg_evals(), 1, "message args not evaluated at VERBOSE");
 	} else {
@@ -69,7 +69,7 @@ ZTEST(zassert_deprecated, test_assert_no_msg_fail_fires)
 {
 	HARNESS_EXPECT(__ASSERT_NO_MSG(1 == 2));
 
-	switch (CONFIG_ASSERT_MODULE_DEFAULT_LEVEL) {
+	switch (CONFIG_ASSERT_MODULE_UNNAMED_LEVEL) {
 	case ZASSERT_LEVEL_OFF:
 		zassert_false(harness_fired(), "OFF must be compiled out");
 		zassert_false(harness_printed(), "OFF must not print");

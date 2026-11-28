@@ -34,7 +34,7 @@
 
 LOG_MODULE_REGISTER(bt_audio, CONFIG_BT_AUDIO_LOG_LEVEL);
 
-ZASSERT_MODULE(DEFAULT);
+ZASSERT_MODULE(UNNAMED);
 
 void bt_audio_mutex_lock_forever(struct k_mutex *mutex)
 {

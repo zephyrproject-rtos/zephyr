@@ -934,6 +934,13 @@ WiFi
 Other subsystems
 ****************
 
+Debug
+=====
+
+* The ``DEFAULT`` assert module and its ``CONFIG_ASSERT_MODULE_DEFAULT_LEVEL*`` symbols were
+  renamed to ``UNNAMED`` and ``CONFIG_ASSERT_MODULE_UNNAMED_LEVEL*``. Update any
+  ``ZASSERT_MODULE(DEFAULT)`` and ``CONFIG_ASSERT_MODULE_DEFAULT_LEVEL*`` usage accordingly.
+
 Shell
 =====
 

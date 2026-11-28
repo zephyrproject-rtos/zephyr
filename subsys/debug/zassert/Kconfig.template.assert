@@ -11,15 +11,18 @@
 #	module-str = my module
 #	source "subsys/debug/zassert/Kconfig.template.assert"
 #
-# This produces a user-facing choice (Off / Terse / On / Verbose) and the derived,
+# This produces a user-facing choice (Off / Terse / Normal / Verbose) and the derived,
 # non-assignable CONFIG_ASSERT_MODULE_$(module)_LEVEL integer symbol.
-# The choice defaults to Verbose.
+# The choice defaults to the system-wide CONFIG_ASSERT_DEFAULT_LEVEL_* level.
 # The level stays overridable from prj.conf.
 #
 # SPDX-License-Identifier: Apache-2.0
 
 choice "ASSERT_MODULE_$(module)_LEVEL_CHOICE"
 	prompt "Assertion level for $(module-str)"
+	default ASSERT_MODULE_$(module)_LEVEL_OFF if ASSERT_DEFAULT_LEVEL_OFF
+	default ASSERT_MODULE_$(module)_LEVEL_TERSE if ASSERT_DEFAULT_LEVEL_TERSE
+	default ASSERT_MODULE_$(module)_LEVEL_NORMAL if ASSERT_DEFAULT_LEVEL_NORMAL
 	default ASSERT_MODULE_$(module)_LEVEL_VERBOSE
 	depends on ASSERT
 
