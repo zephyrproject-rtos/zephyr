@@ -1280,6 +1280,28 @@ int k_thread_cpu_mask_enable_all(k_tid_t thread);
  */
 int k_thread_cpu_mask_enable(k_tid_t thread, int cpu);
 
+#if !defined(CONFIG_SCHED_CPU_MASK_PIN_ONLY) || defined(__DOXYGEN__)
+/**
+ * @brief Enable a thread to run on a range of CPUs
+ *
+ * Sets the CPU enable bits of CPUs @p cpu_first to @p cpu_last, both included. The enable bits of
+ * the other CPUs are left as they are. The thread must not be currently runnable.
+ *
+ * @note You should enable @kconfig{CONFIG_SCHED_CPU_MASK} in your project
+ * configuration.
+ * @note Not available when @kconfig{CONFIG_SCHED_CPU_MASK_PIN_ONLY} is enabled, as the mask of a
+ * thread must then have exactly one CPU bit set.
+ *
+ * @param thread Thread to operate upon
+ * @param cpu_first Index of the first CPU of the range
+ * @param cpu_last Index of the last CPU of the range, not lower than @p cpu_first
+ * @retval 0 Success
+ * @retval -EINVAL @p cpu_first or @p cpu_last is out of range, @p cpu_first is higher than
+ *                 @p cpu_last, or the thread is currently runnable
+ */
+int k_thread_cpu_mask_enable_range(k_tid_t thread, int cpu_first, int cpu_last);
+#endif
+
 /**
  * @brief Prevent thread to run on specified CPU
  *
@@ -1299,6 +1321,29 @@ int k_thread_cpu_mask_enable(k_tid_t thread, int cpu);
  * @retval -EINVAL @p cpu is out of range, or the thread is currently runnable
  */
 int k_thread_cpu_mask_disable(k_tid_t thread, int cpu);
+
+#if !defined(CONFIG_SCHED_CPU_MASK_PIN_ONLY) || defined(__DOXYGEN__)
+/**
+ * @brief Prevent a thread from running on a range of CPUs
+ *
+ * Clears the CPU enable bits of CPUs @p cpu_first to @p cpu_last, both included. The enable bits of
+ * the other CPUs are left as they are. The thread must not be currently runnable.
+ *
+ * @note You should enable @kconfig{CONFIG_SCHED_CPU_MASK} in your project
+ * configuration.
+ * @note Not available when @kconfig{CONFIG_SCHED_CPU_MASK_PIN_ONLY} is enabled, as the mask of a
+ * thread must then have exactly one CPU bit set. Use :c:func:`k_thread_cpu_pin` to move a thread
+ * to a different CPU.
+ *
+ * @param thread Thread to operate upon
+ * @param cpu_first Index of the first CPU of the range
+ * @param cpu_last Index of the last CPU of the range, not lower than @p cpu_first
+ * @retval 0 Success
+ * @retval -EINVAL @p cpu_first or @p cpu_last is out of range, @p cpu_first is higher than
+ *                 @p cpu_last, or the thread is currently runnable
+ */
+int k_thread_cpu_mask_disable_range(k_tid_t thread, int cpu_first, int cpu_last);
+#endif
 
 /**
  * @brief Pin a thread to a CPU

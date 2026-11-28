@@ -318,6 +318,12 @@ Other notable changes
     :c:func:`k_thread_cpu_mask_enable` while it is not runnable (before it is started, or while
     it is blocked or suspended).
 
+  * A thread's CPU affinity can be changed for a range of CPUs at once with
+    :c:func:`k_thread_cpu_mask_enable_range` and :c:func:`k_thread_cpu_mask_disable_range` instead
+    of calling :c:func:`k_thread_cpu_mask_enable` or :c:func:`k_thread_cpu_mask_disable` for each
+    CPU. Both ends of the range are included. The functions are not available with
+    :kconfig:option:`CONFIG_SCHED_CPU_MASK_PIN_ONLY`.
+
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the documentation of the change?
