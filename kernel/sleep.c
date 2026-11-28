@@ -68,7 +68,7 @@ k_ticks_t z_impl_k_sleep_ticks(k_timeout_t timeout)
 	pending_current = _current;
 #endif /* CONFIG_TIMESLICING && CONFIG_SWAP_NONATOMIC */
 	z_sched_unready_locked(_current);
-	expected_wakeup_ticks = (uint32_t)z_add_thread_timeout(_current, timeout);
+	expected_wakeup_ticks = (uint32_t)z_add_thread_timeout(_current, z_thread_timeout, timeout);
 	z_mark_thread_as_sleeping(_current);
 
 	(void)z_swap_locked(key);

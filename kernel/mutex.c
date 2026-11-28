@@ -26,24 +26,20 @@
  * scanning the wait queues of all remaining held mutexes, ensuring the
  * correct priority is maintained when multiple mutexes are involved.
  *
+ * When a waiter times out, the timeout handler (mutex_pend_timeout) wakes it
+ * and recalculates the owner's priority from the timer ISR, under mutex_lock.
+ *
  * Known limitations:
  * - Bounded chain walk: the ownership-chain walk stops after
  *   MUTEX_CHAIN_WALK_MAX_HOPS hops. Owners beyond that hop count keep their
  *   pre-boost priority. This is a deliberate bound on the work done under
  *   mutex_lock, not a claim that chains longer than the limit cannot
  *   legally form.
- * - Deferred priority drop on timeout: when a waiter times out, the owner's
- *   priority is adjusted in the waiter's context after it resumes, not at ISR
- *   level. The owner may run at a slightly higher priority than it should for
- *   a short time, but all threads will eventually run correctly.
- *   Fixing this requires acquiring mutex_lock from the timer handler, which
- *   is not safe: on single-core, mutex_lock disables interrupts and the ISR
- *   would spin forever if a thread holds it; on SMP, it reverses the lock
- *   ordering in k_mutex_unlock (mutex_lock -> _sched_spinlock) and deadlocks.
  * - Chain priority-down not propagated on timeout: when a timeout occurs in a
  *   multi-hop ownership chain, only the immediate owner's priority is adjusted;
- *   deeper owners remain over-boosted until they release their mutexes. The
- *   impact and self-correcting nature are the same as above.
+ *   deeper owners remain over-boosted until they release their mutexes. They
+ *   may run at a slightly higher priority than they should for a while, but
+ *   all threads will eventually run correctly.
  *   Propagating the drop through the full chain would require a chain walk of
  *   unbounded length in the timer handler under the scheduler lock, adding
  *   unbounded ISR latency.
@@ -156,7 +152,7 @@ static int32_t new_prio_for_inheritance(int32_t target, int32_t limit)
 	return new_prio;
 }
 
-static bool adjust_owner_prio(struct k_mutex *mutex, int32_t new_prio)
+static void adjust_owner_prio(struct k_mutex *mutex, int32_t new_prio)
 {
 	if (mutex->owner->base.prio != new_prio) {
 
@@ -165,9 +161,8 @@ static bool adjust_owner_prio(struct k_mutex *mutex, int32_t new_prio)
 			'y' : 'n',
 			new_prio, mutex->owner->base.prio);
 
-		return z_thread_prio_set(mutex->owner, new_prio);
+		(void)z_thread_prio_set(mutex->owner, new_prio);
 	}
-	return false;
 }
 
 /*
@@ -199,12 +194,44 @@ static int32_t held_mutexes_highest_waiter_prio(struct k_thread *thread,
 }
 #endif
 
+#if Z_MUTEX_PI_ENABLED && defined(CONFIG_SYS_CLOCK_EXISTS)
+/* Timeout handler for a thread pended on a mutex */
+static void mutex_pend_timeout(struct _timeout *timeout)
+{
+	k_spinlock_key_t key = k_spin_lock(&mutex_lock);
+
+	if (z_sched_timeout_wake(timeout)) {
+		struct k_thread *thread = CONTAINER_OF(timeout, struct k_thread, base.timeout);
+
+		struct k_mutex *mutex = thread->mutex_pended_on;
+
+		LOG_DBG("%p timeout on mutex %p", thread, mutex);
+
+		/*
+		 * Clear mutex_pended_on under mutex_lock so no concurrent chain walk
+		 * can observe the stale pointer and detect a false deadlock cycle.
+		 */
+		thread->mutex_pended_on = NULL;
+
+		/*
+		 * Recalculate the owner's priority across all mutexes it still
+		 * holds; another held mutex may still justify a partial boost.
+		 */
+		int32_t new_prio =
+			held_mutexes_highest_waiter_prio(mutex->owner, mutex->owner->orig_prio);
+
+		LOG_DBG("adjusting prio down on mutex %p", mutex);
+
+		adjust_owner_prio(mutex, new_prio);
+	}
+	k_spin_unlock(&mutex_lock, key);
+}
+#endif /* Z_MUTEX_PI_ENABLED && CONFIG_SYS_CLOCK_EXISTS */
+
 int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 {
 	k_spinlock_key_t key;
-#if Z_MUTEX_PI_ENABLED
-	bool resched = false;
-#endif
+	int got_mutex;
 
 	__ASSERT(!arch_is_in_isr(), "mutexes cannot be used inside ISRs");
 
@@ -235,7 +262,7 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 #else
 		LOG_DBG("%p took mutex %p, count: %d",
 			_current, mutex, mutex->lock_count);
-#endif
+#endif /* Z_MUTEX_PI_ENABLED */
 
 		k_spin_unlock(&mutex_lock, key);
 
@@ -271,7 +298,7 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 		int hops = 0;
 #if defined(CONFIG_MUTEX_DEADLOCK_DETECT)
 		bool all_forever = K_TIMEOUT_EQ(timeout, K_FOREVER);
-#endif
+#endif /* CONFIG_MUTEX_DEADLOCK_DETECT */
 
 		LOG_DBG("chain boosting prio on mutex %p", mutex);
 
@@ -284,8 +311,7 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 			 * in the chain -- not just at the hop that closes the
 			 * cycle -- correctly rules out a false positive.
 			 * z_is_thread_pending() guards against a stale
-			 * mutex_pended_on in a thread that timed out but has
-			 * not yet cleared the field.
+			 * mutex_pended_on in a thread that is no longer pending.
 			 */
 			all_forever = all_forever &&
 				      z_is_inactive_timeout(&chain_owner->base.timeout);
@@ -303,14 +329,12 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 #endif /* CONFIG_MUTEX_DEADLOCK_DETECT */
 
 			if (z_is_prio_higher(boost_prio, chain_owner->base.prio)) {
-				resched = adjust_owner_prio(chain_mutex, boost_prio)
-					  || resched;
+				adjust_owner_prio(chain_mutex, boost_prio);
 			}
 
 			/*
 			 * Stop the chain walk if the owner is not actually
-			 * pending — its mutex_pended_on may be stale (e.g. it
-			 * just timed out but has not yet cleared the field).
+			 * pending — its mutex_pended_on may be stale.
 			 * Always boost the current owner first, then decide
 			 * whether to continue.
 			 */
@@ -335,9 +359,15 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 			chain_owner = chain_mutex->owner;
 		}
 	}
-#endif
+#endif /* Z_MUTEX_PI_ENABLED */
 
-	int got_mutex = z_pend_curr(&mutex_lock, key, &mutex->wait_q, timeout);
+#if Z_MUTEX_PI_ENABLED && defined(CONFIG_SYS_CLOCK_EXISTS)
+	got_mutex =
+		z_pend_curr_handler(&mutex_lock, key, &mutex->wait_q, timeout, mutex_pend_timeout);
+#else
+	got_mutex =
+		z_pend_curr_handler(&mutex_lock, key, &mutex->wait_q, timeout, z_thread_timeout);
+#endif /* Z_MUTEX_PI_ENABLED && CONFIG_SYS_CLOCK_EXISTS */
 
 	LOG_DBG("on mutex %p got_mutex value: %d", mutex, got_mutex);
 
@@ -346,47 +376,13 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 
 #if Z_MUTEX_PI_ENABLED
 	if (got_mutex == 0) {
-		/* Lock granted; clear the pending mutex pointer. */
-		_current->mutex_pended_on = NULL;
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mutex, lock, mutex, timeout, 0);
 		return 0;
 	}
 
-	/* timed out */
-
-	LOG_DBG("%p timeout on mutex %p", _current, mutex);
-
+	/* Timed out: wait for the timeout handler to finish with the mutex. */
 	key = k_spin_lock(&mutex_lock);
-
-	/*
-	 * Clear mutex_pended_on under mutex_lock so no concurrent chain walk
-	 * can observe the stale pointer and detect a false deadlock cycle.
-	 */
-	_current->mutex_pended_on = NULL;
-
-	/*
-	 * Check if mutex was unlocked after this thread was unpended.
-	 * If so, skip adjusting owner's priority down.
-	 */
-	if (likely(mutex->owner != NULL)) {
-		/*
-		 * Recalculate the owner's priority across all mutexes it still
-		 * holds; another held mutex may still justify a partial boost.
-		 */
-		int32_t new_prio = held_mutexes_highest_waiter_prio(
-						mutex->owner,
-						mutex->owner->orig_prio);
-
-		LOG_DBG("adjusting prio down on mutex %p", mutex);
-
-		resched = adjust_owner_prio(mutex, new_prio) || resched;
-	}
-
-	if (resched) {
-		z_reschedule(&mutex_lock, key);
-	} else {
-		k_spin_unlock(&mutex_lock, key);
-	}
+	k_spin_unlock(&mutex_lock, key);
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mutex, lock, mutex, timeout, -EAGAIN);
 
@@ -395,7 +391,7 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mutex, lock, mutex, timeout, got_mutex);
 
 	return got_mutex;
-#endif
+#endif /* Z_MUTEX_PI_ENABLED */
 }
 
 #ifdef CONFIG_USERSPACE
