@@ -1,0 +1,30 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - posix
+    - threads
+  min_ram: 64
+  timeout: 30
+  integration_platforms:
+    - mps2/an385
+    - qemu_riscv32
+    - qemu_x86/atom
+    - qemu_x86_64/atom
+tests:
+  posix.pthread_lifecycle.pool:
+    extra_configs:
+      - CONFIG_DYNAMIC_THREAD_POOL_SIZE=3
+  posix.pthread_lifecycle.heap:
+    min_ram: 128
+    extra_configs:
+      - CONFIG_DYNAMIC_THREAD_POOL_SIZE=0
+      - CONFIG_DYNAMIC_THREAD_ALLOC=y
+      - CONFIG_DYNAMIC_THREAD_PREFER_ALLOC=y
+      # Include alignment and guard-page overhead for three dynamic stacks.
+      - CONFIG_HEAP_MEM_POOL_SIZE=65536
+  posix.pthread_lifecycle.immediate_recycle:
+    extra_configs:
+      - CONFIG_DYNAMIC_THREAD_POOL_SIZE=3
+      - CONFIG_PTHREAD_RECYCLER_DELAY_MS=0
