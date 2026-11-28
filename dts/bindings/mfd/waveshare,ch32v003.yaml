@@ -1,0 +1,14 @@
+# Copyright 2026, Kim Bøndergaard <kim@fam-boendergaard.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Waveshare CH32V003 I2C IO expander (MFD)
+
+compatible: "waveshare,ch32v003"
+
+include: [i2c-device.yaml]
+
+bus: waveshare-ch32v003
+
+properties:
+  reg:
+    required: true

@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Kim Bøndergaard
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MFD_WAVESHARE_CH32V003
+	bool "Waveshare CH32V003 I2C IO expander (MFD)"
+	default y
+	depends on DT_HAS_WAVESHARE_CH32V003_ENABLED
+	select I2C
+	help
+	  Enable the MFD driver for the Waveshare CH32V003 I2C IO expander.
+
+if MFD_WAVESHARE_CH32V003
+
+config MFD_WAVESHARE_CH32V003_INIT_PRIORITY
+	int "MFD init priority"
+	default 65
+	help
+	  Device driver initialization priority for CH32V003 MFD.
+
+endif # MFD_WAVESHARE_CH32V003

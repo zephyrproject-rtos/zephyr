@@ -49,8 +49,8 @@ static esp_err_t gdma_create_sleep_retention_cb(void *arg)
 {
 	const gdma_retention_desc_t *ctx = (const gdma_retention_desc_t *)arg;
 
-	return sleep_retention_entries_create(ctx->link_list, ctx->link_num,
-					      REGDMA_LINK_PRI_GDMA, ctx->module_id);
+	return sleep_retention_entries_create(ctx->link_list, ctx->link_num, REGDMA_LINK_PRI_GDMA,
+					      ctx->module_id);
 }
 #endif
 
@@ -168,6 +168,13 @@ struct dma_esp32_channel {
 	bool running;
 	/* TX: a chain is linked behind the one in flight */
 	bool restart_pending;
+	/* TX: the chain loops back to its head, see dma_esp32_gdma_restart_channel() */
+	bool cyclic;
+	/* TX cyclic: where dma_esp32_gdma_restart_channel() starts the ring */
+	union {
+		esp_dma_desc_t restart_desc;
+		uint8_t restart_line[ROUND_UP(sizeof(esp_dma_desc_t), DMA_ESP32_DESC_ALIGN)];
+	} __aligned(DMA_ESP32_DESC_ALIGN);
 #if CONFIG_PM
 	bool pm_lock_held;
 #endif
@@ -648,7 +655,7 @@ static void IRAM_ATTR dma_esp32_isr_handle_tx(const struct device *dev,
 		intr_status &= ~(GDMA_LL_EVENT_TX_TOTAL_EOF | GDMA_LL_EVENT_TX_DONE |
 				 GDMA_LL_EVENT_TX_EOF);
 
-		if (intr_status != 0U || completed) {
+		if (intr_status != 0U || completed || tx->cyclic) {
 			tx->cb(dev, tx->user_data, tx->channel_id * 2 + 1, -intr_status);
 		}
 	}
@@ -678,7 +685,7 @@ static void IRAM_ATTR dma_esp32_isr_handle(const struct device *dev, uint8_t rx_
 #endif
 
 static int dma_esp32_config_descriptor(struct dma_esp32_channel *dma_channel,
-				       struct dma_block_config *block)
+				       struct dma_block_config *block, bool cyclic)
 {
 	if (!block) {
 		LOG_ERR("At least one dma block is required");
@@ -756,8 +763,8 @@ static int dma_esp32_config_descriptor(struct dma_esp32_channel *dma_channel,
 			if (block->next_block) {
 				block = block->next_block;
 			} else {
-				desc_iter->next = NULL;
-				if (dma_channel->dir == DMA_TX) {
+				desc_iter->next = cyclic ? dma_channel->desc_list : NULL;
+				if (dma_channel->dir == DMA_TX && !cyclic) {
 					desc_iter->dw0.suc_eof = 1;
 				}
 				break;
@@ -774,7 +781,9 @@ static int dma_esp32_config_descriptor(struct dma_esp32_channel *dma_channel,
 		return -EINVAL;
 	}
 
-	if (dma_channel->dir == DMA_TX && dma_channel->periph_id != SOC_GDMA_TRIG_PERIPH_M2M0) {
+	/* A ring has no tail to split: it must stay closed */
+	if (dma_channel->dir == DMA_TX && dma_channel->periph_id != SOC_GDMA_TRIG_PERIPH_M2M0 &&
+	    !cyclic) {
 		desc_iter = dma_esp32_tx_split_tail(
 			desc_iter, dma_channel->desc_list + ARRAY_SIZE(dma_channel->desc_list) / 2);
 	}
@@ -882,6 +891,69 @@ static uint32_t dma_esp32_rx_burst(uint32_t burst_length, uint32_t addr, uint32_
 	return burst_length;
 }
 
+int dma_esp32_gdma_config_restart(const struct device *dev, uint32_t channel, size_t skip_bytes)
+{
+	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
+	struct dma_esp32_channel *dma_channel;
+	esp_dma_desc_t *restart;
+
+	if (channel >= config->dma_channel_max) {
+		LOG_ERR("Unsupported channel");
+		return -EINVAL;
+	}
+
+	dma_channel = &config->dma_channel[channel];
+	if ((dma_channel->dir != DMA_TX) || !dma_channel->cyclic) {
+		LOG_ERR("config_restart requires a cyclic TX channel");
+		return -EINVAL;
+	}
+
+	if ((skip_bytes >= dma_channel->desc_list[0].dw0.size) ||
+	    ((skip_bytes != 0U) && (skip_bytes < 4U))) {
+		LOG_ERR("Invalid restart skip: %u bytes", (uint32_t)skip_bytes);
+		return -EINVAL;
+	}
+
+	restart = &dma_channel->restart_desc;
+	*restart = dma_channel->desc_list[0];
+	restart->buffer = (void *)((uint8_t *)restart->buffer + skip_bytes);
+	restart->dw0.size -= skip_bytes;
+	restart->dw0.length -= skip_bytes;
+	restart->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
+	/* next copied from desc_list[0] already points into the ring
+	 * (desc_list[1], then looped back to the head at the terminal), so the
+	 * frame flows through the whole ring thereafter.
+	 */
+	sys_cache_data_flush_range(restart, sizeof(*restart));
+
+	return 0;
+}
+
+int IRAM_ATTR dma_esp32_gdma_restart_channel(const struct device *dev, uint32_t channel)
+{
+	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
+	struct dma_esp32_data *data = (struct dma_esp32_data *const)(dev)->data;
+	struct dma_esp32_channel *dma_channel;
+
+	if (channel >= config->dma_channel_max) {
+		LOG_ERR("Unsupported channel");
+		return -EINVAL;
+	}
+
+	dma_channel = &config->dma_channel[channel];
+	if ((dma_channel->dir != DMA_TX) || !dma_channel->cyclic) {
+		LOG_ERR("Restart requires a cyclic TX channel");
+		return -EINVAL;
+	}
+
+	gdma_ll_tx_reset_channel(data->hal.dev, dma_channel->channel_id);
+	gdma_ll_tx_set_desc_addr(data->hal.dev, dma_channel->channel_id,
+				 (uint32_t)(uintptr_t)&dma_channel->restart_desc);
+	gdma_ll_tx_start(data->hal.dev, dma_channel->channel_id);
+
+	return 0;
+}
+
 static int dma_esp32_config_rx(const struct device *dev, struct dma_esp32_channel *dma_channel,
 			       struct dma_config *config_dma)
 {
@@ -926,7 +998,7 @@ static int dma_esp32_config_rx(const struct device *dev, struct dma_esp32_channe
 	gdma_hal_clear_intr(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX,
 			    GDMA_LL_RX_EVENT_MASK);
 
-	return dma_esp32_config_descriptor(dma_channel, config_dma->head_block);
+	return dma_esp32_config_descriptor(dma_channel, config_dma->head_block, false);
 }
 
 static int dma_esp32_config_tx(const struct device *dev, struct dma_esp32_channel *dma_channel,
@@ -934,8 +1006,14 @@ static int dma_esp32_config_tx(const struct device *dev, struct dma_esp32_channe
 {
 	struct dma_esp32_data *data = (struct dma_esp32_data *const)(dev)->data;
 
+	if (config_dma->cyclic && dma_channel->periph_id == SOC_GDMA_TRIG_PERIPH_M2M0) {
+		LOG_ERR("Cyclic transfers are not supported memory-to-memory");
+		return -ENOTSUP;
+	}
+
 	dma_channel->dir = DMA_TX;
 	dma_channel->running = false;
+	dma_channel->cyclic = config_dma->cyclic;
 
 	dma_esp32_channel_reset(data, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX);
 
@@ -962,7 +1040,8 @@ static int dma_esp32_config_tx(const struct device *dev, struct dma_esp32_channe
 	gdma_hal_clear_intr(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX,
 			    GDMA_LL_TX_EVENT_MASK);
 
-	return dma_esp32_config_descriptor(dma_channel, config_dma->head_block);
+	return dma_esp32_config_descriptor(dma_channel, config_dma->head_block,
+					   dma_channel->cyclic);
 }
 
 static int dma_esp32_config(const struct device *dev, uint32_t channel,
@@ -1117,8 +1196,11 @@ static int dma_esp32_start(const struct device *dev, uint32_t channel)
 				return 0; /* the reload was linked behind the chain in flight */
 			}
 			dma_channel->running = true;
-			gdma_hal_enable_intr(&data->hal, dma_channel->channel_id,
-					     GDMA_CHANNEL_DIRECTION_TX, GDMA_LL_EVENT_TX_EOF, true);
+			/* A ring has no EOF: report each descriptor done instead */
+			gdma_hal_enable_intr(
+				&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX,
+				dma_channel->cyclic ? GDMA_LL_EVENT_TX_DONE : GDMA_LL_EVENT_TX_EOF,
+				true);
 			gdma_hal_start_with_desc(&data->hal, dma_channel->channel_id,
 						 GDMA_CHANNEL_DIRECTION_TX,
 						 (intptr_t)dma_channel->desc_list);
@@ -1355,14 +1437,18 @@ static int dma_esp32_reload(const struct device *dev, uint32_t channel, uint32_t
 		return -EINVAL;
 	}
 
+	if (dma_channel->dir == DMA_TX && dma_channel->cyclic) {
+		LOG_ERR("Reload is not supported on a cyclic channel");
+		return -ENOTSUP;
+	}
+
 	/* A running TX channel takes the buffer as the next one, as with eDMA. */
 	if (dma_channel->dir == DMA_TX && dma_channel->periph_id != SOC_GDMA_TRIG_PERIPH_M2M0 &&
 	    dma_channel->running && dma_channel->in_flight > 0U) {
 		return dma_esp32_tx_append(data, dma_channel, src, size);
 	}
 
-	if (size > ARRAY_SIZE(dma_channel->desc_list) *
-		   DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED) {
+	if (size > ARRAY_SIZE(dma_channel->desc_list) * DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED) {
 		LOG_ERR("Not enough DMA descriptors. Increase CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM");
 		return -EINVAL;
 	}
@@ -1458,14 +1544,12 @@ static int dma_esp32_configure_irq(const struct device *dev)
 		}
 #endif
 
-		int ret = esp_intr_alloc_intrstatus(irq_cfg[i].irq_source,
+		int ret = esp_intr_alloc_intrstatus(
+			irq_cfg[i].irq_source,
 			ESP_PRIO_TO_FLAGS(irq_cfg[i].irq_priority) |
 				ESP_INT_FLAGS_CHECK(irq_cfg[i].irq_flags) | ESP_INTR_FLAG_IRAM,
-			(uint32_t)status_reg,
-			status_mask,
-			(intr_handler_t)config->irq_handlers[i],
-			(void *)dev,
-			NULL);
+			(uint32_t)status_reg, status_mask, (intr_handler_t)config->irq_handlers[i],
+			(void *)dev, NULL);
 
 		if (ret != 0) {
 			LOG_ERR("Could not allocate interrupt handler");
@@ -1545,8 +1629,7 @@ static int dma_esp32_init(const struct device *dev)
 
 #if GDMA_SLEEP_RETENTION_ENABLED
 	for (uint8_t pair = 0; pair < GDMA_LL_PAIRS_PER_INST; pair++) {
-		const gdma_retention_desc_t *ctx =
-			&gdma_retention_infos[group_id][pair];
+		const gdma_retention_desc_t *ctx = &gdma_retention_infos[group_id][pair];
 		sleep_retention_module_init_param_t init_param = {
 			.cbs = {.create = {.handle = gdma_create_sleep_retention_cb,
 					   .arg = (void *)ctx}},
