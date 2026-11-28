@@ -1,0 +1,13 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * McASP0 in internal digital loopback (I2S_OPT_LOOPBACK): AXR0 transmits
+ * to AXR1, no wiring needed.
+ */
+
+/ {
+	aliases {
+		i2s-node0 = &mcasp0;
+	};
+};
