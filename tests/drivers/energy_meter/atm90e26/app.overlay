@@ -1,0 +1,54 @@
+/*
+ * Copyright (c) 2025 Pedro Ramos
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	euart_meter: uart-meter {
+		compatible = "zephyr,uart-emul";
+		current-speed = <9600>;
+		status = "okay";
+
+		meter_uart: atm90e26 {
+			compatible = "microchip,atm90e26";
+			meter-constant = <3200>;
+			mmode = <0x9423>;
+			u-gain = <0x6000>;
+		};
+	};
+};
+
+&spi0 {
+	meter_spi: atm90e26@0 {
+		compatible = "microchip,atm90e26";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+		meter-constant = <3200>;
+		func-en = <0x0008>;
+		pl-constant = <0x0015d175>;
+		l-gain = <0x1234>;
+		mmode = <0x9423>;
+		u-gain = <0x6000>;
+		q-offset-n = <0x0042>;
+		irq-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+		cf1-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+	};
+
+	meter_deferred: atm90e26@1 {
+		compatible = "microchip,atm90e26";
+		reg = <1>;
+		spi-max-frequency = <1000000>;
+		zephyr,deferred-init;
+	};
+
+	/* Calibrated to read one tenth of the actual current */
+	meter_scaled: atm90e26@2 {
+		compatible = "microchip,atm90e26";
+		reg = <2>;
+		spi-max-frequency = <1000000>;
+		current-scale = <10 1>;
+	};
+};
