@@ -1,0 +1,46 @@
+common:
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+  tags:
+    - bluetooth
+  build_only: true
+
+tests:
+  bluetooth.classic.config_variants.avrcp_controller_no_browsing:
+    extra_configs:
+      - CONFIG_BT_AVRCP_BROWSING=n
+      - CONFIG_BT_AVRCP_CONTROLLER=y
+      - CONFIG_BT_AVRCP_TARGET=n
+
+  bluetooth.classic.config_variants.avrcp_target_no_browsing:
+    extra_configs:
+      - CONFIG_BT_AVRCP_BROWSING=n
+      - CONFIG_BT_AVRCP_CONTROLLER=n
+      - CONFIG_BT_AVRCP_TARGET=y
+
+  bluetooth.classic.config_variants.avrcp_controller_target_no_browsing:
+    extra_configs:
+      - CONFIG_BT_AVRCP_BROWSING=n
+      - CONFIG_BT_AVRCP_CONTROLLER=y
+      - CONFIG_BT_AVRCP_TARGET=y
+
+  bluetooth.classic.config_variants.avrcp_controller_browsing:
+    extra_configs:
+      - CONFIG_BT_AVRCP_BROWSING=y
+      - CONFIG_BT_AVRCP_CONTROLLER=y
+      - CONFIG_BT_AVRCP_TARGET=n
+
+  bluetooth.classic.config_variants.avrcp_target_browsing:
+    extra_configs:
+      - CONFIG_BT_AVRCP_BROWSING=y
+      - CONFIG_BT_AVRCP_CONTROLLER=n
+      - CONFIG_BT_AVRCP_TARGET=y
+
+  bluetooth.classic.config_variants.avrcp_controller_target_browsing:
+    extra_configs:
+      - CONFIG_BT_AVRCP_BROWSING=y
+      - CONFIG_BT_AVRCP_CONTROLLER=y
+      - CONFIG_BT_AVRCP_TARGET=y
