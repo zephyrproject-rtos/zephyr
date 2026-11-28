@@ -45,26 +45,25 @@ static int settings_direct_loader(const char *key, size_t len,
 			return 0;
 		}
 
-#ifdef CONFIG_STREAM_FLASH_ERASE
-		int rc;
-		struct flash_pages_info page;
-		off_t offset = (off_t) (ctx->offset + ctx->bytes_written) - 1;
+		if (ctx->auto_erase) {
+			int rc;
+			struct flash_pages_info page;
+			off_t offset = (off_t)(ctx->offset + ctx->bytes_written) - 1;
 
-		/* Update the last erased page to avoid deleting already
-		 * written data.
-		 */
-		if (ctx->bytes_written > 0) {
-			rc = flash_get_page_info_by_offs(ctx->fdev, offset,
-							 &page);
-			if (rc != 0) {
-				LOG_ERR("Error %d while getting page info", rc);
-				return rc;
+			/* Update the last erased page to avoid deleting already
+			 * written data.
+			 */
+			if (ctx->bytes_written > 0) {
+				rc = flash_get_page_info_by_offs(ctx->fdev, offset, &page);
+				if (rc != 0) {
+					LOG_ERR("Error %d while getting page info", rc);
+					return rc;
+				}
+				ctx->erased_up_to = page.start_offset + page.size - ctx->offset;
+			} else {
+				ctx->erased_up_to = 0;
 			}
-			ctx->erased_up_to = page.start_offset + page.size - ctx->offset;
-		} else {
-			ctx->erased_up_to = 0;
 		}
-#endif /* CONFIG_STREAM_FLASH_ERASE */
 	}
 
 	return 0;
@@ -83,23 +82,24 @@ static int settings_direct_loader(const char *key, size_t len,
 static int stream_flash_erase_to_append(struct stream_flash_ctx *ctx, size_t size)
 {
 	int rc = 0;
-#if defined(CONFIG_STREAM_FLASH_ERASE)
-	struct flash_pages_info page;
+
+	if (ctx->auto_erase) {
+		struct flash_pages_info page;
 #if defined(CONFIG_STREAM_FLASH_ERASE_ONLY_WHEN_SUPPORTED)
-	const struct flash_parameters *fparams = flash_get_parameters(ctx->fdev);
+		const struct flash_parameters *fparams = flash_get_parameters(ctx->fdev);
 #endif
 
-	/* ctx->erased_up_to points to first offset that has not yet been erased,
-	 * relative to ctx->offset.
-	 */
-	if (ctx->bytes_written + size <= ctx->erased_up_to) {
-		return 0;
-	}
+		/* ctx->erased_up_to points to first offset that has not yet been erased,
+		 * relative to ctx->offset.
+		 */
+		if (ctx->bytes_written + size <= ctx->erased_up_to) {
+			return 0;
+		}
 
-	/* Trying to append beyond available range? */
-	if (ctx->bytes_written + size > ctx->available) {
-		return -ERANGE;
-	}
+		/* Trying to append beyond available range? */
+		if (ctx->bytes_written + size > ctx->available) {
+			return -ERANGE;
+		}
 
 #if defined(CONFIG_STREAM_FLASH_ERASE_ONLY_WHEN_SUPPORTED)
 	/* Stream flash does not rely on erase, it does it when device needs it */
@@ -125,7 +125,8 @@ static int stream_flash_erase_to_append(struct stream_flash_ctx *ctx, size_t siz
 	} else {
 		ctx->erased_up_to = page.start_offset + page.size - ctx->offset;
 	}
-#endif
+	}
+
 	return rc;
 }
 
@@ -142,7 +143,7 @@ static int flash_sync(struct stream_flash_ctx *ctx)
 		return 0;
 	}
 
-	if (IS_ENABLED(CONFIG_STREAM_FLASH_ERASE)) {
+	if (ctx->auto_erase) {
 
 		rc = stream_flash_erase_to_append(ctx, ctx->buf_bytes);
 		if (rc < 0) {
@@ -310,8 +311,8 @@ static inline int inspect_device(const struct stream_flash_ctx *ctx)
 }
 #endif
 
-int stream_flash_init(struct stream_flash_ctx *ctx, const struct device *fdev,
-		      uint8_t *buf, size_t buf_len, size_t offset, size_t size,
+int stream_flash_init(struct stream_flash_ctx *ctx, const struct device *fdev, uint8_t *buf,
+		      size_t buf_len, size_t offset, size_t size, bool auto_erase,
 		      stream_flash_callback_t cb)
 {
 	const struct flash_parameters *params;
@@ -349,6 +350,8 @@ int stream_flash_init(struct stream_flash_ctx *ctx, const struct device *fdev,
 	ctx->buf_bytes = 0U;
 	ctx->offset = offset;
 	ctx->available = size;
+	ctx->auto_erase = auto_erase;
+	ctx->erased_up_to = 0;
 	ctx->write_block_size = params->write_block_size;
 
 #if !defined(CONFIG_STREAM_FLASH_POST_WRITE_CALLBACK)
@@ -357,10 +360,6 @@ int stream_flash_init(struct stream_flash_ctx *ctx, const struct device *fdev,
 	ctx->callback = cb;
 #endif
 
-
-#ifdef CONFIG_STREAM_FLASH_ERASE
-	ctx->erased_up_to = 0;
-#endif
 	ctx->erase_value = params->erase_value;
 
 	/* Inspection is deliberately done once context has been filled in */

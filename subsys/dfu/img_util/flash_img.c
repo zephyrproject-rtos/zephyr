@@ -254,11 +254,12 @@ int flash_img_init_id(struct flash_img_context *ctx, uint8_t area_id)
 
 	return stream_flash_init(&ctx->stream, flash_dev, ctx->buf, CONFIG_IMG_BLOCK_BUF_SIZE,
 				 (ctx->flash_area->fa_off + sector_data.fs_size),
-				 (ctx->flash_area->fa_size - sector_data.fs_size), NULL);
+				 (ctx->flash_area->fa_size - sector_data.fs_size),
+				 IS_ENABLED(CONFIG_IMG_ERASE_PROGRESSIVELY), NULL);
 #else
-	return stream_flash_init(&ctx->stream, flash_dev, ctx->buf,
-			CONFIG_IMG_BLOCK_BUF_SIZE, ctx->flash_area->fa_off,
-			ctx->flash_area->fa_size, NULL);
+	return stream_flash_init(&ctx->stream, flash_dev, ctx->buf, CONFIG_IMG_BLOCK_BUF_SIZE,
+				 ctx->flash_area->fa_off, ctx->flash_area->fa_size,
+				 IS_ENABLED(CONFIG_IMG_ERASE_PROGRESSIVELY), NULL);
 #endif
 }
 
