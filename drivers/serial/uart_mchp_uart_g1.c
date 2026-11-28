@@ -27,6 +27,7 @@ LOG_MODULE_REGISTER(mchp_uart_g1, CONFIG_UART_LOG_LEVEL);
 /* Device constant configuration parameters */
 struct mchp_uart_dev_cfg {
 	DEVICE_MMIO_ROM;
+	const struct device *clock_dev;
 	const struct sam_clk_cfg clock_cfg;
 	const struct pinctrl_dev_config *pin_cfg;
 
@@ -134,7 +135,10 @@ static uint8_t mchp_uart_get_parity(const struct device *dev)
 
 static int mchp_uart_configure(const struct device *dev, const struct uart_config *uart_cfg)
 {
+	const struct mchp_uart_dev_cfg *const cfg = dev->config;
+	struct mchp_uart_dev_data *const dev_data = dev->data;
 	mm_reg_t base = DEVICE_MMIO_GET(dev);
+	uint32_t clk_hz = 0U;
 
 	/* Only supports 8 data bits, 1 stop bit, and no flow control */
 	if (uart_cfg->stop_bits != UART_CFG_STOP_BITS_1 ||
@@ -143,10 +147,29 @@ static int mchp_uart_configure(const struct device *dev, const struct uart_confi
 		return -ENOTSUP;
 	}
 
+	if (uart_cfg->baudrate == 0U) {
+		return -EINVAL;
+	}
+
 	/* Reset and disable UART */
 	sys_write32(UART_CR_RSTRX_Msk | UART_CR_RSTTX_Msk | UART_CR_RXDIS_Msk | UART_CR_TXDIS_Msk |
 		    UART_CR_RSTSTA_Msk,
 		    base + UART_CR_REG_OFST);
+
+	/*
+	 * Baud rate = peripheral clock / (16 * CD). When the peripheral clock rate
+	 * is not available, keep the divisor programmed before Zephyr started.
+	 */
+	if (clock_control_get_rate(cfg->clock_dev, (clock_control_subsys_t)&cfg->clock_cfg,
+				   &clk_hz) == 0 &&
+	    clk_hz != 0U) {
+		uint32_t cd = DIV_ROUND_CLOSEST(clk_hz, 16U * uart_cfg->baudrate);
+
+		if (cd == 0U || cd > (UART_BRGR_CD_Msk >> UART_BRGR_CD_Pos)) {
+			return -ENOTSUP;
+		}
+		sys_write32(UART_BRGR_CD(cd), base + UART_BRGR_REG_OFST);
+	}
 
 	/* Normal channel mode, peripheral clock source, parity from config */
 	sys_write32(UART_MR_CHMODE_NORMAL | UART_MR_BRSRCCK_PERIPH_CLK |
@@ -155,6 +178,8 @@ static int mchp_uart_configure(const struct device *dev, const struct uart_confi
 
 	/* Enable receiver and transmitter */
 	sys_write32(UART_CR_RXEN_Msk | UART_CR_TXEN_Msk, base + UART_CR_REG_OFST);
+
+	dev_data->baud_rate = uart_cfg->baudrate;
 
 	return 0;
 }
@@ -293,11 +318,29 @@ static void mchp_uart_isr(const struct device *dev)
 
 static int mchp_uart_init(const struct device *dev)
 {
-	__maybe_unused const struct mchp_uart_dev_cfg *const cfg = dev->config;
+	const struct mchp_uart_dev_cfg *const cfg = dev->config;
 	struct mchp_uart_dev_data *const dev_data = dev->data;
+	int ret;
 
 	/* Map the MMIO region into the address space */
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
+
+	/*
+	 * Enable the peripheral clock and route the pins. Where a bootloader has
+	 * already done this and the PMC or pin configuration is not described,
+	 * keep the existing setup.
+	 */
+	ret = clock_control_on(cfg->clock_dev, (clock_control_subsys_t)&cfg->clock_cfg);
+	if (ret < 0 && ret != -EALREADY) {
+		LOG_DBG("peripheral clock not enabled: %d", ret);
+	}
+
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(pinctrl_0)
+	ret = pinctrl_apply_state(cfg->pin_cfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0 && ret != -ENOENT) {
+		return ret;
+	}
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(pinctrl_0) */
 
 	/* Disable all interrupts */
 	sys_write32(UART_IDR_Msk, DEVICE_MMIO_GET(dev) + UART_IDR_REG_OFST);
@@ -351,6 +394,7 @@ static DEVICE_API(uart, mchp_uart_driver_api) = {
 #define MCHP_UART_G1_DECLARE_CFG(n, IRQ_FUNC_INIT)					\
 	static const struct mchp_uart_dev_cfg mchp_uart##n##_cfg = {			\
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),					\
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),			\
 		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),				\
 		.pin_cfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
 		IRQ_FUNC_INIT								\

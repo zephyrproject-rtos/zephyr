@@ -1,0 +1,84 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <microchip/pic32c/pic32cz_ca/pic32cz_ca70/pic32cz2051ca70144.dtsi>
+#include "pic32cz_ca70_cult-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	compatible = "microchip,pic32cz_ca70_cult", "microchip,pic32cz2051ca70144";
+	model = "PIC32CZ CA70 Curiosity Ultra";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+	};
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &button0;
+		sw1 = &button1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&piod 23 GPIO_ACTIVE_LOW>;
+			label = "USER LED0";
+		};
+
+		led1: led_1 {
+			gpios = <&piod 29 GPIO_ACTIVE_LOW>;
+			label = "USER LED1";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&pioa 1 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			label = "SW0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: button_1 {
+			gpios = <&pioa 9 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			label = "SW1";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <300000000>;
+};
+
+/* 12 MHz crystal Y300 on XIN/XOUT (PB9/PB8). */
+&main_xtal {
+	clock-frequency = <12000000>;
+	status = "okay";
+};
+
+/* PLLA = 12 MHz * 25 = 300 MHz, processor clock 300 MHz, MCK 150 MHz. */
+&pmc {
+	microchip,plla-mul = <25>;
+	microchip,plla-div = <1>;
+	microchip,mck-prescaler = <1>;
+	microchip,mck-divider = <2>;
+};
+
+&uart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};

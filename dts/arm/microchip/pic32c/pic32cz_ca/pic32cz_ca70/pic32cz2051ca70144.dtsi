@@ -1,0 +1,29 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <microchip/pic32c/pic32cz_ca/pic32cz_ca70/pic32cz_ca70.dtsi>
+#include <dt-bindings/pic32c/pic32cz_ca/pic32cz_ca70/pic32cz2051ca70144-pinctrl.h>
+
+/* PIOC and PIOE are only bonded out on the 144-pin package. */
+&pinctrl {
+	pioc: gpio@400e1200 {
+		compatible = "atmel,sam-gpio";
+		reg = <0x400e1200 0x200>;
+		interrupts = <12 0>;
+		clocks = <&pmc PMC_TYPE_PERIPHERAL 12>;
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+
+	pioe: gpio@400e1600 {
+		compatible = "atmel,sam-gpio";
+		reg = <0x400e1600 0x200>;
+		interrupts = <17 0>;
+		clocks = <&pmc PMC_TYPE_PERIPHERAL 17>;
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+};

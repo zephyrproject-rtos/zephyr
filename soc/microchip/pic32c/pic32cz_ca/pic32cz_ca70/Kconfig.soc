@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_PIC32CZ_CA70
+	bool
+	select SOC_FAMILY_MICROCHIP_PIC32CZ_CA
+	help
+	  Enable support for Microchip PIC32CZ CA70 Cortex-M7 microcontrollers.
+
+config SOC_SERIES
+	default "pic32cz_ca70" if SOC_SERIES_PIC32CZ_CA70
+
+config SOC_PIC32CZ2051CA70064
+	bool
+	select SOC_SERIES_PIC32CZ_CA70
+
+config SOC_PIC32CZ2051CA70100
+	bool
+	select SOC_SERIES_PIC32CZ_CA70
+
+config SOC_PIC32CZ2051CA70144
+	bool
+	select SOC_SERIES_PIC32CZ_CA70
+
+config SOC
+	default "pic32cz2051ca70064" if SOC_PIC32CZ2051CA70064
+	default "pic32cz2051ca70100" if SOC_PIC32CZ2051CA70100
+	default "pic32cz2051ca70144" if SOC_PIC32CZ2051CA70144

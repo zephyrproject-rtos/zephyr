@@ -20,6 +20,7 @@
 
 /* SAMA7G5 */
 #define PMC_CPUPLL		(PMC_MAIN + 1)
+#define PMC_PLLACK		(PMC_MAIN + 1)
 #define PMC_SYSPLL		(PMC_MAIN + 2)
 #define PMC_DDRPLL		(PMC_MAIN + 3)
 #define PMC_IMGPLL		(PMC_MAIN + 4)
