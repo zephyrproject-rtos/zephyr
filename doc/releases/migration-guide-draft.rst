@@ -570,6 +570,12 @@ Serial
   removed; the baud rate is now computed from ``clock-frequency`` and ``current-speed``.
   (:github:`114729`)
 
+STM32
+=====
+
+* The attribute macros ``__ccm_data_section``, ``__ccm_data_section`` and ``__ccm_data_section``
+  retained in Zephyr 4.4 for backwards compatibility have been removed. (:github:`101255`)
+
 Timers
 ======
 
