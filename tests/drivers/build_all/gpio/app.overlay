@@ -551,6 +551,10 @@
 				    &test_gpio 0 0
 				    &test_gpio 0 0
 				    &test_gpio 0 0
+				    &test_gpio 0 0
+				    &test_gpio 0 0
+				    &test_gpio 0 0
+				    &test_gpio 0 0
 				    &test_gpio 0 0>;
 			status = "okay";
 
@@ -768,6 +772,27 @@
 				en-gpios = <&test_gpio 0 0>;
 				sync-gpios = <&test_gpio 0 0>;
 				crcen-gpios = <&test_gpio 0 0>;
+				status = "okay";
+			};
+
+			test_spi_vni8200xp: vni8200xp@e {
+				compatible = "st,vni8200xp";
+				reg = <0x0e>;
+				spi-max-frequency = <0>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <8>;
+				out-en-gpios = <&test_gpio 0 0>;
+				status = "okay";
+			};
+
+			test_spi_clt01_38sq7: clt01_38sq7@f {
+				compatible = "st,clt01-38sq7";
+				reg = <0x0f>;
+				spi-max-frequency = <0>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <8>;
 				status = "okay";
 			};
 		};

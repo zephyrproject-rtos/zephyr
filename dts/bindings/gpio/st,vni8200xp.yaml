@@ -1,0 +1,52 @@
+# Copyright (c) 2026 Sebastian Balling
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ST VNI8200XP octal high-side smart power solid state relay.
+
+  The chip is used in 16-bit SPI mode (SEL2 = H, SEL1 = H) and exposed as a
+  GPIO controller with 8 output-only pins (pin 0 = OUT1 ... pin 7 = OUT8).
+  The driver adds the command parity bits and checks the fault frame that is
+  returned on every write.
+
+  If the watchdog of the chip is enabled (WD_EN), its WD input must see a
+  falling edge at least every watchdog period (40, 80 or 160 ms), otherwise
+  all outputs are switched off. On the X-NUCLEO-PLC01A1, WD is wired to the
+  chip select of the CLT01-38SQ7 input chip, so the inputs must be read
+  periodically.
+
+  Example (X-NUCLEO-PLC01A1 on an Arduino R3 header):
+
+    &arduino_spi {
+        vni8200xp: gpio@0 {
+            compatible = "st,vni8200xp";
+            reg = <0>;
+            spi-max-frequency = <5000000>;
+            gpio-controller;
+            #gpio-cells = <2>;
+            ngpios = <8>;
+            out-en-gpios = <&arduino_header ARDUINO_HEADER_R3_D6 GPIO_ACTIVE_HIGH>;
+        };
+    };
+
+compatible: "st,vni8200xp"
+
+include: [gpio-controller.yaml, spi-device.yaml]
+
+properties:
+  "#gpio-cells":
+    const: 2
+
+  ngpios:
+    const: 8
+
+  out-en-gpios:
+    type: phandle-array
+    description: |
+      OUT_EN input of the VNI8200XP. While inactive, all outputs are off.
+      The driver keeps it inactive until a defined all-off state has been
+      programmed and reprograms the chip after asserting it.
+
+gpio-cells:
+  - pin
+  - flags

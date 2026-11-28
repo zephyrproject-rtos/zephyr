@@ -1,0 +1,19 @@
+# Copyright (c) 2026 Sebastian Balling
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_VNI8200XP
+	bool "ST VNI8200XP octal high-side switch"
+	default y
+	depends on DT_HAS_ST_VNI8200XP_ENABLED
+	depends on SPI
+	help
+	  GPIO driver for the ST VNI8200XP octal high-side power switch
+	  (8 digital outputs, 16-bit SPI frames with parity).
+
+config GPIO_VNI8200XP_INIT_PRIORITY
+	int "VNI8200XP init priority"
+	default 75
+	depends on GPIO_VNI8200XP
+	help
+	  Device driver initialization priority. Must be higher than
+	  SPI_INIT_PRIORITY.
