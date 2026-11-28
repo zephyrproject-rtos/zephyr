@@ -903,25 +903,23 @@ static int mcux_lpuart_tx(const struct device *dev, const uint8_t *buf, size_t l
 	const struct mcux_lpuart_config *config = dev->config;
 	LPUART_Type *lpuart = get_base(dev);
 
+	/*
+	 * Claim the transmitter with interrupts locked only for the check: the DMA
+	 * configuration below runs with interrupts enabled. The buffer is released
+	 * when the transfer is done or aborted. If a transfer is still in progress,
+	 * the async UART API requires -EBUSY.
+	 */
 	unsigned int key = irq_lock();
 
-	/* If a previous transfer is still in progress, the async UART API requires -EBUSY. */
-	struct dma_status status;
-	const int get_status_result = dma_get_status(config->tx_dma_config.dma_dev,
-						     config->tx_dma_config.dma_channel,
-						     &status);
-
-	if (get_status_result < 0) {
-		irq_unlock(key);
-		LOG_ERR("Failed to get DMA(Tx) status (%d)", get_status_result);
-		return get_status_result;
-	}
-
-	if (status.busy || data->async.tx_dma_params.buf != NULL) {
+	if (data->async.tx_dma_params.buf != NULL) {
 		irq_unlock(key);
 		LOG_DBG("UART TX transfer still active");
 		return -EBUSY;
 	}
+
+	data->async.tx_dma_params.buf = buf;
+	data->async.tx_dma_params.buf_len = len;
+	irq_unlock(key);
 
 	int ret;
 
@@ -943,7 +941,8 @@ static int mcux_lpuart_tx(const struct device *dev, const uint8_t *buf, size_t l
 
 	if (ret != 0) {
 		LOG_ERR("Error configuring UART DMA: %x", ret);
-		irq_unlock(key);
+		data->async.tx_dma_params.buf = NULL;
+		data->async.tx_dma_params.buf_len = 0U;
 		return ret;
 	}
 
@@ -954,19 +953,18 @@ static int mcux_lpuart_tx(const struct device *dev, const uint8_t *buf, size_t l
 	if (ret != 0) {
 		LOG_ERR("Failed to start DMA(Tx) Ch %u (%d)",
 			config->tx_dma_config.dma_channel, ret);
-		irq_unlock(key);
+		data->async.tx_dma_params.buf = NULL;
+		data->async.tx_dma_params.buf_len = 0U;
 		return ret;
 	}
 
-	data->async.tx_dma_params.buf = buf;
-	data->async.tx_dma_params.buf_len = len;
-	LPUART_EnableTxDMA(lpuart, true);
+	/* Completion cancels the timeout, so arm it before TX DMA can make progress. */
 	if (timeout_us > 0 &&
 	    data->uart_config.flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS) {
 		async_timer_start(&data->async.tx_dma_params.timeout_work,
 				  timeout_us);
 	}
-	irq_unlock(key);
+	LPUART_EnableTxDMA(lpuart, true);
 	return 0;
 }
 
