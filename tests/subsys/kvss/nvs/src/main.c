@@ -15,6 +15,10 @@
 #include <zephyr/sys/crc.h>
 #include "nvs_priv.h"
 
+#if defined(CONFIG_FLASH_SIMULATOR_CALLBACKS)
+#include <zephyr/drivers/flash/flash_simulator.h>
+#endif
+
 #define TEST_NVS_FLASH_AREA		storage_partition
 #define TEST_NVS_FLASH_AREA_OFFSET	PARTITION_OFFSET(TEST_NVS_FLASH_AREA)
 #define TEST_NVS_FLASH_AREA_ID		PARTITION_ID(TEST_NVS_FLASH_AREA)
@@ -79,6 +83,9 @@ static void after(void *data)
 		stats_reset(fixture->sim_thresholds);
 	}
 #endif /* CONFIG_TEST_NVS_SIMULATOR */
+#if defined(CONFIG_FLASH_SIMULATOR_CALLBACKS)
+	flash_simulator_set_callbacks(fixture->fs.flash_device, NULL);
+#endif
 
 	/* Clear NVS */
 	if (fixture->fs.ready) {
@@ -537,8 +544,102 @@ ZTEST_F(nvs, test_nvs_corrupted_sector_close_operation)
 	check_content(max_id, &fixture->fs);
 
 	/* Ensure that the NVS is able to store new content. */
-	execute_long_pattern_write(max_id, &fixture->fs);
+	/* max_id was just written in the retry, use an unused id. */
+	execute_long_pattern_write(max_id + 1, &fixture->fs);
 }
+
+#if defined(CONFIG_FLASH_SIMULATOR_CALLBACKS)
+static off_t fail_close_offset;
+
+static int sim_fail_close_write_cb(const struct device *dev, off_t offset,
+				   uint8_t data)
+{
+	ARG_UNUSED(dev);
+
+	if (fail_close_offset != 0 && offset >= fail_close_offset &&
+	    offset < fail_close_offset + sizeof(struct nvs_ate)) {
+		return -EIO;
+	}
+	return data;
+}
+
+ZTEST_F(nvs, test_nvs_sector_close_write_failure)
+{
+	int err;
+	int len;
+	uint8_t buf[32];
+	const uint16_t max_id = 10;
+	const uint16_t max_writes = 50;
+	struct flash_simulator_cb sim_cb = {
+		.write_byte = sim_fail_close_write_cb,
+	};
+	size_t ate_size;
+	uint32_t sector_num;
+	bool close_failed = false;
+
+	ate_size = ROUND_UP(sizeof(struct nvs_ate),
+			    fixture->fs.flash_parameters->write_block_size);
+
+	err = nvs_mount(&fixture->fs);
+	zassert_true(err == 0, "nvs_mount call failure: %d", err);
+
+	/* Register callback but keep failure disabled (fail_close_offset = 0).
+	 * This way initial writes complete without interference.
+	 */
+	flash_simulator_set_callbacks(fixture->fs.flash_device, &sim_cb);
+
+	/* Do initial writes to fill sectors. All should succeed. */
+
+	for (uint16_t i = 0; i < max_writes; i++) {
+		uint8_t id = (i % max_id);
+
+		memset(buf, i, sizeof(buf));
+		len = nvs_write(&fixture->fs, id, buf, sizeof(buf));
+		zassert_true(len == sizeof(buf), "nvs_write failed: %d", len);
+	}
+
+	/* Compute the close ATE position of the current sector.
+	 * The close ATE is written at sector_start + sector_size - ate_size.
+	 */
+	sector_num = fixture->fs.ate_wra >> ADDR_SECT_SHIFT;
+	fail_close_offset = fixture->fs.offset +
+		    sector_num * fixture->fs.sector_size +
+		    fixture->fs.sector_size - ate_size;
+
+	/* Keep writing until a sector close is triggered. Each successful
+	 * write fills more space until a close is needed; the close ATE
+	 * write at fail_close_offset will then fail.
+	 */
+	for (int attempt = 0; attempt < 20; attempt++) {
+		memset(buf, 0x55, sizeof(buf));
+		len = nvs_write(&fixture->fs, max_id, buf, sizeof(buf));
+		if (len < 0) {
+			close_failed = true;
+			break;
+		}
+	}
+	zassert_true(close_failed,
+	     "Sector close write failure was not triggered");
+
+	/* Clear the failure */
+	fail_close_offset = 0;
+
+	/* Retrying the write should now succeed because the sector close can
+	 * complete.
+	 */
+	len = nvs_write(&fixture->fs, max_id, buf, sizeof(buf));
+	zassert_true(len == sizeof(buf), "nvs_write retry failed: %d", len);
+
+	/* Unmount and remount to verify filesystem integrity and no data loss */
+	err = nvs_mount(&fixture->fs);
+	zassert_true(err == 0,
+		     "nvs_mount call failure after recovery: %d", err);
+
+	check_content(max_id, &fixture->fs);
+	/* max_id was just written in the retry, use an unused id. */
+	execute_long_pattern_write(max_id + 1, &fixture->fs);
+}
+#endif /* CONFIG_FLASH_SIMULATOR_CALLBACKS */
 #endif /* CONFIG_TEST_NVS_SIMULATOR */
 
 /**
@@ -1266,3 +1367,6 @@ ZTEST_F(nvs, test_nvs_write_stream)
 	}
 }
 #endif /* CONFIG_TEST_NVS_SIMULATOR */
+
+
+
