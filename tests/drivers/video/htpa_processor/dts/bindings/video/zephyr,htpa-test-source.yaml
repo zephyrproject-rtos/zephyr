@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test HTPA frame source
+compatible: "zephyr,htpa-test-source"
+include: base.yaml

@@ -131,6 +131,13 @@ Libraries / Subsystems
   * TF-PSA-Crypto was updated to version 1.1.2. Release notes (including security fixes) can be
     found `here <https://github.com/Mbed-TLS/TF-PSA-Crypto/releases/tag/tf-psa-crypto-1.1.2>`_.
 
+* Multimedia
+
+  * Heimann HTPA 120x84 and 160x120 thermal array sensors can provide raw frames
+    containing pixel data and electrical offsets for image processing.
+  * HTPA video devices correct and reorder raw frames, then provide signed samples,
+    histogram-scaled grayscale, or false-color RGB565 output.
+
 * Networking
 
   * :kconfig:option:`CONFIG_NET_DHCPV6_START_ON_RA` starts the DHCPv6 client

@@ -1,0 +1,18 @@
+# Copyright (c) 2026 sensryio
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_HEIMANN_HTPA
+	bool "HTPA family calibration flash driver"
+	default y
+	depends on DT_HAS_HEIMANN_HTPA_FLASH_ENABLED
+	select SPI
+	help
+	  Read-only calibration flash driver for HTPA family chips.
+
+config FLASH_HEIMANN_HTPA_INIT_PRIORITY
+	int "HTPA flash initialization priority"
+	depends on FLASH_HEIMANN_HTPA
+	default 55
+	help
+	  Initialize the calibration flash after its SPI bus and before the
+	  HTPA sensor.
