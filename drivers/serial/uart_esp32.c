@@ -691,10 +691,13 @@ static int uart_esp32_irq_is_pending(const struct device *dev)
 {
 	struct uart_esp32_data *data = dev->data;
 
-	/* Data ready or error-only interrupt (e.g. framing error with no data ready). */
+	/* Data ready or error-only interrupt (e.g. framing error with no data ready).
+	 * The ISR resets the RX FIFO on an overflow, so an overflow alone needs no
+	 * service. uart_err_check() still reports it.
+	 */
 	return uart_esp32_irq_rx_ready(dev) ||
 	       uart_esp32_irq_tx_ready(dev) ||
-	       data->isr_error_flags;
+	       ((data->isr_error_flags & ~(uint32_t)UART_INTR_RXFIFO_OVF) != 0U);
 }
 
 static void uart_esp32_irq_update(const struct device *dev)
@@ -785,6 +788,11 @@ static void uart_esp32_irq_rx_enable(const struct device *dev)
 	uart_hal_clr_intsts_mask(&data->hal, UART_INTR_RXFIFO_TOUT);
 	uart_hal_ena_intr_mask(&data->hal, UART_INTR_RXFIFO_FULL);
 	uart_hal_ena_intr_mask(&data->hal, UART_INTR_RXFIFO_TOUT);
+	/* The overflow interrupt lets the ISR reset the RX FIFO. Its status is
+	 * not cleared here, so an overflow while RX was off causes a reset now.
+	 * uart_irq_rx_disable() leaves it enabled.
+	 */
+	uart_hal_ena_intr_mask(&data->hal, UART_INTR_RXFIFO_OVF);
 }
 
 #endif
@@ -818,6 +826,14 @@ static void IRAM_ATTR uart_esp32_isr(void *arg)
 	 * can report them from the user callback.
 	 */
 	data->isr_error_flags |= uart_intr_status & UART_ESP32_ERR_INTR_MASK;
+
+	/* Reset the RX FIFO on an overflow, before the callback reads it, as
+	 * ESP-IDF does. The bytes in the FIFO are lost. Without the reset the
+	 * FIFO read and write pointers stay out of step.
+	 */
+	if ((uart_intr_status & UART_INTR_RXFIFO_OVF) != 0U) {
+		uart_hal_rxfifo_rst(&data->hal);
+	}
 
 	uart_hal_clr_intsts_mask(&data->hal, uart_intr_status);
 
