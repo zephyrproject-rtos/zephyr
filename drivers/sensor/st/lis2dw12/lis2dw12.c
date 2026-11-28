@@ -24,6 +24,9 @@
 #endif
 
 #include "lis2dw12.h"
+#ifdef CONFIG_SENSOR_ASYNC_API
+#include "lis2dw12_async.h"
+#endif
 
 LOG_MODULE_REGISTER(LIS2DW12, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -441,6 +444,10 @@ static DEVICE_API(sensor, lis2dw12_driver_api) = {
 #endif /* CONFIG_LIS2DW12_TRIGGER */
 	.sample_fetch = lis2dw12_sample_fetch,
 	.channel_get = lis2dw12_channel_get,
+#ifdef CONFIG_SENSOR_ASYNC_API
+	.submit = lis2dw12_submit,
+	.get_decoder = lis2dw12_get_decoder,
+#endif
 };
 
 static int lis2dw12_set_power_mode(const struct device *dev,
@@ -733,6 +740,19 @@ static int lis2dw12_init(const struct device *dev)
 		LIS2DW12_CONFIG_COMMON(inst)				\
 	}
 
+#ifdef CONFIG_SENSOR_ASYNC_API
+#define LIS2DW12_I2C_RTIO_DEFINE(inst)					\
+	I2C_DT_IODEV_DEFINE(lis2dw12_iodev_##inst, DT_DRV_INST(inst));	\
+	RTIO_DEFINE(lis2dw12_rtio_ctx_##inst, 8, 8);
+
+#define LIS2DW12_I2C_RTIO_DATA_INIT(inst)				\
+	.rtio_ctx = &lis2dw12_rtio_ctx_##inst,				\
+	.iodev = &lis2dw12_iodev_##inst,
+#else
+#define LIS2DW12_I2C_RTIO_DEFINE(inst)
+#define LIS2DW12_I2C_RTIO_DATA_INIT(inst)
+#endif
+
 /*
  * Instantiation macros used when a device is on an I2C bus.
  */
@@ -752,7 +772,12 @@ static int lis2dw12_init(const struct device *dev)
  */
 
 #define LIS2DW12_DEFINE(inst)						\
-	static struct lis2dw12_data lis2dw12_data_##inst;		\
+	COND_CODE_1(DT_INST_ON_BUS(inst, i2c),				\
+		    (LIS2DW12_I2C_RTIO_DEFINE(inst)), ())		\
+	static struct lis2dw12_data lis2dw12_data_##inst = {		\
+		COND_CODE_1(DT_INST_ON_BUS(inst, i2c),			\
+			    (LIS2DW12_I2C_RTIO_DATA_INIT(inst)), ())	\
+	};								\
 	static const struct lis2dw12_device_config lis2dw12_config_##inst =	\
 	COND_CODE_1(DT_INST_ON_BUS(inst, spi),				\
 		    (LIS2DW12_CONFIG_SPI(inst)),			\
