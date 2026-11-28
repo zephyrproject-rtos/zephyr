@@ -113,13 +113,20 @@ static inline bool sem_handle_poll_events(struct k_sem *sem)
 #endif /* CONFIG_POLL */
 }
 
-void z_impl_k_sem_give(struct k_sem *sem)
+static ALWAYS_INLINE int sem_give(struct k_sem *sem, bool report)
 {
 	struct k_spinlock *lock = sem_spinlock_get(sem);
 	k_spinlock_key_t key = k_spin_lock(lock);
 	bool resched;
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_sem, give, sem);
+
+	if (report && (sem->count == sem->limit)) {
+		/* no thread can be pending on a semaphore at its limit */
+		k_spin_unlock(lock, key);
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_sem, give, sem);
+		return -EOVERFLOW;
+	}
 
 	if (z_sched_wake(&sem->wait_q, 0, NULL)) {
 		resched = true;
@@ -135,6 +142,18 @@ void z_impl_k_sem_give(struct k_sem *sem)
 	}
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_sem, give, sem);
+
+	return 0;
+}
+
+void z_impl_k_sem_give(struct k_sem *sem)
+{
+	(void)sem_give(sem, false);
+}
+
+int z_impl_k_sem_post(struct k_sem *sem)
+{
+	return sem_give(sem, true);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -144,6 +163,13 @@ static inline void z_vrfy_k_sem_give(struct k_sem *sem)
 	z_impl_k_sem_give(sem);
 }
 #include <zephyr/syscalls/k_sem_give_mrsh.c>
+
+static inline int z_vrfy_k_sem_post(struct k_sem *sem)
+{
+	K_OOPS(K_SYSCALL_OBJ(sem, K_OBJ_SEM));
+	return z_impl_k_sem_post(sem);
+}
+#include <zephyr/syscalls/k_sem_post_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 int z_impl_k_sem_take(struct k_sem *sem, k_timeout_t timeout)
