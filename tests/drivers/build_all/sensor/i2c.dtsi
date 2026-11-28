@@ -1765,3 +1765,8 @@ test_i2c_ictx53xx: ictx53xx@e5 {
 	compatible = "invensense,ictx53xx";
 	reg = <0xe5>;
 };
+
+test_i2c_tmf8801: tmf8801@e6 {
+	compatible = "ams,tmf8801";
+	reg = <0xe6>;
+};
