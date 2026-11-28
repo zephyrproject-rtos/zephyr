@@ -46,7 +46,17 @@
 #define EVENT_CTX_GBADVA    0x74
 /* EVENT_EXIT reuses the GOSP slot after the handler returns. */
 #define EVENT_CTX_SCRATCH   EVENT_CTX_GOSP
+#ifdef CONFIG_DEBUG_COREDUMP
+#define EVENT_CTX_R16_R17   0x78
+#define EVENT_CTX_R18_R19   0x80
+#define EVENT_CTX_R20_R21   0x88
+#define EVENT_CTX_R22_R23   0x90
+#define EVENT_CTX_R24_R25   0x98
+#define EVENT_CTX_R26_R27   0xA0
+#define EVENT_CTX_SIZE      0xA8  /* 8-byte aligned */
+#else
 #define EVENT_CTX_SIZE      0x78  /* 8-byte aligned */
+#endif
 
 GTEXT(z_hexagon_enhanced_machine_check)
 GTEXT(z_hexagon_enhanced_exception)
@@ -150,6 +160,27 @@ GDATA(_kernel)
 	/* Save r28 (caller-saved, not part of r0-r15 register pairs) */
 	memw(r29+#EVENT_CTX_R28) = r28
 
+#ifdef CONFIG_DEBUG_COREDUMP
+.if \event_num <= 3
+	/*
+	 * The coredump wants r16-r27 too. C handlers preserve them, so
+	 * EVENT_EXIT has nothing to restore.
+	 */
+	{
+		memd(r29+#EVENT_CTX_R16_R17) = r17:16
+		memd(r29+#EVENT_CTX_R18_R19) = r19:18
+	}
+	{
+		memd(r29+#EVENT_CTX_R20_R21) = r21:20
+		memd(r29+#EVENT_CTX_R22_R23) = r23:22
+	}
+	{
+		memd(r29+#EVENT_CTX_R24_R25) = r25:24
+		memd(r29+#EVENT_CTX_R26_R27) = r27:26
+	}
+.endif
+#endif
+
 	/* Save GOSP (G2) and GBADVA (G3) as raw event-time values. */
 	r0 = g2
 	memw(r29+#EVENT_CTX_GOSP) = r0
@@ -238,9 +269,8 @@ GDATA(_kernel)
 	 *
 	 * Only volatile (caller-saved) registers r0-r15 are used here.
 	 * EVENT_ENTRY already saved r0-r15, so clobbering them is safe.
-	 * We must NOT touch callee-saved r16-r27 because EVENT_ENTRY
-	 * does not save them, and the interrupted code expects them
-	 * to be preserved.
+	 * We must NOT touch callee-saved r16-r27. The interrupted code
+	 * expects them preserved, and EVENT_EXIT never restores them.
 	 */
 
 	/* r4 = &_kernel.cpus[0] */

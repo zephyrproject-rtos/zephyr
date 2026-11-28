@@ -15,6 +15,7 @@
 #include <kswap.h>
 #include <hexagon_vm.h>
 #include <hexagon_fatal.h>
+#include <irq.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -139,6 +140,23 @@ static void z_hexagon_esf_from_ctx(struct arch_esf *esf,
 	esf->r13 = ctx->r12_r13[1];
 	esf->r14 = ctx->r14_r15[0];
 	esf->r15 = ctx->r14_r15[1];
+#ifdef CONFIG_DEBUG_COREDUMP
+	/* Only fault events have r16-r27 in the frame. */
+	if (event_type <= HEXAGON_EVENT_DEBUG) {
+		esf->r16 = ctx->r16_r27[0];
+		esf->r17 = ctx->r16_r27[1];
+		esf->r18 = ctx->r16_r27[2];
+		esf->r19 = ctx->r16_r27[3];
+		esf->r20 = ctx->r16_r27[4];
+		esf->r21 = ctx->r16_r27[5];
+		esf->r22 = ctx->r16_r27[6];
+		esf->r23 = ctx->r16_r27[7];
+		esf->r24 = ctx->r16_r27[8];
+		esf->r25 = ctx->r16_r27[9];
+		esf->r26 = ctx->r16_r27[10];
+		esf->r27 = ctx->r16_r27[11];
+	}
+#endif
 	esf->r28 = ctx->r28;
 	esf->r31_lr = ctx->link_reg;
 	esf->pc = ctx->gelr;
@@ -193,8 +211,18 @@ static FUNC_NORETURN void z_hexagon_fatal_error_return(unsigned int reason)
 FUNC_NORETURN void z_hexagon_fatal_error(unsigned int reason)
 {
 	struct arch_esf esf = {0};
+	/* Our allocframe holds the caller's fp and lr, with its sp just above. */
+	const uint32_t *frame = __builtin_frame_address(0);
 
 	z_hexagon_get_current_esf(&esf);
+	esf.r31_lr = (uint32_t)(uintptr_t)__builtin_return_address(0);
+	/*
+	 * The call to us is noreturn, so lr can point past the end of the
+	 * caller. Step back into the call so the pc maps to the right line.
+	 */
+	esf.pc = esf.r31_lr - 4;
+	esf.r30_fp = frame[0];
+	esf.r29_sp = (uint32_t)(uintptr_t)&frame[2];
 	z_fatal_error(reason, &esf);
 
 	z_hexagon_fatal_error_return(reason);

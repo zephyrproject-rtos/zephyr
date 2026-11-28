@@ -19,6 +19,18 @@ config ARCH_HAS_STACKWALK
 	  Internal config to indicate that the arch_stack_walk() API is implemented
 	  and it can be enabled.
 
+config ARCH_SUPPORTS_COREDUMP
+	default y
+
+config ARCH_SUPPORTS_COREDUMP_THREADS
+	default y
+
+config ARCH_SUPPORTS_COREDUMP_PRIV_STACKS
+	default y
+
+config ARCH_SUPPORTS_COREDUMP_STACK_PTR
+	default y
+
 source "arch/hexagon/core/Kconfig"
 
 endmenu

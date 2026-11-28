@@ -37,6 +37,9 @@
  *   0x70  gosp (G2; reused as EVENT_EXIT scratch)
  *   0x74  badva (G3)
  *   -- total size 0x78 --
+ *
+ * With CONFIG_DEBUG_COREDUMP, fault events (machine check, exception,
+ * debug) also save r16-r27 at 0x78-0xa7, for a total size of 0xa8.
  */
 
 #ifndef ZEPHYR_ARCH_HEXAGON_INCLUDE_EVENT_CONTEXT_H_
@@ -44,6 +47,7 @@
 
 #ifndef _ASMLANGUAGE
 
+#include <stddef.h>
 #include <zephyr/types.h>
 
 /** @brief Volatile register context saved on the stack by EVENT_ENTRY. */
@@ -70,13 +74,20 @@ struct event_context {
 	uint32_t r28;              /**< R28 (caller-saved, not in r0-r15 pairs) */
 	uint32_t gosp;             /**< GOSP (G2), reused as EVENT_EXIT scratch */
 	uint32_t badva;            /**< GBADVA (G3), raw event-time value */
+#ifdef CONFIG_DEBUG_COREDUMP
+	uint32_t r16_r27[12];      /**< r16-r27, fault events only */
+#endif
 };
 
 /** @brief Size of struct event_context in bytes (must equal EVENT_CTX_SIZE). */
 #define EVENT_CTX_SIZE_C sizeof(struct event_context)
 
 /* EVENT_CTX_SIZE must match the save layout in event_handlers.S. */
+#ifdef CONFIG_DEBUG_COREDUMP
+#define EVENT_CTX_SIZE 0xa8
+#else
 #define EVENT_CTX_SIZE 0x78
+#endif
 
 /*
  * Overhead appended by allocframe above EVENT_CTX_SIZE: old FP/LR stored
@@ -91,6 +102,10 @@ struct event_context {
 BUILD_ASSERT(EVENT_CTX_SIZE_C == EVENT_CTX_SIZE,
 	     "struct event_context size differs from EVENT_CTX_SIZE; "
 	     "update both event_context.h and event_handlers.S");
+#ifdef CONFIG_DEBUG_COREDUMP
+BUILD_ASSERT(offsetof(struct event_context, r16_r27) == 0x78,
+	     "r16_r27 must match EVENT_CTX_R16_R17 in event_handlers.S");
+#endif
 
 #endif /* _ASMLANGUAGE */
 
