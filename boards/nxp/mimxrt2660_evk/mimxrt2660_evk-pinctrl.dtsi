@@ -245,4 +245,41 @@
 			bias-pull-up;
 		};
 	};
+
+	/* Reserved J73 interface; requires board rework from XSPI1 PSRAM. */
+	pinmux_sramc: pinmux-sramc {
+		group-data {
+			pinmux = <&main__iomuxc_pio5_1_main_ahb_sramc_sramc_da00>,
+				 <&main__iomuxc_pio5_2_main_ahb_sramc_sramc_da01>,
+				 <&main__iomuxc_pio5_3_main_ahb_sramc_sramc_da02>,
+				 <&main__iomuxc_pio5_4_main_ahb_sramc_sramc_da03>,
+				 <&main__iomuxc_pio5_5_main_ahb_sramc_sramc_da04>,
+				 <&main__iomuxc_pio5_6_main_ahb_sramc_sramc_da05>,
+				 <&main__iomuxc_pio5_7_main_ahb_sramc_sramc_da06>,
+				 <&main__iomuxc_pio5_8_main_ahb_sramc_sramc_da07>,
+				 <&main__iomuxc_pio5_9_main_ahb_sramc_sramc_da08>,
+				 <&main__iomuxc_pio5_10_main_ahb_sramc_sramc_da09>,
+				 <&main__iomuxc_pio5_11_main_ahb_sramc_sramc_da10>,
+				 <&main__iomuxc_pio5_12_main_ahb_sramc_sramc_da11>,
+				 <&main__iomuxc_pio5_13_main_ahb_sramc_sramc_da12>,
+				 <&main__iomuxc_pio5_14_main_ahb_sramc_sramc_da13>,
+				 <&main__iomuxc_pio5_15_main_ahb_sramc_sramc_da14>,
+				 <&main__iomuxc_pio5_16_main_ahb_sramc_sramc_da15>;
+			slew-rate = "high";
+			input-enable;
+		};
+
+		group-control {
+			pinmux = <&main__iomuxc_pio5_0_main_ahb_sramc_sramc_cs0>,
+				 <&main__iomuxc_pio5_17_main_ahb_sramc_sramc_web>,
+				 <&main__iomuxc_pio5_18_main_ahb_sramc_sramc_oeb>,
+				 <&main__iomuxc_pio5_19_main_ahb_sramc_sramc_advb>;
+			slew-rate = "high";
+		};
+
+		group-wait {
+			pinmux = <&main__iomuxc_pio5_20_main_ahb_sramc_sramc_wp0>;
+			input-enable;
+		};
+	};
 };

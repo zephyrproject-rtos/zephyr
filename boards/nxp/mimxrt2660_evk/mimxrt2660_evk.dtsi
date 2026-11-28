@@ -59,6 +59,12 @@
 	pinctrl-names = "default";
 };
 
+&sramc {
+	pinctrl-0 = <&pinmux_sramc>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
 /*
  * U24 Winbond W25H512NWEAM: 512 Mbit (64 MB) serial NOR, 1.8 V, quad.
  * Boot ROM configures the pins and brings XSPI0 up for XIP from the flash
