@@ -30,7 +30,8 @@ config LOG_SIMPLE_MSG_OPTIMIZE
 	depends on !64BIT && !CBPRINTF_PACKAGE_HEADER_STORE_CREATION_FLAGS
 	default y
 	help
-	  Dedicated code for handling simple log messages (0-2 32 bit word arguments).
+	  Dedicated code for handling simple log messages (0-3 32 bit word arguments,
+	  0-2 with a log frontend).
 	  Approximately, 70%-80% log messages in the application fit into that category.
 	  Depending on the architecture code size reduction is from 0-40% (highest seen on
 	  RISCV32) and execution time also up to 40%.

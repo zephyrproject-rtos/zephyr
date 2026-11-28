@@ -93,9 +93,9 @@ static bool frontend_runtime_filtering(const void *source, uint32_t level)
 
 /** @brief Create a log message using simplified method.
  *
- * Simple log message has 0-2 32 bit word arguments so creating cbprintf package
+ * Simple log message has 0-3 32 bit word arguments so creating cbprintf package
  * is straightforward as there is no padding or alignment to concern about.
- * This function takes input data which is fmt pointer + 0-2 arguments, creates
+ * This function takes input data which is fmt pointer + 0-3 arguments, creates
  * package header which is very simple as it only contain non-zero length field.
  * Then space is allocated and message is committed. Such simple approach can
  * be applied because it is known that input string does not have any arguments
@@ -290,6 +290,18 @@ void z_impl_z_log_msg_simple_create_2(const void *source, uint32_t level,
 	}
 
 	uint32_t data[] = {(uint32_t)(uintptr_t)fmt, arg0, arg1};
+
+	z_log_msg_simple_create(source, level, data, ARRAY_SIZE(data));
+}
+
+void z_impl_z_log_msg_simple_create_3(const void *source, uint32_t level, const char *fmt,
+				      uint32_t arg0, uint32_t arg1, uint32_t arg2)
+{
+	if (!BACKENDS_IN_USE()) {
+		return;
+	}
+
+	uint32_t data[] = {(uint32_t)(uintptr_t)fmt, arg0, arg1, arg2};
 
 	z_log_msg_simple_create(source, level, data, ARRAY_SIZE(data));
 }
