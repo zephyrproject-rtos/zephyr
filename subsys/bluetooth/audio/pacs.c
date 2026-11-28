@@ -69,18 +69,29 @@ static uint16_t src_available_contexts = BT_AUDIO_CONTEXT_TYPE_NONE;
 static uint16_t snk_available_contexts = BT_AUDIO_CONTEXT_TYPE_NONE;
 
 static sys_slist_t pacs_cbs = SYS_SLIST_STATIC_INIT(&pacs_cbs);
+static K_MUTEX_DEFINE(pacs_cbs_mutex);
 
 #if defined(CONFIG_BT_PAC_SNK_LOC_WRITEABLE) || defined(CONFIG_BT_PAC_SRC_LOC_WRITEABLE)
 static void pacs_location_changed(struct bt_conn *conn, enum bt_audio_dir dir,
 				  enum bt_audio_location location)
 {
 	struct bt_pacs_cb *listener, *next;
+	__maybe_unused int err;
 
+	err = k_mutex_lock(&pacs_cbs_mutex, K_FOREVER);
+	__ASSERT(err == 0, "Failed to lock mutex: %d", err);
+
+	/* _SAFE reads the next node before each callback, so a callback can unregister itself but
+	 * not the next one, which would still be called after bt_pacs_unregister_cb() returned.
+	 */
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&pacs_cbs, listener, next, _node) {
 		if (listener->location != NULL) {
 			listener->location(conn, dir, location);
 		}
 	}
+
+	err = k_mutex_unlock(&pacs_cbs_mutex);
+	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 }
 #endif /* CONFIG_BT_PAC_SNK_LOC_WRITEABLE || CONFIG_BT_PAC_SRC_LOC_WRITEABLE */
 
@@ -1637,38 +1648,56 @@ int bt_pacs_get_location(enum bt_audio_dir dir, enum bt_audio_location *location
 
 int bt_pacs_register_cb(struct bt_pacs_cb *cb)
 {
+	__maybe_unused int err;
+	int ret = 0;
+
 	if (cb == NULL) {
 		LOG_DBG("cb is NULL");
 
 		return -EINVAL;
 	}
+
+	err = k_mutex_lock(&pacs_cbs_mutex, K_FOREVER);
+	__ASSERT(err == 0, "Failed to lock mutex: %d", err);
 
 	if (sys_slist_find(&pacs_cbs, &cb->_node, NULL)) {
 		LOG_DBG("cb %p is already registered", cb);
 
-		return -EEXIST;
+		ret = -EEXIST;
+	} else {
+		sys_slist_append(&pacs_cbs, &cb->_node);
 	}
 
-	sys_slist_append(&pacs_cbs, &cb->_node);
+	err = k_mutex_unlock(&pacs_cbs_mutex);
+	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 
-	return 0;
+	return ret;
 }
 
 int bt_pacs_unregister_cb(struct bt_pacs_cb *cb)
 {
+	__maybe_unused int err;
+	int ret = 0;
+
 	if (cb == NULL) {
 		LOG_DBG("cb is NULL");
 
 		return -EINVAL;
 	}
 
+	err = k_mutex_lock(&pacs_cbs_mutex, K_FOREVER);
+	__ASSERT(err == 0, "Failed to lock mutex: %d", err);
+
 	if (!sys_slist_find_and_remove(&pacs_cbs, &cb->_node)) {
 		LOG_DBG("cb %p is not registered", cb);
 
-		return -ENOENT;
+		ret = -ENOENT;
 	}
 
-	return 0;
+	err = k_mutex_unlock(&pacs_cbs_mutex);
+	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+
+	return ret;
 }
 
 int bt_pacs_set_available_contexts(enum bt_audio_dir dir, enum bt_audio_context contexts)
