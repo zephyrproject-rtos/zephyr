@@ -340,6 +340,24 @@ Comparator
   :zephyr_file:`tests/drivers/comparator/gpio_loopback` test provides an example of the comparator
   API. (:github:`124232`).
 
+Display
+=======
+
+* The ``enum display_pixel_format`` type has been removed and display pixel formats are now typed
+  as ``pixel_format_t``.
+
+* :c:member:`display_capabilities.supported_pixel_formats` is no longer a bitmask but a pointer
+  to a zero-terminated, constant table of ``pixel_format_t`` with static storage duration.
+  Applications can use :c:func:`display_is_pixel_format_supported` to test for a format
+  support.
+
+* :c:func:`display_color_dither_patch_caps` no longer adds the RGB input formats enabled by
+  :kconfig:option:`CONFIG_DISPLAY_COLOR_DITHER_INPUT_RGB565` and
+  :kconfig:option:`CONFIG_DISPLAY_COLOR_DITHER_INPUT_RGB888` to the supported pixel formats; it
+  only updates the current pixel format while the helper is converting. Drivers using the color
+  dithering helper must add ``COLOR_DITHER_SUPPORTED_FORMATS`` to their supported pixel format
+  table, before the terminating ``0``.
+
 Entropy
 =======
 

@@ -280,7 +280,7 @@ static int ili9xxx_display_blanking_on(const struct device *dev)
 
 static int
 ili9xxx_set_pixel_format(const struct device *dev,
-			 const enum display_pixel_format pixel_format)
+			 const pixel_format_t pixel_format)
 {
 	struct ili9xxx_data *data = dev->data;
 
@@ -360,6 +360,13 @@ static int ili9xxx_set_orientation(const struct device *dev,
 	return 0;
 }
 
+static const pixel_format_t ili9xxx_supported_pixel_formats[] = {
+	PIXEL_FORMAT_RGB_565,
+	PIXEL_FORMAT_RGB_888,
+	PIXEL_FORMAT_RGB_565X,
+	0,
+};
+
 static void ili9xxx_get_capabilities(const struct device *dev,
 				     struct display_capabilities *capabilities)
 {
@@ -367,7 +374,7 @@ static void ili9xxx_get_capabilities(const struct device *dev,
 	const struct ili9xxx_config *config = dev->config;
 
 	capabilities->supported_pixel_formats =
-		PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_RGB_888 | PIXEL_FORMAT_RGB_565X;
+		ili9xxx_supported_pixel_formats;
 	capabilities->current_pixel_format = data->pixel_format;
 
 	if (data->orientation == DISPLAY_ORIENTATION_NORMAL ||
@@ -388,7 +395,7 @@ static int ili9xxx_configure(const struct device *dev)
 	struct ili9xxx_data *data = dev->data;
 
 	int r;
-	enum display_pixel_format pixel_format;
+	pixel_format_t pixel_format;
 	enum display_orientation orientation;
 
 	/* pixel format */

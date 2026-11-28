@@ -567,6 +567,11 @@ static int ssd16xx_read(const struct device *dev,
 	return ssd16xx_read_ram(dev, SSD16XX_RAM_BLACK, x, y, desc, buf);
 }
 
+static const pixel_format_t ssd16xx_supported_pixel_formats[] = {
+	PIXEL_FORMAT_MONO01,
+	0,
+};
+
 static void ssd16xx_get_capabilities(const struct device *dev,
 				     struct display_capabilities *caps)
 {
@@ -576,7 +581,7 @@ static void ssd16xx_get_capabilities(const struct device *dev,
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height -
 			     config->height % EPD_PANEL_NUMOF_ROWS_PER_PAGE;
-	caps->supported_pixel_formats = PIXEL_FORMAT_MONO01;
+	caps->supported_pixel_formats = ssd16xx_supported_pixel_formats;
 	caps->current_pixel_format = PIXEL_FORMAT_MONO01;
 	caps->screen_info = SCREEN_INFO_MONO_MSB_FIRST | SCREEN_INFO_EPD;
 
@@ -589,7 +594,7 @@ static void ssd16xx_get_capabilities(const struct device *dev,
 }
 
 static int ssd16xx_set_pixel_format(const struct device *dev,
-				    const enum display_pixel_format pf)
+				    const pixel_format_t pf)
 {
 	if (pf == PIXEL_FORMAT_MONO01) {
 		return 0;

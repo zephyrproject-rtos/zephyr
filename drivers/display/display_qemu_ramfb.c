@@ -41,7 +41,7 @@ struct ramfb_settings {
 	uint32_t stride;
 } __packed;
 
-static int ramfb_set_pixel_format(const struct device *dev, const enum display_pixel_format format)
+static int ramfb_set_pixel_format(const struct device *dev, const pixel_format_t format)
 {
 	switch (format) {
 	case PIXEL_FORMAT_ARGB_8888:
@@ -64,13 +64,18 @@ static int ramfb_set_orientation(const struct device *dev,
 	}
 }
 
+static const pixel_format_t ramfb_supported_pixel_formats[] = {
+	PIXEL_FORMAT_ARGB_8888,
+	0,
+};
+
 static void ramfb_get_capabilities(const struct device *dev, struct display_capabilities *caps)
 {
 	const struct ramfb_config *config = dev->config;
 
 	caps->x_resolution = config->common.width;
 	caps->y_resolution = config->common.height;
-	caps->supported_pixel_formats = PIXEL_FORMAT_ARGB_8888;
+	caps->supported_pixel_formats = ramfb_supported_pixel_formats;
 	caps->screen_info = 0;
 	caps->current_pixel_format = PIXEL_FORMAT_ARGB_8888;
 	caps->current_orientation = DISPLAY_ORIENTATION_NORMAL;

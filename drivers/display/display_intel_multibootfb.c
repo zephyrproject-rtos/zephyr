@@ -13,7 +13,7 @@
 #include <zephyr/arch/x86/multiboot.h>
 
 static int intel_multiboot_fb_set_pixel_format(const struct device *dev,
-				     const enum display_pixel_format format)
+				     const pixel_format_t format)
 {
 	switch (format) {
 	case PIXEL_FORMAT_ARGB_8888:
@@ -34,6 +34,11 @@ static int intel_multiboot_fb_set_orientation(const struct device *dev,
 	}
 }
 
+static const pixel_format_t intel_multiboot_fb_supported_pixel_formats[] = {
+	PIXEL_FORMAT_ARGB_8888,
+	0,
+};
+
 static void intel_multiboot_fb_get_capabilities(const struct device *dev,
 				      struct display_capabilities *caps)
 {
@@ -41,7 +46,7 @@ static void intel_multiboot_fb_get_capabilities(const struct device *dev,
 
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
-	caps->supported_pixel_formats = PIXEL_FORMAT_ARGB_8888;
+	caps->supported_pixel_formats = intel_multiboot_fb_supported_pixel_formats;
 	caps->screen_info = 0;
 	caps->current_pixel_format = PIXEL_FORMAT_ARGB_8888;
 	caps->current_orientation = DISPLAY_ORIENTATION_NORMAL;

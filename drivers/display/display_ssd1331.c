@@ -246,18 +246,23 @@ static int ssd1331_set_contrast(const struct device *dev, const uint8_t contrast
 	return ssd1331_write_command(dev, SSD1331_CONTRASTC, &tmp, 1);
 }
 
+static const pixel_format_t ssd1331_supported_pixel_formats[] = {
+	PIXEL_FORMAT_RGB_565,
+	0,
+};
+
 static void ssd1331_get_capabilities(const struct device *dev, struct display_capabilities *caps)
 {
 	const struct ssd1331_config *config = dev->config;
 
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
-	caps->supported_pixel_formats = PIXEL_FORMAT_RGB_565;
+	caps->supported_pixel_formats = ssd1331_supported_pixel_formats;
 	caps->current_pixel_format = PIXEL_FORMAT_RGB_565;
 	caps->screen_info = 0;
 }
 
-static int ssd1331_set_pixel_format(const struct device *dev, const enum display_pixel_format pf)
+static int ssd1331_set_pixel_format(const struct device *dev, const pixel_format_t pf)
 {
 	if (pf == PIXEL_FORMAT_RGB_565) {
 		return 0;

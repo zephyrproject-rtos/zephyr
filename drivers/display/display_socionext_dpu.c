@@ -22,6 +22,12 @@ LOG_MODULE_REGISTER(display_socionext_dpu, CONFIG_DISPLAY_LOG_LEVEL);
 
 static const uint32_t dpu_supported_fmts =
 	PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_RGB_888 | PIXEL_FORMAT_ARGB_8888;
+static const pixel_format_t dpu_supported_pixel_formats[] = {
+	PIXEL_FORMAT_RGB_565,
+	PIXEL_FORMAT_RGB_888,
+	PIXEL_FORMAT_ARGB_8888,
+	0,
+};
 
 struct dpu_config {
 	DISPLAY_SEERIS_Type *base;
@@ -43,7 +49,7 @@ struct dpu_data {
 	/* DT value: PANEL_PIXEL_FORMAT_* */
 	uint32_t panel_pixel_format;
 	/* Runtime/Zephyr value: PIXEL_FORMAT_* */
-	enum display_pixel_format pixel_format;
+	pixel_format_t pixel_format;
 	dpu_pixel_format_t rgb_format;
 	uint8_t pixel_bytes;
 	struct k_sem sem;
@@ -144,7 +150,7 @@ static void dpu_get_capabilities(const struct device *dev,
 
 	capabilities->x_resolution = config->display_timing.width;
 	capabilities->y_resolution = config->display_timing.height;
-	capabilities->supported_pixel_formats = dpu_supported_fmts;
+	capabilities->supported_pixel_formats = dpu_supported_pixel_formats;
 	capabilities->current_pixel_format = data->pixel_format;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
@@ -157,7 +163,7 @@ static void *dpu_get_framebuffer(const struct device *dev)
 }
 
 static int dpu_set_pixel_format(const struct device *dev,
-				const enum display_pixel_format pixel_format)
+				const pixel_format_t pixel_format)
 {
 	const struct dpu_config *config = dev->config;
 	struct dpu_data *data = dev->data;
