@@ -69,12 +69,12 @@ LOG_MODULE_REGISTER(ti_bq25713, CONFIG_CHARGER_LOG_LEVEL);
 #define BQ25713_REG_VIN_DPM_STEP_UV        64000
 #define BQ25713_REG_VIN_DPM_OFFSET_UV      3200000
 #define BQ25713_REG_VIN_DPM_VOLTAGE_MIN_UV BQ25713_REG_VIN_DPM_OFFSET_UV
-#define BQ25713_REG_VIN_DPM_VOLTAGE_MAX_UV 195200000
+#define BQ25713_REG_VIN_DPM_VOLTAGE_MAX_UV 19520000
 
 /* Manufacture ID */
 #define BQ25713_REG_ID_LOW       0x2E
-#define BQ25713_REG_ID_PN_25713  0x4088
-#define BQ25713_REG_ID_PN_25713B 0x408A
+#define BQ25713_REG_ID_PN_25713  0x8840
+#define BQ25713_REG_ID_PN_25713B 0x8A40
 
 #define BQ25713_FACTOR_U_TO_M 1000
 
@@ -140,7 +140,7 @@ static inline int bq25713_read16(const struct device *dev, uint8_t reg, uint16_t
 		return ret;
 	}
 
-	*value = sys_get_be16(i2c_data);
+	*value = sys_get_le16(i2c_data);
 
 	return 0;
 }
@@ -214,20 +214,20 @@ static int bq25713_set_iindpm(const struct device *dev, uint32_t current_ua)
 	return bq25713_write8(dev, BQ25713_REG_IIN_HOST_HIGH, v);
 }
 
-static int bq25713_set_vindpm(const struct device *dev, uint32_t voltage_ua)
+static int bq25713_set_vindpm(const struct device *dev, uint32_t voltage_uv)
 {
-	if (!IN_RANGE(voltage_ua, BQ25713_REG_VIN_DPM_VOLTAGE_MIN_UV,
+	if (!IN_RANGE(voltage_uv, BQ25713_REG_VIN_DPM_VOLTAGE_MIN_UV,
 		      BQ25713_REG_VIN_DPM_VOLTAGE_MAX_UV)) {
 		LOG_WRN("input voltage regulation of range: %umV, "
 			"clamping to the nearest limit",
-			voltage_ua / BQ25713_FACTOR_U_TO_M);
+			voltage_uv / BQ25713_FACTOR_U_TO_M);
 	}
 
 	uint32_t v;
 
-	voltage_ua = CLAMP(voltage_ua, BQ25713_REG_VIN_DPM_VOLTAGE_MIN_UV,
+	voltage_uv = CLAMP(voltage_uv, BQ25713_REG_VIN_DPM_VOLTAGE_MIN_UV,
 			   BQ25713_REG_VIN_DPM_VOLTAGE_MAX_UV);
-	v = (voltage_ua - BQ25713_REG_VIN_DPM_OFFSET_UV) / BQ25713_REG_VIN_DPM_STEP_UV;
+	v = (voltage_uv - BQ25713_REG_VIN_DPM_OFFSET_UV) / BQ25713_REG_VIN_DPM_STEP_UV;
 	v = FIELD_PREP(BQ25713_REG_VIN_DPM_MASK, v);
 	return bq25713_write16(dev, BQ25713_REG_VIN_LOW, v);
 }
