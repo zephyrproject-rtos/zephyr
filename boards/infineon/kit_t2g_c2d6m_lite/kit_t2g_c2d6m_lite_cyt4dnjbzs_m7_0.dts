@@ -99,3 +99,11 @@ can0: &can0_1 {
 	phys = <&transceiver0>;
 	status = "okay";
 };
+
+&gpio_prt11 {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+};

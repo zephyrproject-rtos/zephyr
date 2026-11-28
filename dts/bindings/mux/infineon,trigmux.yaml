@@ -1,0 +1,42 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+title: Infineon trigger multiplexer
+
+description: |
+  Trigger multiplexer of the Infineon PERI block. Each trigger multiplexer
+  output is driven by one input of its group (multiplexer group) or by one
+  fixed input that is switched on or off (one-to-one group).
+
+  The output cell is the trigger multiplexer output, as the PDL trigger
+  output number. The flags cell is IFX_TRIGMUX_LEVEL or IFX_TRIGMUX_EDGE,
+  optionally combined with IFX_TRIGMUX_INV. The select cell is the input
+  that drives the output: the PDL trigger input number for an output in a
+  multiplexer group, or IFX_TRIGMUX_ON for the single input of an output in
+  a one-to-one group. IFX_TRIGMUX_OFF disconnects the output.
+
+  The values are defined in zephyr/dt-bindings/mux/infineon-trigmux.h and
+  in the SoC specific zephyr/dt-bindings/mux/infineon-trigmux-<soc>.h.
+
+compatible: "infineon,trigmux"
+
+include: [base.yaml, mux-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#mux-control-cells":
+    const: 2
+
+  "#mux-state-cells":
+    const: 3
+
+mux-control-cells:
+  - output
+  - flags
+
+mux-state-cells:
+  - output
+  - flags
+  - select

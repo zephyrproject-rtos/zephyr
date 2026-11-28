@@ -19,6 +19,7 @@ config SPI_INFINEON_PDL
 	default y
 	depends on DT_HAS_INFINEON_SPI_ENABLED
 	depends on !USE_INFINEON_LEGACY_HAL
+	depends on !SPI_INFINEON_SCB
 	select USE_INFINEON_SPI
 	select PINCTRL
 	select GPIO
@@ -31,16 +32,28 @@ config SPI_INFINEON_PDL_PERIPHERAL_NO_CLOCK_STALL
 	  The SCB in peripheral mode cannot pause the controller's clock, so a
 	  read-only transfer must be issued as a single PDL Transfer() call.
 
-if USE_INFINEON_SPI
+config SPI_INFINEON_SCB
+	bool "Infineon SCB SPI driver"
+	default y
+	depends on DT_HAS_INFINEON_SPI_ENABLED
+	depends on !USE_INFINEON_LEGACY_HAL
+	depends on CLOCK_CONTROL
+	select PINCTRL
+	help
+	  This option enables the register-level native SPI driver for the
+	  Infineon Serial Communication Block (SCB).
 
 config SPI_INFINEON_DMA
 	bool "Infineon SPI DMA Support"
+	depends on SPI_INFINEON_PDL || SPI_INFINEON_SCB
+	depends on MUX
 	select DMA
 	help
 	  Enable DMA during usage of SPI driver.
 
 config IFX_SPI_OVERSAMPLE_DEFAULT
 	int "Default SPI oversample value"
+	depends on USE_INFINEON_SPI
 	default 16 if SOC_FAMILY_INFINEON_PSOC4
 	default 4
 	range 1 32
@@ -50,6 +63,7 @@ config IFX_SPI_OVERSAMPLE_DEFAULT
 
 config IFX_SPI_MIN_DATA_WIDTH
 	int "Minimum SPI data width (bits)"
+	depends on SPI_INFINEON_PDL || SPI_INFINEON_SCB
 	default 4 if SOC_FAMILY_INFINEON_EDGE || SOC_FAMILY_INFINEON_PSOC4
 	default 8
 	range 1 32
@@ -59,6 +73,7 @@ config IFX_SPI_MIN_DATA_WIDTH
 
 config IFX_SPI_MAX_DATA_WIDTH
 	int "Maximum SPI data width (bits)"
+	depends on SPI_INFINEON_PDL || SPI_INFINEON_SCB
 	default 16 if SOC_FAMILY_INFINEON_PSOC4
 	default 32
 	range 4 32
@@ -68,11 +83,10 @@ config IFX_SPI_MAX_DATA_WIDTH
 
 config IFX_SPI_PDL_TYPO_FIXED
 	bool
+	depends on USE_INFINEON_SPI
 	default y if SOC_DIE_PSC3M6 || SOC_FAMILY_INFINEON_EDGE
 	help
 	  Enabled for SoCs whose PDL fixed the SCB SPI config field name
 	  "enableTransferSeparation". Older PDL revisions misspell it as
 	  "enableTransferSeperation"; the driver picks the field name from
 	  this symbol.
-
-endif # USE_INFINEON_SPI

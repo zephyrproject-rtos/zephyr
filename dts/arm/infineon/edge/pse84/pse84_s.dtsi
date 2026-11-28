@@ -7,6 +7,7 @@
 
 #include <mem.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/mux/infineon-trigmux-pse84.h>
 
 / {
 	dtcm {
@@ -51,6 +52,14 @@
 	};
 
 	soc {
+		trigmux0: mux-controller@52008000 {
+			compatible = "infineon,trigmux";
+			reg = <0x52008000 0x8000>;
+			#mux-control-cells = <2>;
+			#mux-state-cells = <3>;
+			status = "disabled";
+		};
+
 		dma0: dw@52270000 {
 			compatible = "infineon,dma";
 			reg = <0x52270000 0x10000>;
@@ -1306,6 +1315,14 @@
 				#size-cells = <0>;
 				status = "disabled";
 			};
+		};
+
+		trigmux1: mux-controller@54008000 {
+			compatible = "infineon,trigmux";
+			reg = <0x54008000 0x8000>;
+			#mux-control-cells = <2>;
+			#mux-state-cells = <3>;
+			status = "disabled";
 		};
 
 		axidmac: axidmac@541a0000 {
