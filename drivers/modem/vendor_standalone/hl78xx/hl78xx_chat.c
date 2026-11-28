@@ -722,13 +722,15 @@ void hl78xx_chat_callback_handler_info(struct modem_chat *chat,
 	}
 
 	if (result == MODEM_CHAT_SCRIPT_RESULT_SUCCESS) {
-		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SCRIPT_SUCCESS);
+		hl78xx_delegate_script_result(data, MODEM_HL78XX_EVENT_SCRIPT_SUCCESS,
+					      info->script);
 	} else if (result == MODEM_CHAT_SCRIPT_RESULT_TIMEOUT) {
 		hl78xx_capture_script_failure(data, info, result);
-		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_AT_CMD_TIMEOUT);
+		hl78xx_delegate_script_result(data, MODEM_HL78XX_EVENT_AT_CMD_TIMEOUT,
+					      info->script);
 	} else {
 		hl78xx_capture_script_failure(data, info, result);
-		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SCRIPT_FAILED);
+		hl78xx_delegate_script_result(data, MODEM_HL78XX_EVENT_SCRIPT_FAILED, info->script);
 	}
 }
 
@@ -815,6 +817,40 @@ const struct modem_chat_match *hl78xx_get_gnssad_match(void)
 #endif /* CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE */
 
 #endif /* CONFIG_HL78XX_GNSS */
+
+/**
+ * @brief Start a script whose result the current state waits for.
+ *
+ * The script is recorded as the one the state waits for: until it reports,
+ * the state machine keeps the result of any other script from the state. A
+ * second run is refused while the first has not reported, as the two results
+ * could not be told apart.
+ *
+ * @param data Driver data
+ * @param script Script to run
+ *
+ * @retval 0 The script started
+ * @retval -EBUSY Another script holds the chat, or the previous run of this
+ *                script has not reported yet
+ * @retval -errno The script could not be started
+ */
+static int hl78xx_chat_run_state_script(struct hl78xx_data *data,
+					const struct modem_chat_script *script)
+{
+	int ret;
+
+	if (data->events.state_script == script) {
+		return -EBUSY;
+	}
+
+	ret = modem_chat_run_script_async(&data->chat, script);
+	if (ret == 0) {
+		data->events.state_script = script;
+	}
+
+	return ret;
+}
+
 /* Run the predefined init script for the given device */
 int hl78xx_run_init_script(struct hl78xx_data *data)
 {
@@ -838,7 +874,7 @@ int hl78xx_run_init_script_async(struct hl78xx_data *data)
 	if (!data) {
 		return -EINVAL;
 	}
-	return modem_chat_run_script_async(&data->chat, &hl78xx_init_chat_script);
+	return hl78xx_chat_run_state_script(data, &hl78xx_init_chat_script);
 }
 
 int hl78xx_run_periodic_script_async(struct hl78xx_data *data)
@@ -867,7 +903,7 @@ int hl78xx_run_post_restart_script_async(struct hl78xx_data *data)
 	if (!data) {
 		return -EINVAL;
 	}
-	return modem_chat_run_script_async(&data->chat, &hl78xx_post_restart_chat_script);
+	return hl78xx_chat_run_state_script(data, &hl78xx_post_restart_chat_script);
 }
 
 int hl78xx_run_init_fail_script(struct hl78xx_data *data)
@@ -891,7 +927,7 @@ int hl78xx_run_pwroff_script_async(struct hl78xx_data *data)
 	if (!data) {
 		return -EINVAL;
 	}
-	return modem_chat_run_script_async(&data->chat, &hl78xx_pwroff_script);
+	return hl78xx_chat_run_state_script(data, &hl78xx_pwroff_script);
 }
 
 void hl78xx_chat_abort_active_script(struct hl78xx_data *data)
@@ -983,7 +1019,7 @@ int hl78xx_run_cfun_query_script_async(struct hl78xx_data *data)
 	if (!data) {
 		return -EINVAL;
 	}
-	return modem_chat_run_script_async(&data->chat, &hl78xx_query_cfun_script);
+	return hl78xx_chat_run_state_script(data, &hl78xx_query_cfun_script);
 }
 
 #ifdef CONFIG_HL78XX_GNSS

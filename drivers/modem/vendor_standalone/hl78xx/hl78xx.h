@@ -214,6 +214,8 @@ enum hl78xx_event {
 	MODEM_HL78XX_EVENT_NTN_POSREQ,
 #endif /* CONFIG_MODEM_HL78XX_NTN_SUPPORT */
 	MODEM_HL78XX_EVENT_PHONE_FUNCTIONALITY_CHANGED,
+	/* Full functionality requested before the init chain ran in this session */
+	MODEM_HL78XX_EVENT_LTE_RESTORE_REQUESTED,
 #ifdef CONFIG_HL78XX_GNSS
 	MODEM_HL78XX_EVENT_GNSS_START_REQUESTED,
 	MODEM_HL78XX_EVENT_GNSS_SEARCH_STARTED,
@@ -225,7 +227,6 @@ enum hl78xx_event {
 	/* Explicit GNSS mode switching events */
 	MODEM_HL78XX_EVENT_GNSS_MODE_ENTER_REQUESTED,
 	MODEM_HL78XX_EVENT_GNSS_MODE_EXIT_REQUESTED,
-	MODEM_HL78XX_EVENT_LTE_RESTORE_REQUESTED,
 #endif /* CONFIG_HL78XX_GNSS */
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 	MODEM_HL78XX_EVENT_DEVICE_ASLEEP,
@@ -329,6 +330,12 @@ struct hl78xx_power_down_status {
 	 * back to the state machine.
 	 */
 	bool pdp_activation_held;
+	/** The power down work asked the chat to abort its script. RUN_INIT_SCRIPT
+	 * takes the failure of its script for that abort, also when the power
+	 * down has been aborted since. Cleared there, and when
+	 * hl78xx_start_state_script() starts a script.
+	 */
+	bool script_aborted;
 };
 #endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
 
@@ -622,6 +629,12 @@ struct modem_status {
 	 * timeout the previous state queued before it left is not that one.
 	 */
 	bool sleep_wake_timer_armed;
+	/* INIT_POWER_OFF armed its backstop and no detach report has stopped
+	 * it: a timeout is taken for its expiry only then, and only once it has
+	 * run out. A timeout the previous state queued before it left is not
+	 * that one.
+	 */
+	bool power_off_backstop_armed;
 
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 	struct hl78xx_wdsi_status wdsi;
@@ -649,11 +662,50 @@ struct modem_gpio_callbacks {
 	struct gpio_callback uart_cts_cb;
 };
 
+/** Events the queue of the state machine holds */
+#define HL78XX_EVENT_QUEUE_SIZE 8
+
+/** @brief An event queued for the state machine. */
+struct hl78xx_queued_event {
+	/** The event, an enum hl78xx_event */
+	uint8_t evt;
+	/** Script whose result the event reports, NULL for any other event and
+	 *  for a result that no chat script produced
+	 */
+	const struct modem_chat_script *script;
+};
+
 struct modem_event_system {
 	struct k_work event_dispatch_work;
-	uint8_t event_buf[8];
+	uint8_t event_buf[HL78XX_EVENT_QUEUE_SIZE * sizeof(struct hl78xx_queued_event)];
 	struct ring_buf event_rb;
 	struct k_mutex event_rb_lock;
+	/* Script results (success, failure, AT command timeout) queued and not
+	 * handled yet: a state that must tell the result of its own script from
+	 * that of an earlier one starts its script when none is left.
+	 */
+	atomic_t script_results_queued;
+	/* The script the current state started and whose result it waits for,
+	 * NULL when it waits for none. The chat gives itself up before it
+	 * reports the result of the script that ended, so that result can
+	 * still be on its way when the state starts its own script: while this
+	 * is set, the result of any other script is not the state's. Cleared
+	 * when the script reports and when the state changes.
+	 */
+	const struct modem_chat_script *state_script;
+	/* A script that its state started and left before it reported, NULL
+	 * for none. The state that starts a script next waits for that report,
+	 * which it could not tell from the result of its own run of the same
+	 * script: see hl78xx_start_state_script(). Cleared when the script
+	 * reports, and when the chat is released in IDLE or found free.
+	 */
+	const struct modem_chat_script *unreported_script;
+	/* The current state waits to start its script: another script held the
+	 * chat, a script result was still queued, or a power down stopped the
+	 * script. Until the script starts, a script result is not the result of
+	 * that script: see hl78xx_is_stale_script_result().
+	 */
+	bool script_start_deferred;
 };
 
 enum hl78xx_at_cmd_terminal_result {
@@ -1340,6 +1392,21 @@ void hl78xx_enter_state(struct hl78xx_data *data, enum hl78xx_state state);
 void hl78xx_delegate_event(struct hl78xx_data *data, enum hl78xx_event evt);
 
 /**
+ * @brief Queue the result of a chat script for the state machine.
+ *
+ * The result is queued with the script that produced it, so that a state
+ * which started a script can tell the result of that script from the result
+ * of a script that ended before it.
+ *
+ * @param data Driver data
+ * @param evt MODEM_HL78XX_EVENT_SCRIPT_SUCCESS, MODEM_HL78XX_EVENT_SCRIPT_FAILED
+ *            or MODEM_HL78XX_EVENT_AT_CMD_TIMEOUT
+ * @param script Script that ended, NULL when no chat script produced the result
+ */
+void hl78xx_delegate_script_result(struct hl78xx_data *data, enum hl78xx_event evt,
+				   const struct modem_chat_script *script);
+
+/**
  * @brief Resume LTE service, running the config chain first if this session
  *        has not been configured yet.
  *
@@ -1361,11 +1428,17 @@ void hl78xx_enter_lte_restore_state(struct hl78xx_data *data);
  * Must be called at every hardware session boundary: cold power-on
  * (AWAIT_POWER_ON entry), graceful power-down (INIT_POWER_OFF entry) and
  * detected unexpected restart (+KSUP while already booted). The modem's RAM
- * state is gone at these points, so any driver-side record of it — the cached
- * phone functionality and the GNSS engine/search latches — is stale and must
- * not survive into the next session. (Leaving them set is what made GNSS
- * permanently unstartable: a gnss_start_status latched true could only be
- * cleared by a +GNSSEV stop URC that a powered-off modem can never send.)
+ * state is gone at these points, so any driver-side record of it is stale and
+ * must not survive into the next session: the cached phone functionality, the
+ * first-attach state and the GNSS engine/search latches. (Leaving the latches
+ * set is what made GNSS permanently unstartable: a gnss_start_status latched
+ * true could only be cleared by a +GNSSEV stop URC that a powered-off modem
+ * can never send.)
+ *
+ * The registration status the ended session reported last is discarded as
+ * well, so that the first report of the next session is not taken for a
+ * repeat of it. The INIT_POWER_OFF entry keeps that status until the next
+ * session starts: the modem has yet to report the detach of the power-off.
  *
  * Deliberately does NOT touch request/intent flags (gnss_mode_enter_pending):
  * those record what the caller wants, not what the hardware was doing, and the
