@@ -54,7 +54,7 @@ Set ``-DSHIELD=waveshare_pico_lcd_1_14`` when you invoke ``west build``. For exa
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/display/lvgl
    :board: rpi_pico
-   :shield: waveshare_pico_oled_1_14
+   :shield: waveshare_pico_lcd_1_14
    :goals: build
 
 References
