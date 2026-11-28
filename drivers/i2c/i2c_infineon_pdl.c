@@ -107,6 +107,7 @@ struct i2c_infineon_config {
 	void (*irq_config_func)(const struct device *dev);
 	cy_cb_scb_i2c_handle_events_t i2c_handle_events_func;
 	k_timeout_t transfer_timeout;
+	bool controller_rx_fifo;
 #ifdef CONFIG_I2C_INFINEON_BUS_RECOVERY
 	struct gpio_dt_spec scl;
 	struct gpio_dt_spec sda;
@@ -681,8 +682,12 @@ static int i2c_infineon_configure(const struct device *dev, uint32_t dev_config)
 		 * deadline: the acknowledge must be cleared before a buffer's
 		 * final byte, or the controller clocks bytes past the end.
 		 * i2c_infineon_isr_handler() reports that rather than letting it pass.
+		 *
+		 * A bus whose interrupt latency cannot meet that deadline sets
+		 * infineon,rx-fifo-disable.  Bytes are then received one at a time and
+		 * a late handler stretches SCL instead of losing data.
 		 */
-		data->scb_config.useRxFifo = true;
+		data->scb_config.useRxFifo = config->controller_rx_fifo;
 	}
 
 #ifdef CONFIG_PM_DEVICE
@@ -876,6 +881,10 @@ static bool i2c_infineon_reads_adjacent(struct i2c_msg *msg, uint8_t num_msgs, u
  * permits.  Returning true for a buffer that cannot release the byte stalls
  * until the transfer times out.
  *
+ * Without the RX FIFO nothing acknowledges in hardware, so no buffer can
+ * release a held closing byte and read runs are not merged.
+ *
+ * @param[in] dev I2C device instance.
  * @param[in] msg Message array passed to the transfer.
  * @param[in] num_msgs Number of messages in @p msg.
  * @param[in] i Index of the message being submitted.
@@ -884,8 +893,15 @@ static bool i2c_infineon_reads_adjacent(struct i2c_msg *msg, uint8_t num_msgs, u
  *              repeated START.
  * @retval false The run ends at msg[i].
  */
-static bool i2c_infineon_read_run_continues(struct i2c_msg *msg, uint8_t num_msgs, uint32_t i)
+static bool i2c_infineon_read_run_continues(const struct device *dev, struct i2c_msg *msg,
+					    uint8_t num_msgs, uint32_t i)
 {
+	const struct i2c_infineon_config *const config = dev->config;
+
+	if (!config->controller_rx_fifo) {
+		return false;
+	}
+
 	if (!i2c_infineon_reads_adjacent(msg, num_msgs, i)) {
 		return false;
 	}
@@ -1045,14 +1061,14 @@ static int i2c_infineon_transfer(const struct device *dev, struct i2c_msg *msg, 
 
 		if ((msg[i].flags & I2C_MSG_READ) != 0) {
 			rx_msg = &msg[i];
-			hold_bus = i2c_infineon_read_run_continues(msg, num_msgs, i);
+			hold_bus = i2c_infineon_read_run_continues(dev, msg, num_msgs, i);
 		} else {
 			tx_msg = &msg[i];
 
 			if (((i + 1) < num_msgs) && ((msg[i + 1].flags & I2C_MSG_READ) != 0)) {
 				rx_msg = &msg[i + 1];
 				i++;
-				hold_bus = i2c_infineon_read_run_continues(msg, num_msgs, i);
+				hold_bus = i2c_infineon_read_run_continues(dev, msg, num_msgs, i);
 			} else {
 				hold_bus = i2c_infineon_write_run_continues(msg, num_msgs, i);
 			}
@@ -1418,7 +1434,7 @@ static void i2c_infineon_isr_handler(const struct device *dev)
 	 * The PDL drains the FIFO and caps the reported count before the
 	 * completion callback, so the check cannot wait until then.
 	 */
-	if (data->context.masterRdDir &&
+	if (data->scb_config.useRxFifo && data->context.masterRdDir &&
 	    ((data->context.masterStatus & CY_SCB_I2C_MASTER_BUSY) != 0U) &&
 	    (Cy_SCB_GetNumInRxFifo(config->base) > data->context.masterBufferSize)) {
 		data->rx_overrun = true;
@@ -1639,6 +1655,7 @@ static DEVICE_API(i2c, i2c_infineon_driver_api) = {
 		.irq_config_func = i2c_infineon_irq_config_func_##n,                               \
 		.i2c_handle_events_func = i2c_infineon_handle_events_func_##n,                     \
 		.transfer_timeout = I2C_DT_INST_TRANSFER_TIMEOUT(n),                               \
+		.controller_rx_fifo = !DT_INST_PROP(n, infineon_rx_fifo_disable),                  \
 		I2C_INFINEON_CLOCK_GET(n)                                                          \
 		I2C_INFINEON_SCL_INIT(n) I2C_INFINEON_SDA_INIT(n)};                                \
                                                                                                    \
