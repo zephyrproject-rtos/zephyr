@@ -9,4 +9,5 @@ tests:
       - xmc45_relax_kit
       - pic32cz_ca80_cult
       - sam_e54_xpro
+      - am62l_evm/am62l3/a53
     filter: dt_nodelabel_enabled("tst_dma0")
