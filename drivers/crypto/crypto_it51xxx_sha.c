@@ -161,9 +161,9 @@ static int it51xxx_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt, bool
 		uint32_t *out_buf_ptr = (uint32_t *)pkt->out_buf;
 
 		/* Pre-processing (Padding) */
-		chip_ctx.w_input[chip_ctx.w_input_index++] = 0x80;
 		memset(&chip_ctx.w_input[chip_ctx.w_input_index], 0,
 		       SHA_SHA256_BLOCK_LEN - chip_ctx.w_input_index);
+		chip_ctx.w_input[chip_ctx.w_input_index] = 0x80;
 
 		/*
 		 * Handles the boundary case of rest data:
