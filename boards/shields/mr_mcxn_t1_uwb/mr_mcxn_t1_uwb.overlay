@@ -1,0 +1,53 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/mcx/mcxn/pinctrl/MCXN947VDF-pinctrl.h>
+
+/ {
+	chosen {
+		/*
+		 * The NXP transport driver resolves its SPI/GPIO handles from
+		 * `nxp,uwb-device`; the UCI TML layer resolves its transport
+		 * device from `zephyr,uwb-uci`. Both point at the SR250.
+		 */
+		nxp,uwb-device = &sr250;
+		zephyr,uwb-uci = &sr250;
+	};
+};
+
+&flexcomm6 {
+	status = "disabled";
+};
+
+&flexcomm6_lpspi6 {
+	status = "disabled";
+};
+
+&flexcomm7 {
+	status = "okay";
+};
+
+&flexcomm7_lpspi7 {
+	status = "okay";
+};
+
+&mr_mcxn_t1_uwb_spi {
+	status = "okay";
+
+	/*data-pin-config = "sdo-in,sdi-out";*/
+
+	sr250: sr250@0 {
+		compatible = "nxp,uwb-device";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(2)>;
+		spi-cs-setup-delay-ns = <50>;
+		spi-cs-hold-delay-ns = <50>;
+		uwb-uci-name = "UWB NXP SR250";
+		uwb-uci-bus = "spi";
+		uwb,irq-gpios = <&mr_mcxn_t1_header 12 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		uwb,rstn-gpios = <&mr_mcxn_t1_header 10 GPIO_ACTIVE_HIGH>;
+		uwb,wakeup-gpios = <&mr_mcxn_t1_header 11 GPIO_ACTIVE_HIGH>;
+	};
+};
