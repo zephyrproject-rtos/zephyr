@@ -34,10 +34,10 @@ void soc_prep_hook(void)
 
 void soc_late_init_hook(void)
 {
-#if CONFIG_SOC_SERIES_CYT4DN_START_M7_0
+#if CONFIG_SOC_SERIES_CYT4XX_START_M7_0
 	Cy_SysEnableCM7(CORE_CM7_0, DT_REG_ADDR(DT_NODELABEL(m7_0_partition)));
 #endif
-#if CONFIG_SOC_SERIES_CYT4DN_START_M7_1
+#if CONFIG_SOC_SERIES_CYT4XX_START_M7_1
 	Cy_SysEnableCM7(CORE_CM7_1, DT_REG_ADDR(DT_NODELABEL(m7_1_partition)));
 #endif
 }
