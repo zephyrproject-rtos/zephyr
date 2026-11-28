@@ -25,6 +25,22 @@ rules:
       Fills every thread and interrupt stack with a known pattern before use, so anyone able to read
       memory can measure how much of each stack has been used.
 
+  MEM_DOMAIN_ISOLATED_STACKS:
+    value: y
+    rationale: |
+      Keeps thread stacks isolated even between threads sharing a memory domain; without it, one
+      compromised user thread can read and overwrite its domain peers' stacks, return addresses
+      included.
+    references: [CWE-668, CWE-787]
+
+  OBJ_CORE:
+    value: n
+    profiles: [strict]
+    rationale: |
+      Links every participating kernel object into per-type lists that can be walked at run time,
+      giving shell commands and other tooling a ready-made inventory of the system's kernel objects.
+    references: [CWE-200]
+
   STACK_CANARIES:
     value: y
     rationale: |
@@ -55,3 +71,19 @@ rules:
       Stores human-readable thread names in RAM, labeling kernel structures for anyone able to read
       memory or logs.
     references: [CWE-200]
+
+  THREAD_RUNTIME_STATS:
+    value: n
+    profiles: [strict]
+    rationale: |
+      Counts execution cycles per thread and for the whole system at every context switch,
+      revealing each thread's CPU usage and activity pattern to anything that reads the statistics,
+      such as the kernel shell.
+    references: [CWE-200]
+
+  USERSPACE_THREAD_MAY_RAISE_PRIORITY:
+    value: n
+    rationale: |
+      Lets a user-mode thread raise the priority of itself or of any thread it has permission on,
+      so compromised user code can starve or preempt the system's higher-priority threads.
+    references: [CWE-269]
