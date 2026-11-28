@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 description: Bluetooth HCI for test purposes
 
 compatible: "zephyr,bt-hci-test"
@@ -9,5 +12,3 @@ properties:
     default: "test"
   bt-hci-bus:
     default: "virtual"
-  bt-hci-quirks:
-    default: ["no-reset"]
