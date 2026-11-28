@@ -1858,26 +1858,73 @@ void clock_mclkperiph_init(const struct device *dev, uint32_t subsys_val, uint8_
 		clock_mclkperiph_init(dev, DT_PROP(child, subsystem), DT_PROP(child, mclk_en));    \
 	}
 
+/**
+ * @brief Ensure clock system starts from known default reset state.
+ *        DFLL48M enabled, GCLK0 sourced from DFLL48M, DPLL0 disabled.
+ *
+ * A bootloader (e.g. MCUboot) may leave the CPU running from DPLL0 through
+ * GCLK0. Moving GCLK0 back to DFLL48M before the bring-up keeps the CPU on a
+ * running clock while DPLL0 is switched off and reconfigured.
+ *
+ * DFLL48M is on-demand out of reset, so it only runs once GCLK0 requests it:
+ * do not wait for it to be ready before switching GCLK0 to it.
+ */
+static int clock_init_reset_state(const struct device *dev)
+{
+	const struct clock_mchp_config *config = dev->config;
+	oscctrl_registers_t *oscctrl_regs = config->oscctrl_regs;
+	gclk_registers_t *gclk_regs = config->gclk_regs;
+	int ret;
+
+	/* Enable DFLL48M, in case a bootloader switched it off */
+	if ((oscctrl_regs->OSCCTRL_DFLLCTRLA & OSCCTRL_DFLLCTRLA_ENABLE_Msk) == 0) {
+		oscctrl_regs->OSCCTRL_DFLLCTRLA |= OSCCTRL_DFLLCTRLA_ENABLE_Msk;
+		if (WAIT_FOR((oscctrl_regs->OSCCTRL_SYNCBUSY == 0), TIMEOUT_REG_SYNC, NULL) ==
+		    false) {
+			LOG_ERR("%s: OSCCTRL_SYNCBUSY timeout on writing OSCCTRL_DFLLCTRLA",
+				__func__);
+			return -ETIMEDOUT;
+		}
+	}
+
+	/* Configure GCLK0 to its reset value: enabled, sourced from DFLL48M, no division */
+	gclk_regs->GCLK_GENCTRL[CLOCK_MCHP_GCLKGEN_GEN0] =
+		GCLK_GENCTRL_SRC(CLOCK_MCHP_GCLK_SRC_DFLL48M) | GCLK_GENCTRL_GENEN_Msk;
+	if (WAIT_FOR((gclk_regs->GCLK_SYNCBUSY == 0), TIMEOUT_REG_SYNC, NULL) == false) {
+		LOG_ERR("%s: GCLK_SYNCBUSY timeout on writing GCLK_GENCTRL[0]", __func__);
+		return -ETIMEDOUT;
+	}
+
+	/* Disable DPLL0 */
+	ret = clock_mchp_off(dev, (clock_control_subsys_t)CLOCK_MCHP_DPLL_ID_DPLL0);
+	if (ret != 0) {
+		LOG_ERR("%s: failed to disable DPLL0: %d", __func__, ret);
+		return ret;
+	}
+
+	return 0;
+}
+
 #endif /* CONFIG_CLOCK_CONTROL_MCHP_CONFIG_BOOTUP */
 
 /* clock driver initialization function. */
 static int clock_mchp_init(const struct device *dev)
 {
 #if CONFIG_CLOCK_CONTROL_MCHP_CONFIG_BOOTUP
-	const struct clock_mchp_config *config = dev->config;
 	struct clock_mchp_data *data = dev->data;
+	int ret;
+
+	ret = clock_init_reset_state(dev);
+	if (ret != 0) {
+		LOG_ERR("%s: failed to establish default clock state", __func__);
+		return ret;
+	}
 
 	DT_FOREACH_CHILD(DT_NODELABEL(mclkdomain), CLOCK_MCHP_ITERATE_MCLKDOMAIN);
 
 	/* iteration-1 */
 	CLOCK_MCHP_PROCESS_XOSC(DT_NODELABEL(xosc));
 	CLOCK_MCHP_PROCESS_XOSC32K(DT_NODELABEL(xosc32k));
-
-	config->gclk_regs->GCLK_CTRLA = GCLK_CTRLA_SWRST(1);
-	if (WAIT_FOR((config->gclk_regs->GCLK_SYNCBUSY == 0), TIMEOUT_REG_SYNC, NULL) == false) {
-		LOG_ERR("%s: GCLK_SYNCBUSY timeout on writing GCLK_CTRLA", __func__);
-		return -ETIMEDOUT;
-	}
 
 	/* To avoid changing dfll48m, while gclk0 is driven by it. Else will affect CPU */
 	data->gclk0_src = CLOCK_MCHP_GCLK_SRC_DFLL48M;
