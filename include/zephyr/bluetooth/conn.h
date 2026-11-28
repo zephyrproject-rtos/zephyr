@@ -1226,6 +1226,8 @@ enum bt_security_flag {
 	BT_SECURITY_FLAG_SC = BIT(0),
 	/** Paired with Out of Band method. */
 	BT_SECURITY_FLAG_OOB = BIT(1),
+	/** Encrypted with a Transient Application Key (LE security mode 4 level 2); not paired. */
+	BT_SECURITY_FLAG_TAK = BIT(2),
 };
 
 /** Security Info Structure. */
@@ -2013,6 +2015,11 @@ int bt_conn_create_auto_stop(void);
  *  the device has bond information or is already paired and the keys are too
  *  weak then the pairing procedure will be initiated.
  *
+ *  On a connection that uses the non-paired security model, see
+ *  bt_conn_le_non_paired_set(), this function starts no pairing: it fails with
+ *  -EPERM unless the connection has the requested level or is being encrypted
+ *  to it with a key given to bt_conn_le_tak_set().
+ *
  *  This function may return an error if the required level of security defined using
  *  @p sec is not possible to achieve due to local or remote device limitation
  *  (e.g., input output capabilities), or if the maximum number of paired devices
@@ -2045,8 +2052,8 @@ int bt_conn_set_security(struct bt_conn *conn, bt_security_t sec);
  *
  *  @param conn @ref BT_CONN_TYPE_LE or @ref BT_CONN_TYPE_BR connection object.
  *
- *  @return Connection security level if @kconfig{CONFIG_BT_SMP} or @kconfig{CONFIG_BT_CLASSIC} is
- *          enabled, else @ref BT_SECURITY_L1
+ *  @return Connection security level if @kconfig{CONFIG_BT_SMP}, @kconfig{CONFIG_BT_TAK} or
+ *          @kconfig{CONFIG_BT_CLASSIC} is enabled, else @ref BT_SECURITY_L1
  *  @return @ref BT_SECURITY_L0 @p conn is not a valid @ref BT_CONN_TYPE_LE or @ref BT_CONN_TYPE_BR
  *          connection.
  */
@@ -2063,6 +2070,62 @@ bt_security_t bt_conn_get_security(const struct bt_conn *conn);
  *  @return 0 @p conn is not a valid @ref BT_CONN_TYPE_LE or @ref BT_CONN_TYPE_BR connection.
  */
 uint8_t bt_conn_enc_key_size(const struct bt_conn *conn);
+
+/** Size of a Transient Application Key (TAK) in octets. */
+#define BT_CONN_LE_TAK_SIZE 16U
+
+/** @brief Use the non-paired security model on an LE connection.
+ *
+ *  Puts the connection into LE security mode 4 for its lifetime: the Security
+ *  Manager is not used on it, so pairing is neither started nor accepted, and
+ *  the link can be encrypted only with a Transient Application Key given to
+ *  bt_conn_le_tak_set(). Called from the @ref bt_conn_cb.connected callback, this
+ *  takes effect before anything the peer sends on the connection is handled.
+ *
+ *  A pairing that has started when this fails with -EPERM goes on and may bond
+ *  the peer. The model can then be used with that peer only once the bond is
+ *  gone, for example after bt_unpair().
+ *
+ *  The @kconfig{CONFIG_BT_TAK} Kconfig option must be enabled for this function.
+ *
+ *  @param conn Connection object.
+ *
+ *  @retval 0 Success, also when the connection already uses the non-paired security model.
+ *  @retval -EINVAL @p conn is not an LE connection.
+ *  @retval -ENOTCONN @p conn is not connected.
+ *  @retval -EPERM The peer is bonded, or the connection is paired, encrypted or being secured.
+ */
+int bt_conn_le_non_paired_set(struct bt_conn *conn);
+
+/** @brief Encrypt an LE connection with a Transient Application Key (TAK).
+ *
+ *  The key comes from a protocol with which the application has authenticated
+ *  the peer; the peer application has to supply the same key. As Central, this
+ *  starts encryption. As Peripheral, the key is kept until the Central starts
+ *  encryption or the connection ends. The result is reported with the
+ *  @ref bt_conn_cb.security_changed callback: @ref BT_SECURITY_L2 with
+ *  @ref BT_SECURITY_FLAG_TAK set in the connection info. The devices are not
+ *  paired and nothing is stored.
+ *
+ *  The @kconfig{CONFIG_BT_TAK} Kconfig option must be enabled for this function.
+ *
+ *  @param conn Connection object.
+ *  @param tak  Key of @ref BT_CONN_LE_TAK_SIZE octets, in the octet order of an HCI Long Term Key.
+ *
+ *  @retval 0 Success.
+ *  @retval -EINVAL @p conn is not an LE connection, or all octets of @p tak are zero.
+ *  @retval -ENOTCONN @p conn is not connected.
+ *  @retval -EPERM bt_conn_le_non_paired_set() has not been called for @p conn.
+ *  @retval -EALREADY The connection is encrypted.
+ *  @retval -EBUSY Encryption with an earlier key is in progress.
+ *  @retval -ENOTSUP The Controller does not support LE encryption.
+ *  @retval -EACCES As Central, the Controller refused to start encryption, for example
+ *                  while it is busy with the procedures of connection setup. The call
+ *                  can be repeated.
+ *
+ *  @return As Central, also another negative error code from sending the HCI command.
+ */
+int bt_conn_le_tak_set(struct bt_conn *conn, const uint8_t tak[BT_CONN_LE_TAK_SIZE]);
 
 enum bt_security_err {
 	/** Security procedure successful. */
@@ -2389,7 +2452,7 @@ struct bt_conn_cb {
 				  const bt_addr_le_t *rpa,
 				  const bt_addr_le_t *identity);
 #endif /* CONFIG_BT_SMP */
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_TAK) || defined(CONFIG_BT_CLASSIC)
 	/** @brief The security level of a connection has changed.
 	 *
 	 *  This callback notifies the application that the security of a
@@ -2408,7 +2471,7 @@ struct bt_conn_cb {
 	 */
 	void (*security_changed)(struct bt_conn *conn, bt_security_t level,
 				 enum bt_security_err err);
-#endif /* defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC) */
+#endif /* defined(CONFIG_BT_SMP) || defined(CONFIG_BT_TAK) || defined(CONFIG_BT_CLASSIC) */
 
 #if defined(CONFIG_BT_REMOTE_INFO) || defined(__DOXYGEN__)
 	/** @brief Remote information procedures has completed.

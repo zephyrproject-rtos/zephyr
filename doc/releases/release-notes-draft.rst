@@ -67,6 +67,10 @@ Libraries / Subsystems
   * :c:member:`bt_gatt_cb.execute_write_ended` tells the application how an Execute
     Write Request ended: whether the client's prepared values were written, cancelled,
     or discarded after a write failed.
+  * The Host supports the non-paired security model of Bluetooth Core Specification 7.0
+    (:kconfig:option:`CONFIG_BT_TAK`): an application that authenticates the peer itself encrypts
+    the connection with its own key, without pairing and without
+    :kconfig:option:`CONFIG_BT_SMP`. See :ref:`bluetooth_le_host`.
   * The ``bt_mcp_media_control_server_`` API controls the local media player and
     replaces the removed ``media_proxy_`` API, see the :ref:`migration guide
     <migration_4.6>`.

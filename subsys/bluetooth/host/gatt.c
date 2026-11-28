@@ -3397,6 +3397,25 @@ uint8_t bt_gatt_check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr
 
 	if (mask &
 	    (BT_GATT_PERM_ENCRYPT_MASK | BT_GATT_PERM_AUTHEN_MASK | BT_GATT_PERM_LESC_MASK)) {
+		/* Core Vol 3 Part C 10.3.3: a TAK meets a requirement only where the profile
+		 * permits it.
+		 */
+		if (bt_conn_le_non_paired(conn)) {
+			if (!bt_conn_le_tak_encrypted(conn)) {
+				return BT_ATT_ERR_INSUFFICIENT_ENCRYPTION;
+			}
+
+			if ((attr->perm & BT_GATT_PERM_TAK) != 0U) {
+				return 0;
+			}
+
+			if ((mask & (BT_GATT_PERM_AUTHEN_MASK | BT_GATT_PERM_LESC_MASK)) != 0U) {
+				return BT_ATT_ERR_AUTHENTICATION;
+			}
+
+			return BT_ATT_ERR_INSUFFICIENT_ENCRYPTION;
+		}
+
 #if defined(CONFIG_BT_SMP)
 		if (!conn->encrypt) {
 			if (bt_conn_ltk_present(conn)) {
