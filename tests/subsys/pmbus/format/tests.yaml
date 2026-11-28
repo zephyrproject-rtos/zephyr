@@ -1,0 +1,11 @@
+common:
+  tags:
+    - pmbus
+  integration_platforms:
+    - native_sim
+tests:
+  pmbus.format:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - qemu_x86
