@@ -16,6 +16,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/sys_io.h>
@@ -27,6 +28,8 @@
 #include "rsi_power_save.h"
 #include "rsi_pll.h"
 #include "rsi_ulpss_clk.h"
+
+LOG_MODULE_REGISTER(i2s_siwx91x, CONFIG_I2S_LOG_LEVEL);
 
 #define DMA_MAX_TRANSFER_COUNT 1024
 #define I2S_SIWX91X_UNSUPPORTED_OPTIONS                                                            \
@@ -47,8 +50,15 @@ struct i2s_siwx91x_queue_item {
 	size_t size;
 };
 
+enum i2s_siwx91x_pm_ref {
+	I2S_SIWX91X_PM_IDLE,
+	I2S_SIWX91X_PM_HELD,
+	I2S_SIWX91X_PM_BUSY,
+};
+
 struct i2s_siwx91x_stream {
 	int32_t state;
+	atomic_t pm_ref;
 	struct k_sem sem;
 	const struct device *dma_dev;
 	uint32_t dma_channel;
@@ -360,6 +370,23 @@ static void i2s_siwx91x_tx_queue_drop(struct i2s_siwx91x_stream *stream)
 	}
 }
 
+static int i2s_siwx91x_pm_put(const struct device *dev, struct i2s_siwx91x_stream *stream)
+{
+	int ret;
+
+	if (!atomic_cas(&stream->pm_ref, I2S_SIWX91X_PM_HELD, I2S_SIWX91X_PM_BUSY)) {
+		return atomic_get(&stream->pm_ref) == I2S_SIWX91X_PM_IDLE ? 0 : -EBUSY;
+	}
+
+	ret = pm_device_runtime_put_async(dev, K_NO_WAIT);
+	atomic_set(&stream->pm_ref, ret < 0 ? I2S_SIWX91X_PM_HELD : I2S_SIWX91X_PM_IDLE);
+	if (ret < 0) {
+		LOG_ERR("Failed to release runtime PM reference (%d)", ret);
+	}
+
+	return ret;
+}
+
 static void i2s_siwx91x_dma_rx_callback(const struct device *dma_dev, void *user_data,
 					uint32_t channel, int status)
 {
@@ -426,8 +453,11 @@ static void i2s_siwx91x_dma_rx_callback(const struct device *dma_dev, void *user
 	return;
 
 rx_disable:
+	if (stream->state != I2S_STATE_READY) {
+		stream->state = I2S_STATE_ERROR;
+	}
 	i2s_siwx91x_stream_disable(stream, dma_dev);
-	pm_device_runtime_put_async(i2s_dev, K_NO_WAIT);
+	(void)i2s_siwx91x_pm_put(i2s_dev, stream);
 }
 
 static void i2s_siwx91x_dma_tx_callback(const struct device *dma_dev, void *user_data,
@@ -493,8 +523,11 @@ static void i2s_siwx91x_dma_tx_callback(const struct device *dma_dev, void *user
 	return;
 
 tx_disable:
+	if (stream->state != I2S_STATE_READY) {
+		stream->state = I2S_STATE_ERROR;
+	}
 	i2s_siwx91x_stream_disable(stream, dma_dev);
-	pm_device_runtime_put_async(i2s_dev, K_NO_WAIT);
+	(void)i2s_siwx91x_pm_put(i2s_dev, stream);
 }
 
 static int i2s_siwx91x_param_config(const struct device *dev, enum i2s_dir dir)
@@ -743,30 +776,37 @@ static int i2s_siwx91x_trigger(const struct device *dev, enum i2s_dir dir, enum 
 
 	switch (cmd) {
 	case I2S_TRIGGER_START:
+		if (stream->state != I2S_STATE_READY) {
+			return -EIO;
+		}
+		if (!atomic_cas(&stream->pm_ref, I2S_SIWX91X_PM_IDLE, I2S_SIWX91X_PM_BUSY)) {
+			return -EBUSY;
+		}
+
 		ret = pm_device_runtime_get(dev);
 		if (ret < 0) {
+			atomic_set(&stream->pm_ref, I2S_SIWX91X_PM_IDLE);
 			return ret;
 		}
 
-		if (stream->state != I2S_STATE_READY) {
-			pm_device_runtime_put_async(dev, K_NO_WAIT);
-			return -EIO;
-		}
+		atomic_set(&stream->pm_ref, I2S_SIWX91X_PM_HELD);
 
 		__ASSERT_NO_MSG(stream->mem_block == NULL);
 
 		ret = i2s_siwx91x_param_config(dev, dir);
 		if (ret < 0) {
-			pm_device_runtime_put_async(dev, K_NO_WAIT);
+			(void)i2s_siwx91x_pm_put(dev, stream);
 			return ret;
 		}
 
 		ret = i2s_siwx91x_dma_channel_alloc(dev, dir);
 		if (ret < 0) {
-			pm_device_runtime_put_async(dev, K_NO_WAIT);
+			(void)i2s_siwx91x_pm_put(dev, stream);
 			return ret;
 		}
 
+		stream->state = I2S_STATE_RUNNING;
+		stream->last_block = false;
 		if (dir == I2S_DIR_RX) {
 			i2s_siwx91x_start_rx(dev);
 		} else {
@@ -775,19 +815,23 @@ static int i2s_siwx91x_trigger(const struct device *dev, enum i2s_dir dir, enum 
 
 		ret = stream->stream_start(stream, dev);
 		if (ret < 0) {
-			pm_device_runtime_put_async(dev, K_NO_WAIT);
+			if (stream->state == I2S_STATE_RUNNING) {
+				stream->state = I2S_STATE_READY;
+			}
+			(void)i2s_siwx91x_pm_put(dev, stream);
 			return ret;
 		}
 
-		cfg->reg->I2S_CER_b.CLKEN = ENABLE;
-		if (dir == I2S_DIR_TX) {
-			cfg->reg->I2S_ITER_b.TXEN = ENABLE;
-		} else {
-			cfg->reg->I2S_IRER_b.RXEN = ENABLE;
+		key = irq_lock();
+		if (stream->state == I2S_STATE_RUNNING) {
+			cfg->reg->I2S_CER_b.CLKEN = ENABLE;
+			if (dir == I2S_DIR_TX) {
+				cfg->reg->I2S_ITER_b.TXEN = ENABLE;
+			} else {
+				cfg->reg->I2S_IRER_b.RXEN = ENABLE;
+			}
 		}
-
-		stream->state = I2S_STATE_RUNNING;
-		stream->last_block = false;
+		irq_unlock(key);
 		break;
 
 	case I2S_TRIGGER_STOP:
@@ -817,12 +861,14 @@ static int i2s_siwx91x_trigger(const struct device *dev, enum i2s_dir dir, enum 
 		if (stream->state == I2S_STATE_NOT_READY) {
 			return -EIO;
 		}
+		if (atomic_get(&stream->pm_ref) == I2S_SIWX91X_PM_BUSY) {
+			return -EBUSY;
+		}
 
 		i2s_siwx91x_stream_disable(stream, stream->dma_dev);
 		stream->queue_drop(stream);
 		stream->state = I2S_STATE_READY;
-		pm_device_runtime_put_async(dev, K_NO_WAIT);
-		break;
+		return i2s_siwx91x_pm_put(dev, stream);
 
 	case I2S_TRIGGER_PREPARE:
 		if (stream->state != I2S_STATE_ERROR) {
