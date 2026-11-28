@@ -69,16 +69,87 @@ PINCTRL_DT_DEFINE(DT_NODELABEL(itm));
 #define SWO_DRAIN_WAIT_US 2000
 #endif
 
-static uint8_t buf[1];
+#define SWO_BUF_SIZE (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? 1 : 32)
+
+static uint8_t buf[SWO_BUF_SIZE] __aligned(4);
 static uint32_t log_format_current = CONFIG_LOG_BACKEND_SWO_OUTPUT_DEFAULT;
+
+/**
+ * @brief Wait until the ITM stimulus port FIFO is ready to accept data.
+ *
+ * @param port Stimulus port number.
+ */
+static inline void itm_wait_for_fifo(uint32_t port)
+{
+	while (ITM->PORT[port].u32 == 0UL) {
+		__NOP();
+	}
+}
+
+/**
+ * @brief Write data to the ITM stimulus port using multi-byte access widths.
+ *
+ * Uses 32-bit, 16-bit, and 8-bit stimulus port writes to minimize SWO trace packet
+ * header overhead and increase logging throughput.
+ *
+ * @param data   Pointer to the data buffer.
+ * @param length Number of bytes to write.
+ */
+static void itm_write(const uint8_t *data, size_t length)
+{
+	if (((ITM->TCR & ITM_TCR_ITMENA_Msk) == 0UL) ||
+	    ((ITM->TER & (1UL << ITM_PORT_LOGGER)) == 0UL)) {
+		return;
+	}
+
+	/* Align to 2-byte boundary */
+	if (((uintptr_t)data & 1U) && (length >= 1U)) {
+		itm_wait_for_fifo(ITM_PORT_LOGGER);
+		ITM->PORT[ITM_PORT_LOGGER].u8 = *data;
+		data++;
+		length--;
+	}
+
+	/* Align to 4-byte boundary */
+	if (((uintptr_t)data & 2U) && (length >= 2U)) {
+		itm_wait_for_fifo(ITM_PORT_LOGGER);
+		ITM->PORT[ITM_PORT_LOGGER].u16 = *(const uint16_t *)data;
+		data += 2;
+		length -= 2;
+	} else if (((uintptr_t)data & 2U) && (length == 1U)) {
+		itm_wait_for_fifo(ITM_PORT_LOGGER);
+		ITM->PORT[ITM_PORT_LOGGER].u8 = *data;
+		return;
+	}
+
+	/* Write 32-bit aligned words */
+	while (length >= 4U) {
+		itm_wait_for_fifo(ITM_PORT_LOGGER);
+		ITM->PORT[ITM_PORT_LOGGER].u32 = *(const uint32_t *)data;
+		data += 4;
+		length -= 4;
+	}
+
+	/* Write remaining 16-bit half-word */
+	if (length >= 2U) {
+		itm_wait_for_fifo(ITM_PORT_LOGGER);
+		ITM->PORT[ITM_PORT_LOGGER].u16 = *(const uint16_t *)data;
+		data += 2;
+		length -= 2;
+	}
+
+	/* Write final remaining byte */
+	if (length == 1U) {
+		itm_wait_for_fifo(ITM_PORT_LOGGER);
+		ITM->PORT[ITM_PORT_LOGGER].u8 = *data;
+	}
+}
 
 static int char_out(uint8_t *data, size_t length, void *ctx)
 {
 	ARG_UNUSED(ctx);
 
-	for (size_t i = 0; i < length; i++) {
-		ITM_SendChar(data[i]);
-	}
+	itm_write(data, length);
 
 	return length;
 }
