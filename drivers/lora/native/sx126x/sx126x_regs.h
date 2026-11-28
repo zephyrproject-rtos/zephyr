@@ -255,6 +255,10 @@
 /* Over Current Protection */
 #define SX126X_REG_OCP                      0x08E7
 
+/* STM32WL sub-GHz radio SMPS control 0 (SUBGHZ_SMPSC0R) */
+#define SX126X_REG_STM32WL_SMPSC0R          0x0916
+#define SX126X_STM32WL_SMPSC0R_CLKDE        BIT(6)
+
 /* IQ Polarity (workaround) */
 #define SX126X_REG_IQ_POLARITY              0x0736
 

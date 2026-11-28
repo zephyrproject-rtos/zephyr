@@ -70,6 +70,8 @@ void sx126x_dio1_irq_disable(struct sx126x_data *dev_data);
 
 void sx126x_set_tx_params(int8_t power, RadioRampTimes_t ramp_time);
 
+void sx126x_chip_setup(void);
+
 int sx126x_variant_init(const struct device *dev);
 
 #endif /* ZEPHYR_DRIVERS_SX126X_COMMON_H_ */

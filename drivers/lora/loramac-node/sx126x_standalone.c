@@ -66,6 +66,10 @@ void sx126x_set_tx_params(int8_t power, RadioRampTimes_t ramp_time)
 	SX126xSetTxParams(power, ramp_time);
 }
 
+void sx126x_chip_setup(void)
+{
+}
+
 int sx126x_variant_init(const struct device *dev)
 {
 	struct sx126x_data *dev_data = dev->data;

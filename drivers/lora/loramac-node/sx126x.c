@@ -349,6 +349,12 @@ void SX126xIoRfSwitchInit(void)
 {
 	LOG_DBG("Configuring DIO2");
 	SX126xSetDio2AsRfSwitchCtrl(DIO2_TX_ENABLE);
+
+	/*
+	 * Last hook of SX126xInit(), with the radio awake in STDBY_RC after
+	 * its reset, and before RadioInit() selects the regulator mode.
+	 */
+	sx126x_chip_setup();
 }
 
 void SX126xReset(void)
