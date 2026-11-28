@@ -21,6 +21,8 @@
 #include <stm32_backup_domain.h>
 #include <stm32_hsem.h>
 
+#include "clock_stm32_flash_latency.h"
+
 /* Power supply / regulator configuration node */
 #define PWRC_NODE DT_INST(0, st_stm32h7_pwr)
 
@@ -1349,7 +1351,7 @@ int stm32_clock_control_init(const struct device *dev)
 	/* AHB/AXI/HCLK clock is SYSCLK / HPRE */
 	/* If freq increases, set flash latency before any clock setting */
 	if (new_hclk_freq > old_hclk_freq) {
-		LL_SetFlashLatency(new_hclk_freq);
+		stm32_set_flash_latency(new_hclk_freq);
 	}
 
 	/* Preset the prescalers prior to choosing SYSCLK */
@@ -1410,7 +1412,7 @@ int stm32_clock_control_init(const struct device *dev)
 	 */
 	LL_FLASH_SetLatency(LL_FLASH_LATENCY_7);
 	set_regulator_vos(SELECTED_VOLTAGE_SCALE);
-	LL_SetFlashLatency(new_hclk_freq);
+	stm32_set_flash_latency(new_hclk_freq);
 
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 #endif /* CONFIG_CPU_CORTEX_M7 */
