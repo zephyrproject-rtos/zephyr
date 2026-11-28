@@ -54,7 +54,7 @@ static void rtp_socket_svc_handler(struct net_socket_service_event *pev)
 	struct net_msghdr msg = {};
 	struct net_iovec iov = {.iov_base = data, .iov_len = sizeof(data)};
 #ifdef CONFIG_NET_PKT_TIMESTAMP
-	uint8_t ctrl_buf[CMSG_SPACE(sizeof(struct net_ptp_time))] = {};
+	uint8_t ctrl_buf[NET_CMSG_SPACE(sizeof(struct net_ptp_time))] = {};
 #endif
 	struct rtp_packet packet = {};
 	struct rtp_socket_context *ctx;
@@ -102,11 +102,11 @@ static void rtp_socket_svc_handler(struct net_socket_service_event *pev)
 	}
 
 #ifdef CONFIG_NET_PKT_TIMESTAMP
-	for (struct cmsghdr *cmsg = NET_CMSG_FIRSTHDR(&msg); cmsg != NULL;
+	for (struct net_cmsghdr *cmsg = NET_CMSG_FIRSTHDR(&msg); cmsg != NULL;
 	     cmsg = NET_CMSG_NXTHDR(&msg, cmsg)) {
 		if (cmsg->cmsg_level == ZSOCK_SOL_SOCKET &&
 		    cmsg->cmsg_type == ZSOCK_SO_TIMESTAMPING) {
-			memcpy(&packet.timestamp, CMSG_DATA(cmsg), sizeof(packet.timestamp));
+			memcpy(&packet.timestamp, NET_CMSG_DATA(cmsg), sizeof(packet.timestamp));
 			break;
 		}
 	}

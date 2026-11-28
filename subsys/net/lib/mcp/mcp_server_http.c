@@ -935,7 +935,7 @@ static int mcp_server_http_resource_handler(struct http_client_ctx *client,
 static void net_addr4_event_handler(uint64_t mgmt_event, struct net_if *iface, void *info __unused,
 				    size_t info_length __unused, void *user_data __unused)
 {
-	char addr_str[INET_ADDRSTRLEN];
+	char addr_str[NET_INET_ADDRSTRLEN];
 	struct net_in_addr *addr4;
 
 	if (mgmt_event != NET_EVENT_IPV4_ADDR_ADD) {
@@ -944,7 +944,7 @@ static void net_addr4_event_handler(uint64_t mgmt_event, struct net_if *iface, v
 
 	addr4 = net_if_ipv4_get_global_addr(iface, NET_ADDR_PREFERRED);
 	if (addr4 != NULL) {
-		net_addr_ntop(AF_INET, addr4, addr_str, sizeof(addr_str));
+		net_addr_ntop(NET_AF_INET, addr4, addr_str, sizeof(addr_str));
 		LOG_INF("MCP server accessible at: http://%s:%d%s (iface %d)",
 			addr_str, CONFIG_MCP_HTTP_PORT, CONFIG_MCP_HTTP_ENDPOINT,
 			net_if_get_by_iface(iface));
@@ -959,7 +959,7 @@ NET_MGMT_REGISTER_EVENT_HANDLER(mcp_server_http_ipv4_events, NET_EVENT_IPV4_ADDR
 static void net_addr6_event_handler(uint64_t mgmt_event, struct net_if *iface, void *info __unused,
 				    size_t info_length __unused, void *user_data __unused)
 {
-	char addr_str[INET6_ADDRSTRLEN];
+	char addr_str[NET_INET6_ADDRSTRLEN];
 	const struct net_in6_addr *addr6;
 
 	if (mgmt_event != NET_EVENT_IPV6_ADDR_ADD) {
@@ -968,7 +968,7 @@ static void net_addr6_event_handler(uint64_t mgmt_event, struct net_if *iface, v
 
 	addr6 = net_if_ipv6_get_global_addr(NET_ADDR_PREFERRED, &iface);
 	if (addr6 != NULL) {
-		net_addr_ntop(AF_INET6, addr6, addr_str, sizeof(addr_str));
+		net_addr_ntop(NET_AF_INET6, addr6, addr_str, sizeof(addr_str));
 		LOG_INF("MCP server accessible at: http://[%s]:%d%s (iface %d)",
 			addr_str, CONFIG_MCP_HTTP_PORT, CONFIG_MCP_HTTP_ENDPOINT,
 			net_if_get_by_iface(iface));

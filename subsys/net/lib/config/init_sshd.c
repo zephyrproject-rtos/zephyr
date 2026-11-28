@@ -152,7 +152,7 @@ int net_config_init_sshd(struct net_if *iface,
 	}
 
 	memset(&bind_addr, 0, sizeof(bind_addr));
-	net_sin(net_sad(&bind_addr))->sin_port = htons(CONFIG_SSH_PORT);
+	net_sin(net_sad(&bind_addr))->sin_port = net_htons(CONFIG_SSH_PORT);
 
 	/* If an interface was provided, use its address for the SSH server.
 	 * Otherwise, bind to the wildcard address.

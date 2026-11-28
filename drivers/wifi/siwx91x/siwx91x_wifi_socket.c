@@ -36,23 +36,23 @@ enum offloaded_net_if_types siwx91x_get_type(void)
  *   - IPv6 addresses are bytes swapped
  * Note: this function allows to have in == out.
  */
-static void siwx91x_sockaddr_swap_bytes(struct sockaddr *out,
-					const struct sockaddr *in, socklen_t in_len)
+static void siwx91x_sockaddr_swap_bytes(struct net_sockaddr *out,
+					const struct net_sockaddr *in, net_socklen_t in_len)
 {
-	const struct sockaddr_in6 *in6 = (const struct sockaddr_in6 *)in;
-	struct sockaddr_in6 *out6 = (struct sockaddr_in6 *)out;
+	const struct net_sockaddr_in6 *in6 = (const struct net_sockaddr_in6 *)in;
+	struct net_sockaddr_in6 *out6 = (struct net_sockaddr_in6 *)out;
 
 	/* In Zephyr, size of sockaddr == size of sockaddr_storage
 	 * (while in Posix sockaddr is smaller than sockaddr_storage).
 	 */
 	memcpy(out, in, in_len);
-	if (in->sa_family == AF_INET6) {
+	if (in->sa_family == NET_AF_INET6) {
 		ARRAY_FOR_EACH(in6->sin6_addr.s6_addr32, i) {
-			out6->sin6_addr.s6_addr32[i] = ntohl(in6->sin6_addr.s6_addr32[i]);
+			out6->sin6_addr.s6_addr32[i] = net_ntohl(in6->sin6_addr.s6_addr32[i]);
 		}
-		out6->sin6_port = ntohs(in6->sin6_port);
-	} else if (in->sa_family == AF_INET) {
-		out6->sin6_port = ntohs(in6->sin6_port);
+		out6->sin6_port = net_ntohs(in6->sin6_port);
+	} else if (in->sa_family == NET_AF_INET) {
+		out6->sin6_port = net_ntohs(in6->sin6_port);
 	}
 }
 
@@ -62,7 +62,7 @@ void siwx91x_on_join_ipv4(struct siwx91x_dev *sidev)
 		.mode = SL_IP_MANAGEMENT_DHCP,
 		.type = SL_IPV4,
 	};
-	struct in_addr addr4 = { };
+	struct net_in_addr addr4 = { };
 	int ret;
 
 	if (!IS_ENABLED(CONFIG_NET_IPV4)) {
@@ -85,7 +85,7 @@ void siwx91x_on_join_ipv6(struct siwx91x_dev *sidev)
 		.mode = SL_IP_MANAGEMENT_DHCP,
 		.type = SL_IPV6,
 	};
-	struct in6_addr addr6 = { };
+	struct net_in6_addr addr6 = { };
 	int ret;
 
 	if (!IS_ENABLED(CONFIG_NET_IPV6)) {
@@ -98,7 +98,7 @@ void siwx91x_on_join_ipv6(struct siwx91x_dev *sidev)
 		return;
 	}
 	ARRAY_FOR_EACH(addr6.s6_addr32, i) {
-		addr6.s6_addr32[i] = ntohl(ip_config6.ip.v6.global_address.value[i]);
+		addr6.s6_addr32[i] = net_ntohl(ip_config6.ip.v6.global_address.value[i]);
 	}
 	/* SiWx91x already take care of DAD and sending ND is not
 	 * supported anyway.
@@ -199,18 +199,18 @@ static int siwx91x_sock_put(struct net_context *context)
 }
 
 static int siwx91x_sock_bind(struct net_context *context,
-			     const struct sockaddr *addr, socklen_t addrlen)
+			     const struct net_sockaddr *addr, net_socklen_t addrlen)
 {
 	struct siwx91x_dev *sidev = net_if_get_device(net_context_get_iface(context))->data;
 	int sockfd = (int)context->offload_context;
-	struct sockaddr addr_le;
+	struct net_sockaddr addr_le;
 	int ret;
 
 	/* Zephyr tends to call bind() even if the TCP socket is a client. 917
 	 * return an error in this case.
 	 */
-	if (net_context_get_proto(context) == IPPROTO_TCP &&
-	    !((struct sockaddr_in *)addr)->sin_port) {
+	if (net_context_get_proto(context) == NET_IPPROTO_TCP &&
+	    !((struct net_sockaddr_in *)addr)->sin_port) {
 		return 0;
 	}
 	siwx91x_sockaddr_swap_bytes(&addr_le, addr, addrlen);
@@ -219,7 +219,7 @@ static int siwx91x_sock_bind(struct net_context *context,
 		return -errno;
 	}
 	/* WiseConnect refuses to run select on TCP listening sockets */
-	if (net_context_get_proto(context) == IPPROTO_UDP) {
+	if (net_context_get_proto(context) == NET_IPPROTO_UDP) {
 		SL_SI91X_FD_SET(sockfd, &sidev->fds_watch);
 		sl_si91x_select(SLI_NUMBER_OF_SOCKETS, &sidev->fds_watch, NULL, NULL, NULL,
 				siwx91x_sock_on_recv);
@@ -228,12 +228,12 @@ static int siwx91x_sock_bind(struct net_context *context,
 }
 
 static int siwx91x_sock_connect(struct net_context *context,
-				const struct sockaddr *addr, socklen_t addrlen,
+				const struct net_sockaddr *addr, net_socklen_t addrlen,
 				net_context_connect_cb_t cb, int32_t timeout, void *user_data)
 {
 	struct siwx91x_dev *sidev = net_if_get_device(net_context_get_iface(context))->data;
 	int sockfd = (int)context->offload_context;
-	struct sockaddr addr_le;
+	struct net_sockaddr addr_le;
 	int ret;
 
 	/* sl_si91x_connect() always return immediately, so we ignore timeout */
@@ -271,7 +271,7 @@ static int siwx91x_sock_accept(struct net_context *context,
 	struct siwx91x_dev *sidev = net_if_get_device(net_context_get_iface(context))->data;
 	int sockfd = (int)context->offload_context;
 	struct net_context *newcontext;
-	struct sockaddr addr_le;
+	struct net_sockaddr addr_le;
 	int ret;
 
 	/* TODO: support timeout != K_FOREVER */
@@ -311,12 +311,12 @@ static int siwx91x_sock_accept(struct net_context *context,
 }
 
 static int siwx91x_sock_sendto(struct net_pkt *pkt,
-			       const struct sockaddr *addr, socklen_t addrlen,
+			       const struct net_sockaddr *addr, net_socklen_t addrlen,
 			       net_context_send_cb_t cb, int32_t timeout, void *user_data)
 {
 	struct net_context *context = pkt->context;
 	int sockfd = (int)context->offload_context;
-	struct sockaddr addr_le;
+	struct net_sockaddr addr_le;
 	struct net_buf *buf;
 	int ret;
 
