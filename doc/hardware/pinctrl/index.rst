@@ -360,6 +360,51 @@ autogeneration is not an option.
             bias-pull-up;
         };
 
+.. _pinctrl-hogs:
+
+Pin controller hogs
+*******************
+
+A pin controller can consume its own default state, following the Linux model:
+
+.. code-block:: devicetree
+
+   &pinctrl {
+       pinctrl-0 = <&board_default>;
+       pinctrl-names = "default";
+   };
+
+``board_default`` references a child configuration node of the controller. Its
+contents follow the controller's binding, with properties on the configuration
+node itself or on child groups.
+
+Hogs support centralized pin controllers that can configure pins without a
+peripheral register address. Distributed backends that require
+:kconfig:option:`CONFIG_PINCTRL_STORE_REG` are not supported.
+
+:kconfig:option:`CONFIG_PINCTRL_HOGS` is enabled automatically when an enabled
+controller references its own default configuration. Only the default state is
+generated and applied, once during startup. Runtime state changes and power
+management remain under driver control.
+
+Like GPIO hogs, pin controller hogs use a global initialization function and
+default to ``POST_KERNEL``. For earlier initialization, select the first level
+with :kconfig:option:`CONFIG_PINCTRL_HOGS_INIT_PRE_KERNEL_1` or the second with
+:kconfig:option:`CONFIG_PINCTRL_HOGS_INIT_PRE_KERNEL_2`. Both require a backend
+that can run without kernel services. Set the priority within the chosen level
+with :kconfig:option:`CONFIG_PINCTRL_HOGS_INIT_PRIORITY`, after the controller's
+dependencies and before consumers of the pins. The level and priority are
+global: every controller must support the selected initialization point.
+
+The default priority matches that of GPIO hogs. If GPIO hogs depend on these
+pin settings, select an earlier level or a lower priority within the same level
+so pin controller hogs run first.
+
+Hogging does not reserve pins; other consumers can reconfigure them later.
+
+Controller bindings avoid dependency cycles with their configuration children by
+including ``pinctrl-hogs.yaml``, which sets ``dependency-mode: child-ignore``.
+
 Implementation guidelines
 *************************
 

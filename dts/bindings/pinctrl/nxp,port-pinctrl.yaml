@@ -33,7 +33,7 @@ description: |
 
 compatible: "nxp,port-pinctrl"
 
-include: base.yaml
+include: [base.yaml, pinctrl-hogs.yaml]
 
 child-binding:
   description: NXP PORT pin controller pin group

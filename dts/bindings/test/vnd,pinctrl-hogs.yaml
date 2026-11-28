@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Axonne Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test pin controller with pin control hogs
+
+compatible: "vnd,pinctrl-hogs"
+
+include:
+  - base.yaml
+  - pinctrl-hogs.yaml
+
+child-binding:
+  child-binding:
+    properties:
+      pins:
+        type: array
+        required: true
