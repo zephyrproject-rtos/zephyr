@@ -97,7 +97,7 @@ config USBD_MSG_WORK_DELAY
 
 config USBD_HWINFO_DEVID_LENGTH
 	int "The length of the device ID requested from HWINFO in bytes" if HWINFO
-	range 8 128
+	range 7 128
 	default 16
 	help
 	  Each byte represents two digits in the serial number string
