@@ -217,10 +217,6 @@
 /* _XOPEN_REALTIME_THREADS: not supported */
 /* _XOPEN_SHM: not supported */
 
-#ifdef CONFIG_XOPEN_STREAMS
-#define _XOPEN_STREAMS _XOPEN_VERSION
-#endif
-
 /* _XOPEN_UNIX: not supported */
 /* _XOPEN_UUCP: not supported */
 
