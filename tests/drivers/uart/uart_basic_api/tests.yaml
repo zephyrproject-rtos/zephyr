@@ -22,6 +22,16 @@ tests:
     integration_platforms:
       - nucleo_h753zi
     extra_args: DTC_OVERLAY_FILE="boards/nucleo_h743zi.overlay"
+  drivers.uart.basic_api.fifo_read_flagged:
+    extra_configs:
+      - CONFIG_UART_FIFO_READ_FLAGGED=y
+    tags:
+      - drivers
+      - uart
+    filter: CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_FIFO_READ_FLAGGED
+    harness: keyboard
+    integration_platforms:
+      - qemu_cortex_a53
   drivers.uart.basic_api.poll:
     extra_args: CONF_FILE=prj_poll.conf
     tags:

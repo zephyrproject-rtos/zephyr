@@ -325,6 +325,12 @@ Other notable changes
     :c:func:`k_thread_cpu_mask_enable` while it is not runnable (before it is started, or while
     it is blocked or suspended).
 
+* Serial
+
+  * :c:func:`uart_fifo_read_flagged` reads received data together with the error flags of each
+    byte, so that protocols such as DMX512 can tell which byte a break, framing error, or parity
+    error belongs to.
+
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the documentation of the change?

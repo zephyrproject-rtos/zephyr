@@ -51,6 +51,7 @@ Related configuration options:
 * :kconfig:option:`CONFIG_UART_INTERRUPT_DRIVEN`
 * :kconfig:option:`CONFIG_UART_ASYNC_API`
 * :kconfig:option:`CONFIG_UART_WIDE_DATA`
+* :kconfig:option:`CONFIG_UART_FIFO_READ_FLAGGED`
 * :kconfig:option:`CONFIG_UART_USE_RUNTIME_CONFIGURE`
 * :kconfig:option:`CONFIG_UART_LINE_CTRL`
 * :kconfig:option:`CONFIG_UART_DRV_CMD`

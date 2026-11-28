@@ -143,6 +143,29 @@ ZTEST_F(uart_emul, test_errors)
 	zassert_equal(errors, UART_ERROR_OVERRUN, "UART errors do not match");
 }
 
+ZTEST_F(uart_emul, test_rx_flags_latched)
+{
+	const uint8_t rx_data[] = {0x11, 0x00, 0x22};
+	const uint8_t rx_flags[] = {0, (UART_BREAK | UART_ERROR_FRAMING), 0};
+	int errors;
+	int rc;
+
+	uart_emul_put_rx_data_flagged(fixture->dev, rx_data, rx_flags, sizeof(rx_data));
+
+	/* Flags of bytes read without uart_fifo_read_flagged() are latched */
+	for (size_t i = 0; i < sizeof(rx_data); i++) {
+		rc = uart_poll_in(fixture->dev, &fixture->rx_content[i]);
+		zassert_equal(rc, 0, "RX buffer should contain data");
+	}
+	zassert_mem_equal(fixture->rx_content, rx_data, sizeof(rx_data));
+
+	errors = uart_err_check(fixture->dev);
+	zassert_equal(errors, (UART_BREAK | UART_ERROR_FRAMING), "UART errors do not match");
+
+	errors = uart_err_check(fixture->dev);
+	zassert_equal(errors, 0, "Should be no errors");
+}
+
 ZTEST_F(uart_emul, test_config_get)
 {
 	struct uart_config cfg;
@@ -260,6 +283,280 @@ ZTEST_F(uart_emul, test_irq_rx)
 
 	uart_irq_rx_disable(fixture->dev);
 }
+
+static size_t uart_emul_fifo_read_flagged_all(const struct device *dev, uint8_t *rx_data,
+					      uint8_t *flags, size_t size)
+{
+	size_t total = 0;
+	int ret;
+
+	do {
+		ret = uart_fifo_read_flagged(dev, &rx_data[total], &flags[total], size - total);
+		zassert_true(ret >= 0, "uart_fifo_read_flagged failed: %d", ret);
+		total += (size_t)ret;
+	} while ((ret > 0) && (total < size));
+
+	return total;
+}
+
+ZTEST_F(uart_emul, test_fifo_read_flagged)
+{
+	const uint8_t clean_data[] = {0x55};
+	const uint8_t rx_data[] = {0x11, 0x00, 0x22};
+	const uint8_t rx_flags[] = {0, (UART_BREAK | UART_ERROR_FRAMING), 0};
+	const uint8_t expected_data[] = {0x55, 0x11, 0x00, 0x22};
+	const uint8_t expected_flags[] = {0, 0, (UART_BREAK | UART_ERROR_FRAMING), 0};
+	uint8_t flags[sizeof(expected_flags)];
+	size_t len;
+	int errors;
+
+	memset(flags, 0xff, sizeof(flags));
+
+	uart_emul_put_rx_data(fixture->dev, clean_data, sizeof(clean_data));
+	uart_emul_put_rx_data_flagged(fixture->dev, rx_data, rx_flags, sizeof(rx_data));
+
+	/* The latch buffer limits each read, so this also covers reads split into batches */
+	len = uart_emul_fifo_read_flagged_all(fixture->dev, fixture->rx_content, flags,
+					      sizeof(expected_data));
+	zassert_equal(len, sizeof(expected_data), "RX length does not match");
+	zassert_mem_equal(fixture->rx_content, expected_data, sizeof(expected_data));
+	zassert_mem_equal(flags, expected_flags, sizeof(expected_flags));
+
+	/* Errors returned in flags are not reported again */
+	errors = uart_err_check(fixture->dev);
+	zassert_equal(errors, 0, "Should be no errors");
+
+	/* No more data in RX buffer */
+	zassert_equal(uart_fifo_read_flagged(fixture->dev, fixture->rx_content, flags, 1), 0,
+		      "RX buffer should be empty");
+}
+
+ZTEST_F(uart_emul, test_fifo_read_flagged_overrun)
+{
+	uint8_t rx_data[EMUL_UART_RX_FIFO_SIZE];
+	uint8_t flags[EMUL_UART_RX_FIFO_SIZE];
+	size_t len;
+	int errors;
+
+	/* The second put fills the last free byte and loses the rest */
+	uart_emul_put_rx_data(fixture->dev, fixture->sample_data, SAMPLE_DATA_SIZE);
+	uart_emul_put_rx_data(fixture->dev, fixture->sample_data, SAMPLE_DATA_SIZE);
+
+	len = uart_emul_fifo_read_flagged_all(fixture->dev, rx_data, flags, sizeof(rx_data));
+	zassert_equal(len, EMUL_UART_RX_FIFO_SIZE, "RX length does not match");
+	zassert_mem_equal(rx_data, fixture->sample_data, SAMPLE_DATA_SIZE);
+	zassert_equal(rx_data[EMUL_UART_RX_FIFO_SIZE - 1], fixture->sample_data[0]);
+
+	/*
+	 * The overrun is reported once, on the last byte of the first read
+	 * after it, which the latch buffer limits to a single byte
+	 */
+	zassert_equal(flags[0], UART_ERROR_OVERRUN, "Overrun not reported on the first byte");
+	for (size_t i = 1; i < len; i++) {
+		zassert_equal(flags[i], 0, "Unexpected flags 0x%02x at %zu", flags[i], i);
+	}
+
+	errors = uart_err_check(fixture->dev);
+	zassert_equal(errors, 0, "Should be no errors");
+}
+
+ZTEST_F(uart_emul, test_fifo_read_flagged_overrun_err_check_first)
+{
+	uint8_t rx_data[EMUL_UART_RX_FIFO_SIZE];
+	uint8_t flags[EMUL_UART_RX_FIFO_SIZE];
+	size_t len;
+	int errors;
+
+	uart_emul_put_rx_data(fixture->dev, fixture->sample_data, SAMPLE_DATA_SIZE);
+	uart_emul_put_rx_data(fixture->dev, fixture->sample_data, SAMPLE_DATA_SIZE);
+
+	/* An overrun consumed by uart_err_check() is not reported again in flags */
+	errors = uart_err_check(fixture->dev);
+	zassert_equal(errors, UART_ERROR_OVERRUN, "UART errors do not match");
+
+	len = uart_emul_fifo_read_flagged_all(fixture->dev, rx_data, flags, sizeof(rx_data));
+	zassert_equal(len, EMUL_UART_RX_FIFO_SIZE, "RX length does not match");
+	for (size_t i = 0; i < len; i++) {
+		zassert_equal(flags[i], 0, "Unexpected flags 0x%02x at %zu", flags[i], i);
+	}
+}
+
+/* Check that byte arrives clean and the overrun is only reported by uart_err_check() */
+static void uart_emul_assert_overrun_not_flagged(const struct device *dev, uint8_t byte)
+{
+	uint8_t data;
+	uint8_t flags;
+	int errors;
+
+	uart_emul_put_rx_data(dev, &byte, 1);
+	zassert_equal(uart_fifo_read_flagged(dev, &data, &flags, 1), 1, "No data received");
+	zassert_equal(data, byte, "RX data does not match");
+	zassert_equal(flags, 0, "Unexpected flags 0x%02x", flags);
+
+	errors = uart_err_check(dev);
+	zassert_equal(errors, UART_ERROR_OVERRUN, "UART errors do not match");
+}
+
+ZTEST_F(uart_emul, test_fifo_read_flagged_busy)
+{
+	uint8_t data;
+	uint8_t flags;
+
+	/* Reads that return no data leave reads with flags allowed */
+	zassert_equal(uart_fifo_read(fixture->dev, &data, 1), 0, "RX buffer should be empty");
+	zassert_equal(uart_poll_in(fixture->dev, &data), -1, "RX buffer should be empty");
+	zassert_equal(uart_fifo_read_flagged(fixture->dev, &data, &flags, 1), 0,
+		      "Read with flags refused after reads of nothing");
+
+	/*
+	 * Once a byte is read without flags, reads with flags are refused until
+	 * uart_err_check(), also with nothing left to read
+	 */
+	uart_emul_put_rx_data(fixture->dev, fixture->sample_data, 1);
+	zassert_equal(uart_fifo_read(fixture->dev, &data, 1), 1, "No data received");
+	zassert_equal(uart_fifo_read_flagged(fixture->dev, &data, &flags, 1), -EBUSY,
+		      "Read with flags not refused with the buffer empty");
+	zassert_equal(uart_fifo_read_flagged(fixture->dev, &data, &flags, 0), 0,
+		      "Zero size read should return 0");
+	zassert_equal(uart_fifo_read_flagged(fixture->dev, &data, &flags, 1), -EBUSY,
+		      "Refusal lifted before uart_err_check()");
+	zassert_equal(uart_err_check(fixture->dev), 0, "Should be no errors");
+	zassert_equal(uart_fifo_read_flagged(fixture->dev, &data, &flags, 1), 0,
+		      "Read with flags refused after uart_err_check()");
+}
+
+ZTEST_F(uart_emul, test_fifo_read_flagged_after_unflagged_read)
+{
+	uint8_t rx_data[EMUL_UART_RX_FIFO_SIZE - 2];
+	uint8_t flags[EMUL_UART_RX_FIFO_SIZE - 2];
+	uint8_t data;
+	size_t len;
+	int errors;
+
+	/* The second put fills the last free byte and loses the rest */
+	uart_emul_put_rx_data(fixture->dev, fixture->sample_data, SAMPLE_DATA_SIZE);
+	uart_emul_put_rx_data(fixture->dev, fixture->sample_data, SAMPLE_DATA_SIZE);
+
+	/* Once data is read without flags, uart_err_check() must take its errors first */
+	zassert_equal(uart_fifo_read(fixture->dev, &data, 1), 1, "No data received");
+	zassert_equal(uart_fifo_read_flagged(fixture->dev, rx_data, flags, 1), -EBUSY,
+		      "Read with flags not refused after uart_fifo_read()");
+	errors = uart_err_check(fixture->dev);
+	zassert_equal(errors, UART_ERROR_OVERRUN, "UART errors do not match");
+
+	zassert_equal(uart_poll_in(fixture->dev, &data), 0, "No data received");
+	zassert_equal(uart_fifo_read_flagged(fixture->dev, rx_data, flags, 1), -EBUSY,
+		      "Read with flags not refused after uart_poll_in()");
+	errors = uart_err_check(fixture->dev);
+	zassert_equal(errors, 0, "Should be no errors");
+
+	/* The refused reads consumed nothing, and the overrun is not reported again */
+	len = uart_emul_fifo_read_flagged_all(fixture->dev, rx_data, flags, sizeof(rx_data));
+	zassert_equal(len, sizeof(rx_data), "RX length does not match");
+	zassert_mem_equal(rx_data, &fixture->sample_data[2], SAMPLE_DATA_SIZE - 2);
+	zassert_equal(rx_data[sizeof(rx_data) - 1], fixture->sample_data[0]);
+	for (size_t i = 0; i < len; i++) {
+		zassert_equal(flags[i], 0, "Unexpected flags 0x%02x at %zu", flags[i], i);
+	}
+}
+
+ZTEST_F(uart_emul, test_fifo_read_flagged_overrun_flush)
+{
+	uart_emul_put_rx_data(fixture->dev, fixture->sample_data, SAMPLE_DATA_SIZE);
+	uart_emul_put_rx_data(fixture->dev, fixture->sample_data, SAMPLE_DATA_SIZE);
+
+	/* Flushing the data before the loss leaves the overrun to uart_err_check() */
+	uart_emul_flush_rx_data(fixture->dev);
+
+	uart_emul_assert_overrun_not_flagged(fixture->dev, 'Z');
+}
+
+ZTEST_F(uart_emul, test_fifo_read_flagged_set_errors)
+{
+	/* An overrun set with uart_emul_set_errors() is not reported against a byte */
+	uart_emul_set_errors(fixture->dev, UART_ERROR_OVERRUN);
+
+	uart_emul_assert_overrun_not_flagged(fixture->dev, 'Z');
+}
+
+ZTEST_F(uart_emul, test_fifo_read_flagged_size_zero)
+{
+	const uint8_t rx_data[] = {0x11, 0x00};
+	const uint8_t rx_flags[] = {0, UART_BREAK};
+	uint8_t flags[sizeof(rx_flags)];
+	size_t len;
+
+	uart_emul_put_rx_data_flagged(fixture->dev, rx_data, rx_flags, sizeof(rx_data));
+
+	/* A size of 0 consumes no received data */
+	zassert_equal(uart_fifo_read_flagged(fixture->dev, fixture->rx_content, flags, 0), 0,
+		      "Zero size read should return 0");
+
+	/* Neither does a negative size, which must not be taken as a large one */
+	zassert_equal(uart_fifo_read_flagged(fixture->dev, fixture->rx_content, flags, -1), 0,
+		      "Negative size read should return 0");
+
+	len = uart_emul_fifo_read_flagged_all(fixture->dev, fixture->rx_content, flags,
+					      sizeof(rx_data));
+	zassert_equal(len, sizeof(rx_data), "RX length does not match");
+	zassert_mem_equal(fixture->rx_content, rx_data, sizeof(rx_data));
+	zassert_mem_equal(flags, rx_flags, sizeof(rx_flags));
+}
+
+ZTEST_F(uart_emul, test_fifo_read_flagged_latch)
+{
+	/* An emulated UART whose latch buffer returns several bytes per read */
+	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(euart2));
+	const size_t fifo_size = DT_PROP(DT_NODELABEL(euart2), rx_fifo_size);
+	const size_t latch_size = DT_PROP(DT_NODELABEL(euart2), latch_buffer_size);
+	/* Bytes before the end of the RX buffer, so that the first read below wraps */
+	const size_t lead = fifo_size - 4;
+	uint8_t data[DT_PROP(DT_NODELABEL(euart2), rx_fifo_size) + 1];
+	uint8_t put_flags[sizeof(data)];
+	uint8_t rx_data[sizeof(data)];
+	uint8_t flags[sizeof(data)];
+	size_t len;
+	int ret;
+
+	zassert_true(device_is_ready(dev), "euart2 is not ready");
+	uart_emul_flush_rx_data(dev);
+	(void)uart_err_check(dev);
+
+	/* Move the RX buffer position near its end */
+	uart_emul_put_rx_data(dev, fixture->sample_data, lead);
+	len = uart_emul_fifo_read_flagged_all(dev, rx_data, flags, lead);
+	zassert_equal(len, lead, "RX length does not match");
+
+	/* Mixed flags on both sides of the wrap, and one byte more than fits */
+	for (size_t i = 0; i < sizeof(data); i++) {
+		data[i] = (uint8_t)(0x40U + i);
+		put_flags[i] = 0U;
+	}
+	put_flags[2] = UART_ERROR_PARITY;
+	put_flags[5] = UART_BREAK | UART_ERROR_FRAMING;
+	put_flags[12] = UART_ERROR_PARITY;
+	put_flags[fifo_size - 1] = UART_BREAK | UART_ERROR_FRAMING;
+	zassert_equal(uart_emul_put_rx_data_flagged(dev, data, put_flags, sizeof(data)), fifo_size,
+		      "Last byte should not fit");
+
+	/* The first read crosses the wrap and carries the overrun on its last byte */
+	ret = uart_fifo_read_flagged(dev, rx_data, flags, sizeof(rx_data));
+	zassert_equal(ret, (int)latch_size, "First read returned %d bytes", ret);
+	len = (size_t)ret;
+	len += uart_emul_fifo_read_flagged_all(dev, &rx_data[len], &flags[len], fifo_size - len);
+	zassert_equal(len, fifo_size, "RX length does not match");
+	zassert_mem_equal(rx_data, data, fifo_size);
+
+	put_flags[latch_size - 1] |= UART_ERROR_OVERRUN;
+	for (size_t i = 0; i < fifo_size; i++) {
+		zassert_equal(flags[i], put_flags[i], "Flags 0x%02x at %zu, not 0x%02x", flags[i],
+			      i, put_flags[i]);
+	}
+
+	zassert_equal(uart_fifo_read_flagged(dev, rx_data, flags, 1), 0,
+		      "RX buffer should be empty");
+	zassert_equal(uart_err_check(dev), 0, "Should be no errors");
+}
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 #ifdef CONFIG_UART_ASYNC_API
@@ -375,6 +672,47 @@ ZTEST_F(uart_emul, test_async_rx_buffer_release)
 	zexpect_true(uart_emul_wait_for_event(fixture, UART_RX_RDY));
 	zexpect_true(uart_emul_wait_for_event(fixture, UART_RX_DISABLED),
 		     "UART_RX_DISABLED event expected");
+}
+
+ZTEST_F(uart_emul, test_async_rx_flags_latched)
+{
+	/* Bytes before the end of the RX buffer, so that rx_data wraps around it */
+	const size_t lead = EMUL_UART_RX_FIFO_SIZE - 6;
+	const uint8_t rx_data[] = {0x10, 0x11, 0x12, 0x13, 0x14, 0x15,
+				   0x16, 0x17, 0x18, 0x00, 0x1a, 0x1b};
+	const uint8_t rx_flags[] = {
+		0, 0, UART_ERROR_PARITY, 0, 0, 0, 0, 0, 0, (UART_BREAK | UART_ERROR_FRAMING), 0, 0};
+	uint8_t rx_buffer[sizeof(rx_data)];
+	int errors;
+
+	BUILD_ASSERT(sizeof(rx_flags) == sizeof(rx_data));
+
+	/* Move the RX buffer position near its end */
+	uart_emul_put_rx_data(fixture->dev, fixture->sample_data, lead);
+	for (size_t i = 0; i < lead; i++) {
+		zassert_equal(uart_poll_in(fixture->dev, &fixture->rx_content[0]), 0,
+			      "No data at %zu", i);
+	}
+	errors = uart_err_check(fixture->dev);
+	zassert_equal(errors, 0, "Should be no errors");
+
+	zassert_equal(uart_callback_set(fixture->dev, uart_emul_callback_rx_timeout, fixture), 0);
+	zassert_equal(uart_rx_enable(fixture->dev, rx_buffer, sizeof(rx_buffer), SYS_FOREVER_US),
+		      0);
+
+	/* Flags of bytes received through async RX are latched, also across the wrap */
+	uart_emul_put_rx_data_flagged(fixture->dev, rx_data, rx_flags, sizeof(rx_data));
+	zexpect_true(uart_emul_wait_for_event(fixture, UART_RX_RDY), "UART_RX_RDY event expected");
+	zassert_mem_equal(rx_buffer, rx_data, sizeof(rx_data));
+	zexpect_true(uart_emul_wait_for_event(fixture, UART_RX_DISABLED),
+		     "UART_RX_DISABLED event expected");
+
+	errors = uart_err_check(fixture->dev);
+	zassert_equal(errors, (UART_ERROR_PARITY | UART_BREAK | UART_ERROR_FRAMING),
+		      "UART errors do not match");
+
+	errors = uart_err_check(fixture->dev);
+	zassert_equal(errors, 0, "Should be no errors");
 }
 #endif /* CONFIG_UART_ASYNC_API */
 
