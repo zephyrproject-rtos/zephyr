@@ -220,6 +220,10 @@ const struct ptp_time_prop_ds *ptp_clock_time_prop_ds(void)
 	return &fake_time_prop_ds;
 }
 
+void ptp_clock_time_prop_update(__unused const struct ptp_msg *msg)
+{
+}
+
 void ptp_clock_sync_interval_set(int8_t log_sync_interval)
 {
 	last_sync_log_interval = log_sync_interval;

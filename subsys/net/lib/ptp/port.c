@@ -2329,6 +2329,11 @@ int ptp_port_update_current_time_transmitter(struct ptp_port *port, struct ptp_m
 	 */
 	port_hybrid_tt_addr_update(port, msg);
 
+	/* Announce messages differing only in currentUtcOffset or the flags
+	 * do not request a state decision.
+	 */
+	ptp_clock_time_prop_update(msg);
+
 	foreign_clock_cleanup(foreign);
 
 	if (foreign->messages_count > 0) {

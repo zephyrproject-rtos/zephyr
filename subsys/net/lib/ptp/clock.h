@@ -207,6 +207,17 @@ const struct ptp_current_ds *ptp_clock_current_ds(void);
 const struct ptp_time_prop_ds *ptp_clock_time_prop_ds(void);
 
 /**
+ * @brief Function updating the Time Properties dataset from an Announce message.
+ *
+ * The dataset is updated only if the message comes from the current parent,
+ * so that changes of currentUtcOffset or of the flags take effect without a
+ * state decision.
+ *
+ * @param[in] msg Pointer to the received Announce message.
+ */
+void ptp_clock_time_prop_update(const struct ptp_msg *msg);
+
+/**
  * @brief Function for getting a common dataset for the clock's default dataset.
  *
  * @return Pointer to the common dataset that contain data from ptp_default_ds structure.
