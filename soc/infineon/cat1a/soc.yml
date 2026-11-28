@@ -171,3 +171,166 @@ family:
       cpuclusters:
       - name: m0
       - name: m4
+
+  - name: cyt2bx
+    socs:
+      - name: cyt2b73bas
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2b73bae
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2b73cas
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2b73cae
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2b74bas
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2b74bae
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2b74cas
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2b74cae
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2b75bas
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2b75bae
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2b75cas
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2b75cae
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2b77bas
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2b77bae
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2b77cas
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2b77cae
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2b78bas
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2b78bae
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2b78cas
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2b78cae
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2bl3bas
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2bl3bae
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2bl3cas
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2bl3cae
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2bl4bas
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2bl4bae
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2bl4cas
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2bl4cae
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2bl5bas
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2bl5bae
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2bl5cas
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2bl5cae
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2bl7bas
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2bl7bae
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2bl7cas
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2bl7cae
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2bl8bas
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2bl8bae
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2bl8cas
+        cpuclusters:
+        - name: m0p
+        - name: m4
+      - name: cyt2bl8cae
+        cpuclusters:
+        - name: m0p
+        - name: m4

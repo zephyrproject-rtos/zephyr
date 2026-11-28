@@ -14,6 +14,11 @@ config SOC_FAMILY_INFINEON_CAT1
 config SOC_FAMILY_INFINEON_CAT1A
 	bool
 
+config SOC_FAMILY_INFINEON_TRAVEO
+	bool
+	help
+	  Apply to PDL-based drivers for Infineon TRAVEO SoCs.
+
 # Family definitions
 config SOC_FAMILY_PSOC6
 	bool

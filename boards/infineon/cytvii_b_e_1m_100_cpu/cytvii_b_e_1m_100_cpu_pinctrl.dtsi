@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2026 Linumiz
+ * Copyright (c) 2026 Infineon Technologies AG
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/infineon/cat1a/cyt2b7/cyt2b7.100-lqfp.dtsi>
+
+&p13_0_scb3_uart_rx {
+	input-enable;
+};
+
+&p13_1_scb3_uart_tx {
+	drive-push-pull;
+};
+
+&p0_0_scb0_uart_rx {
+	input-enable;
+};
+
+&p0_1_scb0_uart_tx {
+	drive-push-pull;
+};

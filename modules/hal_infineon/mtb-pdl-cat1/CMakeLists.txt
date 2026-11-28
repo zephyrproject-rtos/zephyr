@@ -36,6 +36,7 @@ zephyr_library_sources(${pdl_drv_dir}/source/TOOLCHAIN_GCC_ARM/cy_syslib_ext.S)
 
 # Peripheral drivers
 zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_PSOC6_LEGACY      ${pdl_drv_dir}/source/cy_sysint.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_CYT2BX      ${pdl_drv_dir}/source/cy_sysint.c)
 if(CONFIG_SOC_FAMILY_INFINEON_CAT1C)
   zephyr_library_sources(${pdl_drv_dir}/source/cy_sysint.c)
 endif()
@@ -126,7 +127,7 @@ if(CONFIG_SOC_FAMILY_INFINEON_CAT1A)
   zephyr_library_sources(${pdl_drv_dir}/source/cy_wdt.c)
 endif()
 
-if(CONFIG_SOC_FAMILY_INFINEON_CAT1B OR CONFIG_SOC_FAMILY_INFINEON_CAT1C)
+if(CONFIG_SOC_FAMILY_INFINEON_CAT1B OR CONFIG_SOC_FAMILY_INFINEON_CAT1C OR CONFIG_SOC_SERIES_CYT2BX)
   zephyr_library_sources(${pdl_drv_dir}/source/cy_sysclk_v2.c)
   zephyr_library_sources(${pdl_drv_dir}/source/cy_wdt_b.c)
 endif()

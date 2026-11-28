@@ -1,0 +1,37 @@
+# Copyright (c) 2026 Linumiz
+# Copyright (c) 2026 Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+# SOC Series
+config SOC_SERIES_CYT2BX
+	bool
+	select SOC_FAMILY_INFINEON_CAT1
+	select SOC_FAMILY_INFINEON_CAT1A
+
+config SOC_SERIES
+	default "cyt2bx" if SOC_SERIES_CYT2BX
+
+config SOC_DIE_CYT2B7
+	bool
+
+config SOC_DIE_CYT2BL
+	bool
+
+config SOC_CYT2B75CAE
+	bool
+	select SOC_SERIES_CYT2BX
+	select SOC_DIE_CYT2B7
+
+config SOC_CYT2B75CAE_M0P
+	bool
+	select SOC_CYT2B75CAE
+	select SOC_SERIES_CYT2BX_M0P
+
+config SOC_CYT2B75CAE_M4
+	bool
+	select SOC_CYT2B75CAE
+	select SOC_SERIES_CYT2BX_M4
+
+
+config SOC
+	default "cyt2b75cae" if SOC_CYT2B75CAE

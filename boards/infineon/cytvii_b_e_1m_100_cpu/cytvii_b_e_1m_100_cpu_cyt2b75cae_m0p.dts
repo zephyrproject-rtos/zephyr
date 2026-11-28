@@ -1,0 +1,40 @@
+/*
+* Copyright (c) 2026 Linumiz
+* Copyright (c) 2026 Infineon Technologies AG
+* SPDX-License-Identifier: Apache-2.0
+*/
+
+/dts-v1/;
+
+#include "cytvii_b_e_1m_100_cpu.dtsi"
+#include <infineon/cat1a/cyt2b7/cyt2b7_m0p.dtsi>
+
+/ {
+	model = "Infineon CYTVII-B-E-1M-100-CPU";
+	compatible = "infineon,tviibe1m";
+
+	aliases {
+		led0 = &bb_user_led0;
+		sw0 = &bb_user_bt1;
+	};
+
+	chosen {
+		zephyr,sram = &sram_m0p;
+		zephyr,flash = &code_flash0;
+		zephyr,code-partition = &m0p_partition;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+};
+
+&gpio_prt13 {
+	status = "okay";
+};
+
+&gpio_prt19 {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+};

@@ -1,0 +1,101 @@
+/*
+ * Copyright (c) 2026 Linumiz
+ * Copyright (c) 2026 Infineon Technologies AG
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/pinctrl/ifx_cat1-pinctrl.h>
+#include "cyt2b7.dtsi"
+
+/ {
+
+	soc {
+		/delete-node/ gpio@40310080; // gpio_prt1
+		/delete-node/ gpio@40310200; // gpio_prt4
+		/delete-node/ gpio@40310480; // gpio_prt9
+		/delete-node/ gpio@40310500; // gpio_prt10
+		/delete-node/ gpio@40310780; // gpio_prt15
+		/delete-node/ gpio@40310800; // gpio_prt16
+		/delete-node/ gpio@40310A00; // gpio_prt20
+
+		pinctrl: pinctrl@40300000 {
+			/omit-if-no-ref/ p0_0_scb0_uart_rx: p0_0_scb0_uart_rx {
+			        pinmux = <DT_CAT1_PINMUX(0, 0,	HSIOM_SEL_ACT_5)>;
+			};
+
+			/omit-if-no-ref/ p0_1_scb0_uart_tx: p0_1_scb0_uart_tx {
+			        pinmux = <DT_CAT1_PINMUX(0, 1,	HSIOM_SEL_ACT_5)>;
+			};
+
+			/omit-if-no-ref/ p13_0_scb3_uart_rx: p13_0_scb3_uart_rx {
+			        pinmux = <DT_CAT1_PINMUX(13, 0, HSIOM_SEL_ACT_5)>;
+			};
+
+			/omit-if-no-ref/ p13_1_scb3_uart_tx: p13_1_scb3_uart_tx {
+			        pinmux = <DT_CAT1_PINMUX(13, 1, HSIOM_SEL_ACT_5)>;
+			};
+		};
+	};
+};
+
+&gpio_prt0 {
+	ngpios = <4>;
+};
+
+&gpio_prt2 {
+	ngpios = <4>;
+};
+
+&gpio_prt3 {
+	ngpios = <2>;
+};
+
+&gpio_prt5 {
+	ngpios = <4>;
+};
+
+&gpio_prt6 {
+	ngpios = <6>;
+};
+
+&gpio_prt7 {
+	ngpios = <6>;
+};
+
+&gpio_prt8 {
+	ngpios = <3>;
+};
+
+&gpio_prt11 {
+	ngpios = <3>;
+};
+
+&gpio_prt12 {
+	ngpios = <5>;
+};
+
+&gpio_prt14 {
+	ngpios = <4>;
+};
+
+&gpio_prt17 {
+	ngpios = <3>;
+};
+
+&gpio_prt19 {
+	ngpios = <4>;
+};
+
+&gpio_prt21 {
+	ngpios = <5>;
+};
+
+&gpio_prt22 {
+	ngpios = <6>;
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
