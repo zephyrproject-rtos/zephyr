@@ -1608,10 +1608,11 @@ static int decode_record(struct net_buf_simple *buf,
 
 	rec->len = net_buf_simple_pull_le16(buf);
 
-	if (rec->len > buf->len) {
+	/* The Record Length includes the Record Length field itself */
+	if (rec->len > start_len) {
 		LOG_WRN("incorrect DirListing record length %u, "
 			"longer than remaining size %u",
-			rec->len, buf->len);
+			rec->len, start_len);
 		return -EINVAL;
 	}
 
