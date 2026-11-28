@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Microchip Technology Inc. and its subsidiaries.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip Dual Watchdog Timer
+
+compatible: "microchip,dwdt-g1-watchdog"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
