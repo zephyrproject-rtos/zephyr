@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright 2026 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RIEV_FPGA_DEV_BOARD
+	select SOC_EDGEVISION_M85 if BOARD_RIEV_FPGA_DEV_BOARD_EDGEVISION_M85
