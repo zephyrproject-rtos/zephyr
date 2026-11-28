@@ -149,6 +149,21 @@ def test_handler_final_handle_actions(mocked_instance):
     assert handler.instance.reason == 'This reason shan\'t be changed.'
 
 
+def test_handler_final_handle_actions_ztest_run_id(mocked_instance):
+    mocked_instance.testcases = []
+    handler = Handler(mocked_instance, 'build', mock.Mock())
+    handler._verify_ztest_suite_name = mock.Mock()
+
+    harness = twisterlib.harness.Ztest()
+    harness.matched_run_id = False
+    harness.run_id_exists = True
+
+    handler._final_handle_actions(harness)
+
+    assert handler.instance.status == TwisterStatus.FAIL
+    assert handler.instance.reason == 'RunID mismatch'
+
+
 TESTDATA_2 = [
     (['dummy_testsuite_name'], False),
     ([], True),

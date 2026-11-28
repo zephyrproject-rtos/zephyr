@@ -178,7 +178,7 @@ class Handler:
 
         # only for Ztest tests:
         harness_class_name = type(harness).__name__
-        if self.suite_name_check and harness_class_name == "Test":
+        if self.suite_name_check and harness_class_name in ("Test", "Ztest"):
             self._verify_ztest_suite_name(
                 harness.status,
                 harness.detected_suite_names
