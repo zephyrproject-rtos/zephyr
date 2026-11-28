@@ -14,6 +14,7 @@
 #include <zephyr/device.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/spinlock.h>
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/drivers/interrupt_controller/gic.h>
@@ -148,7 +149,6 @@ void arm_gic_irq_set_priority(
 	unsigned int irq, unsigned int prio, uint32_t flags)
 {
 	int int_grp, int_off;
-	uint32_t val;
 
 	/* Set priority */
 	sys_write8(prio & 0xff, GICD_IPRIORITYRn + irq);
@@ -159,13 +159,17 @@ void arm_gic_irq_set_priority(
 
 	/* GICD_ICFGR0 is read-only; SGIs are always edge-triggered */
 	if (int_grp != 0) {
-		val = sys_read32(GICD_ICFGRn + int_grp);
+		static struct k_spinlock icfgr_lock;
+		k_spinlock_key_t key = k_spin_lock(&icfgr_lock);
+		uint32_t val = sys_read32(GICD_ICFGRn + int_grp);
+
 		val &= ~(GICD_ICFGR_MASK << int_off);
 		if (flags & IRQ_TYPE_EDGE) {
 			val |= (GICD_ICFGR_TYPE << int_off);
 		}
 
 		sys_write32(val, GICD_ICFGRn + int_grp);
+		k_spin_unlock(&icfgr_lock, key);
 	}
 }
 
