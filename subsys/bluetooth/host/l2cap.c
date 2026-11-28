@@ -371,23 +371,73 @@ destroy:
 	}
 }
 
+/* Channels that l2cap_rtx_timeout() removed from their connection and that
+ * are not deleted yet, linked through bt_l2cap_chan.node. Protected by the
+ * host lock (bt_dev_lock()).
+ */
+static sys_slist_t rtx_expired = SYS_SLIST_STATIC_INIT(&rtx_expired);
+
+static void l2cap_rtx_expired_del(void)
+{
+	sys_snode_t *node;
+
+	do {
+		bt_dev_lock();
+		node = sys_slist_get(&rtx_expired);
+		bt_dev_unlock();
+
+		if (node != NULL) {
+			l2cap_chan_del(CONTAINER_OF(node, struct bt_l2cap_chan, node));
+		}
+	} while (node != NULL);
+}
+
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+static void l2cap_rtx_expired_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	l2cap_rtx_expired_del();
+}
+
 static void l2cap_rtx_timeout(struct k_work *work)
 {
+	static K_WORK_DEFINE(expired_work, l2cap_rtx_expired_handler);
 	struct bt_l2cap_le_chan *chan = LE_CHAN_RTX(work);
 	struct bt_conn *conn = chan->chan.conn;
+	const uint8_t ident = chan->ident;
+	const uint16_t pending_req = chan->pending_req;
+	int err;
 
 	LOG_ERR("chan %p timeout", chan);
 
-	bt_l2cap_chan_remove(conn, &chan->chan);
-	l2cap_chan_del(&chan->chan);
+	/* The work queue still uses rtx_work when this handler has returned,
+	 * while the released callback hands the channel back to the
+	 * application: expired_work deletes the channels instead.
+	 */
+	bt_dev_lock();
+
+	if (sys_slist_find_and_remove(&conn->channels, &chan->chan.node)) {
+		sys_slist_append(&rtx_expired, &chan->chan.node);
+	}
 
 	/* Remove other channels if pending on the same ident. Ident 0 marks a
 	 * Disconnection Request that waits for a buffer, not a shared request.
 	 */
-	while (chan->ident != 0U &&
-	       (chan = l2cap_remove_ident(conn, chan->ident, chan->pending_req))) {
-		l2cap_chan_del(&chan->chan);
+	while (ident != 0U) {
+		chan = l2cap_remove_ident(conn, ident, pending_req);
+		if (chan == NULL) {
+			break;
+		}
+
+		sys_slist_append(&rtx_expired, &chan->chan.node);
+	}
+
+	bt_dev_unlock();
+
+	err = bt_work_submit(&expired_work);
+	if (err < 0) {
+		LOG_ERR("Failed to submit the deletion (err %d)", err);
 	}
 }
 
@@ -549,6 +599,11 @@ void bt_l2cap_disconnected(struct bt_conn *conn)
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&conn->channels, chan, next, node) {
 		bt_l2cap_chan_remove(conn, chan);
 		l2cap_chan_del(chan);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)) {
+		/* No channel keeps its connection past this function */
+		l2cap_rtx_expired_del();
 	}
 }
 
