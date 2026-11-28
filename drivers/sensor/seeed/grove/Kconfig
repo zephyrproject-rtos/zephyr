@@ -17,6 +17,7 @@ config GROVE_LIGHT_SENSOR
 	default y
 	depends on DT_HAS_SEEED_GROVE_LIGHT_ENABLED
 	select ADC
+	select REQUIRES_FULL_LIBC
 	help
 	  Setting this value will enable driver support for the Grove Light
 	  Sensor.
@@ -26,6 +27,7 @@ config GROVE_TEMPERATURE_SENSOR
 	default y
 	depends on DT_HAS_SEEED_GROVE_TEMPERATURE_ENABLED
 	select ADC
+	select REQUIRES_FULL_LIBC
 	help
 	  Setting this value will enable driver support for the Grove
 	  Temperature Sensor.
