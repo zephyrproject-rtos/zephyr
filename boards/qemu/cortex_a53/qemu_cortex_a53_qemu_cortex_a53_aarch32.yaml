@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+identifier: qemu_cortex_a53/qemu_cortex_a53/aarch32
+name: QEMU Emulation for Cortex-A53 AArch32
+type: qemu
+simulation:
+  - name: qemu
+arch: arm
+toolchain:
+  - zephyr
+ram: 130048
+flash: 65536
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: qemu
