@@ -746,9 +746,13 @@ static void net_buf_put_uri_scheme_list(const struct tbs_inst *inst, struct net_
 	}
 
 	for (size_t i = 0U; i < ARRAY_SIZE(svc_insts); i++) {
+		/* strtok() modifies the string it splits, so split a copy of the bearer's list */
+		char uri_scheme_list[sizeof(svc_insts[i].uri_scheme_list)];
 		char *uri_to_search = NULL;
 
-		uri_to_search = strtok(svc_insts[i].uri_scheme_list, ",");
+		(void)memcpy(uri_scheme_list, svc_insts[i].uri_scheme_list,
+			     sizeof(uri_scheme_list));
+		uri_to_search = strtok(uri_scheme_list, ",");
 		/* append only unique URI prefix from all TBS instances in GTBS instance */
 		while (uri_to_search != NULL) {
 			if (!is_tbs_uri_unique((char *)buf->data, uri_to_search)) {
@@ -1539,7 +1543,7 @@ static ssize_t read_status_flags(struct bt_conn *conn, const struct bt_gatt_attr
 				 uint16_t len, uint16_t offset)
 {
 	const struct tbs_inst *inst = BT_AUDIO_CHRC_USER_DATA(attr);
-	const uint16_t status_flags_le = sys_cpu_to_le16(inst->optional_opcodes);
+	const uint16_t status_flags_le = sys_cpu_to_le16(inst->status_flags);
 
 	LOG_DBG("Index %u: status_flags 0x%04x", inst_index(inst), inst->status_flags);
 
@@ -3164,16 +3168,20 @@ int bt_tbs_remote_incoming(uint8_t bearer_index, const char *to, const char *fro
 		return -EINVAL;
 	}
 
-	call = call_alloc(inst, BT_TBS_CALL_STATE_INCOMING, (uint8_t *)from, strlen(from));
-	if (call == NULL) {
-		return -ENOMEM;
-	}
-
 	err = k_mutex_lock(&tbs_mutex, K_NO_WAIT);
 	if (err != 0) {
 		LOG_DBG("Failed to lock mutex");
 		return -EBUSY;
 	}
+
+	call = call_alloc(inst, BT_TBS_CALL_STATE_INCOMING, (uint8_t *)from, strlen(from));
+	if (call == NULL) {
+		err = k_mutex_unlock(&tbs_mutex);
+		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+
+		return -ENOMEM;
+	}
+
 	BT_TBS_CALL_FLAG_SET_INCOMING(call->flags);
 
 	/* Notify TBS*/
