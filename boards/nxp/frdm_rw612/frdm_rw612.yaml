@@ -23,7 +23,8 @@ supported:
   - i2c
   - i2s
   - entropy
-  - usb_device
+  - usbd
+  - usbh
   - watchdog
   - counter
   - pwm
