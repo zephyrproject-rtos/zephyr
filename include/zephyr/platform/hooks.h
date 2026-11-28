@@ -120,6 +120,18 @@ void soc_fatal_cpu_park_hook(void);
 #define soc_fatal_cpu_park_hook() do { } while (0)
 #endif
 
+#if defined(CONFIG_SOC_SPURIOUS_IRQ_HOOK) || defined(__DOXYGEN__)
+/**
+ * @brief SoC hook executed on a spurious interrupt.
+ *
+ * This hook is implemented by the SoC and is called after the spurious
+ * interrupt has been logged and before the fatal error is raised.
+ */
+void soc_spurious_irq_hook(void);
+#else
+#define soc_spurious_irq_hook() do { } while (0)
+#endif
+
 #if defined(CONFIG_BOARD_EARLY_INIT_HOOK) || defined(__DOXYGEN__)
 /**
  * @brief Board hook executed before the kernel starts.
