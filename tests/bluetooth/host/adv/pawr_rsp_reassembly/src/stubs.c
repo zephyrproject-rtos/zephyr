@@ -248,6 +248,13 @@ int k_work_cancel_delayable(struct k_work_delayable *dwork)
 	return 0;
 }
 
+int k_work_delayable_busy_get(const struct k_work_delayable *dwork)
+{
+	ARG_UNUSED(dwork);
+
+	return 0;
+}
+
 int bt_work_reschedule(struct k_work_delayable *dwork, k_timeout_t delay)
 {
 	ARG_UNUSED(dwork);
