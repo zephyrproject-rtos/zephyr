@@ -1,0 +1,37 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Drop the MPU memory-attr from the DTCM node so the static MPU region
+ * and the DT-configured region do not overlap.
+ * The DTCM linker region must be preserved as the linker script references it.
+ * Enabling &semc causes CMakeLists to select the SEMC XMCD.
+ */
+
+&dtcm {
+	/delete-property/ zephyr,memory-attr;
+};
+
+/ {
+	chosen {
+		zephyr,sram = &dtcm;
+	};
+
+	aliases {
+		sram-ext = &sdram0;
+	};
+};
+
+&hyperram0 {
+	status = "disabled";
+};
+
+&semc {
+	status = "okay";
+};
+
+&sdram0 {
+	status = "okay";
+};
