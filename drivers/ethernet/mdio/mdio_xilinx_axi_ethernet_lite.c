@@ -108,6 +108,9 @@ static inline int mdio_axi_eth_lite_complete_transaction(const struct mdio_axi_e
 static int mdio_axi_eth_lite_read(const struct device *dev, uint8_t phy_addr, uint8_t regad,
 			     uint16_t *value)
 {
+	DEVICE_DT_ASSUME_ANY(dev, xlnx_xps_ethernetlite_3_00_a_mdio,
+			     xlnx_xps_ethernetlite_1_00_a_mdio);
+
 	const struct mdio_axi_eth_lite_config *config = dev->config;
 	struct mdio_axi_eth_lite_data *data = dev->data;
 
@@ -143,6 +146,9 @@ static int mdio_axi_eth_lite_read(const struct device *dev, uint8_t phy_addr, ui
 static int mdio_axi_eth_lite_write(const struct device *dev, uint8_t phy_addr, uint8_t regad,
 			      uint16_t value)
 {
+	DEVICE_DT_ASSUME_ANY(dev, xlnx_xps_ethernetlite_3_00_a_mdio,
+			     xlnx_xps_ethernetlite_1_00_a_mdio);
+
 	const struct mdio_axi_eth_lite_config *config = dev->config;
 	struct mdio_axi_eth_lite_data *data = dev->data;
 
@@ -174,6 +180,9 @@ static int mdio_axi_eth_lite_write(const struct device *dev, uint8_t phy_addr, u
 
 static int mdio_axi_eth_lite_init(const struct device *dev)
 {
+	DEVICE_DT_ASSUME_ANY(dev, xlnx_xps_ethernetlite_3_00_a_mdio,
+			     xlnx_xps_ethernetlite_1_00_a_mdio);
+
 	struct mdio_axi_eth_lite_data *data = dev->data;
 
 	(void)k_mutex_init(&data->mutex);

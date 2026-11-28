@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT xlnx_axi_ethernet_1_00_a
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(eth_xilinx_axienet, CONFIG_ETHERNET_LOG_LEVEL);
 
@@ -157,6 +159,9 @@ static void xilinx_axienet_rx_callback(const struct device *dma, void *user_data
 				       int status)
 {
 	struct device *ethdev = (struct device *)user_data;
+
+	DEVICE_DT_INST_ASSUME_ANY(ethdev);
+
 	struct xilinx_axienet_data *data = ethdev->data;
 	size_t current_rx_desc_idx = data->rx_completed_buffer_index;
 	struct net_buf *recvd_buf;
@@ -229,6 +234,9 @@ static void xilinx_axienet_tx_callback(const struct device *dev, void *user_data
 				       int status)
 {
 	struct device *ethdev = (struct device *)user_data;
+
+	DEVICE_DT_INST_ASSUME_ANY(ethdev);
+
 	struct xilinx_axienet_data *data = ethdev->data;
 	size_t current_tx_desc_idx = data->tx_completed_buffer_index;
 
@@ -412,6 +420,8 @@ static int setup_dma_tx_transfer(const struct device *dev,
 
 static void xilinx_axienet_isr(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct xilinx_axienet_config *config = dev->config;
 	struct xilinx_axienet_data *data = dev->data;
 	uint32_t status =
@@ -439,6 +449,8 @@ static void xilinx_axienet_isr(const struct device *dev)
 static enum ethernet_hw_caps xilinx_axienet_caps(const struct device *dev,
 						 struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct xilinx_axienet_config *config = dev->config;
 	enum ethernet_hw_caps ret = ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE |
 				    ETHERNET_LINK_1000BASE;
@@ -456,6 +468,8 @@ static enum ethernet_hw_caps xilinx_axienet_caps(const struct device *dev,
 static const struct device *xilinx_axienet_get_phy(const struct device *dev,
 						   struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct xilinx_axienet_config *config = dev->config;
 
 	return config->phy;
@@ -466,6 +480,8 @@ static int xilinx_axienet_get_config(const struct device *dev,
 				     enum ethernet_config_type type,
 				     struct ethernet_config *config)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct xilinx_axienet_config *dev_config = dev->config;
 
 	switch (type) {
@@ -513,6 +529,8 @@ static int xilinx_axienet_set_config(const struct device *dev,
 				     enum ethernet_config_type type,
 				     const struct ethernet_config *config)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct xilinx_axienet_config *dev_config = dev->config;
 	struct xilinx_axienet_data *data = dev->data;
 
@@ -538,8 +556,12 @@ static void phy_link_state_changed(const struct device *dev __unused, struct phy
 
 static void xilinx_axienet_iface_init(struct net_if *iface)
 {
-	struct xilinx_axienet_data *data = net_if_get_device(iface)->data;
-	const struct xilinx_axienet_config *config = net_if_get_device(iface)->config;
+	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
+	struct xilinx_axienet_data *data = dev->data;
+	const struct xilinx_axienet_config *config = dev->config;
 	int err;
 
 	data->interface = iface;
@@ -563,6 +585,8 @@ static void xilinx_axienet_iface_init(struct net_if *iface)
 
 static int xilinx_axienet_send(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct xilinx_axienet_data *data = dev->data;
 	const struct xilinx_axienet_config *config = dev->config;
 	size_t current_tx_desc_idx = data->tx_populated_buffer_index;
@@ -584,6 +608,8 @@ static int xilinx_axienet_send(const struct device *dev, struct net_pkt *pkt)
 
 static int xilinx_axienet_probe(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct xilinx_axienet_config *config = dev->config;
 	struct xilinx_axienet_data *data = dev->data;
 	uint32_t status;
@@ -630,6 +656,8 @@ static int xilinx_axienet_probe(const struct device *dev)
 
 static int xilinx_axienet_stop(const struct device *dev, struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct xilinx_axienet_config *config = dev->config;
 	struct xilinx_axienet_data *data = dev->data;
 	uint32_t status;
@@ -687,6 +715,8 @@ static int xilinx_axienet_stop(const struct device *dev, struct net_if *iface __
 
 static int xilinx_axienet_start(const struct device *dev, struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct xilinx_axienet_config *config = dev->config;
 	struct xilinx_axienet_data *data = dev->data;
 	uint32_t status;
@@ -765,5 +795,4 @@ static DEVICE_API(ethernet, xilinx_axienet_api) = {
 				      &config_##inst, CONFIG_ETH_INIT_PRIORITY,                    \
 				      &xilinx_axienet_api, NET_ETH_MTU);
 
-#define DT_DRV_COMPAT xlnx_axi_ethernet_1_00_a
 DT_INST_FOREACH_STATUS_OKAY(XILINX_AXIENET_INIT);

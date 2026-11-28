@@ -4,6 +4,9 @@
  * Copyright (c) 2024, CISPA Helmholtz Center for Information Security
  * SPDX - License - Identifier : Apache-2.0
  */
+
+#define DT_DRV_COMPAT xlnx_axi_ethernet_1_00_a_mdio
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(eth_xilinx_axienet_mdio, CONFIG_ETHERNET_LOG_LEVEL);
 
@@ -152,6 +155,8 @@ static void mdio_xilinx_axienet_bus_enable(const struct device *dev)
 static int mdio_xilinx_axienet_read(const struct device *dev, uint8_t prtad, uint8_t devad,
 				    uint16_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct mdio_xilinx_axienet_config *config = dev->config;
 	struct mdio_xilinx_axienet_data *dev_data = dev->data;
 	int err;
@@ -214,6 +219,8 @@ static int mdio_xilinx_axienet_read(const struct device *dev, uint8_t prtad, uin
 static int mdio_xilinx_axienet_write(const struct device *dev, uint8_t prtad, uint8_t devad,
 				     uint16_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct mdio_xilinx_axienet_config *config = dev->config;
 	struct mdio_xilinx_axienet_data *dev_data = dev->data;
 	int err;
@@ -269,6 +276,8 @@ static int mdio_xilinx_axienet_write(const struct device *dev, uint8_t prtad, ui
 
 static inline void xilinx_axienet_mdio_isr(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct mdio_xilinx_axienet_config *config = dev->config;
 	struct mdio_xilinx_axienet_data *data = dev->data;
 	uint32_t interrupt_status;
@@ -288,6 +297,8 @@ static inline void xilinx_axienet_mdio_isr(const struct device *dev)
 
 static int xilinx_axienet_mdio_probe(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct mdio_xilinx_axienet_config *config = dev->config;
 	struct mdio_xilinx_axienet_data *data = dev->data;
 	int err;
@@ -338,5 +349,4 @@ static DEVICE_API(mdio, mdio_xilinx_axienet_api) = {
 			      &mdio_xilinx_axienet_data##inst, &mdio_xilinx_axienet_config##inst,  \
 			      POST_KERNEL, CONFIG_MDIO_INIT_PRIORITY, &mdio_xilinx_axienet_api);
 
-#define DT_DRV_COMPAT xlnx_axi_ethernet_1_00_a_mdio
 DT_INST_FOREACH_STATUS_OKAY(XILINX_AXIENET_MDIO_INIT)
