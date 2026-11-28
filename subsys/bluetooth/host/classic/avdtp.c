@@ -1748,25 +1748,31 @@ static int avdtp_send_cmd(struct bt_avdtp *session, struct net_buf *buf, struct 
 
 	avdtp_lock(session);
 
+	if (!session->connected) {
+		avdtp_unlock(session);
+		net_buf_unref(buf);
+		LOG_DBG("Signalling channel is not connected");
+		return -ENOTCONN;
+	}
+
 	if (session->req != NULL) {
 		avdtp_unlock(session);
 		net_buf_unref(buf);
 		return -EBUSY;
 	}
 
-	session->req = req;
-	avdtp_unlock(session);
-
 	hdr = (struct bt_avdtp_single_sig_hdr *)buf->data;
 	/* Save the sent request information */
 	req->sig = AVDTP_SIGID_GET(hdr->signal_id);
 	req->tid = AVDTP_TID_GET(hdr->hdr);
+	session->req = req;
 	LOG_DBG("Command sent: buf=%p, sig=0x%02X, tid=0x%02X", buf, req->sig, req->tid);
 
 	avdtp_send_common(session, buf);
 
 	/* Start timeout work */
 	bt_work_reschedule(&session->timeout_work, AVDTP_TIMEOUT);
+	avdtp_unlock(session);
 
 	return 0;
 }
@@ -1783,6 +1789,10 @@ void bt_avdtp_l2cap_connected(struct bt_l2cap_chan *chan)
 
 	session = AVDTP_CHAN(chan);
 	LOG_DBG("chan %p session %p", chan, session);
+
+	avdtp_lock(session);
+	session->connected = true;
+	avdtp_unlock(session);
 
 	/* notify a2dp connection result */
 	session->ops->connected(session);
@@ -1834,17 +1844,20 @@ void bt_avdtp_clear_tx(struct bt_avdtp *session)
 void bt_avdtp_l2cap_disconnected(struct bt_l2cap_chan *chan)
 {
 	struct bt_avdtp *session = AVDTP_CHAN(chan);
+	struct bt_avdtp_req *req;
 
 	LOG_DBG("chan %p session %p", chan, session);
 
+	avdtp_lock(session);
+	session->connected = false;
 	k_work_cancel_delayable(&session->timeout_work);
+	req = session->req;
+	session->req = NULL;
+	avdtp_unlock(session);
 
 	/* Clear the Pending req if set*/
-	if (session->req) {
-		struct bt_avdtp_req *req = session->req;
-
+	if (req != NULL) {
 		req->status = BT_AVDTP_BAD_STATE;
-		bt_avdtp_clear_req(session);
 
 		if (req->func != NULL) {
 			req->func(req, NULL);
@@ -2180,6 +2193,7 @@ int bt_avdtp_connect(struct bt_conn *conn, struct bt_avdtp *session)
 	 * memory is owned and cleared by the upper layer.
 	 */
 	k_sem_init(&session->sem_lock, 1, 1);
+	session->connected = false;
 	session->br_chan.chan.conn = conn;
 	bt_avdtp_clear_tx(session);
 	k_sem_give(&avdtp_sem_lock);
@@ -2275,6 +2289,7 @@ int bt_avdtp_l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
 		 * session memory is owned and cleared by the upper layer.
 		 */
 		k_sem_init(&session->sem_lock, 1, 1);
+		session->connected = false;
 		session->br_chan.chan.conn = conn;
 		bt_avdtp_clear_tx(session);
 		k_sem_give(&avdtp_sem_lock);
