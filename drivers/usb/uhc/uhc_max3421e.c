@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Antmicro <www.antmicro.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,9 +27,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(max3421e, CONFIG_UHC_DRIVER_LOG_LEVEL);
 
-
-#define MAX3421E_STATE_BUS_RESET	0
-#define MAX3421E_STATE_BUS_RESUME	1
+#define MAX3421E_STATE_BUS_RESET      0
+#define MAX3421E_STATE_BUS_RESUME     1
+#define MAX3421E_STATE_DEVICE_PRESENT 2
 
 struct max3421e_data {
 	struct gpio_callback gpio_cb;
@@ -553,30 +554,62 @@ static int max3421e_handle_hxfrdn(const struct device *dev)
 	return ret;
 }
 
+static ALWAYS_INLINE int max3421e_mode_update(const struct device *dev, const uint8_t mode)
+{
+	struct max3421e_data *priv = uhc_get_private(dev);
+
+	if (mode == priv->mode) {
+		return 0;
+	}
+
+	priv->mode = mode;
+
+	return max3421e_write_byte(dev, MAX3421E_REG_MODE, priv->mode);
+}
+
 static void max3421e_handle_condet(const struct device *dev)
 {
 	struct max3421e_data *priv = uhc_get_private(dev);
 	const uint8_t jk = priv->hrsl & MAX3421E_JKSTATUS_MASK;
 	enum uhc_event_type type = UHC_EVT_ERROR;
+	uint8_t mode = priv->mode;
+	int err;
+
+	if (atomic_test_bit(&priv->state, MAX3421E_STATE_BUS_RESET)) {
+		/* NOTE: Resetting the bus triggers a spurious condet event */
+		return;
+	}
 
 	/*
-	 * JSTATUS:KSTATUS 0:0 - SE0
-	 * JSTATUS:KSTATUS 0:1 - K   (Resume)
-	 * JSTATUS:KSTATUS 1:0 - J   (Idle)
+	 * The meaning of J/K depends on the LOWSPEED bit (AN3785, "SAMPLEBUS
+	 * JSTATUS, KSTATUS"). J is the idle state of a device at the current
+	 * speed, K the idle state of a device at the other speed, in which
+	 * case LOWSPEED should be toggled.
 	 */
 	if (jk == 0) {
-		/* Device disconnected */
 		type = UHC_EVT_DEV_REMOVED;
+		mode &= ~MAX3421E_SOFKAENAB;
+		atomic_clear_bit(&priv->state, MAX3421E_STATE_DEVICE_PRESENT);
 	}
 
 	if (jk == MAX3421E_JSTATUS) {
-		/* Device connected */
-		type = UHC_EVT_DEV_CONNECTED_FS;
+		mode |= MAX3421E_SOFKAENAB;
+		type = (mode & MAX3421E_LOWSPEED) != 0U ? UHC_EVT_DEV_CONNECTED_LS
+							: UHC_EVT_DEV_CONNECTED_FS;
+		atomic_set_bit(&priv->state, MAX3421E_STATE_DEVICE_PRESENT);
 	}
 
 	if (jk == MAX3421E_KSTATUS) {
-		/* Device connected */
-		type = UHC_EVT_DEV_CONNECTED_LS;
+		mode ^= MAX3421E_LOWSPEED;
+		mode |= MAX3421E_SOFKAENAB;
+		type = (mode & MAX3421E_LOWSPEED) != 0U ? UHC_EVT_DEV_CONNECTED_LS
+							: UHC_EVT_DEV_CONNECTED_FS;
+		atomic_set_bit(&priv->state, MAX3421E_STATE_DEVICE_PRESENT);
+	}
+
+	err = max3421e_mode_update(dev, mode);
+	if (unlikely(err)) {
+		type = UHC_EVT_ERROR;
 	}
 
 	uhc_submit_event(dev, type, 0);
@@ -673,6 +706,11 @@ static void uhc_max3421e_thread(void *p1, void *p2, void *p3)
 		k_sem_take(&priv->irq_sem, K_FOREVER);
 
 		max3421e_lock(dev);
+
+		if (!uhc_is_enabled(dev)) {
+			max3421e_unlock(dev);
+			continue;
+		}
 
 		/*
 		 * Get HRSL and HIRQ values, do not perform any operation
@@ -950,9 +988,9 @@ static int max3421e_hien_setup(const struct device *dev)
 	return 0;
 }
 
-static int max3421e_enable_int_output(const struct device *dev)
+static int max3421e_set_int_output(const struct device *dev, bool enable)
 {
-	const uint8_t cpuctl = MAX3421E_IE;
+	const uint8_t cpuctl = enable ? MAX3421E_IE : 0;
 	uint8_t tmp;
 	int ret;
 
@@ -972,6 +1010,41 @@ static int max3421e_enable_int_output(const struct device *dev)
 			cpuctl, tmp);
 		return -EIO;
 	}
+
+	return 0;
+}
+
+static int max3421e_bus_sample(const struct device *dev)
+{
+	struct max3421e_data *priv = uhc_get_private(dev);
+	int ret;
+
+	ret = max3421e_write_byte(dev, MAX3421E_REG_HCTL, MAX3421E_SAMPLEBUS);
+	if (ret) {
+		return ret;
+	}
+
+	return max3421e_read(dev, MAX3421E_REG_HRSL, &priv->hrsl, sizeof(priv->hrsl));
+}
+
+static int max3421e_bus_probe(const struct device *dev)
+{
+	struct max3421e_data *priv = uhc_get_private(dev);
+	uint8_t jk;
+	int ret;
+
+	ret = max3421e_bus_sample(dev);
+	if (ret) {
+		return ret;
+	}
+
+	jk = priv->hrsl & MAX3421E_JKSTATUS_MASK;
+	if (jk == 0) {
+		/* Do not report lack of root device as a new event */
+		return 0;
+	}
+
+	max3421e_handle_condet(dev);
 
 	return 0;
 }
@@ -1012,30 +1085,57 @@ static int uhc_max3421e_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = max3421e_enable_int_output(dev);
-	if (ret) {
-		LOG_ERR("Failed to enable INT output");
-		return ret;
-	}
 
 	LOG_INF("REV 0x%x, MODE 0x%02x, HIEN 0x%02x",
 		rev, priv->mode, priv->hien);
 
 	priv->addr = 0;
 
-	/* Sample bus if device is already connected */
-	return max3421e_write_byte(dev, MAX3421E_REG_HCTL, MAX3421E_SAMPLEBUS);
+	return 0;
 }
 
 static int uhc_max3421e_enable(const struct device *dev)
 {
-	/* TODO */
+	int err;
+
+	err = max3421e_bus_probe(dev);
+	if (err) {
+		LOG_ERR("Failed to sample the bus");
+		return err;
+	}
+
+	err = max3421e_set_int_output(dev, true);
+	if (err) {
+		LOG_ERR("Failed to enable INT output");
+		return err;
+	}
+
 	return 0;
 }
 
 static int uhc_max3421e_disable(const struct device *dev)
 {
-	/* TODO */
+	struct max3421e_data *priv = uhc_get_private(dev);
+	int err;
+
+	err = max3421e_set_int_output(dev, false);
+	if (err) {
+		LOG_ERR("Failed to disable INT output");
+		return err;
+	}
+
+	err = max3421e_mode_update(dev, priv->mode & ~(MAX3421E_SOFKAENAB));
+	if (err) {
+		LOG_ERR("Failed to disable automatic SOF/KA generation");
+		return err;
+	}
+
+	max3421e_xfer_drop_active(dev, -ECONNRESET);
+
+	if (atomic_test_bit(&priv->state, MAX3421E_STATE_DEVICE_PRESENT)) {
+		uhc_submit_event(dev, UHC_EVT_DEV_REMOVED, 0);
+	}
+
 	return 0;
 }
 
