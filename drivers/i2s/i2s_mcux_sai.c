@@ -907,14 +907,18 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 	 * responsible for reconfiguring the underlying audio PLL family.
 	 *
 	 * Both directions share this root clock, so only touch it when the
-	 * rate actually has to change, and refuse the change while the
-	 * opposite direction is configured: its bit clock divider was
-	 * derived from the current MCLK and would silently shift.
+	 * rate actually has to change. A NOT_READY peer has no divider to
+	 * preserve. A READY peer has a divider derived from the old MCLK, so
+	 * invalidate it before the retune; it must be configured again before
+	 * it can start. Never retune while the peer is active or stopping, or
+	 * after it has encountered an error.
 	 */
 	{
-		enum i2s_state peer_state = (dir == I2S_DIR_TX) ? *rx_state : *tx_state;
+		struct stream *peer = (dir == I2S_DIR_TX) ? &dev_data->rx : &dev_data->tx;
+		enum i2s_state peer_state;
 		uint32_t desired_mclk;
 		uint32_t current_mclk;
+		bool invalidate_peer;
 
 		if ((i2s_cfg->frame_clk_freq % 11025U) == 0U) {
 			desired_mclk = 11289600U;   /* 44.1kHz family */
@@ -925,11 +929,30 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 		get_mclk_rate(dev, &current_mclk);
 
 		if (current_mclk != desired_mclk) {
-			if (peer_state != I2S_STATE_NOT_READY) {
-				LOG_ERR("cannot retune root clock to %uHz: opposite "
-					"direction is already configured", desired_mclk);
+			unsigned int key = irq_lock();
+
+			peer_state = peer->state;
+			if (peer_state != I2S_STATE_NOT_READY &&
+			    peer_state != I2S_STATE_READY) {
+				irq_unlock(key);
+				LOG_ERR("cannot retune root clock to %uHz: %s state is %u",
+					desired_mclk, (dir == I2S_DIR_TX) ? "rx" : "tx",
+					peer_state);
 				goto invalid_config;
 			}
+
+			invalidate_peer = (peer_state == I2S_STATE_READY);
+			if (invalidate_peer) {
+				peer->state = I2S_STATE_NOT_READY;
+			}
+			irq_unlock(key);
+
+			if (invalidate_peer) {
+				i2s_purge_stream_buffers(peer, peer->cfg.mem_slab, true, true);
+				LOG_WRN("retune to %uHz invalidated the %s configuration",
+					desired_mclk, (dir == I2S_DIR_TX) ? "rx" : "tx");
+			}
+
 			set_mclk_rate(dev, desired_mclk);
 		}
 	}
