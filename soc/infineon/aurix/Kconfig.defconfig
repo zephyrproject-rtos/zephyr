@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: Copyright (c) 2024 Infineon Technologies AG,
 # SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
 # SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
 #
@@ -9,6 +9,9 @@ if SOC_SERIES_TC3X
 config NUM_IRQS
 	default 256
 
+config CLOCK_CONTROL
+	default y
+
 endif
 
 if SOC_SERIES_TC4X
@@ -16,17 +19,9 @@ if SOC_SERIES_TC4X
 config NUM_IRQS
 	default 16
 
-endif
-
-if SOC_QEMU_TC3X || SOC_QEMU_TC4X
-
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default $(dt_node_int_prop_int,/clocks/fstm,clock-frequency)
-
-config BUILD_OUTPUT_HEX
+config CLOCK_CONTROL
 	default y
 
-config TRICORE_CSA_COUNT
-	default 384
-
 endif
+
+rsource "*/Kconfig.defconfig"

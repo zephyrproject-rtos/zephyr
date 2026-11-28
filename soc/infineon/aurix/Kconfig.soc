@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: Copyright (c) 2024 Infineon Technologies AG,
 # SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
 # SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
 #
@@ -22,12 +22,4 @@ config SOC_SERIES
 	default "tc3x" if SOC_SERIES_TC3X
 	default "tc4x" if SOC_SERIES_TC4X
 
-config SOC_QEMU_TC3X
-	bool
-
-config SOC_QEMU_TC4X
-	bool
-
-config SOC
-	default "qemu_tc3x" if SOC_QEMU_TC3X
-	default "qemu_tc4x" if SOC_QEMU_TC4X
+rsource "*/Kconfig.soc"
