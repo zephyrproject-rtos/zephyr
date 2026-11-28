@@ -9,8 +9,14 @@ description: |
   in a board or application overlay (not the shared SoC DTSI), since SPI and
   I2S cannot share the same USART.
 
-  The driver currently supports TX (stereo and mono). RX is not supported yet
-  (``i2s_configure(I2S_DIR_RX)`` returns ``-ENOTSUP``).
+  Supports stereo/mono TX and stereo RX with 16-bit words, as I2S controller
+  only (clock target options are rejected by the driver).
+
+  ``i2s_configure(I2S_DIR_RX)`` must set ``channels`` to 2; mono RX
+  (``channels = 1``) returns ``-EINVAL``. TX may use ``channels = 1`` on the
+  same instance together with stereo RX (wire format stays stereo; see the
+  driver documentation). Frame clock, word size, and format must match between
+  the two streams.
 
 compatible: "silabs,usart-i2s"
 
@@ -36,12 +42,13 @@ properties:
     required: true
     description: |
       DMA channels for ``txbl`` (USARTnTXBL) and optional ``txblright``
-      (USARTnTXBLRIGHT, mono TX).
+      (USARTnTXBLRIGHT, mono TX) and ``rxdatav`` (USARTnRXDATAV).
 
   dma-names:
     required: true
     description: |
       Must include ``txbl``. Add ``txblright`` for mono TX (``channels = 1``).
+      Add ``rxdatav`` for stereo RX.
 
   silabs,mono-tx-slot:
     type: string
@@ -52,6 +59,20 @@ properties:
     description: |
       Which mono TX slot carries audio when ``channels = 1`` (the other is
       silence).
+
+  silabs,slot-width:
+    type: int
+    enum:
+      - 16
+      - 32
+    default: 16
+    description: |
+      Bit clocks per channel slot, for both TX and RX. 16 selects W16D16
+      (BCLK = 32 x frame clock). 32 selects W32D16 (BCLK = 64 x frame clock)
+      for devices that need 64 bit clocks per frame, such as most I2S MEMS
+      microphones. ``i2s_config.word_size`` stays 16 either way: RX returns
+      the 16 most significant bits of each slot and TX sends zeros after the
+      16-bit sample.
 
 examples:
   - |
@@ -97,6 +118,7 @@ examples:
       pinctrl-names = "default";
       silabs,mclk-out = <&clkout0>;
       dmas = <&dma0 DMA_REQSEL_USART0TXBL>,
-             <&dma0 DMA_REQSEL_USART0TXBLRIGHT>;
-      dma-names = "txbl", "txblright";
+             <&dma0 DMA_REQSEL_USART0TXBLRIGHT>,
+             <&dma0 DMA_REQSEL_USART0RXDATAV>;
+      dma-names = "txbl", "txblright", "rxdatav";
     };

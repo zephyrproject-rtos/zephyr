@@ -14,10 +14,16 @@ menuconfig I2S_SILABS_USART
 	  I2S over USART synchronous mode with I2SCTRL enabled (Series 2+ and
 	  similar). Audio data is transferred using the SoC LDMA controller
 	  (requires ``dmas`` / ``dma-names`` on the USART I2S devicetree node).
-	  TX (stereo and mono) is supported; RX is not supported yet.
-	  Bit clock runs only while TX data is active; ``i2s_configure()``
-	  must set ``I2S_OPT_BIT_CLK_GATED`` (``I2S_OPT_BIT_CLK_CONT`` returns
-	  ``-EINVAL``).
+	  TX (stereo and mono) and stereo RX are supported with a
+	  ``word_size`` of 16, in 16-bit slots (W16D16) or, with the
+	  ``silabs,slot-width`` devicetree property set to 32, in 32-bit
+	  slots (W32D16). RX ``i2s_configure()`` must set ``channels`` to 2
+	  (mono RX returns ``-EINVAL``); mono TX may be used with stereo RX
+	  on the same instance. On this USART master, BCLK/LRCLK run
+	  only while TX is shifting; while RX is running without TX data the
+	  driver shifts silence to keep the bus clocked.
+	  ``i2s_configure()`` must set ``I2S_OPT_BIT_CLK_GATED``
+	  (``I2S_OPT_BIT_CLK_CONT`` returns ``-EINVAL``).
 
 if I2S_SILABS_USART
 
@@ -25,5 +31,12 @@ config I2S_SILABS_USART_TX_BLOCK_COUNT
 	int "TX queue depth (memory blocks)"
 	default 4
 	range 2 16
+
+config I2S_SILABS_USART_RX_BLOCK_COUNT
+	int "RX queue depth (memory blocks)"
+	default 4
+	range 2 16
+	help
+	  Number of completed RX blocks the driver may hold for i2s_read().
 
 endif # I2S_SILABS_USART
