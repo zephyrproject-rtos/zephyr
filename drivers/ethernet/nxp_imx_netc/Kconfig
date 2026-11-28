@@ -33,11 +33,13 @@ config ETH_NXP_IMX_NETC_MSI_GIC
 	  Use GIC ITS controller as MSI module for NXP NETC
 
 if !ETH_NXP_IMX_NETC_MSI_GIC
+
 config ETH_NXP_IMX_MSGINTR
 	int "Message Interrupt module select"
 	default 1
 	help
 	  Message Interrupt module select.
+
 endif
 
 config ETH_NXP_IMX_RX_THREAD_PRIO

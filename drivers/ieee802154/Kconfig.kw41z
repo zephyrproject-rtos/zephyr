@@ -24,4 +24,5 @@ config KW41_DBG_TRACE
 	  The value depends on your debugging needs. This generates an encoded
 	  trace of events without going to debug logging to avoid timing impact
 	  on running code. The buffer is post analyzed via the debugger.
+
 endif

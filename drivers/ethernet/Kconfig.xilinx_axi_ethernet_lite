@@ -1,14 +1,15 @@
 #
-#Xilinx AXI Ethernet Lite
+# Xilinx AXI Ethernet Lite
 #
-#Copyright(c) 2025, CISPA Helmholtz Center for Information Security
-#SPDX-License-Identifier: Apache-2.0
+# Copyright(c) 2025, CISPA Helmholtz Center for Information Security
+# SPDX-License-Identifier: Apache-2.0
 #
 
 menuconfig ETH_XILINX_AXI_ETHERNET_LITE
 	bool "Xilinx AXI Ethernet Lite Driver"
 	default y
-	depends on DT_HAS_XLNX_XPS_ETHERNETLITE_3_00_A_MAC_ENABLED || DT_HAS_XLNX_XPS_ETHERNETLITE_1_00_A_MAC_ENABLED
+	depends on DT_HAS_XLNX_XPS_ETHERNETLITE_3_00_A_MAC_ENABLED || \
+		DT_HAS_XLNX_XPS_ETHERNETLITE_1_00_A_MAC_ENABLED
 	depends on LITTLE_ENDIAN # byte order operations might break for BE
 	select ETH_PHY_DRIVER
 	help
