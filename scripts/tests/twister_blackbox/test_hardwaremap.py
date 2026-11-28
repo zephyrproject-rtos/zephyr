@@ -52,6 +52,7 @@ def _make_options(**kwargs):
         'generate_hardware_map': None,
         'hardware_map': None,
         'persistent_hardware_map': False,
+        'device_rtt': False,
     }
     defaults.update(kwargs)
     return argparse.Namespace(**defaults)

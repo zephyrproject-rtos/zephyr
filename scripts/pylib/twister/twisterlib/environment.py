@@ -188,8 +188,9 @@ Artificially long but functional example:
 
     run_group_option.add_argument(
         "--device-testing", action="store_true",
-        help="Test on device directly. Specify the serial device to "
-             "use with the --device-serial option.")
+        help="Test on device directly. Specify the serial device to use with "
+            "the --device-serial option or specify script to use with the "
+            "--device-serial-pty or specify to use with --device-rtt option.")
 
     parser.add_argument("--pre-script",
                         help="""specify a pre script. This will be executed
@@ -212,6 +213,27 @@ Artificially long but functional example:
 
                         E.g "twister --device-testing
                         --device-serial-pty <script>
+                        """)
+
+    parser.add_argument("--device-rtt", action="store_true", default=False,
+                        help="""Use RTT as communication transport.
+                        Instead of using serial console, Twister will connect to the
+                        device with "west rtt" command to capture logs and interact with
+                        the test application. Setting this option automatically sets
+                        --flash-before option, as we can connect to the device only
+                        after it was flashed.
+
+                        Twister only runs those test cases whose image enables
+                        CONFIG_RTT_CONSOLE or CONFIG_SHELL_BACKEND_RTT, others are
+                        filtered at runtime.
+                        """)
+
+    parser.add_argument("--rtt-runner",
+                        help="""Uses the specified west rtt runner instead of default
+                        when running with --device-rtt.
+
+                        E.g "twister --device-testing --device-rtt --rtt-runner=jlink"
+                        will translate to "west rtt --runner jlink"
                         """)
 
     run_group_option.add_argument("--generate-hardware-map",
@@ -944,6 +966,10 @@ def parse_arguments(
         logger.error("--device-serial-pty is not supported on Windows OS")
         sys.exit(1)
 
+    if options.device_rtt and os.name == "nt":  # OS is Windows
+        logger.error("--device-rtt is not supported on Windows OS")
+        sys.exit(1)
+
     if not options.testsuite_root:
         # if we specify a test scenario which is part of a suite directly, do
         # not set testsuite root to default, just point to the test directory
@@ -1007,20 +1033,27 @@ def parse_arguments(
 
     if (
         (not options.device_testing)
-        and (options.device_serial or options.device_serial_pty or options.hardware_map)
+        and (options.device_serial or options.device_serial_pty or options.device_rtt or
+             options.hardware_map)
     ):
         logger.error(
-            "Use --device-testing with --device-serial, or --device-serial-pty, or --hardware-map."
+            "Use --device-testing with --device-serial, or --device-serial-pty, or "
+            "--device-rtt, or --hardware-map."
         )
         sys.exit(1)
 
     if (
         options.device_testing
-        and (options.device_serial or options.device_serial_pty) and len(options.platform) != 1
+        and (
+            options.device_serial
+            or options.device_serial_pty
+            or (options.device_rtt and not options.hardware_map)
+        )
+        and len(options.platform) != 1
     ):
-        logger.error("When --device-testing is used with --device-serial "
-                     "or --device-serial-pty, exactly one platform must "
-                     "be specified")
+        logger.error("When --device-testing is used with --device-serial, "
+                     "--device-serial-pty or --device-rtt without --hardware-map, "
+                     "exactly one platform must be specified")
         sys.exit(1)
 
     if options.device_flash_with_test and not options.device_testing:
