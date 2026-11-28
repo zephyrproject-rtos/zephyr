@@ -14,7 +14,6 @@
  */
 
 #include <soc.h>
-#include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/drivers/clock_control/mchp_clock_control.h>
@@ -119,6 +118,17 @@ LOG_MODULE_REGISTER(flash_mchp_nvmctrl_g1);
 
 #define DELAY_US 2
 
+/* Error flags reported by the NVMCTRL commands issued by this driver */
+#define FLASH_MCHP_INTFLAG_ERR_MSK                                                                 \
+	(NVMCTRL_INTFLAG_ADDRE_Msk | NVMCTRL_INTFLAG_PROGE_Msk | NVMCTRL_INTFLAG_LOCKE_Msk |       \
+	 NVMCTRL_INTFLAG_NVME_Msk)
+
+/*
+ * Flags cleared by this driver. The SmartEEPROM and SUSP flags are left alone, and the
+ * ECC flags are cleared by reading ECCERR.
+ */
+#define FLASH_MCHP_INTFLAG_CLR_MSK (NVMCTRL_INTFLAG_DONE_Msk | FLASH_MCHP_INTFLAG_ERR_MSK)
+
 /*******************************************
  * Enums and Structs
  *******************************************/
@@ -146,9 +156,6 @@ struct flash_mchp_dev_data {
 
 	/* Semaphore lock for flash APIs operations */
 	struct k_mutex flash_data_lock;
-
-	/* Stores the current interrupt flag status */
-	volatile uint16_t interrupt_flag_status;
 };
 
 /**
@@ -165,9 +172,6 @@ struct flash_mchp_dev_config {
 
 	/* Flash clock control */
 	struct flash_mchp_clock flash_clock;
-
-	/* Function to configure IRQ */
-	void (*irq_config_func)(const struct device *dev);
 
 	/* Flash memory parameters */
 	struct flash_parameters flash_param;
@@ -229,24 +233,10 @@ static inline void flash_enable_auto_wait_state(const struct device *dev)
 }
 
 /**
- * @brief Enable NVMCTRL interrupt.
- *
- * @param dev Pointer to the device structure representing the flash controller.
- *
- */
-static inline void flash_interrupt_enable(const struct device *dev)
-{
-	const uint16_t enable_mask = NVMCTRL_INTENSET_ADDRE_Msk | NVMCTRL_INTENSET_PROGE_Msk |
-				     NVMCTRL_INTENSET_LOCKE_Msk | NVMCTRL_INTENSET_NVME_Msk;
-
-	NVM_REGS->NVMCTRL_INTENSET = enable_mask;
-}
-
-/**
  * @brief Initializes the flash controller for the specified device.
  *
- * This function enables the automatic wait state and interrupt for the flash
- * controller associated with the given device. It should be called before
+ * This function enables the automatic wait state for the flash controller
+ * associated with the given device. It should be called before
  * performing any flash operations to ensure the controller is properly configured.
  *
  * @param dev Pointer to the device structure representing the flash controller.
@@ -254,7 +244,12 @@ static inline void flash_interrupt_enable(const struct device *dev)
 static void flash_controller_init(const struct device *dev)
 {
 	flash_enable_auto_wait_state(dev);
-	flash_interrupt_enable(dev);
+
+	/*
+	 * Clear any flag left by a previous user (e.g. a bootloader): commands that use
+	 * an address are discarded while ADDRE is set.
+	 */
+	NVM_REGS->NVMCTRL_INTFLAG = FLASH_MCHP_INTFLAG_CLR_MSK;
 }
 
 /**
@@ -281,34 +276,13 @@ static inline void flash_set_write_mode(const struct device *dev, enum flash_mch
 }
 
 /**
- * @brief Retrieve and clear the interrupt flag status of the NVMCTRL
- * peripheral.
+ * @brief Retrieve, clear and report the error status of the NVM controller.
  *
- * This function reads the current interrupt flag status from the
- * NVMCTRL_INTFLAG register and then clears the interrupt flags by writing the
- * same value back to the register. This operation is typically used to
- * acknowledge and clear interrupt flags.
+ * This function reads the NVMCTRL_INTFLAG register, clears the command done and
+ * error flags so that they do not affect the next operation, and checks for
+ * address, programming, lock and NVM errors.
  *
  * @param dev Pointer to the device structure representing the flash controller.
- *
- */
-static inline void flash_clear_interrupt_flag(const struct device *dev)
-{
-	struct flash_mchp_dev_data *mchp_flash_data = dev->data;
-
-	mchp_flash_data->interrupt_flag_status = NVM_REGS->NVMCTRL_INTFLAG;
-
-	/* Clear NVMCTRL INTFLAG register */
-	NVM_REGS->NVMCTRL_INTFLAG = mchp_flash_data->interrupt_flag_status;
-}
-
-/**
- * @brief Retrieve and report the error status of the NVM controller.
- *
- * This function examines the interrupt flag status of the NVMCTRL (Non-Volatile
- * Memory Controller) to determine if any errors have occurred. It checks for
- * address, programming, lock, and NVM errors The function returns a success or
- * failure code based on the presence of errors.
  *
  * @return Returns `FLASH_MCHP_SUCCESS` if no errors are detected, or
  *         `-EIO` if any error flags are set.
@@ -316,15 +290,12 @@ static inline void flash_clear_interrupt_flag(const struct device *dev)
 static int flash_get_interrupt_status_error(const struct device *dev)
 {
 	int ret = FLASH_MCHP_SUCCESS;
+	uint16_t status = NVM_REGS->NVMCTRL_INTFLAG;
 
-	struct flash_mchp_dev_data *mchp_flash_data = dev->data;
-	uint16_t status = mchp_flash_data->interrupt_flag_status;
+	/* Clear the flags so that the next operation starts from a clean state */
+	NVM_REGS->NVMCTRL_INTFLAG = status & FLASH_MCHP_INTFLAG_CLR_MSK;
 
-	/* Combine all error masks */
-	const uint16_t error_mask = NVMCTRL_INTFLAG_ADDRE_Msk | NVMCTRL_INTFLAG_PROGE_Msk |
-				    NVMCTRL_INTFLAG_LOCKE_Msk | NVMCTRL_INTFLAG_NVME_Msk;
-
-	if ((status & error_mask) != 0) {
+	if ((status & FLASH_MCHP_INTFLAG_ERR_MSK) != 0) {
 		LOG_ERR("flash operation failed with status 0x%x", status);
 		ret = -EIO;
 	}
@@ -771,7 +742,7 @@ static int flash_mchp_write(const struct device *dev, off_t offset, const void *
 	}
 #endif /*!CONFIG_FLASH_HAS_UNALIGNED_WRITE*/
 
-	k_mutex_lock(&mchp_flash_data->flash_data_lock, K_MSEC(10));
+	k_mutex_lock(&mchp_flash_data->flash_data_lock, K_FOREVER);
 
 #ifdef CONFIG_FLASH_HAS_UNALIGNED_WRITE
 	/* Handle unaligned start */
@@ -846,7 +817,7 @@ static int flash_mchp_erase(const struct device *dev, off_t offset, size_t size)
 		return ret;
 	}
 
-	k_mutex_lock(&mchp_flash_data->flash_data_lock, K_MSEC(10));
+	k_mutex_lock(&mchp_flash_data->flash_data_lock, K_FOREVER);
 
 	while (size > 0U) {
 
@@ -896,7 +867,7 @@ static int flash_mchp_read(const struct device *dev, off_t offset, void *data, s
 	uint8_t *dst = (uint8_t *)data;
 	const uint8_t *src = (const uint8_t *)flash_base_addr + offset;
 
-	k_mutex_lock(&mchp_flash_data->flash_data_lock, K_MSEC(10));
+	k_mutex_lock(&mchp_flash_data->flash_data_lock, K_FOREVER);
 
 	for (size_t i = 0; i < len; i++) {
 		dst[i] = src[i];
@@ -952,23 +923,23 @@ static void flash_mchp_page_layout(const struct device *dev,
 
 #ifdef CONFIG_FLASH_EX_OP_ENABLED
 /**
- * @brief Determines if a given address is outside the user row range in NVMCTRL.
+ * @brief Determines if a given range is outside the user row in NVMCTRL.
  *
- * This function checks whether the specified address falls outside the
- * defined user row range in the NVMCTRL memory. If the address is outside
- * the range, it returns a failure code; otherwise, it returns a success code.
+ * This function checks whether the range [address, address + len) falls
+ * outside the defined user row range in the NVMCTRL memory.
  *
- * @param address The address to be checked.
- * @return Returns FLASH_MCHP_SUCCESS if the address is within the user row range,
- *         otherwise returns -EINVAL if the address is outside the range.
+ * @param address Start address of the range.
+ * @param len Length of the range in bytes.
+ * @retval FLASH_MCHP_SUCCESS The range is within the user row.
+ * @retval -EINVAL The range is outside the user row.
  */
-static int flash_check_offset_user_range(uint32_t address)
+static int flash_check_offset_user_range(uint32_t address, size_t len)
 {
 	int ret = FLASH_MCHP_SUCCESS;
 
-	/* Check if the address is outside the user row range */
-	if ((address < SOC_NV_USERROW_BASE_ADDR) ||
-	    (address > (SOC_NV_USERROW_BASE_ADDR + SOC_NV_USERROW_SIZE))) {
+	/* Check if the range is outside the user row range */
+	if ((address < SOC_NV_USERROW_BASE_ADDR) || (len > SOC_NV_USERROW_SIZE) ||
+	    ((address - SOC_NV_USERROW_BASE_ADDR) > (SOC_NV_USERROW_SIZE - len))) {
 		ret = -EINVAL;
 	}
 
@@ -1010,8 +981,9 @@ static int flash_user_row_erase(const struct device *dev, uint32_t address)
  * This function writes a buffer of data to the user row section of flash memory,
  * starting at the specified offset. The address and data length must be aligned
  * to the user row write block size. The function checks for valid address range
- * and alignment before performing the write operation. Data is written in
- * quad-word (typically 16-byte) blocks.
+ * and alignment before performing the write operation. Data is written with
+ * quad-word writes where a full aligned quad word is available, and with
+ * double-word (ADW) writes otherwise.
  *
  * @param dev Pointer to the device structure representing the flash controller.
  * @param in  Pointer to a flash_mchp_ex_op_userrow_data_t structure containing
@@ -1047,23 +1019,32 @@ static int flash_ex_op_user_row_write(const struct device *dev, const uintptr_t 
 		return ret;
 	}
 
-	ret = flash_check_offset_user_range(address);
+	ret = flash_check_offset_user_range(address, len);
 	if (ret != FLASH_MCHP_SUCCESS) {
 		return ret;
 	}
 
-	uint32_t num_quad_words = (len / SOC_NV_USERROW_WRITE_BLOCK_SIZE);
+	k_mutex_lock(&mchp_flash_data->flash_data_lock, K_FOREVER);
 
-	k_mutex_lock(&mchp_flash_data->flash_data_lock, K_MSEC(10));
+	while (len > 0U) {
+		size_t chunk;
 
-	for (uint32_t write_count = 0U; write_count < num_quad_words; write_count++) {
-		ret = flash_quadword_write(dev, buffer, address);
+		if ((len >= FLASH_MCHP_QUAD_WORD_SIZE) &&
+		    (flash_aligned(address, FLASH_MCHP_QUAD_WORD_SIZE) == FLASH_MCHP_SUCCESS)) {
+			ret = flash_quadword_write(dev, buffer, address);
+			chunk = FLASH_MCHP_QUAD_WORD_SIZE;
+		} else {
+			ret = flash_doubleword_write(dev, buffer, address);
+			chunk = FLASH_MCHP_DOUBLE_WORD_SIZE;
+		}
+
 		if (ret != FLASH_MCHP_SUCCESS) {
 			break;
 		}
 
-		buffer += SOC_NV_USERROW_WRITE_BLOCK_SIZE;
-		address += SOC_NV_USERROW_WRITE_BLOCK_SIZE;
+		buffer += chunk;
+		address += chunk;
+		len -= chunk;
 	}
 
 	k_mutex_unlock(&mchp_flash_data->flash_data_lock);
@@ -1094,7 +1075,7 @@ static int flash_ex_op_user_row_erase(const struct device *dev, const uintptr_t 
 	int ret = -EINVAL;
 	struct flash_mchp_dev_data *mchp_flash_data = dev->data;
 
-	k_mutex_lock(&mchp_flash_data->flash_data_lock, K_MSEC(10));
+	k_mutex_lock(&mchp_flash_data->flash_data_lock, K_FOREVER);
 
 	/* Erase the user page */
 	ret = flash_user_row_erase(dev, SOC_NV_USERROW_BASE_ADDR);
@@ -1125,6 +1106,9 @@ static int flash_ex_op_region_lock(const struct device *dev, const uintptr_t in,
 	ARG_UNUSED(in);
 	ARG_UNUSED(out);
 	int ret = -EINVAL;
+	struct flash_mchp_dev_data *mchp_flash_data = dev->data;
+
+	k_mutex_lock(&mchp_flash_data->flash_data_lock, K_FOREVER);
 
 	for (off_t offset = 0; offset < SOC_NV_FLASH_SIZE;
 	     offset += SOC_NV_FLASH_LOCK_REGION_SIZE) {
@@ -1133,11 +1117,15 @@ static int flash_ex_op_region_lock(const struct device *dev, const uintptr_t in,
 		NVM_REGS->NVMCTRL_ADDR = offset + SOC_NV_FLASH_BASE_ADDRESS;
 		flash_process_command(dev, NVMCTRL_CTRLB_CMD_LR);
 
+		flash_status_ready_wait(dev);
+
 		ret = flash_get_interrupt_status_error(dev);
 		if (ret != FLASH_MCHP_SUCCESS) {
 			break;
 		}
 	}
+
+	k_mutex_unlock(&mchp_flash_data->flash_data_lock);
 
 	return ret;
 }
@@ -1160,6 +1148,9 @@ static int flash_ex_op_region_unlock(const struct device *dev, const uintptr_t i
 	ARG_UNUSED(in);
 	ARG_UNUSED(out);
 	int ret = -EINVAL;
+	struct flash_mchp_dev_data *mchp_flash_data = dev->data;
+
+	k_mutex_lock(&mchp_flash_data->flash_data_lock, K_FOREVER);
 
 	for (off_t offset = 0; offset < SOC_NV_FLASH_SIZE;
 	     offset += SOC_NV_FLASH_LOCK_REGION_SIZE) {
@@ -1168,11 +1159,15 @@ static int flash_ex_op_region_unlock(const struct device *dev, const uintptr_t i
 		NVM_REGS->NVMCTRL_ADDR = offset + SOC_NV_FLASH_BASE_ADDRESS;
 		flash_process_command(dev, NVMCTRL_CTRLB_CMD_UR);
 
+		flash_status_ready_wait(dev);
+
 		ret = flash_get_interrupt_status_error(dev);
 		if (ret != FLASH_MCHP_SUCCESS) {
 			break;
 		}
 	}
+
+	k_mutex_unlock(&mchp_flash_data->flash_data_lock);
 
 	return ret;
 }
@@ -1220,26 +1215,12 @@ static int flash_mchp_ex_op(const struct device *dev, uint16_t code, const uintp
 #endif /*CONFIG_FLASH_EX_OP_ENABLED*/
 
 /**
- * @brief Interrupt Service Routine for the Microchip NVMCTRL peripheral.
- *
- * This function handles interrupts from the Microchip NVMCTRL peripheral.
- * It clears the interrupt flag to acknowledge the interrupt and releases
- * a semaphore to allow other operations to proceed.
- *
- * @param dev Pointer to the device structure for the flash controller.
- */
-static void flash_mchp_isr(const struct device *dev)
-{
-	flash_clear_interrupt_flag(dev);
-}
-
-/**
  * @brief Initializes the Microchip NVMCTRL peripheral.
  *
  * This function sets up the necessary resources and configurations for the
- * Microchip flash memory controller to operate. It initializes mutexes and
- * semaphores, enables the clock for the controller, configures interrupts,
- * and performs any necessary hardware initialization.
+ * Microchip flash memory controller to operate. It initializes the mutex,
+ * enables the clock for the controller and performs any necessary hardware
+ * initialization.
  *
  * @param dev Pointer to the device structure for the flash controller.
  *
@@ -1259,8 +1240,6 @@ static int flash_mchp_init(const struct device *dev)
 	if ((ret == FLASH_MCHP_SUCCESS) || (ret == -EALREADY)) {
 
 		k_mutex_init(&(mchp_flash_data->flash_data_lock));
-
-		mchp_flash_cfg->irq_config_func(dev);
 
 		flash_controller_init(dev);
 
@@ -1287,30 +1266,6 @@ static DEVICE_API(flash, flash_mchp_api) = {
 };
 
 /**
- * @brief Declare the FLASH IRQ handler.
- *
- * @param n Instance number.
- */
-#define FLASH_MCHP_IRQ_HANDLER_DECL(n)                                                             \
-	static void flash_mchp_irq_config_##n(const struct device *dev)
-
-/**
- * @brief Define and connect the FLASH IRQ handler for a given instance.
- *
- * This macro defines the IRQ configuration function for the specified FLASH instance,
- * connects the FLASH interrupt to its handler, and enables the IRQ.
- *
- * @param n Instance number.
- */
-#define FLASH_MCHP_IRQ_HANDLER(n)                                                                  \
-	static void flash_mchp_irq_config_##n(const struct device *dev)                            \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 0, irq), DT_INST_IRQ_BY_IDX(n, 0, priority),     \
-			    flash_mchp_isr, DEVICE_DT_INST_GET(n), 0);                             \
-		irq_enable(DT_INST_IRQ_BY_IDX(n, 0, irq));                                         \
-	}
-
-/**
  * @brief Configures the flash memory page layout for the FLASH.
  *
  */
@@ -1333,7 +1288,6 @@ static DEVICE_API(flash, flash_mchp_api) = {
 		.base_addr = SOC_NV_FLASH_BASE_ADDRESS,                                            \
 		.flash_clock.clock_dev = DEVICE_DT_GET(DT_NODELABEL(clock)),                       \
 		.flash_clock.mclk_sys = (void *)(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, subsystem)), \
-		.irq_config_func = flash_mchp_irq_config_##n,                                      \
 		.flash_param = {.write_block_size = SOC_NV_FLASH_WRITE_BLOCK_SIZE,                 \
 				.caps = {.no_explicit_erase = false},                              \
 				.erase_value = FLASH_ERASE_DEFAULT_VALUE},                         \
@@ -1369,11 +1323,9 @@ static DEVICE_API(flash, flash_mchp_api) = {
  * @param n Instance number.
  */
 #define FLASH_MCHP_DEVICE_INIT(n)                                                                  \
-	FLASH_MCHP_IRQ_HANDLER_DECL(n);                                                            \
 	FLASH_MCHP_CONFIG_DEFN(n);                                                                 \
 	FLASH_MCHP_DATA_DEFN(n);                                                                   \
-	FLASH_MCHP_DEVICE_DT_DEFN(n);                                                              \
-	FLASH_MCHP_IRQ_HANDLER(n);
+	FLASH_MCHP_DEVICE_DT_DEFN(n);
 
 /**
  * @brief Initialize all FLASH instances.
