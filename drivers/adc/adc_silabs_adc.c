@@ -158,14 +158,6 @@ static bool silabs_adc_clear_sampling(struct silabs_adc_data *data)
 	return atomic_cas(&data->sampling, 1, 0);
 }
 
-static void silabs_adc_complete_error(struct adc_context *ctx, int err)
-{
-	if ((ctx->sequence.options != NULL) && (ctx->options.interval_us != 0U)) {
-		adc_context_disable_timer(ctx);
-	}
-	adc_context_complete(ctx, err);
-}
-
 #ifdef CONFIG_ADC_SILABS_ADC_DMA
 static int silabs_adc_dma_init(const struct device *dev)
 {
@@ -269,14 +261,14 @@ static void silabs_adc_dma_cb(const struct device *dma_dev, void *user_data, uin
 	if (status < 0) {
 		silabs_adc_stop(dev);
 		LOG_ERR("DMA transfer error: %d", status);
-		silabs_adc_complete_error(&data->ctx, status);
+		adc_context_complete(&data->ctx, status);
 		return;
 	}
 
 	if (flags != 0U) {
 		silabs_adc_stop(dev);
 		LOG_ERR("ADC error, flags=%08x", flags);
-		silabs_adc_complete_error(&data->ctx, -EIO);
+		adc_context_complete(&data->ctx, -EIO);
 		return;
 	}
 
@@ -510,7 +502,7 @@ static void silabs_adc_start_scan(const struct device *dev)
 		data->dma.blk_cfg.dest_address = (uintptr_t)data->buffer;
 		ret = silabs_adc_dma_start(dev);
 		if (ret < 0) {
-			silabs_adc_complete_error(&data->ctx, ret);
+			adc_context_complete(&data->ctx, ret);
 			return;
 		}
 	} else {
@@ -573,7 +565,7 @@ static void silabs_adc_isr(void *arg)
 	if (err != 0U) {
 		silabs_adc_stop(dev);
 		LOG_ERR("ADC error, flags=%08x", err);
-		silabs_adc_complete_error(&data->ctx, -EIO);
+		adc_context_complete(&data->ctx, -EIO);
 		return;
 	}
 
