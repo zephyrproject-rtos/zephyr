@@ -1,0 +1,17 @@
+#
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config MPIPE_DISP
+	bool "Display plugin support"
+	select DISPLAY
+	help
+	  The sink element that puts frames on a screen, terminating a video
+	  graph.
+
+	  What it accepts comes from the panel rather than from the element: its
+	  capabilities are enumerated from the display's own pixel formats and
+	  resolution. A graph ending here therefore usually needs a converter in
+	  front of it, unless the source already produces what the panel takes.
