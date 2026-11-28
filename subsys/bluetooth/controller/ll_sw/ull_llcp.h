@@ -48,6 +48,14 @@ int ull_cp_prt_elapse(struct ll_conn *conn, uint16_t elapsed_event, uint8_t *err
 void ull_cp_prt_reload_set(struct ll_conn *conn, uint32_t conn_intv);
 
 /**
+ * @brief Keep the time left of the running procedure timers at a new
+ *        connection interval
+ * @param old_intv_us The connection interval the timers counted in.
+ * @param new_intv_us The new connection interval.
+ */
+void ull_cp_prt_rescale(struct ll_conn *conn, uint32_t old_intv_us, uint32_t new_intv_us);
+
+/**
  * @brief Run pending LL Control Procedures.
  */
 void ull_cp_run(struct ll_conn *conn);

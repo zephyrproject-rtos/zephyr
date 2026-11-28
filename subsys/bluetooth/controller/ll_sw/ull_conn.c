@@ -2519,6 +2519,16 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 		break;
 	}
 
+	/* The procedure response and termination timers count connection
+	 * events, keep the time they have left.
+	 */
+	if (lll->interval >= BT_HCI_LE_INTERVAL_MIN) {
+		ull_cp_prt_rescale(conn, lll->interval * CONN_INT_UNIT_US, conn_interval_us);
+	} else {
+		ull_cp_prt_rescale(conn, (lll->interval + 1U) * CONN_LOW_LAT_INT_UNIT_US,
+				   conn_interval_us);
+	}
+
 	lll->interval = interval;
 	lll->latency = latency;
 

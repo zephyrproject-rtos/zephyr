@@ -580,7 +580,15 @@ void llcp_lr_complete(struct ll_conn *conn);
 void llcp_lr_connect(struct ll_conn *conn);
 void llcp_lr_disconnect(struct ll_conn *conn);
 void llcp_lr_terminate(struct ll_conn *conn);
+/* Like llcp_lr_terminate(), but a procedure that has fixed an instant keeps
+ * running until it, ahead of the termination.
+ */
+void llcp_lr_terminate_keep_instant(struct ll_conn *conn);
 void llcp_lr_check_done(struct ll_conn *conn, struct proc_ctx *ctx);
+
+/* Hold off the procedure run in the ULL from thread context */
+bool llcp_shared_data_lock(void);
+void llcp_shared_data_unlock(bool key);
 
 /*
  * LLCP Remote Request
@@ -604,6 +612,10 @@ void llcp_rr_complete(struct ll_conn *conn);
 void llcp_rr_connect(struct ll_conn *conn);
 void llcp_rr_disconnect(struct ll_conn *conn);
 void llcp_rr_terminate(struct ll_conn *conn);
+/* Like llcp_rr_terminate(), but a procedure that has fixed an instant keeps
+ * running until it, next to the termination.
+ */
+void llcp_rr_terminate_keep_instant(struct ll_conn *conn);
 void llcp_rr_new(struct ll_conn *conn, memq_link_t *link, struct node_rx_pdu *rx,
 		 bool valid_pdu);
 void llcp_rr_check_done(struct ll_conn *conn, struct proc_ctx *ctx);
