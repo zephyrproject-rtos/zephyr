@@ -1,0 +1,81 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config TAILSCALE_MAP_STREAM
+	bool "Tailscale control map response framing" if ZTEST
+	help
+	  Build the incremental decoder for an uncompressed Tailscale control
+	  map response body. The control client supplies the payload buffer and
+	  handles complete messages.
+
+config TAILSCALE_CONTROL_STREAM
+	bool "Persistent Tailscale control map session" if ZTEST
+	select TAILSCALE_MAP_STREAM
+	help
+	  Run a map stream over an application-provided authenticated response
+	  transport and reconnect on recoverable session errors.
+
+config TAILSCALE_PEER_INVENTORY
+	bool "Tailscale control peer inventory" if ZTEST
+	help
+	  Maintain a bounded snapshot of peers from Tailscale control maps.
+
+config TAILSCALE_PEER_INVENTORY_MAX_PEERS
+	int "Maximum peers in a control map"
+	depends on TAILSCALE_PEER_INVENTORY
+	range 1 256
+	default 16
+	help
+	  Each inventory reserves two snapshots of this many peers so a failed
+	  update cannot expose a partial map. Parsing a peer list also uses one
+	  64-bit identifier per configured peer on the control worker's stack.
+
+config TAILSCALE_POLICY
+	bool "Transactional Tailscale forwarding policy" if ZTEST
+	depends on UTF8
+	select TAILSCALE_PEER_INVENTORY
+	help
+	  Stage bounded peer and packet filter snapshots together and publish
+	  them through an application-provided installer. The direct ingress
+	  filter supports explicit TCP and UDP rules.
+
+config TAILSCALE_PEER_STABLE_ID
+	string "Limit the client to one control-assigned peer ID"
+	depends on TAILSCALE_POLICY
+	default ""
+	help
+	  An empty selection admits all peers within the configured capacity.
+
+config TAILSCALE_POLICY_LEASE_SECONDS
+	int "Maximum age of the installed client policy in seconds"
+	depends on TAILSCALE_POLICY
+	range 1 3600
+	default 180
+	help
+	  Withdraw peers and owned addresses after this interval without a valid
+	  map or keepalive on the installed generation.
+
+config TAILSCALE_DERP_MAP
+	bool "Accept DERP relay maps in forwarding policy" if ZTEST
+	depends on TAILSCALE_POLICY
+	help
+	  Publish relay definitions with the peer and packet filter snapshot.
+	  The DERP client selects and connects to regions from the installed map.
+
+config TAILSCALE_DERP_MAX_NODES
+	int "Maximum relay nodes in a map"
+	depends on TAILSCALE_DERP_MAP
+	range 1 256
+	default 128
+	help
+	  Bound relay storage in policy and transport snapshots. The default
+	  accommodates the hosted relay map. An oversized update leaves the
+	  previous map and forwarding policy intact.
+
+config TAILSCALE_ROUTE_POLICY
+	bool "Decode approved subnet and exit route policy" if ZTEST
+	depends on TAILSCALE_POLICY
+	help
+	  Allow multiple routers to advertise a prefix and retain control's
+	  primary route designations and exit node suggestion capability.
+	  The installer must choose a single owner for each effective prefix.

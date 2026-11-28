@@ -1,0 +1,55 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - net
+    - tailscale
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+tests:
+  net.tailscale.map_stream: {}
+  net.tailscale.map_stream.ipv4_only:
+    extra_configs:
+      - CONFIG_NET_IPV6=n
+  net.tailscale.map_stream.ipv6_only:
+    extra_configs:
+      - CONFIG_NET_IPV4=n
+  net.tailscale.framing:
+    extra_configs:
+      - CONFIG_TAILSCALE_MAP_STREAM=y
+      - CONFIG_TAILSCALE_CONTROL_STREAM=n
+      - CONFIG_TAILSCALE_PEER_INVENTORY=n
+  net.tailscale.inventory.small:
+    extra_configs:
+      - CONFIG_TAILSCALE_CONTROL_STREAM=n
+      - CONFIG_TAILSCALE_PEER_INVENTORY_MAX_PEERS=4
+  net.tailscale.inventory.large:
+    extra_configs:
+      - CONFIG_TAILSCALE_CONTROL_STREAM=n
+      - CONFIG_TAILSCALE_PEER_INVENTORY_MAX_PEERS=256
+      - CONFIG_ZTEST_STACK_SIZE=8192
+  net.tailscale.policy:
+    extra_configs:
+      - CONFIG_TAILSCALE_POLICY=y
+      - CONFIG_UTF8=y
+      - CONFIG_TAILSCALE_PEER_INVENTORY_MAX_PEERS=4
+      - CONFIG_ZTEST_STACK_SIZE=4096
+  net.tailscale.policy.derp:
+    extra_configs:
+      - CONFIG_TAILSCALE_POLICY=y
+      - CONFIG_UTF8=y
+      - CONFIG_TAILSCALE_DERP_MAP=y
+      - CONFIG_TAILSCALE_DERP_MAX_NODES=2
+      - CONFIG_TAILSCALE_PEER_INVENTORY_MAX_PEERS=4
+      - CONFIG_ZTEST_STACK_SIZE=4096
+  net.tailscale.policy.derp_hosted:
+    extra_configs:
+      - CONFIG_TAILSCALE_POLICY=y
+      - CONFIG_UTF8=y
+      - CONFIG_TAILSCALE_DERP_MAP=y
+      - CONFIG_TAILSCALE_PEER_INVENTORY_MAX_PEERS=4
+      - CONFIG_ZTEST_STACK_SIZE=4096
