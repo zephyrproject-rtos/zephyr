@@ -1,0 +1,27 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RX CANFD Gateway controller
+
+compatible: "renesas,rx-canfdg"
+
+include: [can-fd-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+
+  channel:
+    type: int
+    required: true
+
+  rx-max-filters:
+    type: int
+    default: 64
+    description: |
+      Determines the maximum number of RX filters that can be added to the
+      Acceptance Filter List for this CAN device.
+      The total number of filters must be less than or equal to 64 per channel.

@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config CAN_RENESAS_RX_CANFDG
+	bool "Renesas RX CANFDG"
+	default y
+	depends on DT_HAS_RENESAS_RX_CANFDG_ENABLED
+	select USE_RX_FSP_CANFDG
+	select PINCTRL
+	help
+	  Enable Renesas RX CANFDG driver
