@@ -1670,7 +1670,6 @@ static const struct udc_api udc_smartbond_api = {
 		.vbus_irq = VBUS_IRQ(n),                                                           \
 		.dma_min_transfer_size = DMA_MIN_TRANSFER_SIZE(n),                                 \
 		.fifo_read_threshold = FIFO_READ_THRESHOLD(n),                                     \
-		.fifo_read_threshold = FIFO_READ_THRESHOLD(n),                                     \
 		.num_of_eps = DT_INST_PROP(n, num_bidir_endpoints),                                \
 		.dma_cfg = {                                                                       \
 				.tx_chan = DT_INST_DMAS_CELL_BY_NAME(n, tx, channel),              \
