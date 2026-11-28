@@ -330,6 +330,17 @@
 			status = "disabled";
 		};
 
+		qspi: spi@4007c000 {
+			compatible = "atmel,sam-qspi";
+			reg = <0x4007c000 0x100>, <0x80000000 0x20000000>;
+			reg-names = "qspi", "qspi_mm";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <43 0>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 43>;
+			status = "disabled";
+		};
+
 		pmc: pmc@400e0600 {
 			compatible = "atmel,sam-pmc";
 			reg = <0x400e0600 0x200>;
