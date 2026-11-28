@@ -6,6 +6,7 @@ add_subdirectory_ifdef(CONFIG_STEPPER_ADI_TMC2300 tmc2300)
 add_subdirectory_ifdef(CONFIG_STEPPER_ADI_TMC50XX tmc50xx)
 add_subdirectory_ifdef(CONFIG_STEPPER_ADI_TMC51XX tmc51xx)
 add_subdirectory_ifdef(CONFIG_STEPPER_ADI_TMC522X tmc522x)
+add_subdirectory_ifdef(CONFIG_STEPPER_ADI_TMC5241 tmc5241)
 add_subdirectory_ifdef(CONFIG_STEPPER_ADI_TMCM3216 tmcm3216)
 
 add_subdirectory(bus)
