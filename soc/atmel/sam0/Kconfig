@@ -10,6 +10,12 @@ config SOC_FAMILY_ATMEL_SAM0
 
 if SOC_FAMILY_ATMEL_SAM0
 
+config SOC_ATMEL_SAM0_HAS_CMCC
+	bool
+	select CPU_HAS_ICACHE
+	help
+	  The SoC has a Cortex M Cache Controller (CMCC) on the code bus.
+
 rsource "common/Kconfig.sam*"
 rsource "*/Kconfig"
 

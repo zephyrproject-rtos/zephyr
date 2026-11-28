@@ -10,6 +10,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_sam0);
 
+#include <zephyr/cache.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/init.h>
@@ -187,6 +188,8 @@ static int flash_sam0_write_page(const struct device *dev, off_t offset,
 #endif
 
 	err = flash_sam0_check_status(offset);
+	/* A cache on the code bus still holds the old contents */
+	(void)sys_cache_instr_invd_all();
 	if (err != 0) {
 		return err;
 	}
@@ -201,13 +204,18 @@ static int flash_sam0_write_page(const struct device *dev, off_t offset,
 
 static int flash_sam0_erase_row(const struct device *dev, off_t offset)
 {
+	int err;
+
 	*FLASH_MEM(offset) = 0U;
 #ifdef NVMCTRL_CTRLA_CMD_ER
 	NVMCTRL->CTRLA.reg = NVMCTRL_CTRLA_CMD_ER | NVMCTRL_CTRLA_CMDEX_KEY;
 #else
 	NVMCTRL->CTRLB.reg = NVMCTRL_CTRLB_CMD_EB | NVMCTRL_CTRLB_CMDEX_KEY;
 #endif
-	return flash_sam0_check_status(offset);
+	err = flash_sam0_check_status(offset);
+	(void)sys_cache_instr_invd_all();
+
+	return err;
 }
 
 #if CONFIG_SOC_FLASH_SAM0_EMULATE_BYTE_PAGES
