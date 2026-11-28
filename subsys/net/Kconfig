@@ -22,6 +22,23 @@ config NET_POWER_MANAGEMENT
 	bool
 	depends on PM_DEVICE
 
+config NET_UNITY_BUILD
+	bool "Build the networking libraries as unity builds [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Compile the source files of each networking library as one
+	  translation unit, so that the compiler can inline and optimize
+	  across the files of the library. Files that cannot be combined
+	  are compiled separately.
+
+config NET_UNITY_BUILD_MERGED
+	bool "Merge the networking core into one unity build [EXPERIMENTAL]"
+	depends on NET_UNITY_BUILD
+	help
+	  Compile the network driver, L2, IP stack, sockets and net_buf
+	  libraries as one translation unit instead of one per library, so
+	  that the compiler can also inline across the library boundaries.
+
 source "subsys/net/Kconfig.hostname"
 
 source "subsys/net/l2/Kconfig"
