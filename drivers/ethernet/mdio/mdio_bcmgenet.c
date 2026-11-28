@@ -86,17 +86,23 @@ release_lock:
 static int mdio_bcmgenet_read(const struct device *dev, uint8_t prtad, uint8_t regad,
 			      uint16_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	return mdio_bcmgenet_transfer(dev, prtad, regad, false, 0, data);
 }
 
 static int mdio_bcmgenet_write(const struct device *dev, uint8_t prtad, uint8_t regad,
 			       uint16_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	return mdio_bcmgenet_transfer(dev, prtad, regad, true, data, NULL);
 }
 
 static int mdio_bcmgenet_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct mdio_bcmgenet_data *data = dev->data;
 
 	k_mutex_init(&data->mdio_transfer_lock);

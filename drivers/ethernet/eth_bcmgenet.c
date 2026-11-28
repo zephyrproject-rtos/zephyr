@@ -270,6 +270,8 @@ static void bcmgenet_rx_thread(void *arg1, void *arg2 __unused, void *arg3 __unu
 {
 	const struct device *dev = (struct device *)arg1;
 
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	while (true) {
 		while (bcmgenet_rx(dev) == 0) {
 		/* drain all pending descriptors before sleeping */
@@ -301,6 +303,8 @@ static void bcmgenet_tx_ring_init(const struct device *dev)
 
 static int bcmgenet_send(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct bcmgenet_data *data = dev->data;
 	uint32_t desc, len_ack;
 	uint16_t nb_frags = 0;
@@ -355,6 +359,8 @@ static int bcmgenet_send(const struct device *dev, struct net_pkt *pkt)
 
 static int bcmgenet_start(const struct device *dev, struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	LOG_DBG("BCMGENET Started");
 
 	/* Enable Rx/Tx DMA */
@@ -368,6 +374,8 @@ static int bcmgenet_start(const struct device *dev, struct net_if *iface __unuse
 
 static int bcmgenet_stop(const struct device *dev, struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	LOG_DBG("BCMGENET Stopped");
 
 	/* Disable Rx/Tx queues */
@@ -388,6 +396,8 @@ static void bcmgenet_set_mac_addr(const struct device *dev, const uint8_t *mac_a
 static int bcmgenet_set_config(const struct device *dev, struct net_if *iface __unused,
 			       enum ethernet_config_type type, const struct ethernet_config *config)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
 		bcmgenet_set_mac_addr(dev, config->mac_address.addr);
@@ -406,6 +416,8 @@ static enum ethernet_hw_caps bcmgenet_get_caps(const struct device *dev __unused
 static const struct device *bcmgenet_get_phy(const struct device *dev,
 					     struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct bcmgenet_config *config = dev->config;
 
 	return config->phy_dev;
@@ -416,6 +428,9 @@ static void phy_link_state_changed(const struct device *phy_dev __unused,
 {
 	struct net_if *iface = (struct net_if *)user_data;
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	uint8_t speed = 0;
 
 	if (state->is_up) {
@@ -449,6 +464,9 @@ static void phy_link_state_changed(const struct device *phy_dev __unused,
 static void bcmgenet_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct bcmgenet_config *config = dev->config;
 	struct bcmgenet_data *data = dev->data;
 	const uint8_t *mac_addr = data->mac_addr;
@@ -492,6 +510,8 @@ static DEVICE_API(ethernet, bcmgenet_api) = {
 
 static int bcmgenet_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct bcmgenet_config *config = dev->config;
 	struct bcmgenet_data *data = dev->data;
 	int ret;
