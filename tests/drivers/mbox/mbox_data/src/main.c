@@ -26,14 +26,46 @@ static int g_max_transfer_size_bytes;
 #define TX_CHANNEL_INDEX 0
 #define RX_CHANNEL_INDEX 1
 
-#define CHANNEL_ENTRY(_i, ...)                                                                     \
+#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_mbox_consumer)
+#define MBOX_CONSUMER_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_mbox_consumer)
+#elif DT_HAS_COMPAT_STATUS_OKAY(vnd_mbox_consumer)
+#define MBOX_CONSUMER_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(vnd_mbox_consumer)
+#else
+#error "No zephyr,mbox-consumer or vnd,mbox-consumer node in the devicetree"
+#endif
+
+BUILD_ASSERT(DT_PROP_LEN(MBOX_CONSUMER_NODE, mboxes) % 2 == 0,
+	     "mboxes must contain tx/rx channel pairs");
+
+#define CHANNELS_TO_TEST (DT_PROP_LEN(MBOX_CONSUMER_NODE, mboxes) / 2)
+
+#if CHANNELS_TO_TEST > 4
+#error "The test suite covers at most 4 tx/rx channel pairs"
+#endif
+
+/* On loopback platforms sent data comes back unmodified instead of being
+ * incremented by a remote core.
+ */
+#define TEST_LOOPBACK DT_PROP_OR(MBOX_CONSUMER_NODE, loopback, 0)
+
+#define CHANNEL_ENTRY(_i)                                                                          \
 	{                                                                                          \
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), CONCAT(tx, _i)),                          \
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), CONCAT(rx, _i)),                          \
+		MBOX_DT_SPEC_GET(MBOX_CONSUMER_NODE, CONCAT(tx, _i)),                              \
+		MBOX_DT_SPEC_GET(MBOX_CONSUMER_NODE, CONCAT(rx, _i)),                              \
 	}
 
-static const struct mbox_dt_spec channels[CONFIG_CHANNELS_TO_TEST][2] = {
-	LISTIFY(CONFIG_CHANNELS_TO_TEST, CHANNEL_ENTRY, (,)) };
+static const struct mbox_dt_spec channels[CHANNELS_TO_TEST][2] = {
+	CHANNEL_ENTRY(0),
+#if CHANNELS_TO_TEST >= 2
+	CHANNEL_ENTRY(1),
+#endif
+#if CHANNELS_TO_TEST >= 3
+	CHANNEL_ENTRY(2),
+#endif
+#if CHANNELS_TO_TEST >= 4
+	CHANNEL_ENTRY(3),
+#endif
+};
 
 static uint32_t current_channel_index;
 
@@ -55,7 +87,7 @@ static void callback(const struct device *dev, uint32_t channel, void *user_data
 
 static void mbox_data_tests_before(void *f)
 {
-	zassert_false(current_channel_index >= CONFIG_CHANNELS_TO_TEST,
+	zassert_false(current_channel_index >= CHANNELS_TO_TEST,
 		      "Channel to test is out of range");
 
 	const struct mbox_dt_spec *tx_channel = &channels[current_channel_index][TX_CHANNEL_INDEX];
@@ -79,7 +111,7 @@ static void mbox_data_tests_before(void *f)
 
 static void mbox_data_tests_after(void *f)
 {
-	zassert_false(current_channel_index >= CONFIG_CHANNELS_TO_TEST,
+	zassert_false(current_channel_index >= CHANNELS_TO_TEST,
 		      "Channel to test is out of range");
 
 	const struct mbox_dt_spec *rx_channel = &channels[current_channel_index][RX_CHANNEL_INDEX];
@@ -115,14 +147,14 @@ static void mbox_test(const uint64_t data)
 		/*
 		 * Determine expected received data based on the configured Maximum
 		 * Transfer Unit (MTU). Supported MTU sizes are 1-8 bytes.
-		 * If CONFIG_TEST_SINGLE_CPU is enabled, the received data should match
-		 * the sent data. Otherwise, it is expected to be incremented by one.
+		 * On loopback channels the received data should match the sent
+		 * data. Otherwise, it is expected to be incremented by one.
 		 */
 		g_mbox_expected_data = test_data & GENMASK64((g_max_transfer_size_bytes * 8) - 1,
 							   0); /* Mask data to MTU size */
-#ifndef CONFIG_TEST_SINGLE_CPU
-		g_mbox_expected_data++;
-#endif
+		if (!TEST_LOOPBACK) {
+			g_mbox_expected_data++;
+		}
 
 		k_sem_take(&g_mbox_data_rx_sem, K_FOREVER);
 
@@ -165,7 +197,7 @@ ZTEST(mbox_data_tests, test_ping_pong_1)
 	mbox_test(0xADADADAD);
 }
 
-#if CONFIG_CHANNELS_TO_TEST >= 2
+#if CHANNELS_TO_TEST >= 2
 
 /**
  * @brief MBOX Data transfer by ping pong for second set of channels
@@ -180,7 +212,7 @@ ZTEST(mbox_data_tests, test_ping_pong_2)
 
 #endif
 
-#if CONFIG_CHANNELS_TO_TEST >= 3
+#if CHANNELS_TO_TEST >= 3
 
 /**
  * @brief MBOX Data transfer by ping pong for third set of channels
@@ -195,7 +227,7 @@ ZTEST(mbox_data_tests, test_ping_pong_3)
 
 #endif
 
-#if CONFIG_CHANNELS_TO_TEST >= 4
+#if CHANNELS_TO_TEST >= 4
 
 /**
  * @brief MBOX Data transfer by ping pong for forth set of channels

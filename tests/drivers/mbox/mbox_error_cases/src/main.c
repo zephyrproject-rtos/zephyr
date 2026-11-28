@@ -8,7 +8,42 @@
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/mbox.h>
 
+#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_mbox_consumer)
+#define MBOX_CONSUMER_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_mbox_consumer)
+#define TX_CHANNEL_NAME    tx0
+#define RX_CHANNEL_NAME    rx0
+#elif DT_HAS_COMPAT_STATUS_OKAY(vnd_mbox_consumer)
+#define MBOX_CONSUMER_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(vnd_mbox_consumer)
+#define TX_CHANNEL_NAME    remote_valid
+#define RX_CHANNEL_NAME    local_valid
+#else
+#error "No zephyr,mbox-consumer or vnd,mbox-consumer node in the devicetree"
+#endif
+
+#define TX_CHANNEL_SPEC MBOX_DT_SPEC_GET(MBOX_CONSUMER_NODE, TX_CHANNEL_NAME)
+#define RX_CHANNEL_SPEC MBOX_DT_SPEC_GET(MBOX_CONSUMER_NODE, RX_CHANNEL_NAME)
+
+#define TEST_BIDIRECTIONAL_CHANNELS DT_PROP_OR(MBOX_CONSUMER_NODE, bidirectional_channels, 0)
+#define TEST_EXPECTED_MTU_VALUE     DT_PROP_OR(MBOX_CONSUMER_NODE, mtu, 0)
+#define TEST_REMOTE_BUSY_DETECTION  DT_PROP_OR(MBOX_CONSUMER_NODE, remote_busy_detection, 0)
+
 int dummy_value[] = {1, 2, 3, 4};
+
+/* Channel ids run from 0 to (maximum number of channels - 1), so the
+ * maximum itself is always an incorrect channel id.
+ */
+static struct mbox_dt_spec incorrect_channel(const struct mbox_dt_spec *valid)
+{
+	struct mbox_dt_spec spec = *valid;
+	int max_channels = mbox_max_channels_get_dt(valid);
+
+	zassert_true(max_channels > 0,
+		     "mbox_max_channels_get_dt() shall return value greater than 0"
+		     " got unexpected %d", max_channels);
+	spec.channel_id = (mbox_channel_id_t)max_channels;
+
+	return spec;
+}
 
 static void dummy_callback(const struct device *dev, mbox_channel_id_t channel_id,
 		     void *user_data, struct mbox_msg *data)
@@ -40,10 +75,8 @@ static void dummy_callback_2(const struct device *dev, mbox_channel_id_t channel
  */
 ZTEST(mbox_error_cases, test_01a_mbox_is_ready_positive)
 {
-	const struct mbox_dt_spec rx_channel =
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), local_valid);
-	const struct mbox_dt_spec tx_channel =
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), remote_valid);
+	const struct mbox_dt_spec rx_channel = RX_CHANNEL_SPEC;
+	const struct mbox_dt_spec tx_channel = TX_CHANNEL_SPEC;
 	bool ret;
 
 	ret = mbox_is_ready_dt(&tx_channel);
@@ -73,10 +106,10 @@ ZTEST(mbox_error_cases, test_01a_mbox_is_ready_positive)
  */
 ZTEST(mbox_error_cases, test_01b_mbox_is_ready_negative)
 {
-	const struct mbox_dt_spec rx_channel =
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), local_incorrect);
-	const struct mbox_dt_spec tx_channel =
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), remote_incorrect);
+	const struct mbox_dt_spec rx_valid = RX_CHANNEL_SPEC;
+	const struct mbox_dt_spec tx_valid = TX_CHANNEL_SPEC;
+	const struct mbox_dt_spec rx_channel = incorrect_channel(&rx_valid);
+	const struct mbox_dt_spec tx_channel = incorrect_channel(&tx_valid);
 	bool ret;
 
 	ret = mbox_is_ready_dt(&tx_channel);
@@ -104,8 +137,8 @@ ZTEST(mbox_error_cases, test_01b_mbox_is_ready_negative)
  */
 ZTEST(mbox_error_cases, test_02a_mbox_send_on_invalid_tx_channel)
 {
-	const struct mbox_dt_spec tx_channel =
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), remote_incorrect);
+	const struct mbox_dt_spec tx_valid = TX_CHANNEL_SPEC;
+	const struct mbox_dt_spec tx_channel = incorrect_channel(&tx_valid);
 	int ret;
 
 	ret = mbox_send_dt(&tx_channel, NULL);
@@ -126,11 +159,12 @@ ZTEST(mbox_error_cases, test_02a_mbox_send_on_invalid_tx_channel)
  */
 ZTEST(mbox_error_cases, test_02b_mbox_send_on_rx_channel)
 {
-	const struct mbox_dt_spec rx_channel =
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), local_valid);
+	const struct mbox_dt_spec rx_channel = RX_CHANNEL_SPEC;
 	int ret;
 
-	Z_TEST_SKIP_IFDEF(CONFIG_TEST_CHANNEL_IS_BIDIRECTIONAL);
+	if (TEST_BIDIRECTIONAL_CHANNELS) {
+		ztest_test_skip();
+	}
 
 	ret = mbox_send_dt(&rx_channel, NULL);
 	zassert_true(
@@ -150,8 +184,7 @@ ZTEST(mbox_error_cases, test_02b_mbox_send_on_rx_channel)
  */
 ZTEST(mbox_error_cases, test_02c_mbox_send_message_data_too_large)
 {
-	const struct mbox_dt_spec tx_channel =
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), remote_valid);
+	const struct mbox_dt_spec tx_channel = TX_CHANNEL_SPEC;
 	struct mbox_msg data_msg = {0};
 	int ret;
 
@@ -183,12 +216,13 @@ ZTEST(mbox_error_cases, test_02c_mbox_send_message_data_too_large)
  */
 ZTEST(mbox_error_cases, test_02d_mbox_send_message_remote_busy)
 {
-	const struct mbox_dt_spec tx_channel =
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), remote_valid);
+	const struct mbox_dt_spec tx_channel = TX_CHANNEL_SPEC;
 	int ret;
 
 	/* Skip this test when driver can't detect that remote is busy. */
-	Z_TEST_SKIP_IFDEF(CONFIG_TEST_REMOTE_BUSY_NOT_SUPPORTED);
+	if (!TEST_REMOTE_BUSY_DETECTION) {
+		ztest_test_skip();
+	}
 
 	ret = mbox_send_dt(&tx_channel, NULL);
 	zassert_true(
@@ -216,11 +250,12 @@ ZTEST(mbox_error_cases, test_02d_mbox_send_message_remote_busy)
  */
 ZTEST(mbox_error_cases, test_03a_mbox_register_callback_on_remote_channel)
 {
-	const struct mbox_dt_spec tx_channel =
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), remote_valid);
+	const struct mbox_dt_spec tx_channel = TX_CHANNEL_SPEC;
 	int ret;
 
-	Z_TEST_SKIP_IFDEF(CONFIG_TEST_CHANNEL_IS_BIDIRECTIONAL);
+	if (TEST_BIDIRECTIONAL_CHANNELS) {
+		ztest_test_skip();
+	}
 
 	ret = mbox_register_callback_dt(&tx_channel, dummy_callback, NULL);
 	zassert_true(
@@ -240,8 +275,8 @@ ZTEST(mbox_error_cases, test_03a_mbox_register_callback_on_remote_channel)
  */
 ZTEST(mbox_error_cases, test_03b_mbox_register_callback_on_invalid_channel)
 {
-	const struct mbox_dt_spec rx_channel =
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), local_incorrect);
+	const struct mbox_dt_spec rx_valid = RX_CHANNEL_SPEC;
+	const struct mbox_dt_spec rx_channel = incorrect_channel(&rx_valid);
 	int ret;
 
 	ret = mbox_register_callback_dt(&rx_channel, dummy_callback, NULL);
@@ -263,8 +298,7 @@ ZTEST(mbox_error_cases, test_03b_mbox_register_callback_on_invalid_channel)
  */
 ZTEST(mbox_error_cases, test_03c_mbox_register_callback_twice_on_same_channel)
 {
-	const struct mbox_dt_spec rx_channel =
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), local_valid);
+	const struct mbox_dt_spec rx_channel = RX_CHANNEL_SPEC;
 	int ret;
 
 	ret = mbox_register_callback_dt(&rx_channel, dummy_callback, NULL);
@@ -293,11 +327,12 @@ ZTEST(mbox_error_cases, test_03c_mbox_register_callback_twice_on_same_channel)
  */
 ZTEST(mbox_error_cases, test_04a_mbox_mtu_get_on_rx_channel)
 {
-	const struct mbox_dt_spec rx_channel =
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), local_valid);
+	const struct mbox_dt_spec rx_channel = RX_CHANNEL_SPEC;
 	int ret;
 
-	Z_TEST_SKIP_IFDEF(CONFIG_TEST_CHANNEL_IS_BIDIRECTIONAL);
+	if (TEST_BIDIRECTIONAL_CHANNELS) {
+		ztest_test_skip();
+	}
 
 	ret = mbox_mtu_get_dt(&rx_channel);
 	zassert_true(
@@ -318,27 +353,25 @@ ZTEST(mbox_error_cases, test_04a_mbox_mtu_get_on_rx_channel)
  */
 ZTEST(mbox_error_cases, test_04b_mbox_mtu_get_on_tx_channel)
 {
-	const struct mbox_dt_spec tx_channel =
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), remote_valid);
-	const struct mbox_dt_spec tx_channel_incorrect =
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), remote_incorrect);
+	const struct mbox_dt_spec tx_channel = TX_CHANNEL_SPEC;
+	const struct mbox_dt_spec tx_channel_incorrect = incorrect_channel(&tx_channel);
 	int ret;
 
 	ret = mbox_mtu_get_dt(&tx_channel);
 	zassert_true(
-		(ret == CONFIG_TEST_EXPECTED_MTU_VALUE),
+		(ret == TEST_EXPECTED_MTU_VALUE),
 		"mbox_mtu_get_dt(tx_channel) shall return %d"
 		" got unexpected %d",
-		CONFIG_TEST_EXPECTED_MTU_VALUE,
+		TEST_EXPECTED_MTU_VALUE,
 		ret
 	);
 
 	ret = mbox_mtu_get_dt(&tx_channel_incorrect);
 	zassert_true(
-		(ret == CONFIG_TEST_EXPECTED_MTU_VALUE),
+		(ret == TEST_EXPECTED_MTU_VALUE),
 		"mbox_mtu_get_dt(tx_channel_incorrect) shall return %d"
 		" got unexpected %d",
-		CONFIG_TEST_EXPECTED_MTU_VALUE,
+		TEST_EXPECTED_MTU_VALUE,
 		ret
 	);
 }
@@ -352,11 +385,12 @@ ZTEST(mbox_error_cases, test_04b_mbox_mtu_get_on_tx_channel)
  */
 ZTEST(mbox_error_cases, test_05a_mbox_set_enabled_on_tx_channel)
 {
-	const struct mbox_dt_spec tx_channel =
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), remote_valid);
+	const struct mbox_dt_spec tx_channel = TX_CHANNEL_SPEC;
 	int ret;
 
-	Z_TEST_SKIP_IFDEF(CONFIG_TEST_CHANNEL_IS_BIDIRECTIONAL);
+	if (TEST_BIDIRECTIONAL_CHANNELS) {
+		ztest_test_skip();
+	}
 
 	ret = mbox_set_enabled_dt(&tx_channel, true);
 	zassert_true(
@@ -376,8 +410,8 @@ ZTEST(mbox_error_cases, test_05a_mbox_set_enabled_on_tx_channel)
  */
 ZTEST(mbox_error_cases, test_05b_mbox_set_enabled_on_incorrect_rx_channel)
 {
-	const struct mbox_dt_spec rx_channel =
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), local_incorrect);
+	const struct mbox_dt_spec rx_valid = RX_CHANNEL_SPEC;
+	const struct mbox_dt_spec rx_channel = incorrect_channel(&rx_valid);
 	int ret;
 
 	ret = mbox_set_enabled_dt(&rx_channel, true);
@@ -398,8 +432,7 @@ ZTEST(mbox_error_cases, test_05b_mbox_set_enabled_on_incorrect_rx_channel)
  */
 ZTEST(mbox_error_cases, test_05c_mbox_set_enabled_on_already_enabled_rx_channel)
 {
-	const struct mbox_dt_spec rx_channel =
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), local_valid);
+	const struct mbox_dt_spec rx_channel = RX_CHANNEL_SPEC;
 	int ret;
 
 	/* The user must take care of installing a proper callback
@@ -448,8 +481,7 @@ ZTEST(mbox_error_cases, test_05c_mbox_set_enabled_on_already_enabled_rx_channel)
  */
 ZTEST(mbox_error_cases, test_05d_mbox_set_disable_on_already_disabled_rx_channel)
 {
-	const struct mbox_dt_spec rx_channel =
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), local_valid);
+	const struct mbox_dt_spec rx_channel = RX_CHANNEL_SPEC;
 	int ret;
 
 	/* The user must take care of installing a proper callback
@@ -498,14 +530,10 @@ ZTEST(mbox_error_cases, test_05d_mbox_set_disable_on_already_disabled_rx_channel
  */
 ZTEST(mbox_error_cases, test_06_mbox_max_channels_get_functional)
 {
-	const struct mbox_dt_spec tx_channel =
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), remote_valid);
-	const struct mbox_dt_spec tx_channel_incorrect =
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), remote_incorrect);
-	const struct mbox_dt_spec rx_channel =
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), local_valid);
-	const struct mbox_dt_spec rx_channel_incorrect =
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), local_incorrect);
+	const struct mbox_dt_spec tx_channel = TX_CHANNEL_SPEC;
+	const struct mbox_dt_spec tx_channel_incorrect = incorrect_channel(&tx_channel);
+	const struct mbox_dt_spec rx_channel = RX_CHANNEL_SPEC;
+	const struct mbox_dt_spec rx_channel_incorrect = incorrect_channel(&rx_channel);
 	int ret1, ret2;
 
 	ret1 = mbox_max_channels_get_dt(&tx_channel);
