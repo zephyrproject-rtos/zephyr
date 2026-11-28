@@ -198,6 +198,10 @@
 	status = "okay";
 };
 
+&otpc {
+	status = "okay";
+};
+
 &pinctrl {
 	pinctrl_can1_default: can1_default {
 		group1 {
