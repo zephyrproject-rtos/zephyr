@@ -1,0 +1,67 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Texas Instruments MSPM0 General Purpose Amplifier (GPAMP).
+
+  The GPAMP has no register block of its own. It is controlled by the
+  PMUOPAMP register inside SYSCTL, so the node has no reg property and is
+  declared as a child of the SYSCTL syscon node.
+
+  The amplifier has no gain stage. The gain is set by the external network
+  connected to the GPAMP_IN-/GPAMP_OUT pins. The input routing is derived
+  from functional-mode:
+
+    follower   - the output is fed back to the inverting input, gain is x1.
+                 With ti,outpin-enable the output is on the GPAMP_OUT pin
+                 (unity gain mode). Without it the output is internal only,
+                 for example as an ADC input buffer.
+    standalone - inverting input is on the GPAMP_IN- pin, all feedback
+                 is external. Needs ti,outpin-enable.
+
+  Other functional-mode values are not supported.
+
+  Register and field names (PMUOPAMP) are those of the MSPM0 G-Series TRM
+  (SLAU846F), chapter "GPAMP", and the MSPM0G350x data sheet (SLASEX6C),
+  section "GPAMP".
+
+  The GPAMP pins are analog functions, they are not selected in the IOMUX and
+  need no pinctrl. The VBOOST circuit supplying the GPAMP needs MCLK and ULPCLK
+  not sourced from LFCLK while it starts up.
+
+compatible: "ti,mspm0-gpamp"
+
+include: opamp-controller.yaml
+
+properties:
+  ti,outpin-enable:
+    type: boolean
+    description: |
+      Connect the amplifier output to the GPAMP_OUT package pin.
+
+  ti,chop-mode:
+    type: string
+    default: "disabled"
+    enum: ["disabled", "standard", "adc-assisted"]
+    description: |
+      Selects the chopping mode.
+      standard: needs an external output filter, refer to the device data
+        sheet for recommended values.
+      adc-assisted: for an output feeding an ADC channel that uses hardware
+        averaging with an even sample count. No external filter is needed,
+        the ADC toggles the chopping state between samples.
+
+  ti,chop-freq-hz:
+    type: int
+    default: 16000
+    enum: [16000, 8000, 4000, 2000]
+    description: |
+      Chopping clock frequency in Hz. Lower the frequency as the external
+      gain increases, refer to the chopping section of the device TRM.
+
+  ti,rri-mode:
+    type: string
+    default: "rail-to-rail"
+    enum: ["pmos", "nmos", "rail-to-rail"]
+    description: |
+      Selects the input stage, PMOS pair, NMOS pair or rail-to-rail input.
