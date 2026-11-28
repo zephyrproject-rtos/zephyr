@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Chen Ren
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  WCH X03x flash controller. The register block follows the WCH FPEC
+  layout (ACTLR, KEYR, OBKEYR, STATR, CTLR, ADDR, OBR, WPR, MODEKEYR)
+  with the X035-specific BOOT_MODEKEYR added at offset 0x28. The flash
+  programming model is 256-byte page based (fast page program/erase).
+
+compatible: "wch,x03x-flash-controller"
+
+include: base.yaml

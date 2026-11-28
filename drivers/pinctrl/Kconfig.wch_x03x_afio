@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Chen Ren
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_WCH_X03X_AFIO
+	bool "WCH AFIO pin controller driver for CH32X035"
+	default y
+	depends on DT_HAS_WCH_X03X_AFIO_ENABLED
+	help
+	  WCH CH32X035 AFIO pin controller driver.

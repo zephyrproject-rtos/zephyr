@@ -64,6 +64,8 @@
 #define WCH_RCC_SRC_IS_HSE 1
 #elif DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(0), wch_ch32v00x_hsi_clock)
 #define WCH_RCC_SRC_IS_HSI 1
+#elif DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(0), wch_ch32x035_hsi_clock)
+#define WCH_RCC_SRC_IS_X035_HSI 1
 #endif
 
 #if defined(CONFIG_DT_HAS_WCH_CH32V20X_30X_PLL_CLOCK_ENABLED)
@@ -166,6 +168,14 @@ static void clock_control_wch_rcc_setup_flash(void)
 	} else {
 		latency = FLASH_ACTLR_LATENCY_2;
 	}
+#elif defined(CONFIG_SOC_CH32X035)
+	if (WCH_RCC_SYSCLK <= 12000000) {
+		latency = FLASH_ACTLR_LATENCY_0;
+	} else if (WCH_RCC_SYSCLK <= 24000000) {
+		latency = FLASH_ACTLR_LATENCY_1;
+	} else {
+		latency = FLASH_ACTLR_LATENCY_2;
+	}
 #else
 #error Unrecognised SOC family
 #endif
@@ -237,6 +247,39 @@ static DEVICE_API(clock_control, clock_control_wch_rcc_api) = {
 	.on = clock_control_wch_rcc_on,
 	.get_rate = clock_control_wch_rcc_get_rate,
 };
+
+/*
+ * The CH32X035 RCC is a cut-down version of the CH32V20x one: the system
+ * clock is always the HSI, and there is no HSE, PLL, LSI (the AWU and IWDG
+ * are clocked from HSI/1024), CSS, or clock-ready interrupt. Select that
+ * path from the RCC clock-source compatible in devicetree, as for the
+ * CH32H41X above.
+ */
+#if WCH_RCC_SRC_IS_X035_HSI
+
+static int clock_control_wch_rcc_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	clock_control_wch_rcc_setup_flash();
+
+	/* Enable the HSI. It is already enabled out of reset but wait for it
+	 * to stabilise in case the bootloader turned it off.
+	 */
+	RCC->CTLR |= RCC_HSION;
+	while ((RCC->CTLR & RCC_HSIRDY) == 0) {
+	}
+
+	/* The reset value of CFGR0 divides the HSI by 6: set HPRE to 1 for
+	 * HCLK = SYSCLK = APB1 = APB2. There is no clock switch to configure
+	 * as the SYSCLK source is fixed.
+	 */
+	RCC->CFGR0 = (RCC->CFGR0 & ~RCC_HPRE) | RCC_HPRE_DIV1;
+
+	return 0;
+}
+
+#else
 
 static int clock_control_wch_rcc_init(const struct device *dev)
 {
@@ -327,6 +370,8 @@ static int clock_control_wch_rcc_init(const struct device *dev)
 
 	return 0;
 }
+
+#endif /* WCH_RCC_SRC_IS_X035_HSI */
 
 #define CLOCK_CONTROL_WCH_RCC_INIT(idx)                                                            \
 	static const struct clock_control_wch_rcc_config clock_control_wch_rcc_##idx##_config = {  \
