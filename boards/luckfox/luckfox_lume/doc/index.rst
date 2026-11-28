@@ -12,6 +12,8 @@ quad-core Cortex-A7 processors, a XuanTie E907 RISC-V core, 128 MiB DDR3,
 
 The ``luckfox_lume/t153/e907`` target runs Zephyr on the E907. Linux on the
 Cortex-A7 loads the application through the vendor remoteproc driver.
+The ``luckfox_lume/t153/a7`` target runs Zephyr on a single Cortex-A7 core,
+booted from U-Boot instead of Linux.
 See the `Luckfox Lume overview`_ for more information about the board.
 
 Hardware
@@ -22,42 +24,50 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
-This board configuration uses 3 MiB of reserved DRAM at ``0x421c5000`` and
-UART3 as the console. The ``mmio-sram`` entry in the table refers to this
-DRAM region.
-
-Zephyr support is limited to the E907 core and the features listed above.
-RPMsg and shared-memory logging with Linux are not supported. UART3 uses
-fixed pins and clocks; runtime pin or clock reconfiguration and power
-management are not supported.
+The E907 target uses 3 MiB of reserved DRAM at ``0x421c5000`` and UART3 as
+the console. The Cortex-A7 target uses 22 MiB of DRAM at ``0x40a00000`` and
+UART0 as the console. The ``mmio-sram`` entries in the table refer to these
+DRAM regions.
 
 Connections and IOs
 ===================
 
-Power the board through USB-C and use a USB-to-TTL adapter with 3.3 V signals.
-Connect TX, RX, and ground as shown below, leaving the adapter's power
-output disconnected.
+Power the board through USB-C and use a USB-to-TTL adapter with 3.3 V signals,
+leaving the adapter's power output disconnected. Configure the serial terminal
+for 115200 baud, 8 data bits, no parity, one stop bit, and no flow control.
+Use the `Luckfox UART pinout`_ to locate the physical pins on the 40-pin
+header.
 
-.. list-table:: UART3 wiring (physical 40-pin header numbers)
+* **E907** uses UART3 (separate from the Linux debug console).
+* **Cortex-A7** uses UART0 (shared with U-Boot and the Linux debug console).
+
+.. list-table:: UART wiring (physical 40-pin header numbers)
    :header-rows: 1
 
-   * - Board pin
+   * - Target
+     - Board pin
      - Board signal
      - Adapter signal
-   * - 15
+   * - E907 (UART3)
+     - 15
      - PD14 / UART3 TX
      - RX
-   * - 13
+   * - E907 (UART3)
+     - 13
      - PD15 / UART3 RX
      - TX
-   * - 6
+   * - Cortex-A7 (UART0)
+     - 8
+     - PB9 / UART0 TX
+     - RX
+   * - Cortex-A7 (UART0)
+     - 10
+     - PB10 / UART0 RX
+     - TX
+   * - Both
+     - 6
      - Ground
      - Ground
-
-Configure the serial terminal for 115200 baud, 8 data bits, no parity,
-one stop bit, and no flow control. Use the `Luckfox UART pinout`_ to locate
-the physical pins. Linux's debug console uses UART0 on PB9/PB10 (pins 8/10),
-separate from Zephyr's UART3 console.
 
 Programming and Debugging
 *************************
@@ -65,11 +75,11 @@ Programming and Debugging
 .. zephyr:board-supported-runners::
 
 Install the vendor Linux image following `Luckfox OS installation`_.
-Applications are loaded through Linux remoteproc, as described in
-`Luckfox RISC-V subsystem`_.
+E907 applications are loaded through Linux remoteproc, as described in
+`Luckfox RISC-V subsystem`_. Cortex-A7 applications are loaded from U-Boot.
 
-Building and loading
-====================
+Building and loading (E907)
+===========================
 
 From the Zephyr repository, build the :zephyr:code-sample:`hello_world` sample:
 
@@ -131,12 +141,59 @@ To stop Zephyr:
 
 To run another build, copy the new ELF and repeat the loading steps.
 
+Building and loading (Cortex-A7)
+================================
+
+The Cortex-A7 target boots from the stock vendor U-Boot. Build the
+:zephyr:code-sample:`hello_world` sample:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: luckfox_lume/t153/a7
+   :goals: build
+
+Package ``build/zephyr/zephyr.bin`` as a legacy U-Boot image using ``mkimage``:
+
+.. code-block:: console
+
+   mkimage -A arm -O linux -T kernel -C none \
+       -a 0x40a00000 -e 0x40a00000 -n "Zephyr" \
+       -d build/zephyr/zephyr.bin build/zephyr/zephyr.uImage
+
+Interrupt autoboot on the UART0 console to reach the U-Boot prompt and start a
+YMODEM transfer:
+
+.. code-block:: console
+
+   => loady 0x40000000 115200
+
+Send ``build/zephyr/zephyr.uImage`` from your serial terminal, then boot it
+(the vendor image keeps its FDT at ``0x42000000``, which can be checked with
+``fdt addr``):
+
+.. code-block:: console
+
+   => bootm 0x40000000 - 0x42000000
+
+U-Boot requires the FDT argument for ``bootm``, while Zephyr uses its own
+built-in devicetree.
+
+The UART0 console should display:
+
+.. code-block:: text
+
+   *** Booting Zephyr OS build ... ***
+   Hello World! luckfox_lume/t153/a7
+
+This loads Zephyr into RAM only; reset the board and interrupt autoboot to
+run another build.
+
 Debugging
 =========
 
-Use UART3 for application output and Linux ``dmesg`` to diagnose remoteproc
-loading errors. A ``west debug`` runner is not provided, and JTAG debugging
-has not been validated.
+Use UART3 and Linux ``dmesg`` to diagnose E907 remoteproc loading errors, and
+UART0 for U-Boot and Cortex-A7 console output. A ``west debug`` runner is not
+provided, and JTAG debugging has not been validated.
 
 References
 **********

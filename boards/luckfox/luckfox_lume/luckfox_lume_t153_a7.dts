@@ -1,0 +1,41 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <allwinner/t153_a7.dtsi>
+
+/ {
+	compatible = "luckfox,lume";
+	model = "Luckfox Lume";
+
+	chosen {
+		zephyr,sram = &a7_ram;
+		zephyr,console = &uart0;
+	};
+
+	a7_ram: memory@40a00000 {
+		compatible = "mmio-sram";
+		reg = <0x40a00000 0x01600000>;
+		device_type = "memory";
+	};
+};
+
+&cpu0 {
+	status = "okay";
+};
+
+&gic {
+	status = "okay";
+};
+
+&arch_timer {
+	status = "okay";
+};
+
+&uart0 {
+	current-speed = <115200>;
+	status = "okay";
+};

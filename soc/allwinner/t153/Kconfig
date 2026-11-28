@@ -9,3 +9,9 @@ config SOC_T153_E907
 	select RISCV
 	select RISCV_SOC_CONTEXT_SAVE
 	select SOC_EARLY_INIT_HOOK
+
+config SOC_T153_A7
+	select ARM
+	select ARM_ARCH_TIMER
+	select CPU_CORTEX_A7
+	select SYS_CLOCK_EXISTS

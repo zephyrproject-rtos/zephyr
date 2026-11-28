@@ -10,3 +10,16 @@ configdefault RISCV_MCAUSE_EXCEPTION_MASK
 	default 0xFFF
 
 endif # SOC_T153_E907
+
+if SOC_T153_A7
+
+configdefault NUM_IRQS
+	default 352
+
+configdefault SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/timer,clock-frequency)
+
+configdefault UART_NS16550_ACCESS_WORD_ONLY
+	default y
+
+endif # SOC_T153_A7

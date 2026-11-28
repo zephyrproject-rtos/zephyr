@@ -2,4 +2,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_LUCKFOX_LUME
-	select SOC_T153_E907
+	select SOC_T153_E907 if BOARD_LUCKFOX_LUME_T153_E907
+	select SOC_T153_A7 if BOARD_LUCKFOX_LUME_T153_A7
