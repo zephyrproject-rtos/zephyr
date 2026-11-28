@@ -33,6 +33,7 @@ struct gpio_qdec_config {
 	uint32_t idle_timeout_ms;
 	uint16_t axis;
 	uint8_t steps_per_period;
+	uint8_t detent_state;
 	bool invert_direction;
 };
 
@@ -40,6 +41,7 @@ struct gpio_qdec_data {
 	const struct device *dev;
 	struct k_timer sample_timer;
 	uint8_t prev_step;
+	bool waiting_for_detent;
 	int32_t acc;
 	struct k_work event_work;
 	struct k_work_delayable idle_work;
@@ -156,6 +158,23 @@ static uint8_t gpio_qdec_get_step(const struct device *dev)
 	return step;
 }
 
+static bool gpio_qdec_at_detent(uint8_t step, uint8_t detent_state)
+{
+	/* Both signal bits invert between adjacent half-period detents. */
+	return step == detent_state || step == (detent_state ^ BIT_MASK(GPIO_QDEC_GPIO_NUM));
+}
+
+static void gpio_qdec_reset_tracking(const struct device *dev)
+{
+	const struct gpio_qdec_config *cfg = dev->config;
+	struct gpio_qdec_data *data = dev->data;
+
+	data->prev_step = gpio_qdec_get_step(dev);
+	data->acc = 0;
+	data->waiting_for_detent = cfg->detent_state != UINT8_MAX &&
+				   !gpio_qdec_at_detent(data->prev_step, cfg->detent_state);
+}
+
 static void gpio_qdec_sample_timer_timeout(struct k_timer *timer)
 {
 	const struct device *dev = k_timer_user_data_get(timer);
@@ -200,6 +219,12 @@ static void gpio_qdec_sample_timer_timeout(struct k_timer *timer)
 	}
 
 	data->prev_step = step;
+
+	if (data->waiting_for_detent) {
+		/* Discard the initial partial click, including the edge into the first detent. */
+		data->waiting_for_detent = !gpio_qdec_at_detent(step, cfg->detent_state);
+		delta = 0;
+	}
 
 	key = irq_lock();
 	data->acc += delta;
@@ -332,8 +357,7 @@ static int gpio_qdec_init(const struct device *dev)
 		}
 	}
 
-	data->prev_step = gpio_qdec_get_step(dev);
-
+	gpio_qdec_reset_tracking(dev);
 	gpio_qdec_idle_mode(dev);
 
 	ret = pm_device_runtime_enable(dev);
@@ -401,9 +425,7 @@ static int gpio_qdec_pm_action(const struct device *dev,
 
 		gpio_qdec_pin_suspend(dev, false);
 
-		data->prev_step = gpio_qdec_get_step(dev);
-		data->acc = 0;
-
+		gpio_qdec_reset_tracking(dev);
 		gpio_qdec_idle_mode(dev);
 
 		break;
@@ -416,6 +438,10 @@ static int gpio_qdec_pm_action(const struct device *dev,
 #endif
 
 #define QDEC_GPIO_INIT(n)							\
+	BUILD_ASSERT(!DT_INST_NODE_HAS_PROP(n, detent_state) ||			\
+			     DT_INST_PROP(n, steps_per_period) == 2,		\
+		     "detent-state requires steps-per-period = 2");		\
+										\
 	BUILD_ASSERT(!(DT_INST_NODE_HAS_PROP(n, led_gpios) &&			\
 		       DT_INST_NODE_HAS_PROP(n, idle_poll_time_us)) ||		\
 		     DT_INST_NODE_HAS_PROP(n, led_pre_us),			\
@@ -442,6 +468,7 @@ static int gpio_qdec_pm_action(const struct device *dev,
 		.sample_time_us = DT_INST_PROP(n, sample_time_us),		\
 		.idle_poll_time_us = DT_INST_PROP_OR(n, idle_poll_time_us, 0),	\
 		.idle_timeout_ms = DT_INST_PROP(n, idle_timeout_ms),		\
+		.detent_state = DT_INST_PROP_OR(n, detent_state, UINT8_MAX),	\
 		.steps_per_period = DT_INST_PROP(n, steps_per_period),		\
 		.axis = DT_INST_PROP(n, zephyr_axis),				\
 		.invert_direction = DT_INST_PROP(n, invert_direction),		\
