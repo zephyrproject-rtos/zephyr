@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP PMC buffered bandgap output (PMC_REGSC[BGBE]).
+  Must be a child of the PMC node, whose reg is the PMC base address.
+
+compatible: "nxp,pmc-bandgap-buffer"
+
+include:
+  - name: regulator.yaml
+    property-allowlist:
+      - regulator-always-on
+      - regulator-boot-on

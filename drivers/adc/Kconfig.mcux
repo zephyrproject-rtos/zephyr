@@ -16,6 +16,7 @@ config ADC_MCUX_ADC16
 	default y
 	depends on DT_HAS_NXP_KINETIS_ADC16_ENABLED
 	select PINCTRL
+	select REGULATOR if $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_KINETIS_ADC16),bandgap-supply)
 	help
 	  Enable the MCUX ADC16 driver.
 
