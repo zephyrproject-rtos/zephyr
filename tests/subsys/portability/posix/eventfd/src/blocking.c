@@ -5,6 +5,7 @@
  */
 
 #include "_main.h"
+#include <limits.h>
 
 ZTEST_F(eventfd, test_write_then_read)
 {
@@ -58,6 +59,34 @@ ZTEST_F(eventfd, test_poll_timeout)
 
 	ret = poll(&pfd, 1, 500);
 	zassert_true(ret == 0, "poll ret %d", ret);
+}
+
+ZTEST_F(eventfd, test_poll_invalid_fd)
+{
+	struct pollfd fds[] = {
+		{.fd = INT_MAX, .events = POLLIN},
+		{.fd = -1, .events = POLLIN},
+		{.fd = fixture->fd, .events = POLLIN},
+	};
+	int64_t start = k_uptime_get();
+	int ret = poll(fds, ARRAY_SIZE(fds), 500);
+	int64_t elapsed = k_uptime_get() - start;
+
+	zassert_equal(ret, 1);
+	zassert_equal(fds[0].revents, POLLNVAL);
+	zassert_equal(fds[1].revents, 0);
+	zassert_equal(fds[2].revents, 0);
+	zassert_true(elapsed < 250, "poll waited %lld ms for an invalid fd", (long long)elapsed);
+
+	fds[0].events = 0;
+	start = k_uptime_get();
+	ret = poll(fds, 1, 500);
+	elapsed = k_uptime_get() - start;
+
+	zassert_equal(ret, 1);
+	zassert_equal(fds[0].revents, POLLNVAL);
+	zassert_true(elapsed < 250, "poll waited %lld ms with no requested events",
+		     (long long)elapsed);
 }
 
 ZTEST_F(eventfd, test_set_poll_event_block)
