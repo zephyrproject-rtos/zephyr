@@ -27,10 +27,13 @@ properties:
     enum:
       - 0
       - 1
-    default: 0
+    default: 1
     description: |
-      Automatic wait state enable
-      0: to disable, 1: to enable
+      Automatic wait state enable (FCR.CTRLA.AUTOWS), enabled at reset
+
+      0: disable, total flash wait states are ADRWS + FWS (flash-wait-states)
+      1: enable, total flash wait states are ADRWS + Taws, where
+         Taws = Tacc + 5ns + 2 clocks. flash-wait-states is not used.
 
   flash-wait-states:
     type: int
@@ -38,5 +41,31 @@ properties:
     description: |
       Number of wait states for a flash read operation.
 
-      Change this value based on the NVM access time and system frequency
-      up to 15 wait states.
+      Change this value based on the NVM access time and the AHB clock
+      frequency.
+
+      Used only when flash-auto-wait-state-en is 0 (disabled). To set the
+      wait states manually, disable auto wait state first; if it is enabled,
+      this value is discarded.
+
+      Maximum AHB clock frequency per wait state:
+
+        Wait states (FWS)   Max AHB frequency
+        0                   50 MHz
+        1                   90 MHz
+        2                   130 MHz
+        3                   140 MHz
+        4                   145 MHz
+        5                   150 MHz
+
+  flash-address-wait-state-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      Address wait state enable for a flash read operation.
+      0: no extra address wait state, for higher performance at lower clock
+         frequencies
+      1: add one address wait state, for higher clock frequencies
