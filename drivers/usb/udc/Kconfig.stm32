@@ -74,6 +74,19 @@ config UDC_STM32_OTG_RXFIFO_BASELINE_SIZE
 	  configuration (e.g., number of endpoints implemented).
 
 	  Refer to STM32 Reference Manuals for more details about the RxFIFO.
+
+config UDC_STM32_OTG_BULK_IN_TXFIFO_PACKETS
+	int "TxFIFO depth of bulk IN endpoints (in packets)"
+	range 1 4
+	default 2
+	help
+	  Number of max-size packets the TxFIFO of each bulk IN endpoint can
+	  hold. With room for two packets, the core can send one packet while
+	  the next one is written, which increases bulk IN throughput.
+
+	  Endpoints with an MPS of 256 bytes or less always get at least two
+	  packets, so this only affects high-speed bulk IN endpoints, which
+	  use 512 bytes of USB RAM per packet. Set it to 1 to save USB RAM.
 endmenu
 
 menu "ST USB options"

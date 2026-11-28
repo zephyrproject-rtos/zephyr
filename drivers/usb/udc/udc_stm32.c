@@ -1080,7 +1080,12 @@ static int udc_stm32_ep_mem_config(const struct device *dev,
 	}
 
 	words = DIV_ROUND_UP(MIN(udc_mps_ep_size(ep_cfg), cfg->ep_mps), 4U);
-	words = (words <= 64) ? words * 2 : words;
+	if ((ep_cfg->attributes & USB_EP_TRANSFER_TYPE_MASK) == USB_EP_TYPE_BULK) {
+		words *= MAX((unsigned int)CONFIG_UDC_STM32_OTG_BULK_IN_TXFIFO_PACKETS,
+			     (words <= 64U) ? 2U : 1U);
+	} else {
+		words = (words <= 64U) ? words * 2U : words;
+	}
 
 	ret = sys_bitarray_alloc(cfg->sram_bitmap, words, &offset);
 	if (ret != 0) {
