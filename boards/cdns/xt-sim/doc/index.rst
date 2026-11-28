@@ -35,6 +35,9 @@ releases (with multilib support).
 Only Xtensa tools version ``RF-2016.4-linux`` or later are officially
 supported. Other versions may work but are not supported by Cadence Systems Inc.
 
+The board can also be built with the Zephyr SDK toolchain. Running the image
+needs ``xt-run`` from the Xtensa tools.
+
 In order to set up the Zephyr OS build system, a Linux 32-bit GCC compiler must
 be installed on the building linux box. Install GCC if needed either by
 downloading ``Zephyr SDK`` or by using your distribution package manager.
