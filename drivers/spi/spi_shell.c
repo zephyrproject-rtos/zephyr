@@ -34,11 +34,19 @@
  * itself has status okay. This prevents enumerating sub-nodes of SPI
  * devices (for example GPIO sub-devices) which are on the same SPI bus
  * but are not direct children of the controller.
+ *
+ * The node must also have the duplex property, which every binding that
+ * includes spi-device.yaml has and SPI_DT_SPEC_GET() reads. Some memory
+ * controllers, such as the NXP FlexSPI and XSPI, are an SPI bus in
+ * devicetree, but their children are memories driven by the controller's
+ * own driver, not through the SPI API, and their bindings do not include
+ * spi-device.yaml.
  */
 #define RUN_FN_ON_SPI_DEVICE(node_id, fn)                                                         \
 	COND_CODE_1(DT_ON_BUS(node_id, spi),                                                      \
 	(COND_CODE_1(DT_SAME_NODE(DT_PARENT(node_id), DT_BUS(node_id)),                           \
-	(COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(node_id), (fn), ())), ())), ())
+	(COND_CODE_1(DT_NODE_HAS_PROP(node_id, duplex),                                           \
+	(COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(node_id), (fn), ())), ())), ())), ())
 
 /* Create specified number of empty structs, separated by ',' */
 #define _EMPTY_STRUCT_INST(idx, list) {0}
