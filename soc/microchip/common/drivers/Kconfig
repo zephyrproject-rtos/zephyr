@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright 2026 Muhammed Asif
+# SPDX-License-Identifier: Apache-2.0
+
+# zephyr-keep-sorted-start
+rsource "mchp_evsys/Kconfig"
+# zephyr-keep-sorted-stop
