@@ -1714,6 +1714,10 @@ int z_cbvprintf_impl(cbprintf_cb __out, void *ctx, const char *fp,
 				}
 			}
 
+			if (conv->altform_0 && (conv->pad0_value > 0 || *bps == '0')) {
+				conv->altform_0 = false;
+			}
+
 			break;
 		case 'n':
 			if (IS_ENABLED(CONFIG_CBPRINTF_N_SPECIFIER)) {
