@@ -28,6 +28,121 @@ split among several packets. Since GATT guarantees ordered delivery of
 packets, the SMP header in the first fragment contains sufficient information
 for reassembly.
 
+.. _mcumgr_smp_transport_ble_client:
+
+Zephyr Bluetooth transports
+===========================
+
+Zephyr implements the two sides of the Bluetooth transport as two transports, selected by two
+Kconfig options:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 20 50
+
+   * - Kconfig option
+     - Local role
+     - Used for
+   * - :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT`
+     - GATT server
+     - Serves the SMP service to a central, such as a phone running an MCUmgr client.
+       Requires :kconfig:option:`CONFIG_BT_PERIPHERAL`.
+   * - :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT_CLIENT`
+     - GATT client
+     - Sends SMP requests to the SMP service of a peer. Requires
+       :kconfig:option:`CONFIG_BT_CENTRAL` and :kconfig:option:`CONFIG_BT_GATT_CLIENT`.
+       The client is experimental, and enabling it also enables
+       :kconfig:option:`CONFIG_EXPERIMENTAL`.
+
+Each can be enabled on its own, or both in the same image. An image with only the client has no
+SMP GATT service of its own. When both are enabled, they are separate SMP transport objects, so a
+response from a peer is never mixed up with a request written by a central that is connected to
+the server.
+
+:kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT_CLIENT` requires either
+:kconfig:option:`CONFIG_SMP_CLIENT` or :kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT`, but not both,
+for one of two uses:
+
+* The MCUmgr SMP client (:kconfig:option:`CONFIG_SMP_CLIENT`) manages a peer that runs the SMP
+  service. The transport registers as ``SMP_BLUETOOTH_TRANSPORT``, and the application passes
+  that type to :c:func:`smp_client_object_init`.
+
+* The outgoing side of a :ref:`transport management <mcumgr_smp_group_11>` bridge
+  (:kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT`) connects to a Bluetooth peer, so that requests
+  received over another transport are forwarded to it. The incoming side of a bridge over
+  Bluetooth is part of the server, so a bridge from a Bluetooth central to another transport
+  needs :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT` as well as
+  :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT_CLIENT`.
+
+Attaching the SMP client
+------------------------
+
+The application scans for the peer, establishes the connection and attaches the transport to
+it:
+
+.. code-block:: c
+
+   static struct smp_client_object smp_client;
+
+   /* conn is a connection that the application has established to the peer */
+   static int attach_peer(struct bt_conn *conn)
+   {
+       int rc;
+
+       rc = smp_client_object_init(&smp_client, SMP_BLUETOOTH_TRANSPORT);
+       if (rc == 0) {
+           rc = smp_client_bt_attach(conn, K_SECONDS(5));
+       }
+
+       return rc;
+   }
+
+:c:func:`smp_client_bt_attach` discovers the SMP service on the peer and subscribes to its
+notifications before it returns, so it must not be called from the Bluetooth RX thread, the
+system work queue or the MCUmgr work queue. It fails with ``-ENOTSUP`` when the peer has no
+usable SMP service, with ``-EIO`` when the peer rejects the subscription, for example because it
+requires an encrypted link, and with ``-ETIMEDOUT`` when the peer does not answer within the
+timeout. It fails with ``-EBUSY`` while the transport is not free, see
+:ref:`mcumgr_smp_transport_ble_client_busy`.
+
+The transport must be the only subscriber to the SMP characteristic of the peer. The Bluetooth
+host makes no CCC write for a second subscription to a characteristic, so an attach to a peer
+whose SMP characteristic the application has subscribed to itself fails with ``-ETIMEDOUT``.
+
+:c:func:`smp_client_bt_detach` unsubscribes from the notifications, releases the target and
+leaves the connection up. The target is also released when the peer disconnects. While it is the
+target, the transport holds a reference of its own on the connection, so the application manages
+its own reference as usual.
+
+The transport writes each SMP packet in fragments of ATT_MTU - 3 bytes. Unless the peer starts the
+ATT MTU exchange, enable :kconfig:option:`CONFIG_BT_GATT_AUTO_UPDATE_MTU` or call
+:c:func:`bt_gatt_exchange_mtu`; otherwise every fragment carries 20 bytes. The image upload client
+sizes its frames from :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_NETBUF_SIZE`, which must not exceed
+the value the peer uses. The number of fragments in flight and how long a packet waits for a
+transmit credit are set with :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT_CLIENT_TX_CREDITS` and
+:kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT_CLIENT_TX_CREDIT_TIMEOUT`.
+
+A sample that attaches the transport and uploads an image to a peer is
+:zephyr:code-sample:`smp-bt-client`.
+
+.. _mcumgr_smp_transport_ble_client_busy:
+
+One target at a time
+--------------------
+
+The transport serves one peer at a time. While a target is attached, :c:func:`smp_client_bt_attach`
+fails with ``-EBUSY``, and while a bridge holds the transport, another bridge connect fails with
+``TRANSPORT_MGMT_ERR_CONNECT_FAILED``. This also applies until the link of a disconnected bridge has
+ended, and after :c:func:`smp_client_bt_detach` until the host reports the response to the CCC write
+of the unsubscribe, or the link ends. If the peer rejects that write and the link has no other
+subscriptions, the host does not report it, and the transport stays busy until the link ends.
+
+A bridge connect waits up to 30 seconds for the link to come up and for the SMP service to be
+discovered and subscribed. It fails with ``TRANSPORT_MGMT_ERR_CONNECT_FAILED`` when that does not
+happen, for example because the peer has no SMP service or rejects the subscription, and the
+link that the bridge created is disconnected. When a bridge is disconnected, the transport
+disconnects its link, which also ends the subscription.
+
 .. _mcumgr_smp_transport_uart:
 
 UART/serial and console
@@ -224,3 +339,5 @@ API Reference
 *************
 
 .. doxygengroup:: mcumgr_transport_smp
+
+.. doxygengroup:: mcumgr_transport_bt_client

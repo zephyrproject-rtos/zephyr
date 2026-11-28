@@ -1,0 +1,31 @@
+#
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Jeff Welder
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# Each scenario names the Bluetooth MCUmgr role it builds, and src/main.c checks that the
+# resulting configuration has the shape of that role.
+
+choice TEST_MCUMGR_BT_ROLE
+	prompt "Bluetooth MCUmgr role under test"
+
+config TEST_MCUMGR_BT_ROLE_SERVER
+	bool "SMP server only"
+
+config TEST_MCUMGR_BT_ROLE_CLIENT
+	bool "SMP client only"
+
+config TEST_MCUMGR_BT_ROLE_BOTH
+	bool "SMP server and SMP client"
+
+config TEST_MCUMGR_BT_ROLE_SERVER_BRIDGE
+	bool "SMP server and transport management bridges"
+
+config TEST_MCUMGR_BT_ROLE_BRIDGE_OUT
+	bool "Outgoing side of transport management bridges, without the SMP server"
+
+endchoice
+
+source "Kconfig.zephyr"

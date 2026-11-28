@@ -120,6 +120,16 @@ Libraries / Subsystems
     (:kconfig:option:`CONFIG_MCUMGR_TRANSPORT_UDP_DTLS_CLIENT_AUTH`), so that only clients
     signed by the CA the application provides can send SMP commands.
 
+* Management
+
+  * MCUmgr
+
+    * The SMP client can send commands to a Bluetooth peer through the Bluetooth client transport,
+      which it shares with the outgoing side of transport management bridges. A peer is attached
+      with :c:func:`smp_client_bt_attach`.
+      :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT_CLIENT` no longer requires
+      :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT`.
+
 * Mbed TLS
 
   * :kconfig:option:`CONFIG_MBEDTLS_SSL_CLI_C`
