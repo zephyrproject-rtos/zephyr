@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <zephyr/ztest.h>
 #include <zephyr/data/json.h>
+#include <zephyr/sys/printk.h>
 
 struct test_nested {
 	int nested_int;
@@ -857,10 +858,7 @@ ZTEST(lib_json_test, test_json_float_infinity)
 
 ZTEST(lib_json_test, test_json_float_limits)
 {
-	char encoded[] = "{\"float_max\":3.40282347e+38,"
-			 "\"float_cero\":0,"
-			 "\"float_min\":-3.40282347e+38"
-			 "}";
+	char encoded[128];
 
 	struct test_float_limits limits = {
 		.float_max = 3.40282347e+38,
@@ -872,9 +870,14 @@ ZTEST(lib_json_test, test_json_float_limits)
 	struct test_float_limits limits_decoded = {0};
 	int ret;
 
+	snprintk(encoded, sizeof(encoded),
+		 "{\"float_max\":%.*g,\"float_cero\":0,\"float_min\":%.*g}",
+		 CONFIG_JSON_FLOAT_PRECISION, (double)limits.float_max, CONFIG_JSON_FLOAT_PRECISION,
+		 (double)limits.float_min);
+
 	ret = json_obj_encode_buf(obj_float_limits_descr, ARRAY_SIZE(obj_float_limits_descr),
 				&limits, buffer, sizeof(buffer));
-	zassert_equal(ret, 0, "Encoding of float limits returned error");
+	zassert_equal(ret, 0, "Encoding of float limits returned error %d", ret);
 	ret = json_obj_parse(encoded, sizeof(encoded), obj_float_limits_descr,
 			     ARRAY_SIZE(obj_float_limits_descr), &limits_decoded);
 	zassert_str_equal(encoded, buffer,
@@ -1020,10 +1023,7 @@ ZTEST(lib_json_test, test_json_double_infinity)
 
 ZTEST(lib_json_test, test_json_doubles_limits)
 {
-	char encoded[] = "{\"double_max\":1.797693134862315e+308,"
-			 "\"double_cero\":0,"
-			 "\"double_min\":-1.797693134862315e+308"
-			 "}";
+	char encoded[128];
 
 	struct test_double_limits limits = {
 		.double_max = 1.797693134862315e+308,
@@ -1035,6 +1035,11 @@ ZTEST(lib_json_test, test_json_doubles_limits)
 	struct test_double_limits limits_decoded = {0};
 	int ret;
 
+	snprintk(encoded, sizeof(encoded),
+		 "{\"double_max\":%.*g,\"double_cero\":0,\"double_min\":%.*g}",
+		 CONFIG_JSON_DOUBLE_PRECISION, limits.double_max, CONFIG_JSON_DOUBLE_PRECISION,
+		 limits.double_min);
+
 	ret = json_obj_encode_buf(obj_double_limits_descr, ARRAY_SIZE(obj_double_limits_descr),
 				&limits, buffer, sizeof(buffer));
 	zassert_equal(ret, 0, "Encoding of double limits returned error");
@@ -1044,6 +1049,16 @@ ZTEST(lib_json_test, test_json_doubles_limits)
 			  "Double limits not encoded correctly");
 	zassert_true(!memcmp(&limits, &limits_decoded, sizeof(limits)),
 		     "Double limits not decoded correctly");
+
+	limits.double_min = -DBL_MAX;
+	snprintk(encoded, sizeof(encoded),
+		 "{\"double_max\":%.*g,\"double_cero\":0,\"double_min\":%.*g}",
+		 CONFIG_JSON_DOUBLE_PRECISION, limits.double_max, CONFIG_JSON_DOUBLE_PRECISION,
+		 limits.double_min);
+	ret = json_obj_encode_buf(obj_double_limits_descr, ARRAY_SIZE(obj_double_limits_descr),
+				  &limits, buffer, sizeof(buffer));
+	zassert_equal(ret, 0, "Encoding of -DBL_MAX returned error %d", ret);
+	zassert_str_equal(encoded, buffer, "-DBL_MAX not encoded correctly");
 }
 
 ZTEST(lib_json_test, test_json_encoding_null)
