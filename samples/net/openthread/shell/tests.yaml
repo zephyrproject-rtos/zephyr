@@ -49,6 +49,20 @@ tests:
       - frdm_mcxw72
       - mcxw72_evk
       - frdm_mcxw70
+  sample.net.openthread.shell.rt1060_evkc_iw612:
+    build_only: true
+    extra_args:
+      - SHIELD="nxp_m2_2ll_wifi_bt nxp_m2_2el_2ll_ieee802154"
+      - EXTRA_CONF_FILE="prj-ot-host.conf;boards/mimxrt1060_evk_mimxrt1062_qspi_C/mimxrt1060_evk_mimxrt1062_qspi_C.conf;boards/mimxrt1060_evk_mimxrt1062_qspi_C/iw612.conf"
+    platform_allow:
+      - mimxrt1060_evk@C/mimxrt1062/qspi
+  sample.net.openthread.shell.rt1060_evkc_iw610:
+    build_only: true
+    extra_args:
+      - SHIELD="nxp_m2_2ll_wifi_bt nxp_m2_2el_2ll_ieee802154"
+      - EXTRA_CONF_FILE="prj-ot-host.conf;boards/mimxrt1060_evk_mimxrt1062_qspi_C/mimxrt1060_evk_mimxrt1062_qspi_C.conf;boards/mimxrt1060_evk_mimxrt1062_qspi_C/iw610.conf"
+    platform_allow:
+      - mimxrt1060_evk@C/mimxrt1062/qspi
   sample.net.openthread.shell.esp:
     build_only: true
     extra_args:

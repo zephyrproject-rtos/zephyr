@@ -50,6 +50,20 @@ Example building for NXP's RW612 FRDM (RCP host).
    :goals: build
    :compact:
 
+Example building for NXP's MIMXRT1060-EVK Rev-C with an IW612 M.2 module (RCP host).
+The IW612 802.15.4 radio is used as an RCP over SPI. The NXP Wi-Fi driver is
+required to load the module firmware; the Wi-Fi interface is present but left
+down. Use ``iw610.conf`` instead of ``iw612.conf`` for an IW610 module. See
+:ref:`nxp_m2_ieee802154` for the hardware setup.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/openthread/shell
+   :board: mimxrt1060_evk@C/mimxrt1062/qspi
+   :shield: nxp_m2_2ll_wifi_bt,nxp_m2_2el_2ll_ieee802154
+   :gen-args: -DEXTRA_CONF_FILE="prj-ot-host.conf;boards/mimxrt1060_evk_mimxrt1062_qspi_C/mimxrt1060_evk_mimxrt1062_qspi_C.conf;boards/mimxrt1060_evk_mimxrt1062_qspi_C/iw612.conf"
+   :goals: build
+   :compact:
+
 Example building for NXP's MCXW72 FRDM (host).
 
 .. zephyr-app-commands::
