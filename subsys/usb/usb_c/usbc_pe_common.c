@@ -148,6 +148,30 @@ bool pe_is_running(const struct device *dev)
 }
 
 /**
+ * @brief Starts a Hard Reset the Device Policy Manager asked for, in the
+ *	  Hard Reset state of the current power role.
+ */
+static void pe_send_requested_hard_reset(const struct device *dev)
+{
+	struct usbc_port_data *data = dev->data;
+	struct policy_engine *pe = data->pe;
+
+#ifdef CONFIG_USBC_CSM_SUPPORTS_SOURCE
+	if (pe->power_role == TC_ROLE_SOURCE) {
+		/*
+		 * Leaving PE_SRC_Transition_Supply this way must not send the
+		 * PS_RDY its exit sends for an accepted request.
+		 */
+		pe->snk_request_reply = SNK_REQUEST_REJECT;
+		pe_set_state(dev, PE_SRC_HARD_RESET);
+		return;
+	}
+#endif
+	ARG_UNUSED(pe);
+	pe_set_state(dev, PE_SNK_HARD_RESET);
+}
+
+/**
  * @brief Run the Policy Engine layer
  */
 void pe_run(const struct device *dev, const int32_t dpm_request)
@@ -179,13 +203,13 @@ void pe_run(const struct device *dev, const int32_t dpm_request)
 		pe->dpm_request = dpm_request;
 
 		/*
-		 * 8.3.3.3.8 PE_SNK_Hard_Reset State
-		 * The Policy Engine Shall transition to the PE_SNK_Hard_Reset
-		 * state from any state when:
+		 * 8.3.3.2.9 PE_SRC_Hard_Reset and 8.3.3.3.8 PE_SNK_Hard_Reset
+		 * The Policy Engine Shall transition to the Hard Reset state of
+		 * its power role from any state when:
 		 * - Hard Reset request from Device Policy Manager
 		 */
 		if (dpm_request == REQUEST_PE_HARD_RESET_SEND) {
-			pe_set_state(dev, PE_SNK_HARD_RESET);
+			pe_send_requested_hard_reset(dev);
 		}
 
 		/* Run state machine */
