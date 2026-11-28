@@ -88,19 +88,9 @@ int main(void)
 	LOG_INF("UpdateHub sample app started");
 
 #if defined(CONFIG_UPDATEHUB_DTLS)
-	if (tls_credential_add(CA_CERTIFICATE_TAG,
-			       TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
-			       server_certificate,
-			       sizeof(server_certificate)) < 0) {
-		LOG_ERR("Failed to register server certificate");
-		return 0;
-	}
-
-	if (tls_credential_add(CA_CERTIFICATE_TAG,
-			       TLS_CREDENTIAL_PRIVATE_KEY,
-			       private_key,
-			       sizeof(private_key)) < 0) {
-		LOG_ERR("Failed to register private key");
+	if (tls_credential_add(CONFIG_UPDATEHUB_DTLS_SEC_TAG, TLS_CREDENTIAL_CA_CERTIFICATE,
+			       updatehub_root_ca, sizeof(updatehub_root_ca)) < 0) {
+		LOG_ERR("Failed to register the UpdateHub root CA");
 		return 0;
 	}
 #endif

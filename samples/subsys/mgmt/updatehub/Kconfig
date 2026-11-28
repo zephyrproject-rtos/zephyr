@@ -29,4 +29,14 @@ config UPDATEHUB_SAMPLE_WIFI_PSK
 	default "secret_passwd"
 endif
 
+config UPDATEHUB_SAMPLE_ROOT_CA_FILE
+	string "UpdateHub root CA certificates (PEM)"
+	default "src/certificates/updatehub-root-ca.pem"
+	depends on UPDATEHUB_DTLS
+	help
+	  PEM file with the root CA certificates that may sign the UpdateHub
+	  server certificate. All of them are registered as one DTLS trust
+	  anchor credential. Relative paths are resolved from the sample
+	  directory.
+
 source "Kconfig.zephyr"
