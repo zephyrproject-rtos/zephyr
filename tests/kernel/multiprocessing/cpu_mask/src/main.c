@@ -237,6 +237,72 @@ ZTEST(cpu_mask, test_cpu_mask_rejects_bad_cpu)
 	k_thread_join(tid, K_FOREVER);
 }
 
+#ifndef CONFIG_SCHED_CPU_MASK_PIN_ONLY
+/**
+ * @brief Verify the CPU range variants of the cpu_mask APIs.
+ *
+ * @ingroup kernel_cpu_mask_tests
+ *
+ * @details
+ * k_thread_cpu_mask_enable_range() and k_thread_cpu_mask_disable_range() set
+ * or clear the mask bits of the CPUs first to last, both included, and leave
+ * the other bits alone. A range that is not made of existing CPUs must be
+ * rejected with -EINVAL and leave the mask unchanged. Not available in
+ * PIN_ONLY mode.
+ *
+ * Test steps:
+ * - Create a thread in the K_FOREVER (not-started) state and clear its mask.
+ * - Enable CPUs 0 to 1, then every CPU, then disable CPU 0 to 0.
+ * - Call both APIs with a negative first CPU, a last CPU past the last CPU
+ *   and a first CPU after the last one.
+ *
+ * Expected result:
+ * - The mask has exactly the bits of the CPUs of each range that was applied.
+ * - Every bad range returns -EINVAL and leaves the mask as it was.
+ *
+ * @see k_thread_cpu_mask_enable_range()
+ * @see k_thread_cpu_mask_disable_range()
+ */
+ZTEST(cpu_mask, test_cpu_mask_range)
+{
+	int last = (int)arch_num_cpus() - 1;
+	k_tid_t tid;
+	int prio = k_thread_priority_get(k_current_get()) - 1;
+
+	tid = k_thread_create(&worker_threads[0], worker_stacks[0],
+			      STACK_SIZE, worker_fn,
+			      INT_TO_POINTER(0), NULL, NULL,
+			      prio, 0, K_FOREVER);
+
+	zassert_ok(k_thread_cpu_mask_clear(tid), "clear failed");
+	zassert_equal(tid->base.cpu_mask, 0U, "mask not empty");
+
+	zassert_ok(k_thread_cpu_mask_enable_range(tid, 0, 1), "enable_range(0, 1) failed");
+	zassert_equal(tid->base.cpu_mask, CPU_MASK_CPU_RANGE(0, 1), "mask is 0x%x",
+		      tid->base.cpu_mask);
+
+	zassert_ok(k_thread_cpu_mask_enable_range(tid, 0, last), "enable_range(all) failed");
+	zassert_equal(tid->base.cpu_mask, CPU_MASK_CPU_RANGE(0, last), "mask is 0x%x",
+		      tid->base.cpu_mask);
+
+	zassert_ok(k_thread_cpu_mask_disable_range(tid, 0, 0), "disable_range(0, 0) failed");
+	zassert_equal(tid->base.cpu_mask, CPU_MASK_CPU_RANGE(1, last), "mask is 0x%x",
+		      tid->base.cpu_mask);
+
+	uint32_t before = tid->base.cpu_mask;
+
+	zassert_equal(k_thread_cpu_mask_enable_range(tid, -1, 0), -EINVAL, "enable(-1, 0)");
+	zassert_equal(k_thread_cpu_mask_enable_range(tid, 0, last + 1), -EINVAL, "enable(0, n)");
+	zassert_equal(k_thread_cpu_mask_enable_range(tid, 1, 0), -EINVAL, "enable(1, 0)");
+	zassert_equal(k_thread_cpu_mask_disable_range(tid, -1, 0), -EINVAL, "disable(-1, 0)");
+	zassert_equal(k_thread_cpu_mask_disable_range(tid, 0, last + 1), -EINVAL, "disable(0, n)");
+	zassert_equal(k_thread_cpu_mask_disable_range(tid, 1, 0), -EINVAL, "disable(1, 0)");
+	zassert_equal(tid->base.cpu_mask, before, "a rejected call changed the mask");
+
+	k_thread_abort(tid);
+}
+#endif /* CONFIG_SCHED_CPU_MASK_PIN_ONLY */
+
 /**
  * @brief Verify that a thread with a cleared CPU mask never executes.
  *

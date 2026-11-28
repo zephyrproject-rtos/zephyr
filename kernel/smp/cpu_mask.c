@@ -43,6 +43,14 @@ static int cpu_mask_mod(k_tid_t thread, uint32_t enable_mask, uint32_t disable_m
 	return ret;
 }
 
+#ifndef CONFIG_SCHED_CPU_MASK_PIN_ONLY
+static bool cpu_range_is_valid(int cpu_first, int cpu_last)
+{
+	return IN_RANGE(cpu_first, 0, (int)arch_num_cpus() - 1) &&
+	       IN_RANGE(cpu_last, cpu_first, (int)arch_num_cpus() - 1);
+}
+#endif /* CONFIG_SCHED_CPU_MASK_PIN_ONLY */
+
 int k_thread_cpu_mask_clear(k_tid_t thread)
 {
 	return cpu_mask_mod(thread, 0, 0xffffffff);
@@ -70,6 +78,26 @@ int k_thread_cpu_mask_disable(k_tid_t thread, int cpu)
 
 	return cpu_mask_mod(thread, 0, BIT(cpu));
 }
+
+#ifndef CONFIG_SCHED_CPU_MASK_PIN_ONLY
+int k_thread_cpu_mask_enable_range(k_tid_t thread, int cpu_first, int cpu_last)
+{
+	if (!cpu_range_is_valid(cpu_first, cpu_last)) {
+		return -EINVAL;
+	}
+
+	return cpu_mask_mod(thread, CPU_MASK_CPU_RANGE(cpu_first, cpu_last), 0);
+}
+
+int k_thread_cpu_mask_disable_range(k_tid_t thread, int cpu_first, int cpu_last)
+{
+	if (!cpu_range_is_valid(cpu_first, cpu_last)) {
+		return -EINVAL;
+	}
+
+	return cpu_mask_mod(thread, 0, CPU_MASK_CPU_RANGE(cpu_first, cpu_last));
+}
+#endif /* CONFIG_SCHED_CPU_MASK_PIN_ONLY */
 
 int k_thread_cpu_pin(k_tid_t thread, int cpu)
 {
