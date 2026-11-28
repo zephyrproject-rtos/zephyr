@@ -1,6 +1,6 @@
 board:
-  name: rak11720
-  full_name: RAK11720
+  name: rak11721
+  full_name: RAK11721 Breakout Board
   vendor: rakwireless
   socs:
   - name: apollo3_blue
