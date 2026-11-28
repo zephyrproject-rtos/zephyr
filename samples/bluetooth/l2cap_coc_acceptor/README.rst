@@ -35,7 +35,7 @@ To build the sample:
    :goals: build flash
    :compact:
 
-After flashing, the device will register an L2CAP server on PSM 0x29 and wait
+After flashing, the device will register an L2CAP server on PSM 0x0080 and wait
 for incoming connections. Pair this sample with the
 :zephyr:code-sample:`bluetooth_l2cap_coc_initiator` sample to establish a
 connection and exchange data.
@@ -51,7 +51,7 @@ Upon successful initialization:
 
 .. code-block:: console
 
-   L2CAP server registered, PSM 41
+   L2CAP server registered, PSM 128
 
 When a client connects:
 

@@ -12,7 +12,7 @@
 #include <zephyr/sys/printk.h>
 
 /* doc l2cap server start */
-#define PSM 0x29 /* example PSM */
+#define PSM 0x0080 /* example SPSM, from the dynamic range 0x0080-0x00FF */
 
 static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf);
 static void l2cap_connected(struct bt_l2cap_chan *chan);
