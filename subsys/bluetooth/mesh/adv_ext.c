@@ -370,6 +370,16 @@ static void send_pending_adv(struct k_work *work)
 		}
 	}
 
+	/* The work may have been resubmitted while it was stopping the proxy advertising and
+	 * then started sending a mesh message. Wait for the adv_sent callback instead of losing
+	 * the next message on a busy advertiser.
+	 */
+	if (atomic_test_bit(ext_adv->flags, ADV_FLAG_ACTIVE) &&
+	    !atomic_test_bit(ext_adv->flags, ADV_FLAG_PROXY)) {
+		LOG_DBG("Advertiser is busy, waiting for the current advertising to end");
+		return;
+	}
+
 	err = adv_queue_send_process(ext_adv);
 	if (!err) {
 		return;
