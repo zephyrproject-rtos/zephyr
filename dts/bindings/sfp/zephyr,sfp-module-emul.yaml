@@ -1,0 +1,13 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Emulated SFF-8472 pluggable module for tests and samples.
+
+  Place the node on a zephyr,i2c-emul-controller at reg 0x50, where it
+  answers for the serial ID page (A0h); the emulator also answers at 0x51
+  for the diagnostics page (A2h). Point an sff,sfp cage at the same bus.
+
+compatible: "zephyr,sfp-module-emul"
+
+include: i2c-device.yaml
