@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Clock provider for the TLV320AIC3104 tests. It counts clock_control_on()
+  calls and reports a fixed rate. It has no clock-frequency property, so the
+  codec driver reads it through the clock control API, not at build time.
+
+compatible: "vnd,aic3104-test-clock"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  output-rate:
+    type: int
+    required: true
+    description: Rate in Hz that clock_control_get_rate() reports.
+
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - name

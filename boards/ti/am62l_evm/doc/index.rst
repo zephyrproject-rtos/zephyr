@@ -69,6 +69,17 @@ offset for other conflicting signals:
 
 Devices
 ========
+
+Audio Codec
+-----------
+
+The TLV320AIC3106 (``audio_codec``) sits on ``main_i2c1`` at 0x1B and takes
+MCLK from a 12.288 MHz oscillator, so it runs at 48 kHz without its PLL.
+Its reset is line 21 (P25, ``GPIO_AUD_RSTn``) of the second I/O expander
+at 0x23. Jack J20 carries the headphone outputs and the microphone input
+(MIC3R). The line inputs LINE1L/LINE1R reach test points only, through
+coupling capacitors that are not fitted; LINE2L is on TP212/TP210.
+
 System Clock
 ------------
 
