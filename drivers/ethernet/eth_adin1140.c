@@ -320,6 +320,8 @@ static enum ethernet_hw_caps adin1140_get_capabilities(const struct device *dev,
 static int adin1140_set_config(const struct device *dev, struct net_if *iface,
 			       enum ethernet_config_type type, const struct ethernet_config *config)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int rc = -ENOTSUP;
 	struct adin1140_data *ctx = dev->data;
 
@@ -652,6 +654,8 @@ static int adin1140_rx_fifo_read(const struct device *dev)
  */
 static int adin1140_send(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int rc;
 	struct adin1140_data *ctx = dev->data;
 
@@ -825,6 +829,8 @@ static int adin1140_configure(const struct device *dev)
  */
 static void adin1140_rx_thread(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int rc;
 	struct adin1140_data *ctx = dev->data;
 	uint32_t ftr;
@@ -871,6 +877,9 @@ static void adin1140_rx_thread(const struct device *dev)
 static void adin1140_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct adin1140_data *ctx = dev->data;
 
 	net_if_set_link_addr(iface, ctx->mac_address, sizeof(ctx->mac_address), NET_LINK_ETHERNET);
@@ -901,6 +910,8 @@ static void adin1140_iface_init(struct net_if *iface)
  */
 static int adin1140_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int rc;
 	const struct adin1140_config *cfg = dev->config;
 	struct adin1140_data *ctx = dev->data;

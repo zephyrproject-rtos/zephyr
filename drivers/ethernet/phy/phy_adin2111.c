@@ -149,6 +149,8 @@ static int phy_adin2111_c45_setup_dev_reg(const struct device *dev, uint16_t dev
 static int phy_adin2111_c45_read(const struct device *dev, uint8_t devad,
 				 uint16_t reg, uint16_t *val)
 {
+	DEVICE_DT_ASSUME_ANY(dev, adi_adin2111_phy, adi_adin1100_phy);
+
 	const struct phy_adin2111_config *cfg = dev->config;
 	int rval;
 
@@ -170,6 +172,8 @@ static int phy_adin2111_c45_read(const struct device *dev, uint8_t devad,
 static int phy_adin2111_c45_write(const struct device *dev, uint8_t devad,
 				  uint16_t reg, uint16_t val)
 {
+	DEVICE_DT_ASSUME_ANY(dev, adi_adin2111_phy, adi_adin1100_phy);
+
 	const struct phy_adin2111_config *cfg = dev->config;
 	int rval;
 
@@ -191,12 +195,16 @@ static int phy_adin2111_c45_write(const struct device *dev, uint8_t devad,
 static int phy_adin2111_reg_read(const struct device *dev, uint16_t reg_addr,
 				 uint32_t *data)
 {
+	DEVICE_DT_ASSUME_ANY(dev, adi_adin2111_phy, adi_adin1100_phy);
+
 	return phy_adin2111_c22_read(dev, reg_addr, (uint16_t *) data);
 }
 
 static int phy_adin2111_reg_write(const struct device *dev, uint16_t reg_addr,
 				  uint32_t data)
 {
+	DEVICE_DT_ASSUME_ANY(dev, adi_adin2111_phy, adi_adin1100_phy);
+
 	return phy_adin2111_c22_write(dev, reg_addr, (uint16_t) data);
 }
 
@@ -329,6 +337,8 @@ static int phy_adin2111_id(const struct device *dev, uint32_t *phy_id)
 static int phy_adin2111_get_link_state(const struct device *dev,
 				       struct phy_link_state *state)
 {
+	DEVICE_DT_ASSUME_ANY(dev, adi_adin2111_phy, adi_adin1100_phy);
+
 	struct phy_adin2111_data *const data = dev->data;
 
 	k_sem_take(&data->sem, K_FOREVER);
@@ -432,6 +442,8 @@ static void monitor_work_handler(struct k_work *work)
 	const struct device *dev = data->dev;
 	int rc;
 
+	DEVICE_DT_ASSUME_ANY(dev, adi_adin2111_phy, adi_adin1100_phy);
+
 	k_sem_take(&data->sem, K_FOREVER);
 
 	rc = update_link_state(dev);
@@ -444,6 +456,8 @@ static void monitor_work_handler(struct k_work *work)
 
 static int phy_adin2111_init(const struct device *dev)
 {
+	DEVICE_DT_ASSUME_ANY(dev, adi_adin2111_phy, adi_adin1100_phy);
+
 	const struct phy_adin2111_config *const cfg = dev->config;
 	struct phy_adin2111_data *const data = dev->data;
 	uint32_t phy_id;
@@ -622,6 +636,8 @@ static int phy_adin2111_init(const struct device *dev)
 static int phy_adin2111_link_cb_set(const struct device *dev, phy_callback_t cb,
 				    void *user_data)
 {
+	DEVICE_DT_ASSUME_ANY(dev, adi_adin2111_phy, adi_adin1100_phy);
+
 	struct phy_adin2111_data *const data = dev->data;
 
 	data->cb = cb;

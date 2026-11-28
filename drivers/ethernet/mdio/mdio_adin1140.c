@@ -29,6 +29,8 @@ LOG_MODULE_REGISTER(mdio_adin1140, CONFIG_MDIO_LOG_LEVEL);
 static int mdio_adin1140_read_c45(const struct device *dev, uint8_t prtad, uint8_t devad,
 				  uint16_t regad, uint16_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct device *adin = dev->config;
 	struct adin1140_data *ctx = adin->data;
 
@@ -41,6 +43,8 @@ static int mdio_adin1140_read_c45(const struct device *dev, uint8_t prtad, uint8
 static int mdio_adin1140_write_c45(const struct device *dev, uint8_t prtad, uint8_t devad,
 				   uint16_t regad, uint16_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct device *adin = dev->config;
 	struct adin1140_data *ctx = adin->data;
 
@@ -53,6 +57,8 @@ static int mdio_adin1140_write_c45(const struct device *dev, uint8_t prtad, uint
 static int mdio_adin1140_read(const struct device *dev, uint8_t prtad, uint8_t regad,
 			      uint16_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct device *adin = dev->config;
 	struct adin1140_data *ctx = adin->data;
 
@@ -65,6 +71,8 @@ static int mdio_adin1140_read(const struct device *dev, uint8_t prtad, uint8_t r
 static int mdio_adin1140_write(const struct device *dev, uint8_t prtad, uint8_t regad,
 			       uint16_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct device *adin = dev->config;
 	struct adin1140_data *ctx = adin->data;
 
