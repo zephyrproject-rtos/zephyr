@@ -21,8 +21,8 @@ _ASM_FILE_PROLOGUE
  * DRAM is XN by default. Setup a simple MPU region to allow enable
  * execute before jumping to the real Zephyr start code in DRAM
  */
-GTEXT(__boot_spring)
-SECTION_SUBSEC_FUNC(boot_section,_start,__boot_spring)
+GTEXT(soc_early_reset_hook)
+SECTION_FUNC(TEXT, soc_early_reset_hook)
 
     mov r0, #0 // MPU region 0
     mcr p15, 0, r0, c6, c2, 0
@@ -45,4 +45,4 @@ SECTION_SUBSEC_FUNC(boot_section,_start,__boot_spring)
     mcr p15, 0, r0, c1, c0, 0 // Write SCTLR
     isb
 
-    b __start
+    bx lr

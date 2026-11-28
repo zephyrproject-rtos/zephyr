@@ -25,6 +25,8 @@ config SOC_FAMILY_TI_K3_BOOT_SPRINGBOARD
 		SOC_SERIES_AM64X_R5 || \
 		SOC_SERIES_J721E_R5 || \
 		SOC_SERIES_J722S_R5
+	select CODE_DATA_RELOCATION
+	select SOC_EARLY_RESET_HOOK
 	help
 	  If Zephyr code area is in DRAM which is MPU protected from execution
 	  by default then this option enables a boot springboard in ATCM to set
