@@ -519,11 +519,16 @@ static int recv_data(struct net_socket_service_event *pev)
 		goto quit;
 	}
 
+	/* Non-blocking: see recv_data() in dispatcher.c */
 	ret = zsock_recvfrom(pev->event.fd, dns_data->data,
-			     net_buf_tailroom(dns_data), 0,
+			     net_buf_tailroom(dns_data), ZSOCK_MSG_DONTWAIT,
 			     (struct net_sockaddr *)&addr, &addrlen);
 	if (ret < 0) {
 		ret = -errno;
+		if (ret == -EAGAIN) {
+			ret = 0;
+			goto free_buf;
+		}
 		NET_ERR("recv failed on IPv%d socket (%d)",
 			family == NET_AF_INET ? 4 : 6, -ret);
 		goto free_buf;
