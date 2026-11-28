@@ -268,6 +268,12 @@ Devicetree
   bits, encoded as one cell (32-bit) or two cells (64-bit, high word first) and read with a scalar
   ``DT_PROP`` macro.
 
+* Counter alarm channels can be referenced from devicetree with a ``counter-alarms`` specifier, for
+  counter nodes that set ``#counter-alarm-cells``. A consumer reads it into a
+  :c:struct:`counter_alarm_dt_spec` with :c:macro:`COUNTER_ALARM_DT_SPEC_GET` and passes it to
+  :c:func:`counter_set_channel_alarm_dt`, so that the channel assignment is made in the devicetree
+  instead of in the driver.
+
 * :dtcompatible:`gnss-nmea-generic` supports optional enable and reset GPIOs, with configurable
   reset pulse and wake-up delays.
 

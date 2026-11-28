@@ -1496,6 +1496,65 @@ static void *counter_setup(void)
 	return NULL;
 }
 
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), counter_alarms)
+struct alarm_dt_spec_ctx {
+	struct k_sem sem;
+	const struct device *dev;
+	uint8_t chan_id;
+};
+
+static void alarm_dt_spec_handler(const struct device *dev, uint8_t chan_id, uint32_t ticks,
+				  void *user_data)
+{
+	struct alarm_dt_spec_ctx *ctx = user_data;
+
+	ARG_UNUSED(ticks);
+
+	ctx->dev = dev;
+	ctx->chan_id = chan_id;
+	k_sem_give(&ctx->sem);
+}
+
+ZTEST(counter_basic, test_alarm_dt_spec)
+{
+	static const struct counter_alarm_dt_spec specs[] = {
+		DT_FOREACH_PROP_ELEM_SEP(DT_PATH(zephyr_user), counter_alarms,
+					 COUNTER_ALARM_DT_SPEC_GET_BY_IDX, (,))
+	};
+	struct alarm_dt_spec_ctx ctx;
+	struct counter_alarm_cfg cfg = {
+		.callback = alarm_dt_spec_handler,
+		.user_data = &ctx,
+	};
+
+	k_sem_init(&ctx.sem, 0, 1);
+
+	ARRAY_FOR_EACH_PTR(specs, spec) {
+		uint32_t period_us = get_counter_period_us(spec->dev);
+
+		zassert_true(device_is_ready(spec->dev), "%s: not ready", spec->dev->name);
+		zassert_ok(counter_start(spec->dev), "%s: failed to start", spec->dev->name);
+
+		cfg.ticks = counter_us_to_ticks(spec->dev, period_us);
+
+		ctx.dev = NULL;
+		ctx.chan_id = UINT8_MAX;
+		zassert_ok(counter_set_channel_alarm_dt(spec, &cfg));
+		zassert_ok(k_sem_take(&ctx.sem, K_USEC(2 * period_us)), "%s: alarm %u not fired",
+			   spec->dev->name, spec->chan_id);
+		zexpect_equal_ptr(ctx.dev, spec->dev);
+		zexpect_equal(ctx.chan_id, spec->chan_id);
+
+		zassert_ok(counter_set_channel_alarm_dt(spec, &cfg));
+		zassert_ok(counter_cancel_channel_alarm_dt(spec));
+		zexpect_equal(k_sem_take(&ctx.sem, K_USEC(2 * period_us)), -EAGAIN,
+			      "%s: cancelled alarm %u fired", spec->dev->name, spec->chan_id);
+
+		zassert_ok(counter_stop(spec->dev), "%s: failed to stop", spec->dev->name);
+	}
+}
+#endif /* DT_NODE_HAS_PROP(DT_PATH(zephyr_user), counter_alarms) */
+
 /* Uses callbacks, run in supervisor mode */
 ZTEST_SUITE(counter_basic, NULL, counter_setup, NULL, NULL, NULL);
 

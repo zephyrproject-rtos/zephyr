@@ -6,6 +6,7 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/devicetree/counter-alarm.h>
 #include <zephyr/devicetree/counter-capture.h>
 #include <zephyr/devicetree/nvmem.h>
 #include <zephyr/device.h>
@@ -1912,6 +1913,82 @@ ZTEST(devicetree_api, test_pwms)
 
 	/* DT_INST_PWMS_FLAGS */
 	zassert_equal(DT_INST_PWMS_FLAGS(0), 3, "");
+}
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_phandle_holder
+ZTEST(devicetree_api, test_counter_alarms)
+{
+	/* DT_COUNTER_ALARMS_CTLR_BY_IDX */
+	zexpect_true(DT_SAME_NODE(DT_COUNTER_ALARMS_CTLR_BY_IDX(TEST_PH, counter_alarms, 0),
+				  TEST_COUNTER_CTLR_1));
+	zexpect_true(DT_SAME_NODE(DT_COUNTER_ALARMS_CTLR_BY_IDX(TEST_PH, counter_alarms, 1),
+				  TEST_COUNTER_CTLR_2));
+
+	/* DT_COUNTER_ALARMS_CTLR_BY_NAME */
+	zexpect_true(DT_SAME_NODE(DT_COUNTER_ALARMS_CTLR_BY_NAME(TEST_PH, counter_alarms, alpha),
+				  TEST_COUNTER_CTLR_1));
+	zexpect_true(DT_SAME_NODE(DT_COUNTER_ALARMS_CTLR_BY_NAME(TEST_PH, counter_alarms, beta),
+				  TEST_COUNTER_CTLR_2));
+
+	/* DT_COUNTER_ALARMS_CTLR */
+	zexpect_true(DT_SAME_NODE(DT_COUNTER_ALARMS_CTLR(TEST_PH, counter_alarms),
+				  TEST_COUNTER_CTLR_1));
+
+	/* DT_COUNTER_ALARMS_CELL_BY_IDX */
+	zexpect_equal(DT_COUNTER_ALARMS_CELL_BY_IDX(TEST_PH, counter_alarms, 1, channel), 3);
+
+	/* DT_COUNTER_ALARMS_CELL_BY_NAME */
+	zexpect_equal(DT_COUNTER_ALARMS_CELL_BY_NAME(TEST_PH, counter_alarms, alpha, channel), 1);
+
+	/* DT_COUNTER_ALARMS_CELL */
+	zexpect_equal(DT_COUNTER_ALARMS_CELL(TEST_PH, counter_alarms, channel), 1);
+
+	/* DT_COUNTER_ALARMS_CHANNEL_BY_IDX */
+	zexpect_equal(DT_COUNTER_ALARMS_CHANNEL_BY_IDX(TEST_PH, counter_alarms, 1), 3);
+
+	/* DT_COUNTER_ALARMS_CHANNEL_BY_NAME */
+	zexpect_equal(DT_COUNTER_ALARMS_CHANNEL_BY_NAME(TEST_PH, counter_alarms, beta), 3);
+
+	/* DT_COUNTER_ALARMS_CHANNEL */
+	zexpect_equal(DT_COUNTER_ALARMS_CHANNEL(TEST_PH, counter_alarms), 1);
+
+	/* DT_INST */
+	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1);
+
+	/* DT_INST_COUNTER_ALARMS_CTLR_BY_IDX */
+	zexpect_true(DT_SAME_NODE(DT_INST_COUNTER_ALARMS_CTLR_BY_IDX(0, counter_alarms, 0),
+				  TEST_COUNTER_CTLR_1));
+	zexpect_true(DT_SAME_NODE(DT_INST_COUNTER_ALARMS_CTLR_BY_IDX(0, counter_alarms, 1),
+				  TEST_COUNTER_CTLR_2));
+
+	/* DT_INST_COUNTER_ALARMS_CTLR_BY_NAME */
+	zexpect_true(DT_SAME_NODE(DT_INST_COUNTER_ALARMS_CTLR_BY_NAME(0, counter_alarms, alpha),
+				  TEST_COUNTER_CTLR_1));
+	zexpect_true(DT_SAME_NODE(DT_INST_COUNTER_ALARMS_CTLR_BY_NAME(0, counter_alarms, beta),
+				  TEST_COUNTER_CTLR_2));
+
+	/* DT_INST_COUNTER_ALARMS_CTLR */
+	zexpect_true(DT_SAME_NODE(DT_INST_COUNTER_ALARMS_CTLR(0, counter_alarms),
+				  TEST_COUNTER_CTLR_1));
+
+	/* DT_INST_COUNTER_ALARMS_CELL_BY_IDX */
+	zexpect_equal(DT_INST_COUNTER_ALARMS_CELL_BY_IDX(0, counter_alarms, 1, channel), 3);
+
+	/* DT_INST_COUNTER_ALARMS_CELL_BY_NAME */
+	zexpect_equal(DT_INST_COUNTER_ALARMS_CELL_BY_NAME(0, counter_alarms, beta, channel), 3);
+
+	/* DT_INST_COUNTER_ALARMS_CELL */
+	zexpect_equal(DT_INST_COUNTER_ALARMS_CELL(0, counter_alarms, channel), 1);
+
+	/* DT_INST_COUNTER_ALARMS_CHANNEL_BY_IDX */
+	zexpect_equal(DT_INST_COUNTER_ALARMS_CHANNEL_BY_IDX(0, counter_alarms, 1), 3);
+
+	/* DT_INST_COUNTER_ALARMS_CHANNEL_BY_NAME */
+	zexpect_equal(DT_INST_COUNTER_ALARMS_CHANNEL_BY_NAME(0, counter_alarms, alpha), 1);
+
+	/* DT_INST_COUNTER_ALARMS_CHANNEL */
+	zexpect_equal(DT_INST_COUNTER_ALARMS_CHANNEL(0, counter_alarms), 1);
 }
 
 #undef DT_DRV_COMPAT
