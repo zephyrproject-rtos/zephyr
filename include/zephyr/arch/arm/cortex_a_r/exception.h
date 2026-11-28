@@ -12,6 +12,13 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_A_R_EXCEPTION_H_
 #define ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_A_R_EXCEPTION_H_
 
+/*
+ * Bytes that the abort and undef entry in exc.S pushes above __basic_sf: the
+ * 4-byte arch_esf.sp and 4 bytes of padding. The padding keeps SP 8-byte
+ * aligned at every call from the handlers into C, as the AAPCS requires.
+ */
+#define Z_ARM_ESF_TRAILER_SIZE 8
+
 #ifdef _ASMLANGUAGE
 GTEXT(z_arm_exc_exit);
 #else
@@ -49,7 +56,6 @@ struct __fpu_sf {
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO)
 struct __extra_esf_info {
 	_callee_saved_t *callee;
-	uint32_t msp;
 	uint32_t exc_return;
 };
 #endif /* CONFIG_EXTRA_EXCEPTION_INFO */
@@ -74,9 +80,15 @@ struct arch_esf {
 		sys_define_gpr_with_alias(pc, r15);
 		uint32_t xpsr;
 	} basic;
+	/*
+	 * Interrupted SP (previous mode). After __basic_sf so SVC/IRQ
+	 * frames that omit this word still have a valid basic.r0 (the
+	 * oops/panic reason). Not part of __basic_sf so the thread
+	 * iframe used by arch_new_thread stays 8 words. The abort and
+	 * undef entry pads the word to Z_ARM_ESF_TRAILER_SIZE bytes.
+	 */
+	uint32_t sp;
 };
-
-extern uint32_t z_arm_coredump_fault_sp;
 
 extern void z_arm_exc_exit(bool fatal);
 

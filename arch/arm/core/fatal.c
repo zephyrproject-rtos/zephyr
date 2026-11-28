@@ -16,6 +16,9 @@
 #include <zephyr/arch/exception.h>
 #include <kernel_arch_data.h>
 #include <zephyr/logging/log.h>
+#if defined(CONFIG_CPU_AARCH32_CORTEX_A) || defined(CONFIG_CPU_AARCH32_CORTEX_R)
+#include <zephyr/arch/arm/cortex_a_r/cpu.h>
+#endif
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 extern void z_arm_unwind_stack(const struct arch_esf *esf);
@@ -27,7 +30,25 @@ static void esf_dump(const struct arch_esf *esf)
 		esf->basic.a1, esf->basic.a2, esf->basic.a3);
 	EXCEPTION_DUMP("r3/a4:  0x%08x r12/ip:  0x%08x r14/lr:  0x%08x",
 		esf->basic.a4, esf->basic.ip, esf->basic.lr);
+#if defined(CONFIG_CPU_AARCH32_CORTEX_A) || defined(CONFIG_CPU_AARCH32_CORTEX_R)
+	/*
+	 * arch_esf.sp is stored only by the abort and undef entries. Those
+	 * handlers call here still in ABT or UND. SVC oops and USE_SWITCH
+	 * frames do not include the word.
+	 */
+	uint32_t mode;
+
+	__asm__ volatile("mrs %0, cpsr" : "=r"(mode));
+	mode &= (uint32_t)MODE_MASK;
+	if ((mode == (uint32_t)MODE_ABT) || (mode == (uint32_t)MODE_UND)) {
+		EXCEPTION_DUMP("r13/sp: 0x%08x   xpsr:  0x%08x", esf->sp,
+			       esf->basic.xpsr);
+	} else {
+		EXCEPTION_DUMP(" xpsr:  0x%08x", esf->basic.xpsr);
+	}
+#else
 	EXCEPTION_DUMP(" xpsr:  0x%08x", esf->basic.xpsr);
+#endif
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	bool extended_frame;
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO) && defined(EXC_RETURN_STACK_FRAME_TYPE_Msk)
