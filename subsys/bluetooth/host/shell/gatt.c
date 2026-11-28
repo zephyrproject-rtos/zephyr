@@ -1035,7 +1035,7 @@ static const struct bt_gatt_attr *find_attr(uint16_t handle)
 struct notify_conn_data {
 	const struct shell *sh;
 	const struct bt_gatt_attr *attr;
-	const char *data;
+	const uint8_t *data;
 	uint16_t data_len;
 };
 
@@ -1075,7 +1075,7 @@ static int cmd_notify(const struct shell *sh, size_t argc, char *argv[])
 	int err;
 	size_t data_len;
 	unsigned long handle;
-	static char data[BT_ATT_MAX_ATTRIBUTE_LEN];
+	static uint8_t data[BT_ATT_MAX_ATTRIBUTE_LEN];
 
 	const char *arg_handle = argv[1];
 	const char *arg_data = argv[2];
