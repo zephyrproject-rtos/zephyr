@@ -8,6 +8,7 @@ config UDC_NRF
 	select NRF_USBD_COMMON
 	select NRFX_POWER
 	select EVENTS
+	depends on MULTITHREADING
 	help
 	  nRF USB device controller driver.
 
