@@ -302,6 +302,8 @@ static inline void eth_wait_for_ptp_ts(const struct device *dev, struct net_pkt 
 static const struct device *eth_nxp_enet_get_ptp_clock(const struct device *dev,
 						       struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct nxp_enet_mac_config *config = dev->config;
 
 	return config->ptp_clock;
@@ -422,6 +424,8 @@ static void eth_nxp_enet_clear_tx_chksum(uint8_t *frame, size_t len)
 
 static int eth_nxp_enet_tx(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct nxp_enet_mac_data *data = dev->data;
 	uint16_t total_len = net_pkt_get_len(pkt);
 	bool frame_is_timestamped;
@@ -468,6 +472,8 @@ static int eth_nxp_enet_tx(const struct device *dev, struct net_pkt *pkt)
 static enum ethernet_hw_caps eth_nxp_enet_get_capabilities(const struct device *dev,
 							   struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct nxp_enet_mac_config *config = dev->config;
 	enum ethernet_hw_caps caps;
 
@@ -499,6 +505,8 @@ static int eth_nxp_enet_set_config(const struct device *dev,
 				   enum ethernet_config_type type,
 				   const struct ethernet_config *cfg)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct nxp_enet_mac_data *data = dev->data;
 
 	switch (type) {
@@ -735,6 +743,9 @@ static void eth_nxp_enet_rx_thread(struct k_work *work)
 	struct nxp_enet_mac_data *data =
 		CONTAINER_OF(work, struct nxp_enet_mac_data, rx_work);
 	const struct device *dev = data->dev;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int ret;
 
 	if (k_sem_take(&data->rx_thread_sem, K_FOREVER)) {
@@ -770,6 +781,9 @@ static void nxp_enet_phy_cb(const struct device *phy,
 				void *eth_dev)
 {
 	const struct device *dev = eth_dev;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct nxp_enet_mac_data *data = dev->data;
 	enet_mii_speed_t speed;
 	enet_mii_duplex_t duplex;
@@ -801,6 +815,9 @@ static void nxp_enet_phy_cb(const struct device *phy,
 static void eth_nxp_enet_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct nxp_enet_mac_data *data = dev->data;
 	const struct nxp_enet_mac_config *config = dev->config;
 
@@ -840,6 +857,9 @@ static void eth_callback(ENET_Type *base, enet_handle_t *handle,
 			 enet_event_t event, enet_frame_info_t *frameinfo, void *param)
 {
 	const struct device *dev = param;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct nxp_enet_mac_data *data = dev->data;
 
 	switch (event) {
@@ -867,6 +887,8 @@ static void eth_callback(ENET_Type *base, enet_handle_t *handle,
 
 static void eth_nxp_enet_isr(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct nxp_enet_mac_config *config __maybe_unused = dev->config;
 	struct nxp_enet_mac_data *data = dev->data;
 	unsigned int irq_lock_key = irq_lock();
@@ -902,6 +924,8 @@ static void eth_nxp_enet_isr(const struct device *dev)
 static const struct device *eth_nxp_enet_get_phy(const struct device *dev,
 						 struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct nxp_enet_mac_config *config = dev->config;
 
 	return config->phy_dev;
@@ -979,6 +1003,8 @@ static inline void nxp_enet_fused_mac(uint8_t *mac_addr)
 
 static int eth_nxp_enet_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct nxp_enet_mac_data *data = dev->data;
 	const struct nxp_enet_mac_config *config = dev->config;
 	enet_config_t enet_config;
@@ -1126,6 +1152,8 @@ static int eth_nxp_enet_init(const struct device *dev)
 #if defined(CONFIG_NET_POWER_MANAGEMENT)
 static int eth_nxp_enet_device_pm_action(const struct device *dev, enum pm_device_action action)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct nxp_enet_mac_config *config = dev->config;
 	struct nxp_enet_mac_data *data = dev->data;
 	int ret;
@@ -1392,6 +1420,8 @@ struct nxp_enet_mod_data {
 
 static int nxp_enet_mod_init(const struct device *dev)
 {
+	DEVICE_DT_ASSUME_ANY(dev, nxp_enet);
+
 	const struct nxp_enet_mod_config *config = dev->config;
 	int ret;
 

@@ -112,11 +112,15 @@ static inline int phy_tja1103_c45_read(const struct device *dev, uint16_t devad,
 
 static int phy_tja1103_reg_read(const struct device *dev, uint16_t reg_addr, uint32_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	return phy_tja1103_c22_read(dev, reg_addr, (uint16_t *)data);
 }
 
 static int phy_tja1103_reg_write(const struct device *dev, uint16_t reg_addr, uint32_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	return phy_tja1103_c22_write(dev, reg_addr, (uint16_t)data);
 }
 
@@ -141,6 +145,8 @@ static int phy_tja1103_id(const struct device *dev, uint32_t *phy_id)
 
 static int phy_tja1103_get_link_state(const struct device *dev, struct phy_link_state *state)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct phy_tja1103_data *const data = dev->data;
 
 	state->speed = data->state.speed;
@@ -210,6 +216,9 @@ static void phy_work_handler(struct k_work *work)
 	struct phy_tja1103_data *const data =
 		CONTAINER_OF(dwork, struct phy_tja1103_data, phy_work);
 	const struct device *dev = data->dev;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct phy_link_state state = {};
 	int rc;
 	const struct phy_tja1103_config *const cfg = dev->config;
@@ -310,6 +319,8 @@ static void phy_tja1103_cfg_irq_poll(const struct device *dev)
 
 static int phy_tja1103_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct phy_tja1103_config *const cfg = dev->config;
 	struct phy_tja1103_data *const data = dev->data;
 	uint32_t phy_id = 0;
@@ -381,6 +392,8 @@ static int phy_tja1103_init(const struct device *dev)
 
 static int phy_tja1103_link_cb_set(const struct device *dev, phy_callback_t cb, void *user_data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int rc = 0;
 	struct phy_tja1103_data *const data = dev->data;
 

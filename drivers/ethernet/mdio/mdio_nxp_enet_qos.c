@@ -136,6 +136,8 @@ static int nxp_enet_qos_mdio_read(const struct device *dev,
 				  uint8_t portaddr, uint8_t regaddr,
 				  uint16_t *read_data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct nxp_enet_qos_mdio_config *config = dev->config;
 	struct nxp_enet_qos_mdio_data *data = dev->data;
 	enet_qos_t *base = ENET_QOS_MODULE_CFG(config->enet_dev)->base;
@@ -155,6 +157,8 @@ static int nxp_enet_qos_mdio_write(const struct device *dev,
 				   uint8_t portaddr, uint8_t regaddr,
 				   uint16_t write_data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct nxp_enet_qos_mdio_config *config = dev->config;
 	struct nxp_enet_qos_mdio_data *data = dev->data;
 	enet_qos_t *base = ENET_QOS_MODULE_CFG(config->enet_dev)->base;
@@ -173,6 +177,8 @@ static int nxp_enet_qos_mdio_write(const struct device *dev,
 static int nxp_enet_qos_mdio_read_c45(const struct device *dev, uint8_t portaddr, uint8_t devaddr,
 				      uint16_t regaddr, uint16_t *read_data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct nxp_enet_qos_mdio_config *config = dev->config;
 	struct nxp_enet_qos_mdio_data *data = dev->data;
 	enet_qos_t *base = ENET_QOS_MODULE_CFG(config->enet_dev)->base;
@@ -192,6 +198,8 @@ static int nxp_enet_qos_mdio_read_c45(const struct device *dev, uint8_t portaddr
 int nxp_enet_qos_mdio_write_c45(const struct device *dev, uint8_t portaddr, uint8_t devaddr,
 				uint16_t regaddr, uint16_t write_data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct nxp_enet_qos_mdio_config *config = dev->config;
 	struct nxp_enet_qos_mdio_data *data = dev->data;
 	enet_qos_t *base = ENET_QOS_MODULE_CFG(config->enet_dev)->base;
@@ -217,6 +225,8 @@ static DEVICE_API(mdio, nxp_enet_qos_mdio_api) = {
 
 static int nxp_enet_qos_mdio_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct nxp_enet_qos_mdio_config *mdio_config = dev->config;
 	struct nxp_enet_qos_mdio_data *data = dev->data;
 	const struct nxp_enet_qos_config *config = ENET_QOS_MODULE_CFG(mdio_config->enet_dev);

@@ -31,6 +31,8 @@ struct nxp_t1s_data {
 
 static int phy_nxp_t1s_get_link(const struct device *dev, struct phy_link_state *state)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct nxp_t1s_config *config = dev->config;
 	TENBASET_PHY_Type *base = config->base;
 
@@ -42,6 +44,8 @@ static int phy_nxp_t1s_get_link(const struct device *dev, struct phy_link_state 
 
 static int phy_nxp_t1s_link_cb_set(const struct device *dev, phy_callback_t cb, void *user_data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct nxp_t1s_data *data = dev->data;
 	struct phy_link_state state;
 
@@ -59,6 +63,8 @@ static int phy_nxp_t1s_link_cb_set(const struct device *dev, phy_callback_t cb, 
 
 static int phy_nxp_t1s_set_plca_cfg(const struct device *dev, struct phy_plca_cfg *plca_cfg)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct nxp_t1s_config *config = dev->config;
 	TENBASET_PHY_Type *base = config->base;
 	tenbaset_phy_plca_config_t plca_config = {};
@@ -82,6 +88,8 @@ static int phy_nxp_t1s_set_plca_cfg(const struct device *dev, struct phy_plca_cf
 
 static int phy_nxp_t1s_get_plca_cfg(const struct device *dev, struct phy_plca_cfg *plca_cfg)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct nxp_t1s_config *config = dev->config;
 	TENBASET_PHY_Type *base = config->base;
 	tenbaset_phy_plca_config_t plca_config = {};
@@ -104,6 +112,8 @@ static int phy_nxp_t1s_get_plca_cfg(const struct device *dev, struct phy_plca_cf
 
 static int phy_nxp_t1s_get_plca_sts(const struct device *dev, bool *plca_sts)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct nxp_t1s_config *config = dev->config;
 	TENBASET_PHY_Type *base = config->base;
 
@@ -114,6 +124,8 @@ static int phy_nxp_t1s_get_plca_sts(const struct device *dev, bool *plca_sts)
 
 static int phy_nxp_t1s_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct nxp_t1s_config *config = dev->config;
 	TENBASET_PHY_Type *base = config->base;
 	struct nxp_t1s_data *data = dev->data;
@@ -143,6 +155,8 @@ static int phy_nxp_t1s_init(const struct device *dev)
 
 static void phy_nxp_t1s_isr(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct nxp_t1s_config *config = dev->config;
 	TENBASET_PHY_Type *base = config->base;
 	struct nxp_t1s_data *data = dev->data;

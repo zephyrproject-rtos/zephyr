@@ -36,6 +36,8 @@ struct mdio_nxp_s32_data {
 static int mdio_nxp_s32_read_c45(const struct device *dev, uint8_t prtad, uint8_t devad,
 				 uint16_t regad, uint16_t *regval)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct mdio_nxp_s32_config *const cfg = dev->config;
 	struct mdio_nxp_s32_data *data = dev->data;
 	Gmac_Ip_StatusType status;
@@ -56,6 +58,8 @@ static int mdio_nxp_s32_read_c45(const struct device *dev, uint8_t prtad, uint8_
 static int mdio_nxp_s32_write_c45(const struct device *dev, uint8_t prtad, uint8_t devad,
 				  uint16_t regad, uint16_t regval)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct mdio_nxp_s32_config *const cfg = dev->config;
 	struct mdio_nxp_s32_data *data = dev->data;
 	Gmac_Ip_StatusType status;
@@ -76,6 +80,8 @@ static int mdio_nxp_s32_write_c45(const struct device *dev, uint8_t prtad, uint8
 static int mdio_nxp_s32_read_c22(const struct device *dev, uint8_t prtad,
 				 uint8_t regad, uint16_t *regval)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct mdio_nxp_s32_config *const cfg = dev->config;
 	struct mdio_nxp_s32_data *data = dev->data;
 	Gmac_Ip_StatusType status;
@@ -96,6 +102,8 @@ static int mdio_nxp_s32_read_c22(const struct device *dev, uint8_t prtad,
 static int mdio_nxp_s32_write_c22(const struct device *dev, uint8_t prtad,
 				  uint8_t regad, uint16_t regval)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct mdio_nxp_s32_config *const cfg = dev->config;
 	struct mdio_nxp_s32_data *data = dev->data;
 	Gmac_Ip_StatusType status;
@@ -115,6 +123,8 @@ static int mdio_nxp_s32_write_c22(const struct device *dev, uint8_t prtad,
 
 static int mdio_nxp_s32_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct mdio_nxp_s32_config *const cfg = dev->config;
 	struct mdio_nxp_s32_data *data = dev->data;
 	int err;

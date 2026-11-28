@@ -26,6 +26,8 @@ struct nxp_s32_mdio_data {
 static int nxp_s32_mdio_read(const struct device *dev, uint8_t prtad,
 			     uint8_t regad, uint16_t *regval)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct nxp_s32_mdio_config *cfg = dev->config;
 	struct nxp_s32_mdio_data *data = dev->data;
 	Std_ReturnType status;
@@ -40,6 +42,8 @@ static int nxp_s32_mdio_read(const struct device *dev, uint8_t prtad,
 static int nxp_s32_mdio_write(const struct device *dev, uint8_t prtad,
 			      uint8_t regad, uint16_t regval)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct nxp_s32_mdio_config *cfg = dev->config;
 	struct nxp_s32_mdio_data *data = dev->data;
 	Std_ReturnType status;
@@ -53,6 +57,8 @@ static int nxp_s32_mdio_write(const struct device *dev, uint8_t prtad,
 
 static int nxp_s32_mdio_initialize(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct nxp_s32_mdio_data *data = dev->data;
 	const struct nxp_s32_mdio_config *cfg = dev->config;
 	int err;

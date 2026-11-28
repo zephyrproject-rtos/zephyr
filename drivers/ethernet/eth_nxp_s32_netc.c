@@ -50,6 +50,8 @@ static inline struct net_if *get_iface(struct nxp_s32_eth_data *ctx)
 
 int nxp_s32_eth_initialize_common(const struct device *dev)
 {
+	DEVICE_DT_ASSUME_ANY(dev, nxp_s32_netc_psi, nxp_s32_netc_vsi);
+
 	const struct nxp_s32_eth_config *cfg = dev->config;
 	struct nxp_s32_eth_data *ctx = dev->data;
 	Netc_Eth_Ip_StatusType status;
@@ -121,6 +123,8 @@ void nxp_s32_eth_mcast_filter(const struct device *dev, const struct ethernet_fi
 
 int nxp_s32_eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_ASSUME_ANY(dev, nxp_s32_netc_psi, nxp_s32_netc_vsi);
+
 	__maybe_unused struct nxp_s32_eth_data *ctx = dev->data;
 	const struct nxp_s32_eth_config *cfg = dev->config;
 	size_t pkt_len = net_pkt_get_len(pkt);
@@ -227,6 +231,9 @@ static int nxp_s32_eth_rx(const struct device *dev)
 static void nxp_s32_eth_rx_thread(void *arg1, void *unused1, void *unused2)
 {
 	const struct device *dev = (const struct device *)arg1;
+
+	DEVICE_DT_ASSUME_ANY(dev, nxp_s32_netc_psi, nxp_s32_netc_vsi);
+
 	struct nxp_s32_eth_data *ctx = dev->data;
 	int res;
 	int work;
@@ -273,6 +280,8 @@ int nxp_s32_eth_set_config(const struct device *dev,
 			   enum ethernet_config_type type,
 			   const struct ethernet_config *config)
 {
+	DEVICE_DT_ASSUME_ANY(dev, nxp_s32_netc_psi, nxp_s32_netc_vsi);
+
 	struct nxp_s32_eth_data *ctx = dev->data;
 	const struct nxp_s32_eth_config *cfg = dev->config;
 	int res = 0;

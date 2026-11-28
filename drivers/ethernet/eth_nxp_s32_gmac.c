@@ -103,6 +103,9 @@ static void phy_link_state_changed(const struct device *pdev,
 				   void *user_data)
 {
 	const struct device *dev = (struct device *)user_data;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_nxp_s32_config *cfg = dev->config;
 	struct eth_nxp_s32_data *ctx = dev->data;
 	Gmac_Ip_ConfigType gmac_cfg;
@@ -126,6 +129,8 @@ static void phy_link_state_changed(const struct device *pdev,
 static const struct device *eth_nxp_s32_get_phy(const struct device *dev,
 						struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_nxp_s32_config *cfg = dev->config;
 
 	return cfg->phy_dev;
@@ -162,6 +167,8 @@ static int select_phy_interface(Gmac_Ip_MiiModeType mode)
 
 static int eth_nxp_s32_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_nxp_s32_config *cfg = dev->config;
 	struct eth_nxp_s32_data *ctx = dev->data;
 	Gmac_Ip_StatusType mac_status;
@@ -219,6 +226,8 @@ static int eth_nxp_s32_init(const struct device *dev)
 static int eth_nxp_s32_start(const struct device *dev,
 			     struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_nxp_s32_config *cfg = dev->config;
 
 	Gmac_Ip_EnableController(cfg->instance);
@@ -234,6 +243,8 @@ static int eth_nxp_s32_start(const struct device *dev,
 static int eth_nxp_s32_stop(const struct device *dev,
 			    struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_nxp_s32_config *cfg = dev->config;
 	Gmac_Ip_StatusType status;
 	int err = 0;
@@ -255,6 +266,9 @@ static int eth_nxp_s32_stop(const struct device *dev,
 static void eth_nxp_s32_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_nxp_s32_config *cfg = dev->config;
 	struct eth_nxp_s32_data *ctx = dev->data;
 
@@ -291,6 +305,8 @@ static void eth_nxp_s32_iface_init(struct net_if *iface)
 
 static int eth_nxp_s32_tx(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_nxp_s32_data *ctx = dev->data;
 	const struct eth_nxp_s32_config *cfg = dev->config;
 	size_t pkt_len = net_pkt_get_len(pkt);
@@ -417,6 +433,9 @@ static void eth_nxp_s32_rx(const struct device *dev)
 static void eth_nxp_s32_rx_thread(void *arg1, void *unused1, void *unused2)
 {
 	const struct device *dev = (const struct device *)arg1;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_nxp_s32_data *ctx = dev->data;
 	const struct eth_nxp_s32_config *cfg = dev->config;
 	int res;
@@ -456,6 +475,8 @@ static int eth_nxp_s32_set_config(const struct device *dev,
 				  enum ethernet_config_type type,
 				  const struct ethernet_config *config)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_nxp_s32_data *ctx = dev->data;
 	const struct eth_nxp_s32_config *cfg = dev->config;
 	int res = 0;
@@ -528,6 +549,8 @@ static enum ethernet_hw_caps eth_nxp_s32_get_capabilities(const struct device *d
 
 static void eth_nxp_s32_tx_irq(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_nxp_s32_config *cfg = dev->config;
 
 	GMAC_TxIRQHandler(cfg->instance, cfg->tx_ring_idx);
@@ -535,6 +558,8 @@ static void eth_nxp_s32_tx_irq(const struct device *dev)
 
 static void eth_nxp_s32_rx_irq(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_nxp_s32_config *cfg = dev->config;
 
 	GMAC_RxIRQHandler(cfg->instance, cfg->rx_ring_idx);
