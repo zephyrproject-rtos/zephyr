@@ -502,4 +502,10 @@
 		#size-cells = <0>;
 		status = "disabled";
 	};
+
+	main_rng: rng@3b100000 {
+		compatible = "inside-secure,safexcel-eip76";
+		reg = <0x3b100000 0x80>;
+		status = "disabled";
+	};
 };

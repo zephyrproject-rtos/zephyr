@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_SAFEXCEL_EIP76
+	bool "Inside Secure SafeXcel EIP-76 TRNG driver"
+	default y
+	depends on DT_HAS_INSIDE_SECURE_SAFEXCEL_EIP76_ENABLED
+	select ENTROPY_HAS_DRIVER
+	help
+	  Enable the polled driver for the Inside Secure SafeXcel EIP-76(d)
+	  true random number generator, used as the TRNG on TI AM62L.
+	  If boot firmware or the secure world has already started the core,
+	  its configuration is kept and the driver only reads output blocks.
