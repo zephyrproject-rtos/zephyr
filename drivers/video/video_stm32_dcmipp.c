@@ -93,6 +93,24 @@ struct stm32_dcmipp_pipe_data {
 	struct video_buffer *active;
 	enum stm32_dcmipp_state state;
 	bool is_streaming;
+	/* Keeps the DCMIPP interrupt out while the pipe is given a buffer */
+	struct k_spinlock queue_lock;
+	/* The stream is being stopped: a capture that paused is not restarted */
+	bool stopping;
+	/* The frame being captured lost data in an overrun */
+	bool overrun;
+	/* Frames dropped after an overrun since the stream started */
+	uint32_t overruns;
+	struct k_poll_signal *sig;
+};
+
+/* Overrun flag of each pipe */
+static const uint32_t stm32_dcmipp_overrun_flags[] = {
+	DCMIPP_FLAG_PIPE0_OVR,
+#if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
+	DCMIPP_FLAG_PIPE1_OVR,
+	DCMIPP_FLAG_PIPE2_OVR,
+#endif
 };
 
 struct stm32_dcmipp_data {
@@ -189,6 +207,84 @@ static void stm32_dcmipp_set_next_buffer_addr(struct stm32_dcmipp_pipe_data *pip
 #endif
 }
 
+/* Give the pipe a buffer: restart a capture that paused for want of one, or queue it */
+static void stm32_dcmipp_queue_buffer(struct stm32_dcmipp_pipe_data *pipe,
+				      struct video_buffer *vbuf)
+{
+	struct stm32_dcmipp_data *dcmipp = pipe->dcmipp;
+	k_spinlock_key_t key = k_spin_lock(&pipe->queue_lock);
+	bool restart = pipe->state == STM32_DCMIPP_WAIT_FOR_BUFFER && !pipe->stopping;
+
+	if (restart) {
+		pipe->next = vbuf;
+		stm32_dcmipp_set_next_buffer_addr(pipe);
+		if (pipe->id == DCMIPP_PIPE0) {
+			stm32_reg_set_bits(&dcmipp->hdcmipp.Instance->P0FCTCR,
+					   DCMIPP_P0FCTCR_CPTREQ);
+		}
+#if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
+		else if (pipe->id == DCMIPP_PIPE1) {
+			stm32_reg_set_bits(&dcmipp->hdcmipp.Instance->P1FCTCR,
+					   DCMIPP_P1FCTCR_CPTREQ);
+		} else if (pipe->id == DCMIPP_PIPE2) {
+			stm32_reg_set_bits(&dcmipp->hdcmipp.Instance->P2FCTCR,
+					   DCMIPP_P2FCTCR_CPTREQ);
+		}
+#endif
+		pipe->state = STM32_DCMIPP_RUNNING;
+	} else {
+		k_fifo_put(&pipe->fifo_in, vbuf);
+	}
+
+	k_spin_unlock(&pipe->queue_lock, key);
+
+	if (restart) {
+		LOG_DBG("Restart CPTREQ after wait for buffer");
+	}
+}
+
+/* Tell the application what became of a buffer */
+static void stm32_dcmipp_raise_signal(struct stm32_dcmipp_pipe_data *pipe,
+				      enum video_signal_result result)
+{
+	if (IS_ENABLED(CONFIG_POLL) && pipe->sig != NULL) {
+		k_poll_signal_raise(pipe->sig, result);
+	}
+}
+
+/* The frame in the active buffer lost data in an overrun: capture into the buffer again */
+static void stm32_dcmipp_drop_active(DCMIPP_HandleTypeDef *hdcmipp,
+				     struct stm32_dcmipp_pipe_data *pipe)
+{
+	struct video_buffer *vbuf = pipe->active;
+
+	stm32_reg_write(&hdcmipp->Instance->CMFCR, stm32_dcmipp_overrun_flags[pipe->id]);
+	pipe->overrun = false;
+	pipe->active = NULL;
+
+	if (vbuf != NULL) {
+		pipe->overruns++;
+		stm32_dcmipp_queue_buffer(pipe, vbuf);
+		stm32_dcmipp_raise_signal(pipe, VIDEO_BUF_ERROR);
+	}
+}
+
+/*
+ * Callback getting called at a pipe's first overrun. The HAL has disabled the overrun
+ * interrupt by then, until the next stream start: the frame callback reads the flag itself.
+ */
+void HAL_DCMIPP_PIPE_ErrorCallback(DCMIPP_HandleTypeDef *hdcmipp, uint32_t Pipe)
+{
+	struct stm32_dcmipp_data *dcmipp =
+			CONTAINER_OF(hdcmipp, struct stm32_dcmipp_data, hdcmipp);
+	struct stm32_dcmipp_pipe_data *pipe = dcmipp->pipe[Pipe];
+
+	/* With no frame in capture, the frame callback has dropped the frame already */
+	if (pipe->active != NULL) {
+		pipe->overrun = true;
+	}
+}
+
 /* Callback getting called for each frame written into memory */
 void HAL_DCMIPP_PIPE_FrameEventCallback(DCMIPP_HandleTypeDef *hdcmipp, uint32_t Pipe)
 {
@@ -199,6 +295,13 @@ void HAL_DCMIPP_PIPE_FrameEventCallback(DCMIPP_HandleTypeDef *hdcmipp, uint32_t 
 	uint32_t bytesused;
 
 	__ASSERT(pipe->active, "Unexpected behavior, active_buf must not be NULL");
+
+	/* The HAL handles an overrun pending with this frame event only after this callback */
+	if (pipe->overrun || stm32_reg_read_bits(&hdcmipp->Instance->CMSR2,
+						 stm32_dcmipp_overrun_flags[Pipe]) != 0U) {
+		stm32_dcmipp_drop_active(hdcmipp, pipe);
+		return;
+	}
 
 	/* Counter is only available on Pipe0 */
 	if (Pipe == DCMIPP_PIPE0) {
@@ -218,6 +321,8 @@ void HAL_DCMIPP_PIPE_FrameEventCallback(DCMIPP_HandleTypeDef *hdcmipp, uint32_t 
 
 	k_fifo_put(&pipe->fifo_out, pipe->active);
 	pipe->active = NULL;
+
+	stm32_dcmipp_raise_signal(pipe, VIDEO_BUF_DONE);
 }
 
 /* Callback getting called for each vsync */
@@ -1128,6 +1233,10 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 	}
 
 	pipe->active = NULL;
+	pipe->stopping = false;
+	pipe->overrun = false;
+	pipe->overruns = 0;
+	stm32_reg_write(&dcmipp->hdcmipp.Instance->CMFCR, stm32_dcmipp_overrun_flags[pipe->id]);
 	pipe->next = k_fifo_get(&pipe->fifo_in, K_NO_WAIT);
 	if (pipe->next == NULL) {
 		LOG_ERR("No buffer available to start streaming");
@@ -1362,6 +1471,7 @@ static int stm32_dcmipp_stream_disable(const struct device *dev)
 #endif
 
 	/* Disable the DCMIPP Pipeline */
+	pipe->stopping = true;
 	ret = 0;
 	if (config->bus_type == VIDEO_BUS_TYPE_PARALLEL) {
 		if (HAL_DCMIPP_PIPE_Stop(&dcmipp->hdcmipp, pipe->id) != HAL_OK) {
@@ -1396,6 +1506,10 @@ static int stm32_dcmipp_stream_disable(const struct device *dev)
 		}
 	}
 
+	if (pipe->overruns != 0) {
+		LOG_WRN("Pipe %u dropped %u frames after an overrun", pipe->id, pipe->overruns);
+	}
+
 	/* Release the video buffer allocated when start streaming */
 	if (pipe->next != NULL) {
 		k_fifo_put(&pipe->fifo_in, pipe->next);
@@ -1408,6 +1522,7 @@ static int stm32_dcmipp_stream_disable(const struct device *dev)
 	while ((vbuf = k_fifo_get(&pipe->fifo_in, K_NO_WAIT)) != NULL) {
 		vbuf->bytesused = 0;
 		k_fifo_put(&pipe->fifo_out, vbuf);
+		stm32_dcmipp_raise_signal(pipe, VIDEO_BUF_ABORTED);
 	}
 
 	pipe->state = STM32_DCMIPP_STOPPED;
@@ -1415,6 +1530,7 @@ static int stm32_dcmipp_stream_disable(const struct device *dev)
 	dcmipp->enabled_pipe--;
 
 out:
+	pipe->stopping = false;
 	k_mutex_unlock(&pipe->lock);
 
 	return ret;
@@ -1428,7 +1544,6 @@ static int stm32_dcmipp_set_stream(const struct device *dev, bool enable, enum v
 static int stm32_dcmipp_enqueue(const struct device *dev, struct video_buffer *vbuf)
 {
 	struct stm32_dcmipp_pipe_data *pipe = dev->data;
-	struct stm32_dcmipp_data *dcmipp = pipe->dcmipp;
 
 	k_mutex_lock(&pipe->lock, K_FOREVER);
 
@@ -1437,32 +1552,27 @@ static int stm32_dcmipp_enqueue(const struct device *dev, struct video_buffer *v
 		return -EINVAL;
 	}
 
-	if (pipe->state == STM32_DCMIPP_WAIT_FOR_BUFFER) {
-		LOG_DBG("Restart CPTREQ after wait for buffer");
-		pipe->next = vbuf;
-		stm32_dcmipp_set_next_buffer_addr(pipe);
-		if (pipe->id == DCMIPP_PIPE0) {
-			stm32_reg_set_bits(&dcmipp->hdcmipp.Instance->P0FCTCR,
-					   DCMIPP_P0FCTCR_CPTREQ);
-		}
-#if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
-		else if (pipe->id == DCMIPP_PIPE1) {
-			stm32_reg_set_bits(&dcmipp->hdcmipp.Instance->P1FCTCR,
-					   DCMIPP_P1FCTCR_CPTREQ);
-		} else if (pipe->id == DCMIPP_PIPE2) {
-			stm32_reg_set_bits(&dcmipp->hdcmipp.Instance->P2FCTCR,
-					   DCMIPP_P2FCTCR_CPTREQ);
-		}
-#endif
-		pipe->state = STM32_DCMIPP_RUNNING;
-	} else {
-		k_fifo_put(&pipe->fifo_in, vbuf);
-	}
+	stm32_dcmipp_queue_buffer(pipe, vbuf);
 
 	k_mutex_unlock(&pipe->lock);
 
 	return 0;
 }
+
+#ifdef CONFIG_POLL
+static int stm32_dcmipp_set_signal(const struct device *dev, struct k_poll_signal *sig)
+{
+	struct stm32_dcmipp_pipe_data *pipe = dev->data;
+
+	if (pipe->sig != NULL && sig != NULL) {
+		return -EALREADY;
+	}
+
+	pipe->sig = sig;
+
+	return 0;
+}
+#endif
 
 static int stm32_dcmipp_dequeue(const struct device *dev, struct video_buffer **vbuf,
 				k_timeout_t timeout)
@@ -1767,6 +1877,9 @@ static DEVICE_API(video, stm32_dcmipp_driver_api) = {
 	.set_stream = stm32_dcmipp_set_stream,
 	.enqueue = stm32_dcmipp_enqueue,
 	.dequeue = stm32_dcmipp_dequeue,
+#ifdef CONFIG_POLL
+	.set_signal = stm32_dcmipp_set_signal,
+#endif
 	.get_caps = stm32_dcmipp_get_caps,
 	.get_frmival = stm32_dcmipp_get_frmival,
 	.set_frmival = stm32_dcmipp_set_frmival,
