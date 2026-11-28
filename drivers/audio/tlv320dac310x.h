@@ -86,6 +86,40 @@ extern "C" {
 #define BEEP_LEN_MIB_ADDR	(struct reg_addr){0, 74}
 #define BEEP_LEN_LSB_ADDR	(struct reg_addr){0, 75}
 
+#define CLOCK_GEN_MUX_ADDR        (struct reg_addr){0, 4}
+#define CLOCK_PLL_CLKIN_MASK      BIT_MASK(2)
+#define CLOCK_PLL_CLKIN(val)      (((val) & CLOCK_PLL_CLKIN_MASK) << 2)
+#define CLOCK_PLL_CLKIN_MCLK      0
+#define CLOCK_PLL_CLKIN_BCLK      1
+#define CLOCK_PLL_CLKIN_GPIO1     2
+#define CLOCK_PLL_CLKIN_DIN       3
+#define CLOCK_CODEC_CLKIN_MASK    BIT_MASK(2)
+#define CLOCK_CODEC_CLKIN(val)    ((val) & CLOCK_CODEC_CLKIN_MASK)
+#define CLOCK_CODEC_CLKIN_MCLK    0
+#define CLOCK_CODEC_CLKIN_BCLK    1
+#define CLOCK_CODEC_CLKIN_GPIO1   2
+#define CLOCK_CODEC_CLKIN_PLL_CLK 3
+
+#define PLL_P_R_ADDR      (struct reg_addr){0, 5}
+#define PLL_POWER_UP_MASK BIT(7)
+#define PLL_POWER_UP      BIT(7)
+#define PLL_P_DIV_MASK    BIT_MASK(3)
+#define PLL_P_DIV(val)    (((val) & PLL_P_DIV_MASK) << 4)
+#define PLL_R_MUL_MASK    BIT_MASK(4)
+#define PLL_R_MUL(val)    ((val) & PLL_R_MUL_MASK)
+
+#define PLL_J_ADDR (struct reg_addr){0, 6}
+#define PLL_J_MASK BIT_MASK(6)
+#define PLL_J(val) ((val) & PLL_J_MASK)
+
+#define PLL_D_MSB_ADDR (struct reg_addr){0, 7}
+#define PLL_D_MSB_MASK BIT_MASK(6)
+#define PLL_D_MSB(val) (((val) >> 8) & PLL_D_MSB_MASK)
+
+#define PLL_D_LSB_ADDR (struct reg_addr){0, 8}
+#define PLL_D_LSB_MASK BIT_MASK(8)
+#define PLL_D_LSB(val) ((val) & PLL_D_LSB_MASK)
+
 #define VOL_MICDET_ADC_CTRL_ADDR (struct reg_addr){0, 116}
 #define VOL_MICDET_VOL_CTRL_PIN  (BIT(7))
 
@@ -150,6 +184,19 @@ extern "C" {
 struct reg_addr {
 	uint8_t page;		/* page number */
 	uint8_t reg_addr;	/* register address */
+};
+
+struct tlv320dac310x_config {
+	struct i2c_dt_spec bus;
+	struct gpio_dt_spec reset_gpio;
+	uint8_t speaker_gain;
+	bool use_volume_control_pin;
+	bool use_internal_pll_with_bclk;
+	bool use_round_up_slot_width_for_internal_pll;
+};
+
+struct tlv320dac310x_data {
+	struct reg_addr reg_addr_cache;
 };
 
 enum proc_block {
