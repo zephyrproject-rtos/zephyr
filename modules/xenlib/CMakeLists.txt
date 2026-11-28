@@ -3,7 +3,7 @@
 # SPDX-FileCopyrightText: 2023 EPAM Systems
 # Author: Volodymyr Babchuk <volodymyr_babchuk@epam.com>
 
-if(CONFIG_XENLIB)
+if(CONFIG_XEN)
 
   set(ZEPHYR_XENLIB_DIR ${ZEPHYR_CURRENT_MODULE_DIR})
 
