@@ -131,6 +131,13 @@ Libraries / Subsystems
   * TF-PSA-Crypto was updated to version 1.1.2. Release notes (including security fixes) can be
     found `here <https://github.com/Mbed-TLS/TF-PSA-Crypto/releases/tag/tf-psa-crypto-1.1.2>`_.
 
+* Micro Core
+
+  * The experimental :ref:`micro_core` service transfers acknowledged payloads over
+    application-provided frame transports. It uses caller-owned storage, CRC-16 checks,
+    bounded retries and duplicate suppression. A two-board UART sample shows byte framing
+    and resynchronization.
+
 * Networking
 
   * :kconfig:option:`CONFIG_NET_DHCPV6_START_ON_RA` starts the DHCPv6 client

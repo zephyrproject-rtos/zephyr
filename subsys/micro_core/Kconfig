@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Mahdi Sahebi
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MC
+	bool "Micro Core communication"
+	default n
+	help
+	  Enable the experimental Micro Core communication service.
+
+if MC
+
+config MC_COMM
+	bool "Reliable framed communication"
+	select CRC
+	default y
+	help
+	  Enable framed, acknowledged payload transfer using application-owned
+	  storage and application-provided transport callbacks.
+
+endif
