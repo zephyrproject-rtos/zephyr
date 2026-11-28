@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: 2026 Seunghoon Park
+# SPDX-License-Identifier: Apache-2.0
+
+config SDHC_ROCKCHIP_DW_MSHC
+	bool "Rockchip RK3568 SD/MMC host controller driver"
+	default y
+	depends on DT_HAS_ROCKCHIP_RK3568_DW_MSHC_ENABLED
+	select SDHC_SUPPORTS_NATIVE_MODE
+	select SYSCON
+	help
+	  Enable the driver for the DesignWare Mobile Storage Host Controller
+	  found on the Rockchip RK3568 and RK3566 SoCs. SD cards at 3.3 V
+	  (default and high speed) on a 1-bit or 4-bit bus are supported.
+	  The controller is polled. Data is moved with the CPU through the
+	  controller FIFO, or with the internal DMA controller if
+	  SDHC_ROCKCHIP_DW_MSHC_IDMAC is enabled.
+
+config SDHC_ROCKCHIP_DW_MSHC_IDMAC
+	bool "Use the internal DMA controller for data transfers"
+	depends on SDHC_ROCKCHIP_DW_MSHC
+	select CACHE_MANAGEMENT
+	help
+	  Move data with the internal DMA controller of the host controller
+	  instead of the CPU when the buffer allows it: the buffer address
+	  and length must be multiples of the data cache line size, the
+	  buffer and the descriptors must lie in RAM below 4 GiB (physical
+	  address) and the transfer must not exceed 256 KiB. Any other
+	  transfer is done by the CPU through the FIFO. The data cache is
+	  cleaned and invalidated around each transfer.
+
+	  This option sets the SD buffer alignment to the data cache line
+	  size, so that buffers from the SD stack are eligible. Without it
+	  most transfers fall back to the CPU.
+
+# With D-cache enabled, align the buffers of the SD stack to a full cache line:
+# the internal DMA is only used for such buffers, and invalidating a buffer
+# must not corrupt adjacent data that shares a cache line.
+config SDHC_BUFFER_ALIGNMENT
+	default DCACHE_LINE_SIZE if SDHC_ROCKCHIP_DW_MSHC_IDMAC && DCACHE

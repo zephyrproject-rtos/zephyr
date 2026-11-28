@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: 2026 Seunghoon Park
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_RK3566
+
+rsource "Kconfig.defconfig.rk3566"
+
+endif # SOC_RK3566

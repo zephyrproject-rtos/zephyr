@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: 2026 Seunghoon Park
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_RK3566
+	bool
+	select SOC_SERIES_RK35
+
+config SOC
+	default "rk3566" if SOC_RK3566

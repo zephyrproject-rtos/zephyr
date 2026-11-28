@@ -1,0 +1,15 @@
+identifier: radxa_zero_3e/rk3566
+name: Radxa ZERO 3E
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 1024
+supported:
+  - sdhc
+  - serial
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
