@@ -408,7 +408,7 @@
         <xhtml:div
            style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 49px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
           <xhtml:div
-             style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">Thread 1</xhtml:div>
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">Thread 2</xhtml:div>
         </xhtml:div>
       </foreignObject>
       <text
@@ -418,7 +418,7 @@
          text-anchor="middle"
          font-size="12px"
          font-family="Helvetica"
-         id="text86">Thread 1</text>
+         id="text86">Thread 2</text>
     </switch>
   </g>
   <rect
@@ -538,7 +538,7 @@
         <xhtml:div
            style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 49px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
           <xhtml:div
-             style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">Thread 2</xhtml:div>
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">Thread 3</xhtml:div>
         </xhtml:div>
       </foreignObject>
       <text
@@ -548,7 +548,7 @@
          text-anchor="middle"
          font-size="12px"
          font-family="Helvetica"
-         id="text116">Thread 2</text>
+         id="text116">Thread 3</text>
     </switch>
   </g>
   <rect
@@ -574,7 +574,7 @@
         <xhtml:div
            style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 49px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
           <xhtml:div
-             style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">Thread 3</xhtml:div>
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">Thread 1</xhtml:div>
         </xhtml:div>
       </foreignObject>
       <text
@@ -584,7 +584,7 @@
          text-anchor="middle"
          font-size="12px"
          font-family="Helvetica"
-         id="text124">Thread 3</text>
+         id="text124">Thread 1</text>
     </switch>
   </g>
   <g
@@ -658,13 +658,13 @@
      id="rect144" />
   <text
      xml:space="preserve"
-     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:18.6667px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;white-space:pre;inline-size:229.066;fill:#000000"
-     x="328.12595"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:18.6667px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;white-space:pre;inline-size:111;fill:#000000"
+     x="387.12595"
      y="80.225197"
      id="text234"
      transform="translate(-45.801526,-2.8625954)"><tspan
-       x="328.12595"
+       x="387.12595"
        y="80.225197"
-       id="tspan372">Uniprocessor Time Slicing
+       id="tspan372">Time Slicing
 </tspan></text>
 </svg>
