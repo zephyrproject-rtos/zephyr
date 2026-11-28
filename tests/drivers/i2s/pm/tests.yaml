@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.i2s.pm.siwx91x:
+    tags:
+      - i2s
+      - pm
+    platform_allow:
+      - siwx917_rb4338a
+      - siwx917_rb4342a
+    integration_platforms:
+      - siwx917_rb4338a
+      - siwx917_rb4342a
+    filter: CONFIG_I2S_SILABS_SIWX91X and not CONFIG_SMP
