@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(QMI8658A, CONFIG_SENSOR_LOG_LEVEL);
 #define QMI8658A_REG_CTRL1    0x02
 #define QMI8658A_REG_CTRL2    0x03
 #define QMI8658A_REG_CTRL3    0x04
+#define QMI8658A_REG_CTRL5    0x06
 #define QMI8658A_REG_CTRL7    0x08
 #define QMI8658A_REG_TEMP_L   0x33
 #define QMI8658A_REG_RESET    0x60
@@ -30,8 +31,12 @@ LOG_MODULE_REGISTER(QMI8658A, CONFIG_SENSOR_LOG_LEVEL);
 #define QMI8658A_CTRL1_ADDR_AI    BIT(6)
 #define QMI8658A_CTRL1_INT2_EN    BIT(4)
 #define QMI8658A_CTRL1_INT1_EN    BIT(3)
+#define QMI8658A_CTRL5_ALPF_EN    BIT(0)
+#define QMI8658A_CTRL5_GLPF_EN    BIT(4)
 #define QMI8658A_CTRL7_GYR_ENABLE BIT(1)
 #define QMI8658A_CTRL7_ACC_ENABLE BIT(0)
+#define QMI8658A_CTRL5_ALPF_MASK  (QMI8658A_CTRL5_ALPF_EN | (0x03 << 1))
+#define QMI8658A_CTRL5_GLPF_MASK  (QMI8658A_CTRL5_GLPF_EN | (0x03 << 5))
 
 #define QMI8658A_RESET_DELAY_MS 15
 #define QMI8658A_SAMPLE_BYTES   14
@@ -56,6 +61,10 @@ struct qmi8658a_config {
 	uint16_t gyro_fs;
 	uint16_t accel_odr;
 	uint16_t gyro_odr;
+	bool accel_lpf_enable;
+	uint8_t accel_lpf_mode;
+	bool gyro_lpf_enable;
+	uint8_t gyro_lpf_mode;
 #ifdef CONFIG_QMI8658A_TRIGGER
 	struct gpio_dt_spec int_gpio;
 	uint8_t int_pin;
@@ -479,6 +488,7 @@ static int qmi8658a_init(const struct device *dev)
 	uint8_t ctrl1;
 	uint16_t accel_odr;
 	uint16_t gyro_odr;
+	uint8_t lpf_config = 0;
 	int rc;
 
 	if (!i2c_is_ready_dt(&cfg->i2c)) {
@@ -560,6 +570,25 @@ static int qmi8658a_init(const struct device *dev)
 		return rc;
 	}
 
+	if (cfg->accel_lpf_enable) {
+		lpf_config |= QMI8658A_CTRL5_ALPF_EN;
+		lpf_config |= (cfg->accel_lpf_mode & 0x03) << 1;
+	} else {
+		lpf_config &= ~QMI8658A_CTRL5_ALPF_EN;
+	}
+	if (cfg->gyro_lpf_enable) {
+		lpf_config |= QMI8658A_CTRL5_GLPF_EN;
+		lpf_config |= (cfg->gyro_lpf_mode & 0x03) << 1;
+	} else {
+		lpf_config &= ~QMI8658A_CTRL5_GLPF_EN;
+	}
+	rc = i2c_reg_update_byte_dt(&cfg->i2c, QMI8658A_REG_CTRL5, QMI8658A_CTRL5_GLPF_MASK,
+				    lpf_config);
+	if (rc < 0) {
+		LOG_ERR("Failed to update CTRL5 GLPF (%d)", rc);
+		return rc;
+	}
+
 	rc = i2c_reg_write_byte_dt(&cfg->i2c, QMI8658A_REG_CTRL7,
 				   QMI8658A_CTRL7_ACC_ENABLE | QMI8658A_CTRL7_GYR_ENABLE);
 	if (rc < 0) {
@@ -582,7 +611,15 @@ static int qmi8658a_init(const struct device *dev)
 	return 0;
 }
 
+#define CHECK_SENSOR_LPF_CONFIG(inst, sensor)                                                      \
+	BUILD_ASSERT(                                                                              \
+		!DT_INST_PROP(inst, sensor##_lpf_enable) ||                                        \
+			DT_INST_NODE_HAS_PROP(inst, sensor##_lpf_mode),                            \
+		STRINGIFY(sensor) "-lpf-mode required when " STRINGIFY(sensor) "-lpf-enable set")
+
 #define QMI8658A_DEFINE(inst)                                                                      \
+	CHECK_SENSOR_LPF_CONFIG(inst, accel);                                                      \
+	CHECK_SENSOR_LPF_CONFIG(inst, gyro);                                                       \
 	static struct qmi8658a_data qmi8658a_data_##inst;                                          \
                                                                                                    \
 	static const struct qmi8658a_config qmi8658a_config_##inst = {                             \
@@ -591,9 +628,13 @@ static int qmi8658a_init(const struct device *dev)
 		.gyro_fs = DT_INST_PROP(inst, gyro_fs),                                            \
 		.accel_odr = DT_INST_PROP(inst, accel_odr),                                        \
 		.gyro_odr = DT_INST_PROP(inst, gyro_odr),                                          \
+		.accel_lpf_enable = DT_INST_PROP(inst, accel_lpf_enable),                          \
+		.accel_lpf_mode = DT_INST_PROP(inst, accel_lpf_mode),                              \
+		.gyro_lpf_enable = DT_INST_PROP(inst, gyro_lpf_enable),                            \
+		.gyro_lpf_mode = DT_INST_PROP(inst, gyro_lpf_mode),                                \
 		IF_ENABLED(CONFIG_QMI8658A_TRIGGER,						\
 			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),	\
-			    .int_pin = DT_INST_PROP(inst, int_pin),)) }; \
+			    .int_pin = DT_INST_PROP(inst, int_pin),)) };  \
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, qmi8658a_init, NULL, &qmi8658a_data_##inst,             \
 				     &qmi8658a_config_##inst, POST_KERNEL,                         \
