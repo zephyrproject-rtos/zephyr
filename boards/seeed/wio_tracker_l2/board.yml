@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: wio_tracker_l2
+  full_name: Wio Tracker L2 Pro
+  vendor: seeed
+  socs:
+    - name: esp32s3

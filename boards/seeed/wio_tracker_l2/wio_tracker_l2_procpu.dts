@@ -1,0 +1,300 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "wio_tracker_l2.dtsi"
+#include "wio_tracker_l2-pinctrl.dtsi"
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/lora/sx126x.h>
+
+/ {
+	compatible = "seeed,wio-tracker-l2";
+	model = "Seeed Studio Wio Tracker L2 Pro PROCPU";
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,console = &usb_serial;
+		zephyr,shell-uart = &usb_serial;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,display = &lcd;
+		zephyr,touch = &gt911;
+	};
+
+	aliases {
+		gnss = &gnss;
+		i2s-codec-tx = &i2s0;
+		led0 = &mesh_led;
+		led1 = &user_led;
+		lora0 = &lora;
+		sw0 = &user_button;
+		sw1 = &wakeup_button;
+		volt-sensor0 = &vbatt;
+		sdhc0 = &sdhc0;
+	};
+
+	audio_supply: regulator-audio {
+		compatible = "regulator-fixed";
+		regulator-name = "audio-codec";
+		enable-gpios = <&gpio_expander 4 GPIO_ACTIVE_HIGH>;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		/* The GPIO expander does not support disconnecting its pins. */
+		zephyr,suspend-action = "none";
+
+		user_button: button_0 {
+			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "USER/BOOT";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		wakeup_button: button-1 {
+			gpios = <&gpio_expander 0 GPIO_ACTIVE_LOW>;
+			label = "WAKE-UP";
+			zephyr,code = <INPUT_KEY_WAKEUP>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		mesh_led: led-0 {
+			gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
+			label = "Mesh LED";
+		};
+
+		user_led: led-1 {
+			gpios = <&gpio_expander 10 GPIO_ACTIVE_HIGH>;
+			label = "User LED";
+		};
+	};
+
+	vbatt: vbatt {
+		compatible = "voltage-divider";
+		io-channels = <&ads1115 0>;
+		/* Only the 2:1 divider ratio is specified; resistances are normalized. */
+		output-ohms = <1>;
+		full-ohms = <2>;
+		power-gpios = <&gpio_expander 15 GPIO_ACTIVE_HIGH>;
+		skip-calibration;
+	};
+};
+
+&dma {
+	status = "okay";
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&i2c0 {
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
+
+	audio_codec: codec@18 {
+		compatible = "everest,es8311";
+		reg = <0x18>;
+		vin-supply = <&audio_supply>;
+		pa-gpios = <&gpio_expander 12 GPIO_ACTIVE_HIGH>;
+	};
+
+	gpio_expander: gpio@21 {
+		compatible = "nxp,pca9555";
+		reg = <0x21>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <16>;
+		int-gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;
+		/* Retain the power and reset controls shared with other peripherals. */
+		no-auto-reset;
+
+		lcd_touch_power {
+			gpio-hog;
+			gpios = <5 GPIO_ACTIVE_HIGH>;
+			output-high;
+			line-name = "lcd-touch-power";
+		};
+	};
+
+	lp5814: led-controller@2c {
+		compatible = "ti,lp5814";
+		reg = <0x2c>;
+
+		backlight0: led-0 {
+			index = <0>;
+			led-max-microamp = <40000>;
+		};
+
+		backlight1: led-1 {
+			index = <1>;
+			led-max-microamp = <40000>;
+		};
+
+		backlight2: led-2 {
+			index = <2>;
+			led-max-microamp = <40000>;
+		};
+
+		backlight3: led-3 {
+			index = <3>;
+			led-max-microamp = <40000>;
+		};
+	};
+
+	ads1115: adc@48 {
+		compatible = "ti,ads1115";
+		reg = <0x48>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		#io-channel-cells = <1>;
+
+		channel@0 {
+			reg = <0>;
+			zephyr,gain = "ADC_GAIN_1_2";
+			zephyr,reference = "ADC_REF_INTERNAL";
+			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+			zephyr,input-positive = <0>;
+			zephyr,resolution = <15>;
+		};
+	};
+
+	gt911: touch-controller@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		irq-gpios = <&gpio_expander 3 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpio_expander 8 GPIO_ACTIVE_LOW>;
+		screen-width = <240>;
+		screen-height = <320>;
+		inverted-y;
+		swapped-x-y;
+	};
+};
+
+&i2s0 {
+	pinctrl-0 = <&i2s0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&sdhc0 {
+	pinctrl-0 = <&sdhc0_default>;
+	pinctrl-1 = <&sdhc0_sleep>;
+	pinctrl-names = "default", "sleep";
+	max-bus-freq = <40000000>;
+	bus-width = <1>;
+	cd-gpios = <&gpio_expander 2 GPIO_ACTIVE_LOW>;
+	pwr-gpios = <&gpio_expander 14 GPIO_ACTIVE_HIGH>;
+	status = "okay";
+
+	mmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+	};
+};
+
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&spi2_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+	status = "okay";
+
+	lora: lora@0 {
+		compatible = "semtech,sx1262";
+		reg = <0>;
+		spi-max-frequency = <8000000>;
+		reset-gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
+		busy-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
+		dio1-gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+		dio2-tx-enable;
+		dio3-tcxo-voltage = <SX126X_DIO3_TCXO_3V0>;
+		tcxo-power-startup-delay-ms = <5>;
+	};
+};
+
+&spi3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&spi3_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
+	status = "okay";
+
+	lcd: display@0 {
+		compatible = "newvision,nv3031b";
+		reg = <0>;
+		spi-max-frequency = <8000000>;
+		spi-cpol;
+		spi-cpha;
+		width = <240>;
+		height = <320>;
+		rotation = <90>;
+		reset-gpios = <&gpio_expander 6 GPIO_ACTIVE_LOW>;
+		backlight-leds = <&backlight0>, <&backlight1>, <&backlight2>, <&backlight3>;
+		brightness = <64>;
+		source-timing = [0c];
+		gate-timing = [07 04];
+		inversion-control = [01];
+		frame-rate = [0f 02 03];
+		porch-control = [02 02 0a 14];
+		display-function = [44 01 9f 00 02];
+		bias-trim = [11];
+		bias-current = [21];
+		power-control = [90 4f 27 21];
+		gamma-positive-voltage = [20 69];
+		gamma-negative-voltage = [69 20];
+		gamma-positive-mid = [10 12 12 30 39 3f];
+		gamma-negative-mid = [3f 33 2d 12 12 10];
+		gamma-positive = [06 06 0b 12 11 11 0e 19];
+		gamma-negative = [19 13 14 14 14 12 08 05];
+		power-slope = [00 ff];
+		source-equalization = [01 04 03 03 00 12];
+		source-level = [00 70 00];
+		gate-equalization = [54];
+	};
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&uart1 {
+	current-speed = <9600>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	gnss: gnss-nmea-generic {
+		compatible = "gnss-nmea-generic";
+		enable-gpios = <&gpio_expander 13 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio_expander 9 GPIO_ACTIVE_HIGH>;
+		reset-pulse-duration-ms = <100>;
+		startup-time-ms = <10>;
+	};
+};
+
+&usb_serial {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+};

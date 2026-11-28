@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_WIO_TRACKER_L2_ESP32S3_PROCPU
+
+config GPIO_HOGS_INIT_PRIORITY
+	# Enable the shared LCD and touch supply after the I2C GPIO expander.
+	default 60 if GPIO_HOGS
+
+config DISPLAY_INIT_PRIORITY
+	# The display controls its backlight through the LP5814 LED driver.
+	default 95 if DISPLAY_NV3031B
+
+config UART_INTERRUPT_DRIVEN
+	default y if GNSS && !UART_ASYNC_API
+
+choice SOC_FAMILY_ESPRESSIF_SPIRAM_MODE
+	default SOC_FAMILY_ESPRESSIF_SPIRAM_MODE_OCT
+endchoice
+
+if LORA
+
+choice LORA_MODULE_BACKEND
+	default LORA_MODULE_BACKEND_NATIVE
+endchoice
+
+endif # LORA
+
+endif # BOARD_WIO_TRACKER_L2_ESP32S3_PROCPU

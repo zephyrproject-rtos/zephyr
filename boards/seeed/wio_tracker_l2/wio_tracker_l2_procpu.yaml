@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: wio_tracker_l2/esp32s3/procpu
+name: Wio Tracker L2 Pro PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - audio
+  - bluetooth
+  - display
+  - entropy
+  - gnss
+  - gpio
+  - i2c
+  - i2s
+  - uart
+  - input
+  - lora
+  - netif:wifi
+  - sdhc
+  - spi
+vendor: seeed

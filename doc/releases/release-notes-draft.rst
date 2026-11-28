@@ -55,6 +55,11 @@ Libraries / Subsystems
     :kconfig:option:`CONFIG_XTENSA_EMULATED_TLS`. Userspace is not supported in
     this mode.
 
+* Audio
+
+  * The ES8311 codec can control its supply and external amplifier, allowing playback
+    on boards with switched audio power. See :kconfig:option:`CONFIG_AUDIO_CODEC_ES8311`.
+
 * Bluetooth
 
   * Added a HID Service server (:kconfig:option:`CONFIG_BT_HIDS`), the service
