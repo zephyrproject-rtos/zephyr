@@ -1,0 +1,16 @@
+tests:
+  drivers.uart.single_wire:
+    harness: pytest
+    harness_config:
+      fixture: gpio_loopback_single_uart
+      pytest_dut_scope: session
+      pytest_root:
+        - "pytest/test_single_wire.py::test_single_wire_uart"
+    timeout: 90
+    arch_allow: arm
+    filter: >
+      dt_alias_exists("single-line-uart1") and
+      dt_alias_exists("single-line-uart2")
+    tags:
+      - drivers
+      - uart
