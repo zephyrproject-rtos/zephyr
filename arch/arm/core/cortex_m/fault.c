@@ -1072,6 +1072,15 @@ static inline struct arch_esf *get_esf(uint32_t msp, uint32_t psp, uint32_t exc_
 	return ptr_esf;
 }
 
+__weak void z_arm_fault_entry_hook(const struct arch_esf *esf, uint32_t msp,
+				 uint32_t psp, uint32_t exc_return)
+{
+	ARG_UNUSED(esf);
+	ARG_UNUSED(msp);
+	ARG_UNUSED(psp);
+	ARG_UNUSED(exc_return);
+}
+
 /**
  *
  * @brief ARM Fault handler
@@ -1161,6 +1170,8 @@ void z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return, _callee_saved_
 #endif /* CONFIG_EXTRA_EXCEPTION_INFO && CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
 
 	z_arm_set_fault_sp(esf, exc_return);
+
+	z_arm_fault_entry_hook(esf, msp, psp, exc_return);
 
 	reason = fault_handle(esf, fault, &recoverable, context.non_secure_esf);
 	if (recoverable) {
