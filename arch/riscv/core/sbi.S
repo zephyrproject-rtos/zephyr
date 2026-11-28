@@ -43,8 +43,10 @@
 	RV_I(	op   a7, (OFF_A7)(sp)	)
 #endif
 
+#ifndef CONFIG_RISCV_ISA_EXT_SSTC
 /* MTIMECMP base address from devicetree (hart 0) */
 #define MTIMECMP0  DT_REG_ADDR_BY_NAME(DT_INST(0, riscv_machine_timer), mtimecmp)
+#endif
 
 /* QEMU virt "sifive_test" device: write here to exit or reset QEMU */
 #define QEMU_TEST_FINISHER  0x00100000
@@ -124,6 +126,16 @@ m_mode_ext_time:
 
 m_mode_set_timer:
     /* a0 = timer deadline (absolute time value) */
+#ifdef CONFIG_RISCV_ISA_EXT_SSTC
+#ifdef CONFIG_64BIT
+    csrw CSR_STIMECMP, a0
+#else
+    li t1, -1
+    csrw CSR_STIMECMP, t1  /* avoid false triggering */
+    csrw CSR_STIMECMPH, a1
+    csrw CSR_STIMECMP, a0
+#endif /* CONFIG_64BIT */
+#else
     li t0, MTIMECMP0
     /* write new deadline to mtimecmp[0] */
 #ifdef CONFIG_64BIT
@@ -141,6 +153,7 @@ m_mode_set_timer:
     */
     li t0, MIP_STIP
     csrc mip, t0
+#endif /* CONFIG_RISCV_ISA_EXT_SSTC */
 
     /* Return success: a0 = SBI_SUCCESS, a1 = 0 (no return value) */
     li a0, SBI_SUCCESS
@@ -178,6 +191,7 @@ m_mode_handle_interrupt:
     slli t0, t0, 1
     srli t0, t0, 1
 
+#ifndef CONFIG_RISCV_ISA_EXT_SSTC
     li t1, IRQ_M_TIMER
     bne t0, t1, m_mode_unhandled
 
@@ -200,6 +214,7 @@ m_mode_handle_interrupt:
     csrs mip, t0
 
     j m_mode_return
+#endif /* CONFIG_RISCV_ISA_EXT_SSTC */
 
 m_mode_unhandled:
 	/*

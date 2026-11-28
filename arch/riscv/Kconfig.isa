@@ -330,6 +330,16 @@ config RISCV_ISA_EXT_SSAIA
 	  is used to infer whether a certain CSR is enabled (e.g. if a hart
 	  implements RV32 and SSAIA the CSRs sieh/siph are enabled).
 
+config RISCV_ISA_EXT_SSTC
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),sstc)
+	depends on RISCV_S_MODE
+	help
+	  (Sstc) - Standard Extension for Supervisor-mode Timer Interrupts
+
+	  The Sstc extension adds the stimecmp CSR, with which supervisor
+	  mode programs its timer interrupt without calling the SBI.
+
 config RISCV_ISA_EXT_ZK
 	bool
 	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zk)

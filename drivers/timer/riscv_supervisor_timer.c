@@ -34,6 +34,29 @@ static void sbi_set_timer(uint64_t deadline)
 #endif
 }
 
+static void sstc_set_timer(uint64_t deadline)
+{
+#ifdef CONFIG_64BIT
+	csr_write(CSR_STIMECMP, deadline);
+#else
+	/* The low half is first set to all ones so that no intermediate value
+	 * is lower than both the old and the new deadline.
+	 */
+	csr_write(CSR_STIMECMP, UINT32_MAX);
+	csr_write(CSR_STIMECMPH, (uint32_t)(deadline >> 32));
+	csr_write(CSR_STIMECMP, (uint32_t)deadline);
+#endif
+}
+
+static void timer_set(uint64_t deadline)
+{
+	if (IS_ENABLED(CONFIG_RISCV_ISA_EXT_SSTC)) {
+		sstc_set_timer(deadline);
+	} else {
+		sbi_set_timer(deadline);
+	}
+}
+
 static uint64_t stime(void)
 {
 #ifdef CONFIG_64BIT
@@ -51,10 +74,11 @@ static uint64_t stime(void)
 }
 
 /*
- * Free-running "time" counter plus an absolute SBI set-timer deadline: a
- * COMPARE_ORDERED backend. The counter is 64 bits wide whatever the register
- * width of the build. The generic core owns the tick accounting and the clock
- * lock; the driver only reads the counter and programs the deadline.
+ * Free-running "time" counter plus an absolute deadline, set in stimecmp with
+ * the Sstc extension and through the SBI otherwise: a COMPARE_ORDERED backend.
+ * The counter is 64 bits wide whatever the register width of the build. The
+ * generic core owns the tick accounting and the clock lock; the driver only
+ * reads the counter and programs the deadline.
  */
 #define TIMER_CORE_BACKEND_COMPARE_ORDERED
 #define TIMER_CORE_COUNTER_WIDTH 64
@@ -66,7 +90,7 @@ static inline uint64_t timer_driver_cycle_get(void)
 
 static inline void timer_driver_set_compare(uint64_t cycles)
 {
-	sbi_set_timer(cycles);
+	timer_set(cycles);
 }
 
 #include "system_timer_generic.h"
@@ -75,13 +99,14 @@ static void timer_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
-	/* Disarm the IRQ. STIP is level sensitive and only the SBI timer call
-	 * clears it, so ask for an infinite expiry, which the SBI spec defines
-	 * as clearing the pending interrupt without scheduling another. This
+	/* Disarm the IRQ. STIP is level sensitive and only moving the deadline
+	 * clears it, so ask for an infinite expiry. With stimecmp that is a
+	 * deadline the time never reaches, and the SBI spec defines it as
+	 * clearing the pending interrupt without scheduling another. This
 	 * interrupt then fires once for the deadline it was armed with,
 	 * whether or not another one is programmed afterwards.
 	 */
-	sbi_set_timer(UINT64_MAX);
+	timer_set(UINT64_MAX);
 
 	timer_core_announce();
 }

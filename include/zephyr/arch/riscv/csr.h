@@ -143,6 +143,8 @@
 
 #define MSECCFG_MLPE	0x400
 #define MENVCFG_LPE	0x4
+#define MENVCFG_STCE	(1ULL << 63)
+#define MENVCFGH_STCE	(1UL << 31)
 #define SENVCFG_LPE	0x4
 
 /**
@@ -194,6 +196,11 @@
 
 /* MSECCFG bit fields */
 #define MSECCFG_SSEED 0x00000200 /* S-mode access to the seed CSR (bit 9) */
+
+/* Sstc CSR addresses */
+#define CSR_MENVCFGH  0x31a
+#define CSR_STIMECMP  0x14d
+#define CSR_STIMECMPH 0x15d
 
 #define DEFAULT_RSTVEC	0x00001000
 #define CLINT_BASE	0x02000000

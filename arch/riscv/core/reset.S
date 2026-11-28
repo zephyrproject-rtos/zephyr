@@ -192,9 +192,20 @@ aa_loop:
 	csrs CSR_MSECCFG, t0
 #endif /* CONFIG_RISCV_ISA_EXT_ZKR */
 
+#ifdef CONFIG_RISCV_ISA_EXT_SSTC
+	/* Let S-mode program its timer interrupt through stimecmp */
+#ifdef CONFIG_64BIT
+	li t0, MENVCFG_STCE
+	csrs menvcfg, t0
+#else
+	li t0, MENVCFGH_STCE
+	csrs CSR_MENVCFGH, t0
+#endif /* CONFIG_64BIT */
+#else
 	/* Enable M-mode timer interrupt so MTIP fires and is forwarded to S-mode as STIP */
 	li t0, MIP_MTIP
 	csrs mie, t0
+#endif /* CONFIG_RISCV_ISA_EXT_SSTC */
 
 	/* Set MPP=S-mode in mstatus then mret into S-mode */
 	li t0, MSTATUS_MPP
