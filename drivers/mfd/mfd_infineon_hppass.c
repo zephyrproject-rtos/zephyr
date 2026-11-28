@@ -202,7 +202,8 @@ union ifx_hppass_mmio_tr_level_out {
 };
 
 /*
- * 8 trigger slots packed into TR_IN_SEL and HW_TR_MODE.
+ * 8 trigger slots packed into TR_IN_SEL and HW_TR_MODE; v3 carries a second
+ * pair, TR_IN_SEL_2 and HW_TR_MODE_2, with the same field shape for slots 8-15.
  *   - HW_TR_MODE (§20.1.76): 4-bit field, 4-bit stride, contiguous.
  *   - TR_IN_SEL  (§20.1.75): 3-bit field at the low end of each 4-bit
  *     stride; bits 3, 7, 11, … 31 are reserved.
@@ -242,6 +243,12 @@ struct ifx_hppass_hw_cfg {
 
 	/* INFRA_HW_TR_MODE.  TRM 002-39445 §20.1.76. */
 	uint32_t hw_tr_mode;
+
+#if defined(CONFIG_MFD_INFINEON_HPPASS_V3)
+	/* Slots 8-15.  INFRA_TR_IN_SEL_2 / INFRA_HW_TR_MODE_2, v3 only. */
+	uint32_t trig_in_sel_2;
+	uint32_t hw_tr_mode_2;
+#endif
 
 	/* MMIO_TR_PULSE_OUT[N].SEL.  TRM 002-39445 §20.1.102. */
 	cy_en_hppass_trig_out_pulse_t trig_pulse[CY_HPPASS_TRIG_NUM];
@@ -421,6 +428,10 @@ static void ifx_hppass_trigger_in_configure(const struct device *dev)
 
 	sys_write32(config->init_cfg->trig_in_sel, base + IFX_HPPASS_INFRA_TR_IN_SEL);
 	sys_write32(config->init_cfg->hw_tr_mode, base + IFX_HPPASS_INFRA_HW_TR_MODE);
+#if defined(CONFIG_MFD_INFINEON_HPPASS_V3)
+	sys_write32(config->init_cfg->trig_in_sel_2, base + IFX_HPPASS_INFRA_TR_IN_SEL_2);
+	sys_write32(config->init_cfg->hw_tr_mode_2, base + IFX_HPPASS_INFRA_HW_TR_MODE_2);
+#endif
 }
 
 /*
@@ -644,7 +655,7 @@ bool ifx_hppass_is_vdda_ok(const struct device *dev)
  * when the corresponding trigger input is configured CY_HPPASS_TR_FW_PULSE.
  * Safe while the AC is running.
  */
-void ifx_hppass_ac_set_fw_trigger_pulse(const struct device *dev, uint8_t mask)
+void ifx_hppass_ac_set_fw_trigger_pulse(const struct device *dev, uint16_t mask)
 {
 	const struct ifx_hppass_mfd_config *config = dev->config;
 
@@ -656,7 +667,7 @@ void ifx_hppass_ac_set_fw_trigger_pulse(const struct device *dev, uint8_t mask)
  * ifx_hppass_ac_clear_fw_trigger_level(); use this for cooperative stops
  * where the AC must observe the trigger no matter where it is in the STT.
  */
-void ifx_hppass_ac_set_fw_trigger_level(const struct device *dev, uint8_t mask)
+void ifx_hppass_ac_set_fw_trigger_level(const struct device *dev, uint16_t mask)
 {
 	const struct ifx_hppass_mfd_config *config = dev->config;
 
@@ -664,7 +675,7 @@ void ifx_hppass_ac_set_fw_trigger_level(const struct device *dev, uint8_t mask)
 } /* ifx_hppass_ac_set_fw_trigger_level() */
 
 /* Clear an asserted FW level trigger bit. */
-void ifx_hppass_ac_clear_fw_trigger_level(const struct device *dev, uint8_t mask)
+void ifx_hppass_ac_clear_fw_trigger_level(const struct device *dev, uint16_t mask)
 {
 	const struct ifx_hppass_mfd_config *config = dev->config;
 
@@ -1125,33 +1136,48 @@ static int ifx_hppass_mfd_pm_action(const struct device *dev, enum pm_device_act
 	}
 
 /*
- * INFRA_TR_IN_SEL slot field: 3-bit type code per slot at the low end of
- * a 4-bit stride; bit 3 of each stride is reserved (TRM 002-39445 §20.1.75).
+ * INFRA_TR_IN_SEL[_2] slot field: 3-bit type at the low end of a 4-bit stride,
+ * bit 3 of each stride reserved.  INFRA_HW_TR_MODE[_2]: 4-bit mode per slot
+ * (TRM 002-39445 §20.1.75-76).  pos is the field's position in its register:
+ * the slot itself for slots 0-7, and slot - 8 for the v3 _2 registers, where
+ * slots 8-15 restart at bit 0.
  */
-#define IFX_HPPASS_TRIG_IN_TYPE_SLOT(n, slot)                                                  \
+#define IFX_HPPASS_TRIG_IN_TYPE_SLOT(n, slot, pos)                                             \
 	(((uint32_t)DT_INST_PROP_OR(n, trig_in_##slot##_type, 0) &                            \
-	  BIT_MASK(IFX_HPPASS_TR_IN_SEL_WIDTH)) <<                                            \
-	 (IFX_HPPASS_TR_BITS_PER_SLOT * (slot)))
+	  BIT_MASK(IFX_HPPASS_TR_IN_SEL_WIDTH)) << (IFX_HPPASS_TR_BITS_PER_SLOT * (pos)))
 
-/* INFRA_HW_TR_MODE slot field: 4-bit mode code per slot (TRM 002-39445 §20.1.76). */
-#define IFX_HPPASS_TRIG_IN_HW_MODE_SLOT(n, slot)                                               \
+#define IFX_HPPASS_TRIG_IN_HW_MODE_SLOT(n, slot, pos)                                          \
 	(((uint32_t)DT_INST_PROP_OR(n, trig_in_##slot##_hw_mode, 0) &                         \
-	  BIT_MASK(IFX_HPPASS_HW_TR_MODE_WIDTH)) <<                                           \
-	 (IFX_HPPASS_TR_BITS_PER_SLOT * (slot)))
+	  BIT_MASK(IFX_HPPASS_HW_TR_MODE_WIDTH)) << (IFX_HPPASS_TR_BITS_PER_SLOT * (pos)))
 
 /* Pack 8 slot fields into INFRA_TR_IN_SEL (TRM 002-39445 §20.1.75). */
 #define IFX_HPPASS_PACK_TRIG_IN_SEL(n)                                                         \
-	(IFX_HPPASS_TRIG_IN_TYPE_SLOT(n, 0) | IFX_HPPASS_TRIG_IN_TYPE_SLOT(n, 1) |            \
-	 IFX_HPPASS_TRIG_IN_TYPE_SLOT(n, 2) | IFX_HPPASS_TRIG_IN_TYPE_SLOT(n, 3) |            \
-	 IFX_HPPASS_TRIG_IN_TYPE_SLOT(n, 4) | IFX_HPPASS_TRIG_IN_TYPE_SLOT(n, 5) |            \
-	 IFX_HPPASS_TRIG_IN_TYPE_SLOT(n, 6) | IFX_HPPASS_TRIG_IN_TYPE_SLOT(n, 7))
+	(IFX_HPPASS_TRIG_IN_TYPE_SLOT(n, 0, 0) | IFX_HPPASS_TRIG_IN_TYPE_SLOT(n, 1, 1) |      \
+	 IFX_HPPASS_TRIG_IN_TYPE_SLOT(n, 2, 2) | IFX_HPPASS_TRIG_IN_TYPE_SLOT(n, 3, 3) |      \
+	 IFX_HPPASS_TRIG_IN_TYPE_SLOT(n, 4, 4) | IFX_HPPASS_TRIG_IN_TYPE_SLOT(n, 5, 5) |      \
+	 IFX_HPPASS_TRIG_IN_TYPE_SLOT(n, 6, 6) | IFX_HPPASS_TRIG_IN_TYPE_SLOT(n, 7, 7))
 
 /* Pack 8 slot fields into INFRA_HW_TR_MODE (TRM 002-39445 §20.1.76). */
 #define IFX_HPPASS_PACK_HW_TR_MODE(n)                                                          \
-	(IFX_HPPASS_TRIG_IN_HW_MODE_SLOT(n, 0) | IFX_HPPASS_TRIG_IN_HW_MODE_SLOT(n, 1) |      \
-	 IFX_HPPASS_TRIG_IN_HW_MODE_SLOT(n, 2) | IFX_HPPASS_TRIG_IN_HW_MODE_SLOT(n, 3) |      \
-	 IFX_HPPASS_TRIG_IN_HW_MODE_SLOT(n, 4) | IFX_HPPASS_TRIG_IN_HW_MODE_SLOT(n, 5) |      \
-	 IFX_HPPASS_TRIG_IN_HW_MODE_SLOT(n, 6) | IFX_HPPASS_TRIG_IN_HW_MODE_SLOT(n, 7))
+	(IFX_HPPASS_TRIG_IN_HW_MODE_SLOT(n, 0, 0) | IFX_HPPASS_TRIG_IN_HW_MODE_SLOT(n, 1, 1) |\
+	 IFX_HPPASS_TRIG_IN_HW_MODE_SLOT(n, 2, 2) | IFX_HPPASS_TRIG_IN_HW_MODE_SLOT(n, 3, 3) |\
+	 IFX_HPPASS_TRIG_IN_HW_MODE_SLOT(n, 4, 4) | IFX_HPPASS_TRIG_IN_HW_MODE_SLOT(n, 5, 5) |\
+	 IFX_HPPASS_TRIG_IN_HW_MODE_SLOT(n, 6, 6) | IFX_HPPASS_TRIG_IN_HW_MODE_SLOT(n, 7, 7))
+
+#if defined(CONFIG_MFD_INFINEON_HPPASS_V3)
+/* Slots 8-15 live in the _2 registers and restart at bit 0, so pos = slot - 8. */
+#define IFX_HPPASS_PACK_TRIG_IN_SEL_2(n)                                                       \
+	(IFX_HPPASS_TRIG_IN_TYPE_SLOT(n, 8, 0) | IFX_HPPASS_TRIG_IN_TYPE_SLOT(n, 9, 1) |      \
+	 IFX_HPPASS_TRIG_IN_TYPE_SLOT(n, 10, 2) | IFX_HPPASS_TRIG_IN_TYPE_SLOT(n, 11, 3) |    \
+	 IFX_HPPASS_TRIG_IN_TYPE_SLOT(n, 12, 4) | IFX_HPPASS_TRIG_IN_TYPE_SLOT(n, 13, 5) |    \
+	 IFX_HPPASS_TRIG_IN_TYPE_SLOT(n, 14, 6) | IFX_HPPASS_TRIG_IN_TYPE_SLOT(n, 15, 7))
+
+#define IFX_HPPASS_PACK_HW_TR_MODE_2(n)                                                        \
+	(IFX_HPPASS_TRIG_IN_HW_MODE_SLOT(n, 8, 0) | IFX_HPPASS_TRIG_IN_HW_MODE_SLOT(n, 9, 1) |\
+	 IFX_HPPASS_TRIG_IN_HW_MODE_SLOT(n, 10, 2) | IFX_HPPASS_TRIG_IN_HW_MODE_SLOT(n, 11, 3) |\
+	 IFX_HPPASS_TRIG_IN_HW_MODE_SLOT(n, 12, 4) | IFX_HPPASS_TRIG_IN_HW_MODE_SLOT(n, 13, 5) |\
+	 IFX_HPPASS_TRIG_IN_HW_MODE_SLOT(n, 14, 6) | IFX_HPPASS_TRIG_IN_HW_MODE_SLOT(n, 15, 7))
+#endif
 
 /* MMIO_TR_LEVEL_CFG.BYPASS_SYNC slot bit (TRM 002-39445 §20.1.100). */
 #define IFX_HPPASS_PACK_SYNC_BYPASS_BIT(n, slot)                                               \
@@ -1189,6 +1215,9 @@ static int ifx_hppass_mfd_pm_action(const struct device *dev, enum pm_device_act
 		},                                                                             \
 		.trig_in_sel = IFX_HPPASS_PACK_TRIG_IN_SEL(n),                                \
 		.hw_tr_mode  = IFX_HPPASS_PACK_HW_TR_MODE(n),                                 \
+		IF_ENABLED(CONFIG_MFD_INFINEON_HPPASS_V3,                                     \
+			   (.trig_in_sel_2 = IFX_HPPASS_PACK_TRIG_IN_SEL_2(n),                \
+			    .hw_tr_mode_2 = IFX_HPPASS_PACK_HW_TR_MODE_2(n),))                 \
 		.trig_pulse = {                                                                \
 			(cy_en_hppass_trig_out_pulse_t)DT_INST_PROP_OR(n, trig_pulse_0, 0),   \
 			(cy_en_hppass_trig_out_pulse_t)DT_INST_PROP_OR(n, trig_pulse_1, 0),   \
