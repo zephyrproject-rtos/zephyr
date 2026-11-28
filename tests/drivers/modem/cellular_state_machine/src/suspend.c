@@ -12,6 +12,7 @@
 #include <modem_cellular_test.h>
 #include <zephyr/ztest.h>
 
+static const struct device *const modem = DEVICE_DT_GET(DT_ALIAS(modem));
 static const struct device *const modem_slow = DEVICE_DT_GET(DT_NODELABEL(modem_slow));
 static const struct device *const modem_no_power = DEVICE_DT_GET(DT_NODELABEL(modem_no_power));
 
@@ -251,6 +252,23 @@ ZTEST(modem_cellular_suspend, test_from_dial)
 ZTEST(modem_cellular_suspend, test_from_deregistered)
 {
 	suspend_from(BOOT_DEREGISTERED, true);
+}
+
+/* A modem that never answers the CMUX disconnect gets the shutdown script on the AT channel,
+ * not on the PPP channel the dial left DLCI2 to
+ */
+ZTEST(modem_cellular_suspend, test_cmux_disconnect_unanswered)
+{
+	modem_restart(modem);
+	advance_to(modem, BOOT_LINK_UP);
+	test_backend_cmux_disconnect_hold(true);
+
+	start_suspend(modem);
+	/* The power-off waits 2 s for the disconnect, as long as expect_line() waits */
+	k_msleep(1000);
+	expect_line(TEST_BACKEND_PIPE_DLCI1, MODEM_CELLULAR_TEST_SHUTDOWN_CMD);
+	ok(TEST_BACKEND_PIPE_DLCI1);
+	finish_clean_suspend(modem);
 }
 
 /* Suspend from link up, then again once idle */

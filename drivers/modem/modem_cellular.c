@@ -2069,7 +2069,12 @@ static void modem_cellular_run_dial_script_event_handler(struct modem_cellular_d
 		modem_chat_release(&data->chat);
 		modem_chat_attach(&data->chat, data->dlci1_pipe);
 
-		/* PHY is now up and searching for network */
+		/* PHY is now up and searching for network. Keep the interface dormant
+		 * until registered, so PPP does not start before the modem has answered
+		 * the dial: a previous link may have ended without passing through
+		 * AWAIT_PPP_DEAD, leaving the interface not dormant.
+		 */
+		net_if_dormant_on(modem_ppp_get_iface(config->ppp));
 		net_if_carrier_on(modem_ppp_get_iface(config->ppp));
 
 		if (modem_ppp_attach(config->ppp, data->dlci2_pipe) < 0) {
@@ -2110,6 +2115,7 @@ static void modem_cellular_run_dial_script_event_handler(struct modem_cellular_d
 
 static int modem_cellular_on_run_dial_script_state_leave(struct modem_cellular_data *data)
 {
+	data->cmd_pipe = data->dlci1_pipe;
 	return modem_chat_attach(&data->chat, data->dlci1_pipe);
 }
 

@@ -110,6 +110,7 @@ K_MSGQ_DEFINE(line_msgq, sizeof(struct test_backend_line), 16, 4);
 static struct test_backend test_backends[] = {DT_INST_FOREACH_STATUS_OKAY(TEST_BACKEND_DEFINE)};
 static struct test_backend *active_backend;
 static bool cmux_connect_hold;
+static bool cmux_disconnect_hold;
 /* Set when a driver line was truncated or did not fit in the queue */
 static bool lines_lost;
 
@@ -238,6 +239,7 @@ void test_backend_reset(const struct device *modem)
 	k_msgq_purge(&line_msgq);
 	lines_lost = false;
 	cmux_connect_hold = false;
+	cmux_disconnect_hold = false;
 	active_backend->cmux_connecting = false;
 	active_backend->cmux_connected = false;
 
@@ -515,6 +517,11 @@ void test_backend_cmux_connect_hold(bool hold)
 	cmux_connect_hold = hold;
 }
 
+void test_backend_cmux_disconnect_hold(bool hold)
+{
+	cmux_disconnect_hold = hold;
+}
+
 bool test_backend_wait_for_cmux_connect(k_timeout_t timeout)
 {
 	k_timepoint_t end = sys_timepoint_calc(timeout);
@@ -559,6 +566,11 @@ int modem_cmux_disconnect(struct modem_cmux *cmux)
 	/* As the real CMUX, nothing is reported unless connected */
 	if (!tbackend->cmux_connected) {
 		return -EALREADY;
+	}
+
+	/* The modem never answers: the CMUX stays connected */
+	if (cmux_disconnect_hold) {
+		return 0;
 	}
 
 	tbackend->cmux_connected = false;
