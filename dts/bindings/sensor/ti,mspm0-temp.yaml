@@ -1,0 +1,68 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: TI MSPM0 internal die temperature sensor
+
+description: |
+  The temperature sensor is an internal input of the ADC12. Each device stores a
+  single-point factory trim, TEMP_SENSE0: the 12-bit ADC code of the sensor at
+  ts-trim-temp, measured against a ts-trim-vref reference. The driver samples the
+  sensor on the ADC internal reference and computes
+
+    T = ts-trim-temp + (V_sample - V_trim) / ts-coefficient
+
+  The trim conditions and the coefficient come from the device datasheet and are
+  set in the SoC devicetree.
+
+  The referenced ADC channel must use the internal reference
+  (zephyr,reference = "ADC_REF_INTERNAL", with the vref property set on the ADC
+  node) and sample for at least 12.5 us.
+
+compatible: "ti,mspm0-temp"
+
+include: sensor-device.yaml
+
+properties:
+  io-channels:
+    required: true
+    description: ADC channel connected to the temperature sensor.
+
+  ts-trim-temp:
+    type: int
+    required: true
+    description: Temperature of the factory trim (TSTRIM), in degrees Celsius.
+
+  ts-trim-vref:
+    type: int
+    required: true
+    description: |
+      Reference voltage of the factory trim measurement, in millivolts: 1400 for
+      the internal reference, or the supply voltage when the trim was taken against
+      VDD.
+
+  ts-coefficient:
+    type: int
+    required: true
+    description: Temperature coefficient of the sensor (TSc), in microvolts per degree Celsius.
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/adc/adc.h>
+
+    &adc0 {
+        vref = <&vref0>;
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        channel@b {
+            reg = <11>;
+            zephyr,gain = "ADC_GAIN_1";
+            zephyr,reference = "ADC_REF_INTERNAL";
+            zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 800)>;
+            zephyr,resolution = <12>;
+        };
+    };
+
+    &die_temp {
+        status = "okay";
+    };

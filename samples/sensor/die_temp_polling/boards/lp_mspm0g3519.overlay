@@ -1,0 +1,39 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+
+/ {
+	aliases {
+		die-temp0 = &die_temp;
+	};
+};
+
+&adc0 {
+	clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+	max-result-reg = <12>;
+	/* The binding needs a pin; the temperature sensor is an internal input */
+	pinctrl-0 = <&analog_pb25>;
+	pinctrl-names = "default";
+	vref = <&vref0>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	ti,clk-divider = <1>;
+	ti,clk-range = <6>;
+	status = "okay";
+
+	/* At least 12.5 us of sampling */
+	channel@b {
+		reg = <11>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 800)>;
+		zephyr,resolution = <12>;
+	};
+};
+
+&die_temp {
+	status = "okay";
+};

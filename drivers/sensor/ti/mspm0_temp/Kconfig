@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config MSPM0_TEMP
+	bool "TI MSPM0 die temperature sensor"
+	default y
+	depends on DT_HAS_TI_MSPM0_TEMP_ENABLED
+	select ADC
+	help
+	  Enable the driver for the internal die temperature sensor of TI MSPM0
+	  devices, read through the ADC and converted with the factory trim.

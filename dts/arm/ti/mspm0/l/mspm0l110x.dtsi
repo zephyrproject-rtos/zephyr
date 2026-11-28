@@ -12,6 +12,15 @@
 /delete-node/ &gpioc;
 
 / {
+	die_temp: dietemp {
+		compatible = "ti,mspm0-temp";
+		io-channels = <&adc0 11>;
+		ts-trim-temp = <30>;
+		ts-trim-vref = <1400>;
+		ts-coefficient = <(-1750)>;
+		status = "disabled";
+	};
+
 	soc {
 		sram0: memory@20000000 {
 			reg = <0x20000000 DT_SIZE_K(4)>;
