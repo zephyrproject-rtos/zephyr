@@ -3404,6 +3404,81 @@ class DeviceAPICheck(ComplianceTest):
                         )
 
 
+class DevicetreeClassCheck(ComplianceTest):
+    """
+    Checks that the device classes that devicetree bindings declare with
+    the "class" key are device API classes, declared as "__subsystem struct
+    <class>_driver_api".
+    """
+
+    name = "DevicetreeClasses"
+    doc = zephyr_doc_detail_builder("/build/dts/bindings-syntax.html#class")
+
+    BINDINGS_DIR = "dts/bindings/"
+    TEST_BINDINGS_DIR = "dts/bindings/test/"
+
+    @staticmethod
+    def api_classes():
+        """
+        Returns the device API classes: the "__subsystem struct
+        <class>_driver_api" declarations that the build collects into its
+        list of device classes, in the headers of the repository and, for a
+        repository other than Zephyr, under include/ of Zephyr.
+        """
+        from glob import glob
+
+        sys.path.insert(0, os.fspath(ZEPHYR_BASE / "scripts" / "build"))
+        import parse_syscalls
+
+        found = git("grep", "-l", "__subsystem", "--", "*.h", cwd=GIT_TOP, ignore_non_zero=True)
+        headers = [GIT_TOP / fname for fname in found.splitlines()]
+        if not ZEPHYR_BASE.samefile(GIT_TOP):
+            headers += glob(f"{os.fspath(ZEPHYR_BASE / 'include')}/**/*.h", recursive=True)
+
+        structs = []
+        for fname in headers:
+            with open(fname, encoding="utf-8", errors="replace") as f:
+                parse_syscalls.tagged_struct_update(structs, "__subsystem", f.read())
+        suffix = "_driver_api"
+        return {name[: -len(suffix)] for name in structs if name.endswith(suffix)}
+
+    def run(self):
+        bindings = [
+            fname
+            for fname in get_files(filter="d")
+            if fname.endswith(".yaml")
+            and self.BINDINGS_DIR in fname
+            and self.TEST_BINDINGS_DIR not in fname
+        ]
+        if not bindings:
+            self.skip("no changes to devicetree bindings were made")
+
+        api_classes = self.api_classes()
+        for fname in bindings:
+            try:
+                with open(GIT_TOP / fname, encoding="utf-8") as f:
+                    binding = yaml.load(f, Loader=SafeLoader)
+            except yaml.YAMLError:
+                # Reported by the DevicetreeBindings check.
+                continue
+
+            # A binding declares classes for its nodes and, in its child
+            # bindings, for their child nodes.
+            while isinstance(binding, dict):
+                classes = binding.get("class") or []
+                for cls in [classes] if isinstance(classes, str) else classes:
+                    ident = str(cls).replace("-", "_")
+                    if ident not in api_classes:
+                        self.fmtd_failure(
+                            "error",
+                            "DevicetreeClasses",
+                            fname,
+                            desc=f"unknown device class '{cls}': no '__subsystem "
+                            f"struct {ident}_driver_api' declaration exists.",
+                        )
+                binding = binding.get("child-binding")
+
+
 def init_logs(cli_arg):
     # Initializes logging
 
