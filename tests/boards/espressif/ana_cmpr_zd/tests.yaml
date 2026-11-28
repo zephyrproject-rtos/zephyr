@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  boards.espressif.ana_cmpr_zd:
+    harness: ztest
+    platform_allow:
+      - esp32s31_function_coreboard/esp32s31/hpcore
+    tags:
+      - drivers
+      - comparator
+  boards.espressif.ana_cmpr_zd.external_ref:
+    harness: ztest
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="boards/esp32s31_function_coreboard_esp32s31_hpcore_ext.overlay"
+    platform_allow:
+      - esp32s31_function_coreboard/esp32s31/hpcore
+    tags:
+      - drivers
+      - comparator

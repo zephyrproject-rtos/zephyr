@@ -1,0 +1,141 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Espressif zero-detector analog comparator.
+
+  One comparator is time-multiplexed across up to three input pads. Each
+  enabled child node is a comparator device. The reference, the hysteresis,
+  the clock and the scan timing are shared by every child.
+
+  The GPIO selected by each pad index is SoC-specific. A pad cannot be both
+  an input and the external reference, and two children cannot select the
+  same pad. Hysteresis is applied only for the internal reference, so
+  hysteresis-mv must be 0 when ref-source is "external".
+
+  An armed trigger starts a periodic full scan of every enabled input. The
+  scan period has to be longer than one pass over those inputs.
+
+  Pad index to GPIO:
+    ESP32-S31 unit 0: pad 0 GPIO37, pad 1 GPIO38, pad 2 GPIO39, pad 3 GPIO40
+
+  Example (internal reference at 50% of VDD, pad 0):
+
+    &ana_cmpr0 {
+            status = "okay";
+            ref-source = "internal";
+            ref-voltage = <50>;
+            hysteresis-mv = <40>;
+
+            channel@0 {
+                    reg = <0>;
+                    source-pad = <0>;
+                    status = "okay";
+            };
+    };
+
+compatible: "espressif,esp32-ana-cmpr-zd"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  ref-source:
+    type: string
+    default: "internal"
+    enum:
+      - "internal"
+      - "external"
+    description: |
+      Reference source. "internal" uses the fraction of VDD set by
+      ref-voltage. "external" uses the voltage on ext-ref-pad.
+
+  ext-ref-pad:
+    type: int
+    default: 3
+    enum: [0, 1, 2, 3]
+    description: |
+      Pad index of the external reference. Used only when ref-source is
+      "external". No enabled child may use this pad.
+
+  ref-voltage:
+    type: int
+    default: 50
+    enum: [0, 10, 20, 30, 40, 50, 60, 70]
+    description: |
+      Internal reference, in percent of VDD, in steps of 10. Used only when
+      ref-source is "internal".
+
+  hysteresis-mv:
+    type: int
+    default: 0
+    enum: [0, 40, 80, 120]
+    description: |
+      Nominal hysteresis around the internal reference, in millivolts. The
+      actual value is hardware-dependent. Must be 0 when ref-source is
+      "external".
+
+  clock-source:
+    type: string
+    default: "default"
+    enum:
+      - "default"
+      - "xtal"
+      - "rc-fast"
+    description: |
+      Function clock. "default" selects the SoC default PLL clock. "xtal" is
+      the crystal. "rc-fast" is the internal fast RC oscillator.
+
+  poll-period-ns:
+    type: int
+    default: 1000
+    min: 1
+    description: |
+      Settling time, in nanoseconds, spent on a pad before its sample. The
+      driver converts this to function-clock cycles.
+
+  resample-limit:
+    type: int
+    default: 5
+    min: 1
+    max: 255
+    description: |
+      Consecutive samples that must agree before the stored comparison
+      changes. Applies to the level read and to edges.
+
+  debounce-cycles:
+    type: int
+    default: 1
+    min: 1
+    description: |
+      Function-clock cycles ignored after a cross interrupt. Applies to edges.
+
+  scan-period-us:
+    type: int
+    default: 20
+    min: 1
+    description: |
+      Period of the scan trigger, in microseconds. It must be longer than one
+      full pass over the enabled inputs.
+
+child-binding:
+  description: One comparison input. Each enabled child is a comparator device.
+
+  properties:
+    reg:
+      type: array
+      required: true
+      description: Channel index. 0, 1 and 2 select hardware channels 1, 2 and 3.
+
+    source-pad:
+      type: int
+      required: true
+      enum: [0, 1, 2, 3]
+      description: |
+        Pad index compared against the shared reference. The GPIO selected by
+        each index is SoC-specific.
