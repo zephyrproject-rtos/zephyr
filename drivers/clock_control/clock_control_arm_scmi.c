@@ -141,12 +141,31 @@ static enum clock_control_status scmi_clock_get_status(const struct device *dev,
 							    : CLOCK_CONTROL_STATUS_OFF;
 }
 
+static int scmi_clock_configure(const struct device *dev, clock_control_subsys_t clk, void *data)
+{
+	struct scmi_protocol *proto = dev->data;
+	struct scmi_clock_data *clk_data = proto->data;
+	uint32_t clk_id = POINTER_TO_UINT(clk);
+	const uint32_t *parent_id = data;
+
+	if (parent_id == NULL) {
+		return -ENOSYS;
+	}
+
+	if (clk_id >= clk_data->clk_num || *parent_id >= clk_data->clk_num) {
+		return -EINVAL;
+	}
+
+	return scmi_clock_parent_set(proto, clk_id, *parent_id);
+}
+
 static DEVICE_API(clock_control, scmi_clock_api) = {
 	.on = scmi_clock_on,
 	.off = scmi_clock_off,
 	.get_rate = scmi_clock_get_rate,
 	.set_rate = scmi_clock_set_rate,
 	.get_status = scmi_clock_get_status,
+	.configure = scmi_clock_configure,
 };
 
 static int scmi_clock_init(const struct device *dev)

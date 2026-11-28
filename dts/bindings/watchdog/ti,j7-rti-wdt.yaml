@@ -14,6 +14,24 @@ properties:
   clock-frequency:
     type: int
     required: true
+    description:
+      Functional clock rate in Hz. Used when the node has no clocks
+      property; otherwise the rate is read from the clock controller.
+
+  assigned-clocks:
+    type: phandle-array
+    specifier-space: clock
+    description:
+      Clock whose parent is selected at init. Only the first entry is
+      used, and it must belong to the controller named by clocks.
+
+  assigned-clock-parents:
+    type: phandle-array
+    specifier-space: clock
+    description:
+      Parent selected for the first assigned-clocks entry at init. K3 SCMI
+      firmware lets an agent select the parent of the RTI clock but not set
+      its rate, and only a slow parent gives timeouts above about 1.3 s.
 
   interrupts:
     description:

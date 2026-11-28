@@ -6,10 +6,13 @@
 
 #define DT_DRV_COMPAT ti_j7_rti_wdt
 
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <stdint.h>
+
+#define WDT_TI_RTI_ANY_CLOCKS DT_ANY_INST_HAS_PROP_STATUS_OKAY(clocks)
 
 #define WDENABLE_KEY  0xa98559da
 #define WDDISABLE_KEY 0x5312aced
@@ -65,12 +68,20 @@ struct wdt_ti_rti_data {
 	DEVICE_MMIO_RAM;
 
 	wdt_callback_t callback;
+	uint64_t freq;
 };
 
 struct wdt_ti_rti_config {
 	DEVICE_MMIO_ROM;
 
 	uint64_t freq;
+#if WDT_TI_RTI_ANY_CLOCKS
+	const struct device *clk_dev;
+	clock_control_subsys_t clk_id;
+	clock_control_subsys_t clk_assigned;
+	uint32_t clk_parent_id;
+	bool has_parent;
+#endif
 	bool nmi_supported;
 	bool reset_supported;
 	void (*irq_config_func)(void);
@@ -132,7 +143,7 @@ static int wdt_ti_rti_timeout(const struct device *dev, const struct wdt_timeout
 	const struct wdt_ti_rti_config *config = DEV_CFG(dev);
 	struct wdt_ti_rti_data *data = DEV_DATA(dev);
 	struct wdt_ti_rti_regs *regs = DEV_REGS(dev);
-	uint32_t timer_margin;
+	uint64_t ticks;
 	int window_size;
 
 	data->callback = cfg->callback;
@@ -142,9 +153,8 @@ static int wdt_ti_rti_timeout(const struct device *dev, const struct wdt_timeout
 		return window_size;
 	}
 
-	timer_margin = (cfg->window.max * config->freq) / MSEC_PER_SEC;
-	timer_margin >>= WDT_PRELOAD_SHIFT;
-	if (timer_margin > WDT_PRELOAD_MAX) {
+	ticks = ((uint64_t)cfg->window.max * data->freq / MSEC_PER_SEC) >> WDT_PRELOAD_SHIFT;
+	if (ticks == 0U || ticks > WDT_PRELOAD_MAX + 1U) {
 		return -EINVAL;
 	}
 
@@ -162,7 +172,7 @@ static int wdt_ti_rti_timeout(const struct device *dev, const struct wdt_timeout
 		regs->WWDRXNCTRL = RTIWWDRX_NMI;
 	}
 
-	regs->DWDPRLD = timer_margin;
+	regs->DWDPRLD = (uint32_t)(ticks - 1U);
 	regs->WWDSIZECTRL = (uint32_t)window_size;
 
 	return 0;
@@ -201,6 +211,7 @@ static void wdt_ti_rti_isr(const struct device *dev)
 static int wdt_ti_rti_init(const struct device *dev)
 {
 	const struct wdt_ti_rti_config *config = DEV_CFG(dev);
+	struct wdt_ti_rti_data *data = DEV_DATA(dev);
 	struct wdt_ti_rti_regs *regs;
 
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
@@ -209,6 +220,40 @@ static int wdt_ti_rti_init(const struct device *dev)
 	if (!regs) {
 		return -EINVAL;
 	}
+
+	data->freq = config->freq;
+
+#if WDT_TI_RTI_ANY_CLOCKS
+	if (config->clk_dev != NULL) {
+		uint32_t rate;
+		int ret;
+
+		if (!device_is_ready(config->clk_dev)) {
+			return -ENODEV;
+		}
+
+		if (config->has_parent) {
+			uint32_t parent = config->clk_parent_id;
+
+			ret = clock_control_configure(config->clk_dev, config->clk_assigned,
+						      &parent);
+			if (ret != 0) {
+				return ret;
+			}
+		}
+
+		ret = clock_control_get_rate(config->clk_dev, config->clk_id, &rate);
+		if (ret != 0) {
+			return ret;
+		}
+
+		if (rate == 0U) {
+			return -EINVAL;
+		}
+
+		data->freq = rate;
+	}
+#endif
 
 	if (config->nmi_supported) {
 		config->irq_config_func();
@@ -223,7 +268,39 @@ static DEVICE_API(wdt, wdt_ti_rti_api) = {
 	.install_timeout = wdt_ti_rti_timeout,
 };
 
+#define WDT_TI_RTI_CLK_ID(i, prop)                                                                 \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(i, prop),                                                \
+		    ((clock_control_subsys_t)DT_INST_PHA_BY_IDX(i, prop, 0, name)), (NULL))
+
+#define WDT_TI_RTI_CLK_INIT(i)                                                                     \
+	.clk_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(i, clocks),                                   \
+			       (DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(i))), (NULL)),                   \
+	.clk_id = WDT_TI_RTI_CLK_ID(i, clocks),                                                    \
+	.clk_assigned = WDT_TI_RTI_CLK_ID(i, assigned_clocks),                                     \
+	.clk_parent_id = COND_CODE_1(DT_INST_NODE_HAS_PROP(i, assigned_clock_parents),             \
+				     (DT_INST_PHA_BY_IDX(i, assigned_clock_parents, 0, name)),     \
+				     (0)),                                                         \
+	.has_parent = DT_INST_NODE_HAS_PROP(i, assigned_clock_parents),
+
+#define WDT_TI_RTI_CLK_PROP_CHECK(i, prop)                                                         \
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(i, prop),                                                 \
+		   (BUILD_ASSERT(DT_INST_PROP_LEN(i, prop) == 1,                                   \
+				 #prop " must have one entry");                                    \
+		    IF_ENABLED(DT_INST_NODE_HAS_PROP(i, clocks),                                   \
+			       (BUILD_ASSERT(DT_SAME_NODE(DT_INST_PHANDLE_BY_IDX(i, prop, 0),      \
+							  DT_INST_CLOCKS_CTLR(i)),                 \
+					     #prop " must use the clocks controller");))))
+
+#define WDT_TI_RTI_CLK_CHECK(i)                                                                    \
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(i, assigned_clock_parents),                               \
+		   (BUILD_ASSERT(DT_INST_NODE_HAS_PROP(i, clocks) &&                               \
+				 DT_INST_NODE_HAS_PROP(i, assigned_clocks),                        \
+				 "assigned-clock-parents needs clocks and assigned-clocks");))     \
+	WDT_TI_RTI_CLK_PROP_CHECK(i, assigned_clocks)                                              \
+	WDT_TI_RTI_CLK_PROP_CHECK(i, assigned_clock_parents)
+
 #define WDT_TI_RTI_INIT(i)                                                                         \
+	WDT_TI_RTI_CLK_CHECK(i)                                                                    \
 	static void wdt_ti_rti_irq_config_##i(void)                                                \
 	{                                                                                          \
 		IF_ENABLED(DT_INST_IRQ_HAS_IDX(i, 0), (						   \
@@ -242,6 +319,7 @@ static DEVICE_API(wdt, wdt_ti_rti_api) = {
 		.nmi_supported = DT_INST_IRQ_HAS_IDX(i, 0),					   \
 		.reset_supported = DT_INST_PROP(i, reset_capable),				   \
 		.irq_config_func = wdt_ti_rti_irq_config_##i,                                      \
+		IF_ENABLED(WDT_TI_RTI_ANY_CLOCKS, (WDT_TI_RTI_CLK_INIT(i)))                        \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(i, wdt_ti_rti_init, NULL, &wdt_ti_rti_data_##i,                      \
