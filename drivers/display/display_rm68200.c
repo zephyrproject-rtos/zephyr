@@ -9,6 +9,7 @@
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/mipi_dsi.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
@@ -94,14 +95,6 @@ static int rm68200_dcs_write(const struct device *dev, uint8_t cmd, uint8_t *buf
 	return mipi_dsi_dcs_write(config->mipi_dsi, config->channel, cmd, buf, len);
 }
 
-static int rm68200_write(const struct device *dev, const uint16_t x,
-			 const uint16_t y,
-			 const struct display_buffer_descriptor *desc,
-			 const void *buf)
-{
-	return 0;
-}
-
 static int rm68200_blanking_off(const struct device *dev)
 {
 	const struct rm68200_config *config = dev->config;
@@ -124,28 +117,6 @@ static int rm68200_blanking_on(const struct device *dev)
 	}
 }
 
-static int rm68200_set_pixel_format(const struct device *dev,
-				    const enum display_pixel_format pixel_format)
-{
-	const struct rm68200_config *config = dev->config;
-
-	if (pixel_format == config->pixel_format) {
-		return 0;
-	}
-	LOG_ERR("Pixel format change not implemented");
-	return -ENOTSUP;
-}
-
-static int rm68200_set_orientation(const struct device *dev,
-				   const enum display_orientation orientation)
-{
-	if (orientation == DISPLAY_ORIENTATION_NORMAL) {
-		return 0;
-	}
-	LOG_ERR("Changing display orientation not implemented");
-	return -ENOTSUP;
-}
-
 static void rm68200_get_capabilities(const struct device *dev,
 				     struct display_capabilities *capabilities)
 {
@@ -153,18 +124,16 @@ static void rm68200_get_capabilities(const struct device *dev,
 
 	capabilities->x_resolution = config->panel_width;
 	capabilities->y_resolution = config->panel_height;
-	capabilities->supported_pixel_formats = config->pixel_format;
-	capabilities->current_pixel_format = config->pixel_format;
+	capabilities->current_pixel_format = config->pixel_format == MIPI_DSI_PIXFMT_RGB565 ?
+					     PIXEL_FORMAT_RGB_565 : PIXEL_FORMAT_RGB_888;
+	capabilities->supported_pixel_formats = capabilities->current_pixel_format;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
 
 static DEVICE_API(display, rm68200_api) = {
 	.blanking_on = rm68200_blanking_on,
 	.blanking_off = rm68200_blanking_off,
-	.write = rm68200_write,
 	.get_capabilities = rm68200_get_capabilities,
-	.set_pixel_format = rm68200_set_pixel_format,
-	.set_orientation = rm68200_set_orientation,
 };
 
 static int rm68200_init(const struct device *dev)

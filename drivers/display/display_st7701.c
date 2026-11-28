@@ -129,13 +129,7 @@ struct st7701_config {
 	uint8_t gip_ef_len;
 	uint8_t pvgamctrl_len;
 	uint8_t nvgamctrl_len;
-};
-
-struct st7701_data {
-	uint16_t xres;
-	uint16_t yres;
-	uint8_t dsi_pixel_format;
-	enum display_pixel_format pixel_format;
+	uint8_t pixel_format;
 	enum display_orientation orientation;
 };
 
@@ -229,7 +223,6 @@ static int st7701_check_id(const struct device *dev)
 
 static int st7701_configure(const struct device *dev)
 {
-	struct st7701_data *data = dev->data;
 	const struct st7701_config *cfg = dev->config;
 	uint8_t buf[4];
 	int ret;
@@ -338,7 +331,7 @@ static int st7701_configure(const struct device *dev)
 	k_msleep(120);
 
 	/* Set pixel color format */
-	switch (data->dsi_pixel_format) {
+	switch (cfg->pixel_format) {
 	case MIPI_DSI_PIXFMT_RGB565:
 		buf[0] = MIPI_DCS_PIXEL_FORMAT_16BIT;
 		break;
@@ -346,7 +339,7 @@ static int st7701_configure(const struct device *dev)
 		buf[0] = MIPI_DCS_PIXEL_FORMAT_24BIT;
 		break;
 	default:
-		LOG_ERR("Unsupported pixel format 0x%x!", data->dsi_pixel_format);
+		LOG_ERR("Unsupported pixel format 0x%x!", cfg->pixel_format);
 		return -ENOTSUP;
 	}
 
@@ -367,7 +360,12 @@ static int st7701_configure(const struct device *dev)
 
 	buf[0] = 0x00;
 	buf[1] = 0x00;
-	sys_put_be16(data->xres, (uint8_t *)&buf[2]);
+	if (cfg->orientation == DISPLAY_ORIENTATION_NORMAL ||
+	    cfg->orientation == DISPLAY_ORIENTATION_ROTATED_180) {
+		sys_put_be16(cfg->width, (uint8_t *)&buf[2]);
+	} else {
+		sys_put_be16(cfg->height, (uint8_t *)&buf[2]);
+	}
 	ret = st7701_dcs_write(dev, MIPI_DCS_SET_COLUMN_ADDRESS, buf, 4);
 	if (ret < 0) {
 		return ret;
@@ -375,7 +373,12 @@ static int st7701_configure(const struct device *dev)
 
 	buf[0] = 0x00;
 	buf[1] = 0x00;
-	sys_put_be16(data->yres, (uint8_t *)&buf[2]);
+	if (cfg->orientation == DISPLAY_ORIENTATION_NORMAL ||
+	    cfg->orientation == DISPLAY_ORIENTATION_ROTATED_180) {
+		sys_put_be16(cfg->height, (uint8_t *)&buf[2]);
+	} else {
+		sys_put_be16(cfg->width, (uint8_t *)&buf[2]);
+	}
 	ret = st7701_dcs_write(dev, MIPI_DCS_SET_PAGE_ADDRESS, buf, 4);
 	if (ret < 0) {
 		return ret;
@@ -459,7 +462,6 @@ static void st7701_get_capabilities(const struct device *dev,
 				    struct display_capabilities *capabilities)
 {
 	const struct st7701_config *cfg = dev->config;
-	struct st7701_data *data = dev->data;
 
 	if (!capabilities) {
 		return;
@@ -467,9 +469,10 @@ static void st7701_get_capabilities(const struct device *dev,
 
 	capabilities->x_resolution = cfg->width;
 	capabilities->y_resolution = cfg->height;
-	capabilities->supported_pixel_formats = data->pixel_format;
-	capabilities->current_pixel_format = data->pixel_format;
-	capabilities->current_orientation = data->orientation;
+	capabilities->current_pixel_format = cfg->pixel_format == MIPI_DSI_PIXFMT_RGB565 ?
+					     PIXEL_FORMAT_RGB_565 : PIXEL_FORMAT_RGB_888;
+	capabilities->supported_pixel_formats = capabilities->current_pixel_format;
+	capabilities->current_orientation = cfg->orientation;
 }
 
 #ifdef CONFIG_PM_DEVICE
@@ -502,7 +505,6 @@ static DEVICE_API(display, st7701_api) = {
 static int st7701_init(const struct device *dev)
 {
 	const struct st7701_config *cfg = dev->config;
-	struct st7701_data *data = dev->data;
 	struct mipi_dsi_device mdev;
 	int ret;
 
@@ -528,28 +530,9 @@ static int st7701_init(const struct device *dev)
 		k_msleep(100);
 	}
 
-	/* store x/y resolution & rotation */
-	if (cfg->rotation == 0) {
-		data->xres = cfg->width;
-		data->yres = cfg->height;
-		data->orientation = DISPLAY_ORIENTATION_NORMAL;
-	} else if (cfg->rotation == 90) {
-		data->xres = cfg->height;
-		data->yres = cfg->width;
-		data->orientation = DISPLAY_ORIENTATION_ROTATED_90;
-	} else if (cfg->rotation == 180) {
-		data->xres = cfg->width;
-		data->yres = cfg->height;
-		data->orientation = DISPLAY_ORIENTATION_ROTATED_180;
-	} else if (cfg->rotation == 270) {
-		data->xres = cfg->height;
-		data->yres = cfg->width;
-		data->orientation = DISPLAY_ORIENTATION_ROTATED_270;
-	}
-
 	/* attach to MIPI-DSI host */
 	mdev.data_lanes = cfg->data_lanes;
-	mdev.pixfmt = data->dsi_pixel_format;
+	mdev.pixfmt = cfg->pixel_format;
 	mdev.mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST | MIPI_DSI_MODE_LPM;
 
 	mdev.timings.hactive = cfg->width;
@@ -687,12 +670,10 @@ static int st7701_init(const struct device *dev)
 		.gip_ef_len = DT_INST_PROP_LEN_OR(inst, gip_ef, 0),                                \
 		.pvgamctrl_len = DT_INST_PROP_LEN_OR(inst, pvgamctrl, 0),                          \
 		.nvgamctrl_len = DT_INST_PROP_LEN_OR(inst, nvgamctrl, 0),                          \
-	};                                                                                         \
-	static struct st7701_data st7701_data_##inst = {                                           \
-		.dsi_pixel_format = DT_INST_PROP(inst, pixel_format),                              \
+		.pixel_format = DT_INST_PROP(inst, pixel_format),                                  \
 	};                                                                                         \
 	PM_DEVICE_DT_INST_DEFINE(inst, st7701_pm_action);                                          \
-	DEVICE_DT_INST_DEFINE(inst, &st7701_init, PM_DEVICE_DT_INST_GET(inst), &st7701_data_##inst,\
+	DEVICE_DT_INST_DEFINE(inst, &st7701_init, PM_DEVICE_DT_INST_GET(inst), NULL,               \
 			      &st7701_config_##inst, POST_KERNEL,                                  \
 			      CONFIG_DISPLAY_INIT_PRIORITY, &st7701_api);
 

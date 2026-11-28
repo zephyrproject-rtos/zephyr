@@ -15,6 +15,7 @@
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/mipi_dsi.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/logging/log.h>
 #include "display_nt35510.h"
@@ -57,14 +58,8 @@ struct nt35510_config {
 	uint16_t width;
 	uint16_t height;
 	uint8_t channel;
-	uint16_t rotation;
-};
-
-struct nt35510_data {
-	enum display_pixel_format pixel_format;
+	uint8_t pixel_format;
 	enum display_orientation orientation;
-	uint16_t xres;
-	uint16_t yres;
 };
 
 struct nt35510_init_cmd {
@@ -189,7 +184,7 @@ static int nt35510_write_sequence(const struct device *dev, const struct nt35510
 /* Initialization, configuration turn on sequence */
 static int nt35510_config(const struct device *dev)
 {
-	struct nt35510_data *data = dev->data;
+	const struct nt35510_config *cfg = dev->config;
 	int ret;
 
 	ret = nt35510_write_sequence(dev, init_cmds, ARRAY_SIZE(init_cmds));
@@ -200,7 +195,7 @@ static int nt35510_config(const struct device *dev)
 	k_msleep(200);
 
 	/* Configure orientation */
-	if (data->orientation == DISPLAY_ORIENTATION_NORMAL) {
+	if (cfg->orientation == DISPLAY_ORIENTATION_NORMAL) {
 		ret = nt35510_write_sequence(dev, portrait_cmds, ARRAY_SIZE(portrait_cmds));
 	} else {
 		ret = nt35510_write_sequence(dev, landscape_cmds, ARRAY_SIZE(landscape_cmds));
@@ -219,7 +214,7 @@ static int nt35510_config(const struct device *dev)
 
 	/* Set color mode */
 	ret = nt35510_write_reg_val(dev, NT35510_CMD_COLMOD,
-				    data->pixel_format == PIXEL_FORMAT_RGB_565
+				    cfg->pixel_format == MIPI_DSI_PIXFMT_RGB565
 					    ? NT35510_COLMOD_RGB565
 					    : NT35510_COLMOD_RGB888);
 	if (ret < 0) {
@@ -270,26 +265,13 @@ static void nt35510_get_capabilities(const struct device *dev,
 				     struct display_capabilities *capabilities)
 {
 	const struct nt35510_config *cfg = dev->config;
-	struct nt35510_data *data = dev->data;
 
 	capabilities->x_resolution = cfg->width;
 	capabilities->y_resolution = cfg->height;
-	capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_RGB_888;
-	capabilities->current_pixel_format = data->pixel_format;
-	capabilities->current_orientation = data->orientation;
-}
-
-static int nt35510_set_pixel_format(const struct device *dev,
-				    const enum display_pixel_format pixel_format)
-{
-	struct nt35510_data *data = dev->data;
-
-	if (pixel_format == PIXEL_FORMAT_RGB_565 || pixel_format == PIXEL_FORMAT_RGB_888) {
-		data->pixel_format = pixel_format;
-		return 0;
-	}
-	LOG_ERR("Pixel format not supported");
-	return -ENOTSUP;
+	capabilities->current_pixel_format = cfg->pixel_format == MIPI_DSI_PIXFMT_RGB565 ?
+					     PIXEL_FORMAT_RGB_565 : PIXEL_FORMAT_RGB_888;
+	capabilities->supported_pixel_formats = capabilities->current_pixel_format;
+	capabilities->current_orientation = cfg->orientation;
 }
 
 static int nt35510_check_id(const struct device *dev)
@@ -314,8 +296,8 @@ static int nt35510_check_id(const struct device *dev)
 static int nt35510_init(const struct device *dev)
 {
 	const struct nt35510_config *cfg = dev->config;
-	struct nt35510_data *data = dev->data;
 	struct mipi_dsi_device mdev;
+	uint16_t xres, yres;
 	int ret;
 
 	if (cfg->reset.port) {
@@ -338,39 +320,36 @@ static int nt35510_init(const struct device *dev)
 	}
 
 	/* Store x/y resolution & rotation */
-	if (cfg->rotation == 0) {
-		data->xres = cfg->width;
-		data->yres = cfg->height;
-		data->orientation = DISPLAY_ORIENTATION_NORMAL;
-	} else if (cfg->rotation == 90) {
-		data->xres = cfg->height;
-		data->yres = cfg->width;
-		data->orientation = DISPLAY_ORIENTATION_ROTATED_90;
-	} else if (cfg->rotation == 180) {
-		data->xres = cfg->width;
-		data->yres = cfg->height;
-		data->orientation = DISPLAY_ORIENTATION_ROTATED_180;
-	} else if (cfg->rotation == 270) {
-		data->xres = cfg->height;
-		data->yres = cfg->width;
-		data->orientation = DISPLAY_ORIENTATION_ROTATED_270;
+	switch (cfg->orientation) {
+	case DISPLAY_ORIENTATION_NORMAL:
+		xres = cfg->width;
+		yres = cfg->height;
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_90:
+		xres = cfg->height;
+		yres = cfg->width;
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_180:
+		xres = cfg->width;
+		yres = cfg->height;
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_270:
+	default:
+		xres = cfg->height;
+		yres = cfg->width;
+		break;
 	}
 
 	/* Attach to MIPI-DSI host */
 	mdev.data_lanes = cfg->data_lanes;
 	mdev.mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST | MIPI_DSI_MODE_LPM;
 
-	if (data->pixel_format == PIXEL_FORMAT_RGB_565) {
-		mdev.pixfmt = MIPI_DSI_PIXFMT_RGB565;
-	} else {
-		mdev.pixfmt = MIPI_DSI_PIXFMT_RGB888;
-	}
-
-	mdev.timings.hactive = data->xres;
+	mdev.pixfmt = cfg->pixel_format;
+	mdev.timings.hactive = xres;
 	mdev.timings.hbp = NT35510_480X800_HBP;
 	mdev.timings.hfp = NT35510_480X800_HFP;
 	mdev.timings.hsync = NT35510_480X800_HSYNC;
-	mdev.timings.vactive = data->yres;
+	mdev.timings.vactive = yres;
 	mdev.timings.vbp = NT35510_480X800_VBP;
 	mdev.timings.vfp = NT35510_480X800_VFP;
 	mdev.timings.vsync = NT35510_480X800_VSYNC;
@@ -414,7 +393,6 @@ static DEVICE_API(display, nt35510_api) = {
 	.blanking_off = nt35510_blanking_off,
 	.set_brightness = nt35510_set_brightness,
 	.get_capabilities = nt35510_get_capabilities,
-	.set_pixel_format = nt35510_set_pixel_format,
 };
 
 #define NT35510_DEFINE(n)                                                                          \
@@ -426,13 +404,13 @@ static DEVICE_API(display, nt35510_api) = {
 		.width = DT_INST_PROP(n, width),                                                   \
 		.height = DT_INST_PROP(n, height),                                                 \
 		.channel = DT_INST_REG_ADDR(n),                                                    \
-		.rotation = DT_INST_PROP(n, rotation),                                             \
+		.orientation = DT_INST_PROP(n, rotation) == 0 ? DISPLAY_ORIENTATION_NORMAL :       \
+			       DT_INST_PROP(n, rotation) == 90 ? DISPLAY_ORIENTATION_ROTATED_90 :  \
+			       DT_INST_PROP(n, rotation) == 180 ? DISPLAY_ORIENTATION_ROTATED_180 :\
+			       DISPLAY_ORIENTATION_ROTATED_270,                                    \
 	};                                                                                         \
                                                                                                    \
-	static struct nt35510_data nt35510_data_##n = {                                            \
-		.pixel_format = DT_INST_PROP(n, pixel_format),                                     \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, &nt35510_init, NULL, &nt35510_data_##n, &nt35510_config_##n,      \
+	DEVICE_DT_INST_DEFINE(n, &nt35510_init, NULL, NULL, &nt35510_config_##n,      \
 			      POST_KERNEL, CONFIG_DISPLAY_NT35510_INIT_PRIORITY, &nt35510_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NT35510_DEFINE)
