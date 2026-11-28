@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Gail Rojas
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_MSP432P4XX
+	bool "TI MSP432P4XX RTC_C driver"
+	default y
+	depends on DT_HAS_TI_MSP432P4XX_RTC_ENABLED
+	help
+	  Real-time clock driver for the RTC_C peripheral on TI MSP432P4XX SoCs.
