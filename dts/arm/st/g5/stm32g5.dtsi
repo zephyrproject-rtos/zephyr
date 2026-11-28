@@ -478,6 +478,24 @@
 			};
 		};
 
+		gpdma1: dma@40020000 {
+			compatible = "st,stm32u5-dma";
+			reg = <0x40020000 DT_SIZE_K(1)>;
+			#dma-cells = <3>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 0)>;
+			dma-requests = <157>;
+			status = "disabled";
+		};
+
+		gpdma2: dma@40021000 {
+			compatible = "st,stm32u5-dma";
+			reg = <0x40021000 DT_SIZE_K(1)>;
+			#dma-cells = <3>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 1)>;
+			dma-requests = <157>;
+			status = "disabled";
+		};
+
 		flash: flash-controller@40022000 {
 			compatible = "st,stm32g5-flash-controller";
 			reg = <0x40022000 DT_SIZE_K(1)>;
