@@ -520,7 +520,8 @@ static int eeprom_emu_range_is_valid(const struct device *dev, off_t address,
 {
 	const struct eeprom_emu_config *dev_config = dev->config;
 
-	if ((address + len) <= dev_config->size) {
+	if ((address >= 0) && ((uintmax_t)address <= dev_config->size) &&
+	    (len <= dev_config->size - (size_t)address)) {
 		return 1;
 	}
 
