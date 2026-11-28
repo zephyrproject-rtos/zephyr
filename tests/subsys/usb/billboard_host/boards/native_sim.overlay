@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &zephyr_udc0;
+
+/ {
+	zephyr_uhc0: uhc_vrt0 {
+		compatible = "zephyr,uhc-virtual";
+
+		zephyr_udc0: udc_vrt0 {
+			compatible = "zephyr,udc-virtual";
+			num-bidir-endpoints = <1>;
+			maximum-speed = "full-speed";
+		};
+	};
+
+	usbh_billboard: usbh_billboard {
+		compatible = "zephyr,usbh-billboard";
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		any_billboard_device: billboard-device@ffffffff {
+			compatible = "zephyr,usbh-billboard-device";
+			reg = <0xffffffff>;
+			status = "okay";
+			match-class;
+		};
+	};
+};
