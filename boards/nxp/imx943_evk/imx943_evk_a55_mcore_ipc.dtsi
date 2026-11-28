@@ -1,0 +1,54 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/ {
+	/* XCache range maintenance does not cover this shared OCRAM window. */
+	a55_m33s_shm: memory@20800000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x20800000 DT_SIZE_K(640)>;
+		zephyr,memory-region = "A55_M33S_SHMEM";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
+		status = "disabled";
+	};
+
+	a55_m33s_rsc_table: memory@208a0000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x208a0000 DT_SIZE_K(4)>;
+		zephyr,memory-region = "A55_M33S_RSC_TABLE";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
+		status = "disabled";
+	};
+
+	a55_m70_shm: memory@82000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x82000000 DT_SIZE_M(32)>;
+		zephyr,memory-region = "A55_M70_SHMEM";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
+		status = "disabled";
+	};
+
+	a55_m70_rsc_table: memory@82220000 {
+		compatible = "mmio-sram";
+		reg = <0x82220000 DT_SIZE_K(4)>;
+		status = "disabled";
+	};
+
+	a55_m71_shm: memory@84000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x84000000 DT_SIZE_M(32)>;
+		zephyr,memory-region = "A55_M71_SHMEM";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
+		status = "disabled";
+	};
+
+	a55_m71_rsc_table: memory@84220000 {
+		compatible = "mmio-sram";
+		reg = <0x84220000 DT_SIZE_K(4)>;
+		status = "disabled";
+	};
+};
