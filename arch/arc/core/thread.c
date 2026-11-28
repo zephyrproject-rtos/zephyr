@@ -13,6 +13,7 @@
 
 #include <zephyr/kernel.h>
 #include <ksched.h>
+#include <ksmp.h>
 #include <offsets_short.h>
 
 #ifdef CONFIG_USERSPACE
@@ -340,7 +341,7 @@ int arc_vpx_lock(k_timeout_t timeout)
 
 	id = _current_cpu->id;
 #if (CONFIG_MP_MAX_NUM_CPUS > 1) && defined(CONFIG_SCHED_CPU_MASK)
-	__ASSERT(!arch_is_in_isr() && (_current->base.cpu_mask == BIT(id)), "");
+	__ASSERT(!arch_is_in_isr() && (_current->base.cpu_mask == CPU_MASK_CPU(id)), "");
 #endif
 	k_spin_unlock(&lock, key);
 
@@ -359,7 +360,7 @@ void arc_vpx_unlock(void)
 
 	key = k_spin_lock(&lock);
 #if (CONFIG_MP_MAX_NUM_CPUS > 1) && defined(CONFIG_SCHED_CPU_MASK)
-	__ASSERT(!arch_is_in_isr() && (_current->base.cpu_mask == BIT(id)), "");
+	__ASSERT(!arch_is_in_isr() && (_current->base.cpu_mask == CPU_MASK_CPU(id)), "");
 #endif
 	id = _current_cpu->id;
 	k_spin_unlock(&lock, key);

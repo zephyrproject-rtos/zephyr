@@ -18,6 +18,37 @@
 #include <zephyr/sys/barrier.h>
 #include <wait_q.h>
 
+/*
+ * Bits of struct _thread_base.cpu_mask. The mask is 32 bits wide, so there is a bit for each of the
+ * up to 32 CPUs that CONFIG_MP_MAX_NUM_CPUS allows, and none for a CPU that does not exist: the
+ * bits of the CPUs outside of that range are cleared.
+ *
+ * - CPU_MASK_CPU_ALL: the bits of all the CPUs, the mask of a thread that may run on any of them
+ * - CPU_MASK_CPU(n): the bit of the logical CPU n
+ * - CPU_MASK_CPU_RANGE(first, last): the bits of the logical CPUs first to last, both included
+ *
+ * CPU_MASK_CPU() and CPU_MASK_CPU_RANGE() assert that the CPUs they are given exist. They are
+ * statement expressions, so they cannot be used in constant expressions or static initializers.
+ */
+#define CPU_MASK_CPU_ALL ((uint32_t)(UINT32_MAX >> (32 - CONFIG_MP_MAX_NUM_CPUS)))
+#define CPU_MASK_CPU(n)                                                                        \
+	({                                                                                         \
+		int _cpu_mask_n = (n);                                                             \
+		__ASSERT((_cpu_mask_n >= 0) && (_cpu_mask_n < CONFIG_MP_MAX_NUM_CPUS),             \
+			 "CPU %d out of range", _cpu_mask_n);                                      \
+		(uint32_t)BIT(_cpu_mask_n) & CPU_MASK_CPU_ALL;                                     \
+	})
+
+#define CPU_MASK_CPU_RANGE(first, last)                                                        \
+	({                                                                                         \
+		int _cpu_mask_first = (first);                                                     \
+		int _cpu_mask_last = (last);                                                       \
+		__ASSERT((_cpu_mask_first >= 0) && (_cpu_mask_first <= _cpu_mask_last) &&          \
+				 (_cpu_mask_last < CONFIG_MP_MAX_NUM_CPUS),                        \
+			 "CPU range %d-%d out of range", _cpu_mask_first, _cpu_mask_last);         \
+		(uint32_t)GENMASK(_cpu_mask_last, _cpu_mask_first) & CPU_MASK_CPU_ALL;             \
+	})
+
 #ifdef CONFIG_SMP
 
 /* Architecture SMP setup, run between PRE_KERNEL_1 and PRE_KERNEL_2. */

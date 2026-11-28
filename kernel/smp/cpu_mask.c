@@ -6,6 +6,7 @@
 #include <zephyr/kernel.h>
 #include <kspinlock.h>
 #include <ksched.h>
+#include <ksmp.h>
 #include <zephyr/spinlock.h>
 
 # ifdef CONFIG_SMP
@@ -45,12 +46,12 @@ static int cpu_mask_mod(k_tid_t thread, uint32_t enable_mask, uint32_t disable_m
 
 int k_thread_cpu_mask_clear(k_tid_t thread)
 {
-	return cpu_mask_mod(thread, 0, 0xffffffff);
+	return cpu_mask_mod(thread, 0, CPU_MASK_CPU_ALL);
 }
 
 int k_thread_cpu_mask_enable_all(k_tid_t thread)
 {
-	return cpu_mask_mod(thread, 0xffffffff, 0);
+	return cpu_mask_mod(thread, CPU_MASK_CPU_ALL, 0);
 }
 
 int k_thread_cpu_mask_enable(k_tid_t thread, int cpu)
@@ -59,7 +60,7 @@ int k_thread_cpu_mask_enable(k_tid_t thread, int cpu)
 		return -EINVAL;
 	}
 
-	return cpu_mask_mod(thread, BIT(cpu), 0);
+	return cpu_mask_mod(thread, CPU_MASK_CPU(cpu), 0);
 }
 
 int k_thread_cpu_mask_disable(k_tid_t thread, int cpu)
@@ -68,7 +69,7 @@ int k_thread_cpu_mask_disable(k_tid_t thread, int cpu)
 		return -EINVAL;
 	}
 
-	return cpu_mask_mod(thread, 0, BIT(cpu));
+	return cpu_mask_mod(thread, 0, CPU_MASK_CPU(cpu));
 }
 
 int k_thread_cpu_pin(k_tid_t thread, int cpu)
@@ -79,7 +80,7 @@ int k_thread_cpu_pin(k_tid_t thread, int cpu)
 		return -EINVAL;
 	}
 
-	mask = BIT(cpu);
+	mask = CPU_MASK_CPU(cpu);
 
 	return cpu_mask_mod(thread, mask, ~mask);
 }

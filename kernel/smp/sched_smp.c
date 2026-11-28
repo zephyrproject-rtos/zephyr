@@ -175,8 +175,8 @@ void *z_get_next_switch_handle(void *interrupted)
 			 */
 			if (z_is_thread_queued(old_thread)) {
 #ifdef CONFIG_SCHED_IPI_CASCADE
-				if ((new_thread->base.cpu_mask != -1) &&
-				    (old_thread->base.cpu_mask != BIT(cpu_id))) {
+				if ((new_thread->base.cpu_mask != CPU_MASK_CPU_ALL) &&
+				    (old_thread->base.cpu_mask != CPU_MASK_CPU(cpu_id))) {
 					flag_ipi(ipi_mask_create(old_thread));
 				}
 #endif

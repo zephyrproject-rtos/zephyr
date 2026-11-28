@@ -1,0 +1,8 @@
+common:
+  tags:
+    - kernel
+  ignore_faults: true
+  platform_allow:
+    - native_sim
+tests:
+  kernel.multiprocessing.cpu_mask_macros: {}

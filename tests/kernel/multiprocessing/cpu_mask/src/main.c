@@ -6,6 +6,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
 #include <ksched.h>
+#include <ksmp.h>
 
 #if CONFIG_MP_MAX_NUM_CPUS < 2
 #error "CPU mask test requires at least two CPUs"
@@ -1008,7 +1009,7 @@ ZTEST(cpu_mask, test_cpu_mask_default_single_cpu_idle_exempt)
 		struct k_thread *idle_thread = _kernel.cpus[i].idle_thread;
 
 		zassert_not_null(idle_thread, "no idle thread for CPU %u", i);
-		zassert_equal(idle_thread->base.cpu_mask, (uint32_t)-1,
+		zassert_equal(idle_thread->base.cpu_mask, CPU_MASK_CPU_ALL,
 			      "idle thread %u CPU mask 0x%x", i,
 			      idle_thread->base.cpu_mask);
 	}
