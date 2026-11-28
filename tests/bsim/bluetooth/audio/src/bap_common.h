@@ -57,7 +57,7 @@
 #define MAX_SDU_SIZE   310U /* enough for stereo in a single stream with BAP 48_6_1 */
 
 struct unicast_stream {
-	struct audio_test_stream stream;
+	struct audio_test_stream *stream;
 	struct bt_audio_codec_cfg codec_cfg;
 	struct bt_bap_qos_cfg qos;
 };

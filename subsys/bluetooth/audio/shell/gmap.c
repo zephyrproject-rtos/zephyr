@@ -338,10 +338,12 @@ static int cmd_gmap_ac_1(const struct shell *sh, size_t argc, char **argv)
 	const struct cap_unicast_ac_param param = {
 		.name = "AC_1",
 		.conn_cnt = 1,
-		.snk_cnt = {1U},
-		.src_cnt = {0U},
-		.snk_chan_cnt = 1U,
-		.src_chan_cnt = 0U,
+
+		.conn_param[0].cis_cnt = 1U,
+
+		.conn_param[0].cis_param[0].has_snk = true,
+		.conn_param[0].cis_param[0].snk_loc = BT_AUDIO_LOCATION_MONO_AUDIO,
+		.conn_param[0].cis_param[0].has_src = false,
 	};
 
 	ARG_UNUSED(argc);
@@ -357,10 +359,12 @@ static int cmd_gmap_ac_2(const struct shell *sh, size_t argc, char **argv)
 	const struct cap_unicast_ac_param param = {
 		.name = "AC_2",
 		.conn_cnt = 1,
-		.snk_cnt = {0U},
-		.src_cnt = {1U},
-		.snk_chan_cnt = 0U,
-		.src_chan_cnt = 1U,
+
+		.conn_param[0].cis_cnt = 1U,
+
+		.conn_param[0].cis_param[0].has_snk = false,
+		.conn_param[0].cis_param[0].has_src = true,
+		.conn_param[0].cis_param[0].src_loc = BT_AUDIO_LOCATION_MONO_AUDIO,
 	};
 
 	ARG_UNUSED(argc);
@@ -376,10 +380,13 @@ static int cmd_gmap_ac_3(const struct shell *sh, size_t argc, char **argv)
 	const struct cap_unicast_ac_param param = {
 		.name = "AC_3",
 		.conn_cnt = 1U,
-		.snk_cnt = {1U},
-		.src_cnt = {1U},
-		.snk_chan_cnt = 1U,
-		.src_chan_cnt = 1U,
+
+		.conn_param[0].cis_cnt = 1U,
+
+		.conn_param[0].cis_param[0].has_snk = true,
+		.conn_param[0].cis_param[0].snk_loc = BT_AUDIO_LOCATION_MONO_AUDIO,
+		.conn_param[0].cis_param[0].has_src = true,
+		.conn_param[0].cis_param[0].src_loc = BT_AUDIO_LOCATION_MONO_AUDIO,
 	};
 
 	ARG_UNUSED(argc);
@@ -395,10 +402,13 @@ static int cmd_gmap_ac_4(const struct shell *sh, size_t argc, char **argv)
 	const struct cap_unicast_ac_param param = {
 		.name = "AC_4",
 		.conn_cnt = 1U,
-		.snk_cnt = {1U},
-		.src_cnt = {0U},
-		.snk_chan_cnt = 2U,
-		.src_chan_cnt = 0U,
+
+		.conn_param[0].cis_cnt = 1U,
+
+		.conn_param[0].cis_param[0].has_snk = true,
+		.conn_param[0].cis_param[0].snk_loc =
+			BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT,
+		.conn_param[0].cis_param[0].has_src = false,
 	};
 
 	ARG_UNUSED(argc);
@@ -414,10 +424,14 @@ static int cmd_gmap_ac_5(const struct shell *sh, size_t argc, char **argv)
 	const struct cap_unicast_ac_param param = {
 		.name = "AC_5",
 		.conn_cnt = 1U,
-		.snk_cnt = {1U},
-		.src_cnt = {1U},
-		.snk_chan_cnt = 2U,
-		.src_chan_cnt = 1U,
+
+		.conn_param[0].cis_cnt = 1U,
+
+		.conn_param[0].cis_param[0].has_snk = true,
+		.conn_param[0].cis_param[0].snk_loc =
+			BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT,
+		.conn_param[0].cis_param[0].has_src = true,
+		.conn_param[0].cis_param[0].src_loc = BT_AUDIO_LOCATION_MONO_AUDIO,
 	};
 
 	ARG_UNUSED(argc);
@@ -434,10 +448,16 @@ static int cmd_gmap_ac_6_i(const struct shell *sh, size_t argc, char **argv)
 	const struct cap_unicast_ac_param param = {
 		.name = "AC_6_I",
 		.conn_cnt = 1U,
-		.snk_cnt = {2U},
-		.src_cnt = {0U},
-		.snk_chan_cnt = 1U,
-		.src_chan_cnt = 0U,
+
+		.conn_param[0].cis_cnt = 2U,
+
+		.conn_param[0].cis_param[0].has_snk = true,
+		.conn_param[0].cis_param[0].snk_loc = BT_AUDIO_LOCATION_FRONT_LEFT,
+		.conn_param[0].cis_param[0].has_src = false,
+
+		.conn_param[0].cis_param[1].has_snk = true,
+		.conn_param[0].cis_param[1].snk_loc = BT_AUDIO_LOCATION_FRONT_RIGHT,
+		.conn_param[0].cis_param[1].has_src = false,
 	};
 
 	ARG_UNUSED(argc);
@@ -453,10 +473,18 @@ static int cmd_gmap_ac_6_ii(const struct shell *sh, size_t argc, char **argv)
 	const struct cap_unicast_ac_param param = {
 		.name = "AC_6_II",
 		.conn_cnt = 2,
-		.snk_cnt = {1U, 1U},
-		.src_cnt = {0U, 0U},
-		.snk_chan_cnt = 1U,
-		.src_chan_cnt = 0U,
+
+		.conn_param[0].cis_cnt = 1U,
+
+		.conn_param[0].cis_param[0].has_snk = true,
+		.conn_param[0].cis_param[0].snk_loc = BT_AUDIO_LOCATION_FRONT_LEFT,
+		.conn_param[0].cis_param[0].has_src = false,
+
+		.conn_param[1].cis_cnt = 1U,
+
+		.conn_param[1].cis_param[0].has_snk = true,
+		.conn_param[1].cis_param[0].snk_loc = BT_AUDIO_LOCATION_FRONT_RIGHT,
+		.conn_param[1].cis_param[0].has_src = false,
 	};
 
 	ARG_UNUSED(argc);
@@ -474,10 +502,18 @@ static int cmd_gmap_ac_7_ii(const struct shell *sh, size_t argc, char **argv)
 	const struct cap_unicast_ac_param param = {
 		.name = "AC_7_II",
 		.conn_cnt = 2,
-		.snk_cnt = {1U, 0U},
-		.src_cnt = {0U, 1U},
-		.snk_chan_cnt = 1U,
-		.src_chan_cnt = 1U,
+
+		.conn_param[0].cis_cnt = 1U,
+
+		.conn_param[0].cis_param[0].has_snk = true,
+		.conn_param[0].cis_param[0].snk_loc = BT_AUDIO_LOCATION_MONO_AUDIO,
+		.conn_param[0].cis_param[0].has_src = false,
+
+		.conn_param[1].cis_cnt = 1U,
+
+		.conn_param[1].cis_param[0].has_snk = false,
+		.conn_param[1].cis_param[0].has_src = true,
+		.conn_param[1].cis_param[0].src_loc = BT_AUDIO_LOCATION_MONO_AUDIO,
 	};
 
 	ARG_UNUSED(argc);
@@ -493,10 +529,17 @@ static int cmd_gmap_ac_8_i(const struct shell *sh, size_t argc, char **argv)
 	const struct cap_unicast_ac_param param = {
 		.name = "AC_8_I",
 		.conn_cnt = 1U,
-		.snk_cnt = {2U},
-		.src_cnt = {1U},
-		.snk_chan_cnt = 1U,
-		.src_chan_cnt = 1U,
+
+		.conn_param[0].cis_cnt = 2U,
+
+		.conn_param[0].cis_param[0].has_snk = true,
+		.conn_param[0].cis_param[0].snk_loc = BT_AUDIO_LOCATION_FRONT_LEFT,
+		.conn_param[0].cis_param[0].has_src = false,
+
+		.conn_param[0].cis_param[1].has_snk = true,
+		.conn_param[0].cis_param[1].snk_loc = BT_AUDIO_LOCATION_FRONT_RIGHT,
+		.conn_param[0].cis_param[1].has_src = true,
+		.conn_param[0].cis_param[1].src_loc = BT_AUDIO_LOCATION_MONO_AUDIO,
 	};
 
 	ARG_UNUSED(argc);
@@ -512,10 +555,19 @@ static int cmd_gmap_ac_8_ii(const struct shell *sh, size_t argc, char **argv)
 	const struct cap_unicast_ac_param param = {
 		.name = "AC_8_II",
 		.conn_cnt = 2U,
-		.snk_cnt = {1U, 1U},
-		.src_cnt = {1U, 0U},
-		.snk_chan_cnt = 1U,
-		.src_chan_cnt = 1U,
+
+		.conn_param[0].cis_cnt = 1U,
+
+		.conn_param[0].cis_param[0].has_snk = true,
+		.conn_param[0].cis_param[0].snk_loc = BT_AUDIO_LOCATION_FRONT_LEFT,
+		.conn_param[0].cis_param[0].has_src = false,
+
+		.conn_param[1].cis_cnt = 1U,
+
+		.conn_param[1].cis_param[0].has_snk = true,
+		.conn_param[1].cis_param[0].snk_loc = BT_AUDIO_LOCATION_FRONT_RIGHT,
+		.conn_param[1].cis_param[0].has_src = true,
+		.conn_param[1].cis_param[0].src_loc = BT_AUDIO_LOCATION_MONO_AUDIO,
 	};
 
 	ARG_UNUSED(argc);
@@ -531,10 +583,18 @@ static int cmd_gmap_ac_11_i(const struct shell *sh, size_t argc, char **argv)
 	const struct cap_unicast_ac_param param = {
 		.name = "AC_11_I",
 		.conn_cnt = 1U,
-		.snk_cnt = {2U},
-		.src_cnt = {2U},
-		.snk_chan_cnt = 1U,
-		.src_chan_cnt = 1U,
+
+		.conn_param[0].cis_cnt = 2U,
+
+		.conn_param[0].cis_param[0].has_snk = true,
+		.conn_param[0].cis_param[0].snk_loc = BT_AUDIO_LOCATION_FRONT_LEFT,
+		.conn_param[0].cis_param[0].has_src = true,
+		.conn_param[0].cis_param[0].src_loc = BT_AUDIO_LOCATION_FRONT_LEFT,
+
+		.conn_param[0].cis_param[1].has_snk = true,
+		.conn_param[0].cis_param[1].snk_loc = BT_AUDIO_LOCATION_FRONT_RIGHT,
+		.conn_param[0].cis_param[1].has_src = true,
+		.conn_param[0].cis_param[1].src_loc = BT_AUDIO_LOCATION_FRONT_RIGHT,
 	};
 
 	ARG_UNUSED(argc);
@@ -552,10 +612,20 @@ static int cmd_gmap_ac_11_ii(const struct shell *sh, size_t argc, char **argv)
 	const struct cap_unicast_ac_param param = {
 		.name = "AC_11_II",
 		.conn_cnt = 2U,
-		.snk_cnt = {1U, 1U},
-		.src_cnt = {1U, 1U},
-		.snk_chan_cnt = 1U,
-		.src_chan_cnt = 1U,
+
+		.conn_param[0].cis_cnt = 1U,
+
+		.conn_param[0].cis_param[0].has_snk = true,
+		.conn_param[0].cis_param[0].snk_loc = BT_AUDIO_LOCATION_FRONT_LEFT,
+		.conn_param[0].cis_param[0].has_src = true,
+		.conn_param[0].cis_param[0].src_loc = BT_AUDIO_LOCATION_FRONT_LEFT,
+
+		.conn_param[1].cis_cnt = 1U,
+
+		.conn_param[1].cis_param[0].has_snk = true,
+		.conn_param[1].cis_param[0].snk_loc = BT_AUDIO_LOCATION_FRONT_RIGHT,
+		.conn_param[1].cis_param[0].has_src = true,
+		.conn_param[1].cis_param[0].src_loc = BT_AUDIO_LOCATION_FRONT_RIGHT,
 	};
 
 	ARG_UNUSED(argc);
