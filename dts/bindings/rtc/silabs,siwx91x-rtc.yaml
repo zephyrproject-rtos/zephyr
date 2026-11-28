@@ -5,8 +5,16 @@ description: Silabs Siwx91x RTC (Real-Time Counter)
 
 compatible: "silabs,siwx91x-rtc"
 
-include: rtc.yaml
+include:
+  - rtc.yaml
+  - rtc-device.yaml
+  - wuc-device.yaml
 
 properties:
   reg:
     required: true
+
+  wakeup-ctrls:
+    description: |
+      Optional SiWx91x WUC source used to wake the system from an RTC alarm.
+      Set to <&wuc0 SIWX91X_WUC_RTC_ALARM>.
