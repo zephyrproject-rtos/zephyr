@@ -11,6 +11,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/rtio/rtio.h>
+#include <zephyr/sys/atomic.h>
 
 #include "akm09918c_reg.h"
 
@@ -36,6 +37,7 @@ struct akm09918c_data {
 	int16_t z_sample;
 	uint8_t mode;
 #ifdef CONFIG_SENSOR_ASYNC_API
+	atomic_t busy;
 	struct akm09918c_async_fetch_ctx {
 		struct rtio_iodev_sqe *iodev_sqe;
 		uint64_t timestamp;

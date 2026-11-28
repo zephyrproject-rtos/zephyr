@@ -7,6 +7,9 @@
 #include <zephyr/drivers/emul.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/ztest.h>
+#include <zephyr/kernel.h>
+#include <zephyr/rtio/rtio.h>
+#include <zephyr/sys/util.h>
 
 #include "akm09918c.h"
 #include "akm09918c_emul.h"
@@ -100,3 +103,83 @@ ZTEST_F(akm09918c, test_fetch_magn)
 
 	test_fetch_magnetic_field(fixture, magn_percent);
 }
+
+#ifdef CONFIG_SENSOR_ASYNC_API
+
+RTIO_DEFINE_WITH_MEMPOOL(rtio_ctx, 4, 4, 4, 64, sizeof(void *));
+SENSOR_DT_READ_IODEV(iodev, DT_NODELABEL(akm09918c), {SENSOR_CHAN_MAGN_XYZ, 0});
+
+static bool consume_cqe(int32_t *result, void **userdata)
+{
+	struct rtio_cqe *cqe = rtio_cqe_consume(&rtio_ctx);
+	uint8_t *buf = NULL;
+	uint32_t buf_len = 0U;
+
+	if (cqe == NULL) {
+		return false;
+	}
+
+	*result = cqe->result;
+	*userdata = cqe->userdata;
+
+	if ((rtio_cqe_get_mempool_buffer(&rtio_ctx, cqe, &buf, &buf_len) == 0) && (buf != NULL)) {
+		rtio_release_buffer(&rtio_ctx, buf, buf_len);
+	}
+	rtio_cqe_release(&rtio_ctx, cqe);
+
+	return true;
+}
+
+ZTEST_F(akm09918c, test_async_overlapping_reads)
+{
+	uint8_t status = AKM09918C_ST1_DRDY;
+	void *userdata = NULL;
+	int32_t result = 0;
+	uint32_t cqe_count = 0U;
+	uint32_t first_count = 0U;
+	uint32_t second_count = 0U;
+	int32_t first_result = -EIO;
+	int32_t second_result = 0;
+
+	akm09918c_emul_set_reg(fixture->target, AKM09918C_REG_ST1, &status, 1);
+
+	/* Submit read #2 while read #1's 9 ms measurement delay is in flight */
+	zassert_ok(sensor_read_async_mempool(&iodev, &rtio_ctx, UINT_TO_POINTER(1U)));
+	k_msleep(1);
+	zassert_ok(sensor_read_async_mempool(&iodev, &rtio_ctx, UINT_TO_POINTER(2U)));
+
+	k_msleep(20);
+
+	while (consume_cqe(&result, &userdata)) {
+		cqe_count++;
+		if (userdata == UINT_TO_POINTER(1U)) {
+			first_count++;
+			first_result = result;
+		} else if (userdata == UINT_TO_POINTER(2U)) {
+			second_count++;
+			second_result = result;
+		} else {
+			zassert_unreachable("Unexpected CQE userdata %p (result=%d)", userdata,
+					    result);
+		}
+	}
+
+	zassert_equal(cqe_count, 2U, "Expected 2 CQEs, got %u", cqe_count);
+	zassert_equal(first_count, 1U, "Expected read #1 to complete once, got %u", first_count);
+	zassert_equal(second_count, 1U, "Expected read #2 to complete once, got %u", second_count);
+	zassert_ok(first_result, "Expected read #1 to succeed, got %d", first_result);
+	zassert_equal(second_result, -EBUSY, "Expected read #2 to fail with -EBUSY, got %d",
+		      second_result);
+
+	/* Re-arm DRDY (emulator clears it on TMPS read) and verify busy flag unlocked */
+	akm09918c_emul_set_reg(fixture->target, AKM09918C_REG_ST1, &status, 1);
+	zassert_ok(sensor_read_async_mempool(&iodev, &rtio_ctx, UINT_TO_POINTER(3U)));
+	k_msleep(20);
+
+	zassert_true(consume_cqe(&result, &userdata), "Expected sequential read #3 to complete");
+	zassert_equal(userdata, UINT_TO_POINTER(3U), "Unexpected userdata for read #3");
+	zassert_ok(result, "Expected sequential read #3 to succeed, got %d", result);
+	zassert_false(consume_cqe(&result, &userdata), "Unexpected extra CQE after read #3");
+}
+
+#endif /* CONFIG_SENSOR_ASYNC_API */
