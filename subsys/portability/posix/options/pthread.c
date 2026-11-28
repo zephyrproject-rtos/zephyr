@@ -465,12 +465,34 @@ static K_WORK_DELAYABLE_DEFINE(posix_thread_recycle_work, posix_thread_recycle_w
 
 extern struct sys_sem pthread_key_lock;
 
+/* Take the most recently pushed cleanup handler off @p t, or return NULL if there is none. */
+static struct __pthread_cleanup *posix_thread_cleanup_get(struct posix_thread *t)
+{
+	sys_snode_t *node = NULL;
+
+	SYS_SEM_LOCK(&pthread_pool_lock) {
+		node = sys_slist_get(&t->cleanup_list);
+	}
+
+	return (node == NULL) ? NULL : CONTAINER_OF(node, struct __pthread_cleanup, node);
+}
+
 static void posix_thread_finalize(struct posix_thread *t, void *retval)
 {
 	sys_snode_t *node_l = NULL;
 	pthread_key_obj *key_obj;
 	pthread_thread_data *thread_spec_data;
 	struct pthread_key_data *key_data;
+	struct __pthread_cleanup *c;
+
+	/*
+	 * Run the cleanup handlers still pushed, most recently pushed first. Each one is taken off
+	 * the list before it runs, and runs without pthread_pool_lock held, so a handler may call
+	 * other pthread functions and is never run twice.
+	 */
+	while ((c = posix_thread_cleanup_get(t)) != NULL) {
+		c->routine(c->arg);
+	}
 
 	/*
 	 * PTHREAD_DESTRUCTOR_ITERATIONS limits passes over the thread's keys, not destructor
