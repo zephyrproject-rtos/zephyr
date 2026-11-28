@@ -413,6 +413,25 @@ bool pe_is_explicit_contract(const struct device *dev)
 	return atomic_test_bit(pe->flags, PE_FLAGS_EXPLICIT_CONTRACT);
 }
 
+#ifdef CONFIG_USBC_CSM_SUPPORTS_SINK
+/**
+ * @brief Return true if a Sink is inside a Hard Reset, from its start until
+ *	  a new contract or until the Source has used all the time it is
+ *	  allowed to bring VBUS back.
+ */
+bool pe_is_hard_reset_in_progress(const struct device *dev)
+{
+	struct usbc_port_data *data = dev->data;
+	struct policy_engine *pe = data->pe;
+
+	if (usbc_timer_expired(&pe->pd_t_hard_reset_vbus)) {
+		return false;
+	}
+
+	return usbc_timer_running(&pe->pd_t_hard_reset_vbus);
+}
+#endif
+
 /**
  * @brief Return true if the PE is within an atomic messaging sequence
  *	  that it initiated with a SOP* port partner.

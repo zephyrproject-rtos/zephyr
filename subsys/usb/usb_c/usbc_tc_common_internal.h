@@ -136,6 +136,10 @@ struct tc_sm_t {
 	/** Try.SNK VBUS timeout timer */
 	struct usbc_timer_t tc_t_try_snk_vbus;
 #endif
+#ifdef CONFIG_USBC_CSM_SUPPORTS_SINK
+	/** tPDDebounce timer, Rp gone from both CC pins in Attached.SNK */
+	struct usbc_timer_t tc_t_pd_debounce;
+#endif
 };
 #ifdef CONFIG_USBC_CSM_DRP
 

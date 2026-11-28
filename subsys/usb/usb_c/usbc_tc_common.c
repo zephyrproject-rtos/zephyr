@@ -149,6 +149,9 @@ static int tc_init(const struct device *dev)
 	usbc_timer_init(&tc->tc_t_try_cc_debounce, TC_T_TRY_CC_DEBOUNCE_MS);
 	usbc_timer_init(&tc->tc_t_try_snk_vbus, TC_T_TRY_SNK_VBUS_MS);
 #endif
+#ifdef CONFIG_USBC_CSM_SUPPORTS_SINK
+	usbc_timer_init(&tc->tc_t_pd_debounce, TC_T_PD_DEBOUNCE_MAX_MS);
+#endif
 
 	/* Clear the flags */
 	tc->flags = ATOMIC_INIT(0);

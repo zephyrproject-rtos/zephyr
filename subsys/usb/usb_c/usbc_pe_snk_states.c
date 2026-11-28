@@ -18,6 +18,15 @@ LOG_MODULE_DECLARE(usbc_stack, CONFIG_USBC_STACK_LOG_LEVEL);
 /**
  * @brief Initialize the Source Policy Engine layer
  */
+/**
+ * Longest a Source may keep VBUS away during a Hard Reset: until it starts
+ * the Hard Reset, takes VBUS to vSafe0V, keeps it there and brings it back
+ * to vSafe5V.
+ */
+#define HARD_RESET_VBUS_MAX_MS                                                                     \
+	(PD_T_PS_HARD_RESET_MAX_MS + PD_T_SAFE_0V_MAX_MS + PD_T_SRC_RECOVER_MAX_MS +               \
+	 PD_T_SAFE_5V_MAX_MS)
+
 void pe_snk_init(const struct device *dev)
 {
 	struct usbc_port_data *data = dev->data;
@@ -31,6 +40,8 @@ void pe_snk_init(const struct device *dev)
 	usbc_timer_init(&pe->pd_t_typec_sink_wait_cap, PD_T_TYPEC_SINK_WAIT_CAP_MAX_MS);
 	usbc_timer_init(&pe->pd_t_ps_transition, PD_T_SPR_PS_TRANSITION_NOM_MS);
 	usbc_timer_init(&pe->pd_t_wait_to_resend, PD_T_SINK_REQUEST_MIN_MS);
+	usbc_timer_init(&pe->pd_t_hard_reset_vbus, HARD_RESET_VBUS_MAX_MS);
+	usbc_timer_stop(&pe->pd_t_hard_reset_vbus);
 
 	/* Goto startup state */
 	pe_set_state(dev, PE_SNK_STARTUP);
@@ -170,6 +181,17 @@ enum smf_state_result pe_snk_wait_for_capabilities_run(void *obj)
 			pe_set_state(dev, PE_SNK_EVALUATE_CAPABILITY);
 			return SMF_EVENT_PROPAGATE;
 		}
+	}
+
+	/*
+	 * VBUS was still up when PE_SNK_Discovery looked, and the Source has
+	 * only now taken it away for the Hard Reset. Wait for it there again
+	 * rather than run out SinkWaitCapTimer and hard reset a second time.
+	 */
+	if (pe_is_hard_reset_in_progress(dev) &&
+	    !usbc_vbus_check_level(data->vbus, TC_VBUS_PRESENT)) {
+		pe_set_state(dev, PE_SNK_DISCOVERY);
+		return SMF_EVENT_PROPAGATE;
 	}
 
 	/* When the SinkWaitCapTimer times out, perform a Hard Reset. */
@@ -418,6 +440,9 @@ void pe_snk_ready_entry(void *obj)
 	/* Clear AMS Flags */
 	atomic_clear_bit(pe->flags, PE_FLAGS_INTERRUPTIBLE_AMS);
 	atomic_clear_bit(pe->flags, PE_FLAGS_DPM_INITIATED_AMS);
+
+	/* A new contract ends any Hard Reset; VBUS going now is a detach. */
+	usbc_timer_stop(&pe->pd_t_hard_reset_vbus);
 }
 
 /**
@@ -605,6 +630,13 @@ void pe_snk_transition_to_default_entry(void *obj)
 	atomic_clear(pe->flags);
 
 	/*
+	 * Sent or received, the Source may now take VBUS to vSafe0V and keep
+	 * it there for tSrcRecover. Attached.SNK rides that out until VBUS is
+	 * back and a contract is made, or the Source has run out of time.
+	 */
+	usbc_timer_start(&pe->pd_t_hard_reset_vbus);
+
+	/*
 	 * Indicate to the Device Policy Manager that the Sink Shall
 	 * transition to default
 	 */
@@ -675,7 +707,7 @@ enum smf_state_result pe_snk_get_source_cap_run(void *obj)
 		 */
 		header = prl_rx->emsg.header;
 
-		if (received_control_message(dev, header, PD_DATA_SOURCE_CAP)) {
+		if (received_data_message(dev, header, PD_DATA_SOURCE_CAP)) {
 			pe_set_state(dev, PE_SNK_EVALUATE_CAPABILITY);
 		}
 	}
