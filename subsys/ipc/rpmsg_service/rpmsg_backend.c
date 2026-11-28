@@ -34,15 +34,20 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_RPMSG_SERVICE_LOG_LEVEL);
 
 /* Configuration defines */
 
-#define VRING_COUNT		    2
+#define VRING_COUNT 2
 
 #ifdef CONFIG_OPENAMP_RSC_TABLE
 #include <resource_table.h>
+#else
+/*
+ * Shared-memory layout used when the host does not provide a resource table.
+ * With OPENAMP_RSC_TABLE, VRING_* come from resource_table.h instead.
+ */
+#define VRING_RX_ADDRESS (VDEV_START_ADDR + SHM_SIZE - VDEV_STATUS_SIZE)
+#define VRING_TX_ADDRESS (VDEV_START_ADDR + SHM_SIZE)
+#define VRING_ALIGNMENT  4
+#define VRING_SIZE       16
 #endif /* CONFIG_OPENAMP_RSC_TABLE */
-#define VRING_RX_ADDRESS	(VDEV_START_ADDR + SHM_SIZE - VDEV_STATUS_SIZE)
-#define VRING_TX_ADDRESS	(VDEV_START_ADDR + SHM_SIZE)
-#define VRING_ALIGNMENT		4
-#define VRING_SIZE		    16
 
 #define IPM_WORK_QUEUE_STACK_SIZE CONFIG_RPMSG_SERVICE_WORK_QUEUE_STACK_SIZE
 #define IPM_WORK_QUEUE_PRIORITY   K_HIGHEST_APPLICATION_THREAD_PRIO

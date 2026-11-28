@@ -6,11 +6,15 @@ config UART_RPMSG
 	depends on RPMSG_SERVICE
 	depends on DT_HAS_RPMSG_UART_ENABLED
 	select SERIAL_HAS_POST_KERNEL_INIT
+	select SERIAL_SUPPORT_INTERRUPT
 	help
-	  Enable uart using RPMSG.
+	  Enable a UART that carries characters over RPMsg instead of a
+	  hardware serial port.
 
-	  This can be used when the application is loaded onto the co-processor
-	  using remoteproc.
+	  Typical use is a Zephyr image running on a remote processor that
+	  Linux started with remoteproc. Polling always works. Turn on
+	  UART_INTERRUPT_DRIVEN as well if you need clients such as the
+	  serial shell, which expect the usual interrupt-driven UART API.
 
 if UART_RPMSG
 
@@ -18,6 +22,27 @@ config UART_RPMSG_RX_BUF_SIZE
 	int "Size of internal rx buffer"
 	default 64
 	help
-	  This option can be used to set the size of receive buffer.
+	  How many received bytes the driver can hold before it has to drop
+	  data. Raise this if bursts from the host overflow the default.
+
+config UART_RPMSG_TX_BUF_SIZE
+	int "Size of internal tx buffer"
+	default 64
+	depends on UART_INTERRUPT_DRIVEN
+	help
+	  How many bytes uart_fifo_fill() can queue for later send. Larger
+	  values absorb short bursts from the shell or other UART clients.
+	  Soft IRQ handling and TX drain both run on the system workqueue.
+
+config UART_RPMSG_TX_CHUNK_SIZE
+	int "Max bytes per RPMsg TX send"
+	default 32
+	range 1 496
+	depends on UART_INTERRUPT_DRIVEN
+	help
+	  Largest block taken from the TX queue and sent in one RPMsg
+	  message. Bigger chunks mean fewer messages across the link. Keep
+	  the value within the payload the other side accepts (commonly the
+	  RPMsg buffer size minus the 16-byte header).
 
 endif # UART_RPMSG
