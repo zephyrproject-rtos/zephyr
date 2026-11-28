@@ -48,6 +48,9 @@ handles S-mode requests via the RISC-V Supervisor Binary Interface (SBI):
 - **Timer**: Machine timer interrupts (MTIP) are forwarded to S-mode as
   supervisor timer interrupts (STIP).  S-mode programs the next timer
   deadline through the SBI ``TIME`` extension (``sbi_set_timer``).
+- **Discovery**: The SBI Base extension reports the firmware and specification
+  versions and the available extensions. The internal runtime provides
+  ``BASE`` and ``TIME``, and provides ``SRST`` for shutdown on QEMU.
 - **Ecalls**: S-mode ecalls (exception cause 9) are routed to the M-mode
   runtime via ``medeleg``; all other exceptions and interrupts are delegated
   to S-mode.  See :ref:`riscv-smode-ecall-constraint` below.

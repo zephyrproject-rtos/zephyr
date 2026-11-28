@@ -11,9 +11,8 @@
  *
  * Defines SBI extension IDs, function IDs, and error codes used by
  * S-mode code to request M-mode firmware services via the @c ecall
- * instruction.  The subset defined here covers only the extensions
- * used by Zephyr's in-tree minimal SBI runtime
- * (@c arch/riscv/core/sbi.S).
+ * instruction. The same calls can be used with Zephyr's minimal SBI
+ * runtime or external firmware that provides the requested extension.
  *
  * References: RISC-V SBI Specification v2.0
  * (https://github.com/riscv-non-isa/riscv-sbi-doc)
@@ -24,7 +23,19 @@
 
 #ifndef _ASMLANGUAGE
 #include <errno.h>
+#include <stdint.h>
+#include <zephyr/sys/util_macro.h>
 #endif /* _ASMLANGUAGE */
+
+/** @brief SBI Base extension and its function IDs. */
+#define SBI_EXT_BASE			0x10
+#define SBI_FUNC_GET_SPEC_VERSION	0
+#define SBI_FUNC_GET_IMPL_ID		1
+#define SBI_FUNC_GET_IMPL_VERSION	2
+#define SBI_FUNC_PROBE_EXTENSION	3
+#define SBI_FUNC_GET_MVENDORID		4
+#define SBI_FUNC_GET_MARCHID		5
+#define SBI_FUNC_GET_MIMPID		6
 
 /** @brief SBI extension ID for the Timer extension (TIME) */
 #define SBI_EXT_TIME			0x54494D45
@@ -168,6 +179,81 @@ static inline struct sbiret sbi_ecall(unsigned long arg0, unsigned long arg1, un
 	ret.value = a1;
 
 	return ret;
+}
+
+/** Return the SBI specification version in the value field. */
+static inline struct sbiret sbi_get_spec_version(void)
+{
+	return sbi_ecall(0, 0, 0, 0, 0, 0, SBI_FUNC_GET_SPEC_VERSION, SBI_EXT_BASE);
+}
+
+/** Return the SBI provider's implementation ID. */
+static inline struct sbiret sbi_get_impl_id(void)
+{
+	return sbi_ecall(0, 0, 0, 0, 0, 0, SBI_FUNC_GET_IMPL_ID, SBI_EXT_BASE);
+}
+
+/** Return the SBI provider's implementation-specific version. */
+static inline struct sbiret sbi_get_impl_version(void)
+{
+	return sbi_ecall(0, 0, 0, 0, 0, 0, SBI_FUNC_GET_IMPL_VERSION, SBI_EXT_BASE);
+}
+
+/** On success, a nonzero value indicates that the extension is available. */
+static inline struct sbiret sbi_probe_extension(unsigned long eid)
+{
+	return sbi_ecall(eid, 0, 0, 0, 0, 0, SBI_FUNC_PROBE_EXTENSION, SBI_EXT_BASE);
+}
+
+/** Return the machine vendor ID visible to the supervisor. */
+static inline struct sbiret sbi_get_mvendorid(void)
+{
+	return sbi_ecall(0, 0, 0, 0, 0, 0, SBI_FUNC_GET_MVENDORID, SBI_EXT_BASE);
+}
+
+/** Return the machine architecture ID visible to the supervisor. */
+static inline struct sbiret sbi_get_marchid(void)
+{
+	return sbi_ecall(0, 0, 0, 0, 0, 0, SBI_FUNC_GET_MARCHID, SBI_EXT_BASE);
+}
+
+/** Return the machine implementation ID visible to the supervisor. */
+static inline struct sbiret sbi_get_mimpid(void)
+{
+	return sbi_ecall(0, 0, 0, 0, 0, 0, SBI_FUNC_GET_MIMPID, SBI_EXT_BASE);
+}
+
+/** Program the absolute 64-bit timer deadline, split across a0/a1 on RV32. */
+static inline struct sbiret sbi_set_timer(uint64_t deadline)
+{
+	unsigned long hi = IS_ENABLED(CONFIG_64BIT) ? 0 : (unsigned long)(deadline >> 32);
+
+	return sbi_ecall((unsigned long)deadline, hi, 0, 0, 0, 0, SBI_FUNC_SET_TIMER, SBI_EXT_TIME);
+}
+
+/** Request a system reset or shutdown. */
+static inline struct sbiret sbi_system_reset(uint32_t type, uint32_t reason)
+{
+	return sbi_ecall(type, reason, 0, 0, 0, 0, SBI_FUNC_SYSTEM_RESET, SBI_EXT_SRST);
+}
+
+/** Send a supervisor software interrupt to the selected harts. */
+static inline struct sbiret sbi_send_ipi(unsigned long hart_mask, unsigned long hart_mask_base)
+{
+	return sbi_ecall(hart_mask, hart_mask_base, 0, 0, 0, 0, SBI_FUNC_SEND_IPI, SBI_EXT_IPI);
+}
+
+/** Start a hart at a physical address, passing opaque in a1 on entry. */
+static inline struct sbiret sbi_hart_start(unsigned long hartid, unsigned long start_addr,
+					   unsigned long opaque)
+{
+	return sbi_ecall(hartid, start_addr, opaque, 0, 0, 0, SBI_FUNC_HART_START, SBI_EXT_HSM);
+}
+
+/** Stop the calling hart. A successful call does not return. */
+static inline struct sbiret sbi_hart_stop(void)
+{
+	return sbi_ecall(0, 0, 0, 0, 0, 0, SBI_FUNC_HART_STOP, SBI_EXT_HSM);
 }
 #endif /* _ASMLANGUAGE */
 

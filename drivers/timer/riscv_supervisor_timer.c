@@ -18,22 +18,6 @@
 const int32_t z_sys_timer_irq_for_test = IRQ_S_TIMER;
 #endif
 
-static void sbi_set_timer(uint64_t deadline)
-{
-	register unsigned long a0 __asm__("a0") = (unsigned long)deadline;
-#ifndef CONFIG_64BIT
-	register unsigned long a1 __asm__("a1") = (unsigned long)(deadline >> 32);
-#endif
-	register unsigned long a6 __asm__("a6") = SBI_FUNC_SET_TIMER;
-	register unsigned long a7 __asm__("a7") = SBI_EXT_TIME;
-
-#ifdef CONFIG_64BIT
-	__asm__ volatile("ecall" : "+r"(a0) : "r"(a6), "r"(a7) : "a1", "memory");
-#else
-	__asm__ volatile("ecall" : "+r"(a0), "+r"(a1) : "r"(a6), "r"(a7) : "memory");
-#endif
-}
-
 static uint64_t stime(void)
 {
 #ifdef CONFIG_64BIT
@@ -66,7 +50,7 @@ static inline uint64_t timer_driver_cycle_get(void)
 
 static inline void timer_driver_set_compare(uint64_t cycles)
 {
-	sbi_set_timer(cycles);
+	(void)sbi_set_timer(cycles);
 }
 
 #include "system_timer_generic.h"
@@ -81,7 +65,7 @@ static void timer_isr(const void *arg)
 	 * interrupt then fires once for the deadline it was armed with,
 	 * whether or not another one is programmed afterwards.
 	 */
-	sbi_set_timer(UINT64_MAX);
+	(void)sbi_set_timer(UINT64_MAX);
 
 	timer_core_announce();
 }

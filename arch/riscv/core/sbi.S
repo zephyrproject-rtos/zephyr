@@ -11,6 +11,7 @@
 #include <zephyr/arch/riscv/csr.h>
 #include <zephyr/arch/riscv/irq.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/version.h>
 #include "asm_macros.inc"
 
 #ifdef CONFIG_64BIT
@@ -54,6 +55,11 @@
 #define CAUSE_ECALL_SMODE  9
 
 #include <zephyr/arch/riscv/sbi.h>
+
+/* SBI v0.3 introduced SRST. The major version occupies bits 30:24. */
+#define ZEPHYR_SBI_SPEC_VERSION 3
+/* Provisional 'ZEPH' value pending allocation of a Zephyr SBI implementation ID. */
+#define ZEPHYR_SBI_IMPL_ID 0x5a455048
 
 /*
 * Small dedicated stack for use inside the M-mode handler.
@@ -101,28 +107,78 @@ SECTION_FUNC(TEXT, __m_mode_sbi_handler)
     csrw mepc, t0
 
     /* Dispatch on SBI extension ID in a7 */
+    li t0, SBI_EXT_BASE
+    beq a7, t0, m_mode_ext_base
+
     li t0, SBI_EXT_TIME
     beq a7, t0, m_mode_ext_time
 
+#ifdef CONFIG_QEMU_TARGET
     li t0, SBI_EXT_SRST
     beq a7, t0, m_mode_ext_srst
+#endif
 
-    /* Unknown extension — a1 is undefined on error per SBI spec */
+m_mode_not_supported:
     li a0, SBI_ERR_NOT_SUPPORTED
     sr a0, OFF_A0(sp)
     j m_mode_return
+
+m_mode_ext_base:
+    li t0, SBI_FUNC_GET_SPEC_VERSION
+    beq a6, t0, m_mode_base_spec_version
+    li t0, SBI_FUNC_GET_IMPL_ID
+    beq a6, t0, m_mode_base_impl_id
+    li t0, SBI_FUNC_GET_IMPL_VERSION
+    beq a6, t0, m_mode_base_impl_version
+    li t0, SBI_FUNC_PROBE_EXTENSION
+    beq a6, t0, m_mode_base_probe
+    li t0, SBI_FUNC_GET_MVENDORID
+    beq a6, t0, m_mode_base_mvendorid
+    li t0, SBI_FUNC_GET_MARCHID
+    beq a6, t0, m_mode_base_marchid
+    li t0, SBI_FUNC_GET_MIMPID
+    bne a6, t0, m_mode_not_supported
+    csrr a1, mimpid
+    j m_mode_success
+
+m_mode_base_spec_version:
+    li a1, ZEPHYR_SBI_SPEC_VERSION
+    j m_mode_success
+
+m_mode_base_impl_id:
+    li a1, ZEPHYR_SBI_IMPL_ID
+    j m_mode_success
+
+m_mode_base_impl_version:
+    li a1, KERNEL_VERSION_NUMBER
+    j m_mode_success
+
+m_mode_base_mvendorid:
+    csrr a1, mvendorid
+    j m_mode_success
+
+m_mode_base_marchid:
+    csrr a1, marchid
+    j m_mode_success
+
+m_mode_base_probe:
+    li a1, 1
+    li t0, SBI_EXT_BASE
+    beq a0, t0, m_mode_success
+    li t0, SBI_EXT_TIME
+    beq a0, t0, m_mode_success
+#ifdef CONFIG_QEMU_TARGET
+    li t0, SBI_EXT_SRST
+    beq a0, t0, m_mode_success
+#endif
+    li a1, 0
+    j m_mode_success
 
 m_mode_ext_time:
     /* Dispatch on function ID in a6 */
     li t0, SBI_FUNC_SET_TIMER
-    beq a6, t0, m_mode_set_timer
+    bne a6, t0, m_mode_not_supported
 
-    /* Unknown function within SBI_EXT_TIME — a1 undefined on error */
-    li a0, SBI_ERR_NOT_SUPPORTED
-    sr a0, OFF_A0(sp)
-    j m_mode_return
-
-m_mode_set_timer:
     /* a0 = timer deadline (absolute time value) */
     li t0, MTIMECMP0
     /* write new deadline to mtimecmp[0] */
@@ -142,19 +198,21 @@ m_mode_set_timer:
     li t0, MIP_STIP
     csrc mip, t0
 
-    /* Return success: a0 = SBI_SUCCESS, a1 = 0 (no return value) */
-    li a0, SBI_SUCCESS
     li a1, 0
+m_mode_success:
+    li a0, SBI_SUCCESS
     sr a0, OFF_A0(sp)    /* update saved a0/a1 so m_mode_return restores them */
     sr a1, OFF_A1(sp)
     j m_mode_return
 
+#ifdef CONFIG_QEMU_TARGET
 m_mode_ext_srst:
     /* Only function 0 (SBI_FUNC_SYSTEM_RESET) is defined */
     li t0, SBI_FUNC_SYSTEM_RESET
-    bne a6, t0, m_mode_srst_unsupported
+    bne a6, t0, m_mode_not_supported
+    /* This runtime only implements shutdown. */
+    bnez a0, m_mode_not_supported
 
-#ifdef CONFIG_QEMU_TARGET
     /*
      * Write FINISHER_EXIT to the QEMU virt "sifive_test" device.
      * QEMU exits immediately; the loop below is unreachable in practice.
@@ -162,16 +220,12 @@ m_mode_ext_srst:
     li t0, QEMU_TEST_FINISHER
     li t1, FINISHER_EXIT
     sw t1, 0(t0)
-#endif /* CONFIG_QEMU_TARGET */
 
 m_mode_srst_loop:
     wfi
     j m_mode_srst_loop
 
-m_mode_srst_unsupported:
-    li a0, SBI_ERR_NOT_SUPPORTED
-    sr a0, OFF_A0(sp)
-    j m_mode_return
+#endif /* CONFIG_QEMU_TARGET */
 
 m_mode_handle_interrupt:
     /* Clear sign bit to get the raw interrupt cause number */

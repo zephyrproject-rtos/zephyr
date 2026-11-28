@@ -50,6 +50,10 @@ Libraries / Subsystems
     :kconfig:option:`CONFIG_EXTRA_EXCEPTION_INFO` is enabled. The gdbstub
     coredump decoder was updated accordingly.
 
+  * RISC-V supervisor-mode software can query the active SBI provider for
+    its version and supported extensions, including when using Zephyr's
+    built-in machine-mode runtime.
+
   * xtensa: Thread-local storage can now be used on cores without a THREADPTR
     register, such as sample_controller32, by enabling
     :kconfig:option:`CONFIG_XTENSA_EMULATED_TLS`. Userspace is not supported in
