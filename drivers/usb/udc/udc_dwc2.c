@@ -1433,10 +1433,17 @@ static int udc_dwc2_ep_enqueue(const struct device *dev,
 static int udc_dwc2_ep_dequeue(const struct device *dev,
 			       struct udc_ep_config *const cfg)
 {
+	struct udc_dwc2_data *const priv = udc_get_private(dev);
+	uint8_t ep_idx = USB_EP_GET_IDX(cfg->addr);
+	uint8_t ep_bit = ep_idx + (USB_EP_DIR_IS_OUT(cfg->addr) ? 16 : 0);
 	struct net_buf *buf;
 	bool invd;
 
 	udc_dwc2_ep_disable(dev, cfg, false, true);
+
+	/* Cancel pending driver thread work, the buffers are released below */
+	atomic_clear_bit(&priv->xfer_new, ep_bit);
+	atomic_clear_bit(&priv->xfer_finished, ep_bit);
 
 	invd = dwc2_in_buffer_dma_mode(dev) && USB_EP_DIR_IS_OUT(cfg->addr);
 	for (buf = udc_buf_get(cfg); buf; buf = udc_buf_get(cfg)) {
