@@ -1,0 +1,15 @@
+# Copyright 2026 Xiaomi Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Bluetooth HCI for test purposes, with a controller emulated by the test.
+
+compatible: "zephyr,bt-hci-test"
+
+include: bt-hci.yaml
+
+properties:
+  bt-hci-name:
+    default: "test"
+  bt-hci-bus:
+    default: "virtual"
