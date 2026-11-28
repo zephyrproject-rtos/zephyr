@@ -236,6 +236,13 @@ Libraries / Subsystems
   * :ref:`MQTT 5.0 <mqtt_socket_interface>` support in the MQTT client
     (:kconfig:option:`CONFIG_MQTT_VERSION_5_0`) is no longer experimental.
 
+* USB
+
+  * The MSC class of the new USB device stack supports write-protected disks. A disk that
+    reports ``DISK_STATUS_WR_PROTECT`` was seen as not present; the host can now read it,
+    MODE SENSE reports it as write-protected, and WRITE (10) fails with the DATA PROTECT sense
+    key.
+
 * USB Type-C
 
   * Dual-role ports can prefer the Sink role through the Try.SNK and TryWait.SRC states

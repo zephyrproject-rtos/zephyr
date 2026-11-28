@@ -174,6 +174,11 @@ struct scsi_inquiry_response {
 
 #define MODE_SENSE_PAGE_CODE_ALL_PAGES		0x3F
 
+/* SBC-4 6.5.1 Mode parameters overview
+ * DEVICE-SPECIFIC PARAMETER field for direct access block devices
+ */
+#define MODE_SENSE_DEVICE_SPECIFIC_PARAMETER_WP	BIT(7)
+
 SCSI_CMD_STRUCT(MODE_SENSE_6) {
 	uint8_t opcode;
 	uint8_t dbd;
@@ -330,6 +335,13 @@ static int update_disk_info(struct scsi_ctx *const ctx)
 {
 	int status = disk_access_status(ctx->disk);
 
+	/* A write protected medium is present. MODE SENSE reports the
+	 * protection and WRITE (10) enforces it.
+	 */
+	if (status > 0) {
+		status &= ~DISK_STATUS_WR_PROTECT;
+	}
+
 	if (disk_access_ioctl(ctx->disk, DISK_IOCTL_GET_SECTOR_COUNT, &ctx->sector_count) != 0) {
 		ctx->sector_count = 0;
 		status = -EIO;
@@ -365,6 +377,13 @@ static int update_disk_info(struct scsi_ctx *const ctx)
 	return status;
 }
 
+static bool is_write_protected(struct scsi_ctx *const ctx)
+{
+	int status = disk_access_status(ctx->disk);
+
+	return (status > 0) && (status & DISK_STATUS_WR_PROTECT);
+}
+
 static size_t good(struct scsi_ctx *ctx, size_t data_in_bytes)
 {
 	ctx->status = GOOD;
@@ -396,6 +415,15 @@ static size_t medium_error(struct scsi_ctx *ctx, enum scsi_additional_sense_code
 {
 	ctx->status = CHECK_CONDITION;
 	ctx->sense_key = MEDIUM_ERROR;
+	ctx->asc = asc;
+
+	return 0;
+}
+
+static size_t data_protect(struct scsi_ctx *ctx, enum scsi_additional_sense_code asc)
+{
+	ctx->status = CHECK_CONDITION;
+	ctx->sense_key = DATA_PROTECT;
 	ctx->asc = asc;
 
 	return 0;
@@ -597,7 +625,8 @@ SCSI_CMD_HANDLER(MODE_SENSE_6)
 
 	r.mode_data_length = 3;
 	r.medium_type = 0x00;
-	r.device_specific_parameter = 0x00;
+	r.device_specific_parameter =
+		is_write_protected(ctx) ? MODE_SENSE_DEVICE_SPECIFIC_PARAMETER_WP : 0x00;
 	r.block_descriptor_length = 0x00;
 
 	BUILD_ASSERT(sizeof(r) <= CONFIG_USBD_MSC_SCSI_BUFFER_SIZE);
@@ -804,6 +833,10 @@ SCSI_CMD_HANDLER(WRITE_10)
 		return not_ready(ctx, MEDIUM_NOT_PRESENT);
 	}
 
+	if (is_write_protected(ctx)) {
+		return data_protect(ctx, WRITE_PROTECTED);
+	}
+
 	if (validate_transfer_length(ctx, lba, transfer_length)) {
 		return illegal_request(ctx, LOGICAL_BLOCK_ADDRESS_OUT_OF_RANGE);
 	}
@@ -829,7 +862,8 @@ SCSI_CMD_HANDLER(MODE_SENSE_10)
 
 	r.mode_data_length = sys_cpu_to_be16(6);
 	r.medium_type = 0x00;
-	r.device_specific_parameter = 0x00;
+	r.device_specific_parameter =
+		is_write_protected(ctx) ? MODE_SENSE_DEVICE_SPECIFIC_PARAMETER_WP : 0x00;
 	r.longlba = 0x00;
 	r.reserved5 = 0x00;
 	r.block_descriptor_length = sys_cpu_to_be16(0);
