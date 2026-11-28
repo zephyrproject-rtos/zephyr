@@ -27,10 +27,28 @@
  * directly.
  */
 
+#if defined(CONFIG_CPU_CORTEX_M0PLUS)
+extern void ifx_srom_syscall_isr(void);
+
+/*
+ * NvicMux0 and NvicMux1 carry the SROM syscall handlers from the boot ROM
+ * vector table (0x40 and 0x44), NvicMux2 the trampoline into NvicMux0.
+ * soc_early_init_hook() checks the ROM entries against this table.
+ */
+#define IFX_SROM_IRQ0_HANDLER 0x00000049U
+#define IFX_SROM_IRQ1_HANDLER 0x00000281U
+#endif
+
 const uintptr_t __irq_vector_table _irq_vector_table[CPU_IRQS] = {
+#if defined(CONFIG_CPU_CORTEX_M0PLUS)
+	((uintptr_t)IFX_SROM_IRQ0_HANDLER),
+	((uintptr_t)IFX_SROM_IRQ1_HANDLER),
+	((uintptr_t)ifx_srom_syscall_isr),
+#else
 	((uintptr_t)_isr_wrapper),
 	((uintptr_t)_isr_wrapper),
 	((uintptr_t)_isr_wrapper),
+#endif
 	((uintptr_t)_isr_wrapper),
 	((uintptr_t)_isr_wrapper),
 	((uintptr_t)_isr_wrapper),
