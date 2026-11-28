@@ -11,6 +11,7 @@
 #endif
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
+#include <zephyr/spinlock.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sw_isr_table.h>
@@ -234,6 +235,9 @@ void arm_gic_irq_set_priority(unsigned int intid, unsigned int prio, uint32_t fl
 
 	/* Interrupt type config */
 	if (!GIC_IS_SGI(intid)) {
+		static struct k_spinlock gic_dist_cfg_lock;
+		k_spinlock_key_t key = k_spin_lock(&gic_dist_cfg_lock);
+
 		idx = GIC_IS_ESPI(intid) ? ((intid - GIC_ESPI_START) / GIC_NUM_CFG_PER_REG)
 					 : (intid / GIC_NUM_CFG_PER_REG);
 		shift = (intid & (GIC_NUM_CFG_PER_REG - 1)) * 2;
@@ -249,6 +253,8 @@ void arm_gic_irq_set_priority(unsigned int intid, unsigned int prio, uint32_t fl
 		} else {
 			sys_write32(val, ICFGR(base, idx));
 		}
+
+		k_spin_unlock(&gic_dist_cfg_lock, key);
 	}
 }
 
