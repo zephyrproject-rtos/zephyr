@@ -170,6 +170,18 @@ config ARM_ON_EXIT_CPU_IDLE
 	  observed on some SoCs caused by a memory access following WFI/WFE
 	  instructions.
 
+config ARM_SYSTEM_HALT_WFI
+	bool "Halt the system in WFI instead of spinning"
+	depends on CPU_CORTEX
+	help
+	  Implement arch_system_halt() with a WFI loop instead of falling back
+	  to the weak spin loop in kernel/fatal.c. A halted core then draws
+	  less power and reports itself idle to a supervisor that waits for
+	  WFI before resetting it.
+
+	  Leave disabled when a debug probe needs the core to remain awake on
+	  a fatal halt.
+
 rsource "core/Kconfig"
 rsource "core/Kconfig.vfp"
 
