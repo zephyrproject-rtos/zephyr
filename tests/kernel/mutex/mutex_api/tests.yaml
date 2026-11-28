@@ -9,3 +9,12 @@ tests:
       - kernel
     extra_configs:
       - CONFIG_WAITQ_SCALABLE=y
+
+  kernel.mutex.user_priority:
+    tags:
+      - kernel
+      - userspace
+    filter: CONFIG_USERSPACE and not CONFIG_USERSPACE_THREAD_MAY_RAISE_PRIORITY
+    extra_configs:
+      - CONFIG_ZTEST_FATAL_HOOK=y
+    ignore_faults: true

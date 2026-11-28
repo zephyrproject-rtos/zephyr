@@ -220,6 +220,9 @@ void z_mem_manage_init(void);
  */
 void z_mem_manage_boot_finish(void);
 
+/* Set base priority while preserving PI. Return -EPERM for a forbidden raise. */
+int z_mutex_thread_priority_set(struct k_thread *thread, int prio, bool deny_raise,
+				bool *need_sched);
 
 bool z_handle_obj_poll_events(sys_dlist_t *events, uint32_t state);
 bool z_handle_obj_poll_events_all(sys_dlist_t *events, uint32_t state);

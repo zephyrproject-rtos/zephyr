@@ -1097,12 +1097,15 @@ struct _static_thread_data {
 __syscall int k_thread_priority_get(k_tid_t thread);
 
 /**
- * @brief Set a thread's priority.
+ * @brief Set a thread's base priority.
  *
- * This routine immediately changes the priority of @a thread.
+ * If @a thread inherits a higher priority from a waiter on a mutex it owns,
+ * setting a lower base priority (a larger @a prio) preserves the boost.
+ * k_thread_priority_get() reports the effective priority. As waiters leave
+ * or @a thread releases mutexes, its effective priority returns to the new
+ * base priority once no remaining waiter requires a boost.
  *
- * Rescheduling can occur immediately depending on the priority @a thread is
- * set to:
+ * Rescheduling can occur immediately if the effective priority changes:
  *
  * - If its priority is raised above the priority of a currently scheduled
  * preemptible thread, @a thread will be scheduled in.
@@ -1116,10 +1119,10 @@ __syscall int k_thread_priority_get(k_tid_t thread);
  * highest priority.
  *
  * @param thread ID of thread whose priority is to be set.
- * @param prio New priority.
+ * @param prio New base priority.
  *
- * @warning Changing the priority of a thread currently involved in mutex
- * priority inheritance may result in undefined behavior.
+ * @warning If @a thread is waiting on a mutex, changing its priority does
+ * not immediately propagate the change to the owner of that mutex.
  */
 __syscall void k_thread_priority_set(k_tid_t thread, int prio);
 
