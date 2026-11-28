@@ -1,0 +1,21 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* ACMP3 IN1 is GPIO_AD_28 on J11-12 (Arduino D13) */
+&pinctrl {
+	acmp3_default: acmp3_default {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_28_acmp3_in1>;
+			drive-strength = "high";
+		};
+	};
+};
+
+&acmp3 {
+	pinctrl-0 = <&acmp3_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
