@@ -6,12 +6,21 @@
 menuconfig NET_SHELL
 	bool "Network shell utilities"
 	select SHELL
-	select REQUIRES_FLOAT_PRINTF
 	help
 	  Activate shell module that provides network commands like
 	  ping to the console.
 
 if NET_SHELL
+
+config NET_SHELL_FLOAT_PRINTF
+	bool "Floating point output in network shell commands"
+	default y
+	select REQUIRES_FLOAT_PRINTF
+	help
+	  Print ping round-trip times with two decimals. Selects
+	  REQUIRES_FLOAT_PRINTF, which enables floating point printf in
+	  the C library and cbprintf. Disable to keep floating point
+	  printf out of the image; ping then prints whole milliseconds.
 
 config NET_SHELL_SHOW_DISABLED_COMMANDS
 	bool "Show disabled command information"

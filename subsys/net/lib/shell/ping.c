@@ -65,7 +65,7 @@ static enum net_verdict handle_echo_reply_common(struct net_pkt *pkt, uint16_t s
 						 uint16_t bytes, const char *src, const char *dst,
 						 uint8_t ttl);
 
-#ifdef CONFIG_FPU
+#if defined(CONFIG_FPU) && defined(CONFIG_NET_SHELL_FLOAT_PRINTF)
 #define PING_PRI_MSEC             "%.2f"
 #define PING_CYCLES_MSEC(_cycles) ((double)((uint32_t)k_cyc_to_ns_floor64(_cycles) / 1e6f))
 #else
