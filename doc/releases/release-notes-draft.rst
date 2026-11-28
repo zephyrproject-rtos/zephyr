@@ -133,6 +133,11 @@ Libraries / Subsystems
 
 * Networking
 
+  * Added the experimental native Tailscale client. Applications join a tailnet
+    through a WireGuard virtual interface and use standard sockets with the
+    installed routes and DNS policy. Direct UDP discovery can operate with DERP
+    relaying disabled. See :zephyr:code-sample:`tailscale`.
+
   * :kconfig:option:`CONFIG_NET_DHCPV6_START_ON_RA` starts the DHCPv6 client
     automatically from the M and O flags of received Router Advertisements, in
     stateful mode with the M flag and in stateless mode (Information-request
