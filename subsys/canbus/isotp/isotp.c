@@ -380,14 +380,19 @@ static void process_ff_sf(struct isotp_recv_ctx *rctx, struct can_frame *frame)
 {
 	int index = 0;
 	uint8_t sf_len;
-	uint8_t payload_len;
+	uint16_t payload_len;
 	uint32_t rx_sa;		/* ISO-TP fixed source address (if used) */
 	uint8_t can_dl = can_dlc_to_bytes(frame->dlc);
 
 	if ((rctx->rx_addr.flags & ISOTP_MSG_EXT_ADDR) != 0) {
-		if (frame->data[index++] != rctx->rx_addr.ext_addr) {
+		if (can_dl == 0U || frame->data[index++] != rctx->rx_addr.ext_addr) {
 			return;
 		}
+	}
+
+	if (can_dl <= index) {
+		LOG_INF("Frame DL invalid. Ignore");
+		return;
 	}
 
 	if ((rctx->rx_addr.flags & ISOTP_MSG_FIXED_ADDR) != 0) {
@@ -443,8 +448,8 @@ static void process_ff_sf(struct isotp_recv_ctx *rctx, struct can_frame *frame)
 			payload_len = index + 1 + sf_len;
 		}
 
-		if (payload_len > can_dl) {
-			LOG_INF("SF DL does not fit. Ignore");
+		if (sf_len == 0 || payload_len > can_dl) {
+			LOG_INF("SF DL invalid. Ignore");
 			return;
 		}
 

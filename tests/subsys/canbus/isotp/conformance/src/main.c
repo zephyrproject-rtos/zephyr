@@ -435,6 +435,28 @@ ZTEST(isotp_conformance, test_receive_sf)
 	send_frame_series(&single_frame, 1, rx_addr.std_id);
 	get_sf_ignore();
 
+	/* SF_DL == 0 must be ignored (ISO 15765-2) */
+	prepare_sf_frame(&single_frame, random_data);
+	#ifdef SF_PCI_BYTE_2
+	single_frame.data[1] = 0;
+	#else
+	single_frame.data[0] = SF_PCI_TYPE << PCI_TYPE_POS;
+	#endif
+	send_frame_series(&single_frame, 1, rx_addr.std_id);
+	get_sf_ignore();
+
+	#ifdef SF_PCI_BYTE_2
+	/* CAN FD SF_DL near UINT8_MAX must not wrap payload_len */
+	single_frame.data[1] = 0xFE;
+	send_frame_series(&single_frame, 1, rx_addr.std_id);
+	get_sf_ignore();
+	#endif
+
+	/* Receiver must still accept a valid SF after ignoring invalid ones */
+	prepare_sf_frame(&single_frame, random_data);
+	send_frame_series(&single_frame, 1, rx_addr.std_id);
+	get_sf(DATA_SIZE_SF);
+
 #ifdef CONFIG_ISOTP_REQUIRE_RX_PADDING
 	single_frame.data[0] = SF_PCI_BYTE_1;
 	single_frame.length = 7;
@@ -490,6 +512,28 @@ ZTEST(isotp_conformance, test_receive_sf_ext)
 	#endif
 	send_frame_series(&single_frame, 1, rx_addr.std_id);
 	get_sf_ignore();
+
+	/* SF_DL == 0 must be ignored (ISO 15765-2) */
+	prepare_sf_ext_frame(&single_frame, random_data);
+	#ifdef SF_PCI_BYTE_2
+	single_frame.data[2] = 0;
+	#else
+	single_frame.data[1] = SF_PCI_TYPE << PCI_TYPE_POS;
+	#endif
+	send_frame_series(&single_frame, 1, rx_addr.std_id);
+	get_sf_ignore();
+
+	#ifdef SF_PCI_BYTE_2
+	/* CAN FD SF_DL near UINT8_MAX must not wrap payload_len */
+	single_frame.data[2] = 0xFD;
+	send_frame_series(&single_frame, 1, rx_addr.std_id);
+	get_sf_ignore();
+	#endif
+
+	/* Receiver must still accept a valid SF after ignoring invalid ones */
+	prepare_sf_ext_frame(&single_frame, random_data);
+	send_frame_series(&single_frame, 1, rx_addr.std_id);
+	get_sf(DATA_SIZE_SF_EXT);
 
 #ifdef CONFIG_ISOTP_REQUIRE_RX_PADDING
 	single_frame.data[1] = SF_PCI_BYTE_2_EXT;
