@@ -62,7 +62,7 @@
 
 	i2c0_default: i2c0_default {
 		group0 {
-			pins = <I2C0_SCL_PC4>, <I2C0_SDA_PC5>;
+			pins = <I2C0_SCL_PC5>, <I2C0_SDA_PC4>;
 			drive-open-drain;
 			bias-pull-up;
 		};
