@@ -6,3 +6,7 @@ project(ipc_pbuf)
 
 FILE(GLOB app_sources src/main.c)
 target_sources(app PRIVATE ${app_sources})
+target_sources(app PRIVATE src/initializers.c)
+if(CONFIG_CPP)
+  set_source_files_properties(src/initializers.c PROPERTIES LANGUAGE CXX)
+endif()
