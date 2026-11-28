@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2026 Powersoft S.p.A.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Used for board revisions A and B. The list has a swap in each group
+ * (channels 0 and 20), a second swap with the same partner channel
+ * (channel 1 gets priority 0 from channel 15) and a channel that already
+ * has the requested priority (channel 31). src/main.c has the expected
+ * result.
+ */
+tst_dma0: &edma0 {
+	nxp,channel-preemption;
+	nxp,channel-priorities = <0 15>, <1 0>, <20 0>, <31 15>;
+};
