@@ -1,0 +1,16 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	hid_dev_0: hid_dev_0 {
+		compatible = "zephyr,hid-device";
+		protocol-code = "none";
+		in-report-size = <6>;
+		in-polling-period-us = <1000>;
+		/* Intentionally not a multiple of the UDC buffer granularity */
+		out-report-size = <6>;
+		out-polling-period-us = <1000>;
+	};
+};
