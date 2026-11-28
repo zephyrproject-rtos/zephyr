@@ -1765,3 +1765,9 @@ test_i2c_ictx53xx: ictx53xx@e5 {
 	compatible = "invensense,ictx53xx";
 	reg = <0xe5>;
 };
+
+test_i2c_iim42652: iim42652@e6 {
+	compatible = "invensense,iim42652", "invensense,icm4268x";
+	reg = <0xe6>;
+	int-gpios = <&test_gpio 0 0>;
+};
