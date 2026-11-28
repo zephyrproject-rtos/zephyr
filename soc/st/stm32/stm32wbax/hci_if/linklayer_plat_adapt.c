@@ -126,14 +126,18 @@ void link_layer_register_isr(void)
 	irq_enable(STM32WBA_RADIO_SW_LOW_IRQ_NUM);
 }
 
-void link_layer_disable_isr(void)
+uint32_t link_layer_disable_isr(void)
 {
+	uint32_t saved_basepri;
+
 	irq_disable(STM32WBA_RADIO_IRQ_NUM);
 
 	irq_disable(STM32WBA_RADIO_SW_LOW_IRQ_NUM);
 
-	local_basepri_value = __get_BASEPRI();
+	saved_basepri = __get_BASEPRI();
 	__set_BASEPRI_MAX(STM32WBA_RADIO_INTR_PRIO_LOW_Z << 4);
+
+	return saved_basepri;
 }
 
 void LINKLAYER_PLAT_TriggerSwLowIT(uint8_t priority)
