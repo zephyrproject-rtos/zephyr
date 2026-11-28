@@ -67,6 +67,7 @@ struct bt_bap_unicast_group_cig_param {
 	uint16_t p_to_c_latency;
 	uint8_t framing;
 	uint8_t packing;
+	uint8_t sca;
 #if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	uint8_t c_to_p_ft;
 	uint8_t p_to_c_ft;
