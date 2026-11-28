@@ -10,6 +10,9 @@ config NUM_IRQS
 configdefault UART_NS16550_TI_K3
 	default y if SOC_SERIES_AM62LX_A53
 
+config MAX_XLAT_TABLES
+	default 24 if SOC_SERIES_AM62LX_A53 && !USERSPACE
+
 if SERIAL
 
 choice UART_NS16550_VARIANT
