@@ -159,8 +159,11 @@ static int fixed_rate_clk_init(const struct device *dev)
 		 * in the following ImoSetFrequency call.
 		 *
 		 * If increasing frequency this must be done before the adjustment.
+		 * Also done when the IMO already runs at the requested rate: the
+		 * boot ROM may leave HFCLK divided with fewer wait states than
+		 * the undivided IMO needs.
 		 */
-		if (config->rate > imo_freq) {
+		if (config->rate >= imo_freq) {
 			Cy_SysLib_SetWaitStates(config->rate/1000000UL);
 		}
 		int err = Cy_SysClk_ImoSetFrequency(config->rate);
@@ -190,7 +193,8 @@ static int fixed_rate_clk_init(const struct device *dev)
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_ilo))
 	case IFX_ILO:
-#if defined(CONFIG_SOC_SERIES_PSOC4HVMS128K) || defined(CONFIG_SOC_SERIES_PSOC4HVMS64K)
+#if defined(CONFIG_SOC_SERIES_PSOC4HVMS128K) || defined(CONFIG_SOC_SERIES_PSOC4HVMS64K) ||         \
+	defined(CONFIG_SOC_SERIES_PSOC4HVPA144K)
 		/* HVMS/PA requires the WDT unlocked while the ILO is enabled. */
 		Cy_WDT_Unlock();
 		Cy_SysClk_IloEnable();
@@ -215,7 +219,8 @@ static int fixed_rate_clk_init(const struct device *dev)
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_pilo))
 	case IFX_PILO:
-#if defined(CONFIG_SOC_SERIES_PSOC4HVMS128K) || defined(CONFIG_SOC_SERIES_PSOC4HVMS64K)
+#if defined(CONFIG_SOC_SERIES_PSOC4HVMS128K) || defined(CONFIG_SOC_SERIES_PSOC4HVMS64K) ||         \
+	defined(CONFIG_SOC_SERIES_PSOC4HVPA144K)
 		/* PILO enable requires the WDT unlocked. */
 		Cy_WDT_Unlock();
 		Cy_SysClk_PiloEnable();
@@ -227,7 +232,8 @@ static int fixed_rate_clk_init(const struct device *dev)
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_hposc)) &&                                            \
-	(defined(CONFIG_SOC_SERIES_PSOC4HVMS128K) || defined(CONFIG_SOC_SERIES_PSOC4HVMS64K))
+	(defined(CONFIG_SOC_SERIES_PSOC4HVMS128K) || defined(CONFIG_SOC_SERIES_PSOC4HVMS64K) ||    \
+	 defined(CONFIG_SOC_SERIES_PSOC4HVPA144K))
 	case IFX_HPOSC:
 		Cy_SysClk_HposcEnable();
 		break;
