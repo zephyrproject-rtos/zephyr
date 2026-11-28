@@ -668,15 +668,16 @@ int isotp_bind(struct isotp_recv_ctx *rctx, const struct device *can_dev,
 		return ISOTP_NO_NET_BUF_LEFT;
 	}
 
+	k_work_init(&rctx->work, receive_work_handler);
+	k_timer_init(&rctx->timer, receive_timeout_handler, NULL);
+
 	ret = add_ff_sf_filter(rctx);
 	if (ret) {
 		LOG_ERR("Can't add filter for binding");
+		(void)k_timer_cleanup(&rctx->timer);
 		net_buf_drop(&rctx->buf);
 		return ret;
 	}
-
-	k_work_init(&rctx->work, receive_work_handler);
-	k_timer_init(&rctx->timer, receive_timeout_handler, NULL);
 
 	return ISOTP_N_OK;
 }

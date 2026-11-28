@@ -1,0 +1,18 @@
+tests:
+  canbus.isotp.bind:
+    tags:
+      - can
+      - isotp
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+  canbus.isotp.bind.objcore:
+    tags:
+      - can
+      - isotp
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_configs:
+      - CONFIG_OBJ_CORE=y
+      - CONFIG_OBJ_CORE_TIMER=y
