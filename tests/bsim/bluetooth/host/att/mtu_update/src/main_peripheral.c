@@ -47,8 +47,11 @@ struct bst_test_list *test_mtu_update_install(struct bst_test_list *tests)
 	return bst_add_tests(tests, test_def);
 }
 
+struct bst_test_list *test_conn_mtu_limit_install(struct bst_test_list *tests);
+
 bst_test_install_t test_installers[] = {
 	test_mtu_update_install,
+	test_conn_mtu_limit_install,
 	NULL
 };
 

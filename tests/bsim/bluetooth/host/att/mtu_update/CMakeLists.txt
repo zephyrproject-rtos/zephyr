@@ -10,6 +10,8 @@ target_link_libraries(app PRIVATE babblekit)
 
 target_include_directories(app PRIVATE src)
 
+target_sources(app PRIVATE src/conn_mtu_limit.c)
+
 target_sources_ifdef(CONFIG_BT_PERIPHERAL app PRIVATE
   src/main_peripheral.c
   ${ZEPHYR_BASE}/samples/bluetooth/mtu_update/peripheral/src/peripheral_mtu_update.c
