@@ -427,13 +427,7 @@ enum smf_state_result pe_src_ready_run(void *obj)
 				pe_set_state(dev, PE_SRC_NEGOTIATE_CAPABILITY);
 				break;
 			case PD_DATA_VENDOR_DEF:
-				/**
-				 * VDM is unsupported. PD2.0 ignores and PD3.0
-				 * reply with not supported.
-				 */
-				if (prl_get_rev(dev, PD_PACKET_SOP) > PD_REV20) {
-					pe_set_state(dev, PE_SEND_NOT_SUPPORTED);
-				}
+				vdm_received(dev);
 				break;
 			default:
 				pe_set_state(dev, PE_SEND_NOT_SUPPORTED);

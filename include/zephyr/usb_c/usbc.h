@@ -327,6 +327,24 @@ typedef int (*policy_cb_get_src_rp_t)(const struct device *dev, enum tc_rp_value
  * @return 0 on success
  */
 typedef int (*policy_cb_src_en_t)(const struct device *dev, bool en);
+
+/**
+ * @brief Callback delivering a received Vendor Defined Message to the DPM
+ *
+ * Runs on the USB-C stack thread, so it must answer without blocking. A
+ * responder's reply is due within tVDMReceiverResponse, which leaves no room
+ * to defer.
+ *
+ * @param dev Runtime device structure
+ * @param vdo The VDM Header followed by any VDOs
+ * @param count Number of objects in @p vdo, 1 to 7
+ * @param rsp Where to put the reply, VDM Header first, room for 7 objects
+ *
+ * @return the number of objects in @p rsp to send back, 0 to send nothing,
+ *	   or a negative value to let the Policy Engine reply Not_Supported
+ */
+typedef int (*policy_cb_vdm_received_t)(const struct device *dev, const uint32_t *vdo,
+					const uint32_t count, uint32_t *rsp);
 /** @}*/
 
 /**
@@ -481,6 +499,17 @@ void usbc_set_policy_cb_get_src_rp(const struct device *dev, const policy_cb_get
  * @param cb callback
  */
 void usbc_set_policy_cb_src_en(const struct device *dev, const policy_cb_src_en_t cb);
+
+/**
+ * @brief Set the callback that delivers received Vendor Defined Messages
+ *
+ * Without a callback the Policy Engine replies Not_Supported to every VDM,
+ * or ignores it at PD 2.0, which is the behaviour when this is left unset.
+ *
+ * @param dev Runtime device structure
+ * @param cb callback
+ */
+void usbc_set_policy_cb_vdm_received(const struct device *dev, const policy_cb_vdm_received_t cb);
 
 /**
  * @brief Set the callback used to get the Source Capabilities
