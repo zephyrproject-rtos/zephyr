@@ -403,12 +403,74 @@ should see the following message in the terminal:
    ***** Booting Zephyr OS v3.4.0-xxxx-xxxxxxxxxxxxx *****
    Hello World! mimxrt1170_evk
 
-ENET1G Driver
-=============
+Ethernet
+========
 
-Current default of ethernet driver is to use 100M Ethernet instance ENET.
-To use the 1G Ethernet instance ENET1G, include the overlay to west build with
-the option ``-DEXTRA_DTC_OVERLAY_FILE=nxp,enet1g.overlay`` instead.
+Both the 100M Ethernet instance ENET and the 1G Ethernet instance ENET1G are
+enabled by default on the CM7 core and come up as two network interfaces.
+ENET1G is first in devicetree order, so it is network interface 1 and the
+default interface: ``CONFIG_NET_CONFIG_MY_IPV4_ADDR`` and DHCP apply to the
+1G port. The 100M port is interface 2. ENET1G is not enabled on the CM4 core.
+
+.. _mimxrt1170_evk_single_ethernet_port:
+
+Using a single Ethernet port
+----------------------------
+
+Child nodes do not inherit ``status`` from their parent, so an overlay that drops
+one port has to disable the instance and all of its child nodes: the MAC, the MDIO
+bus, the PHY and the PTP clock. To use only the 1G port, disable the 100M instance:
+
+.. code-block:: devicetree
+
+   &enet {
+       status = "disabled";
+   };
+
+   &enet_mac {
+       status = "disabled";
+   };
+
+   &enet_mdio {
+       status = "disabled";
+   };
+
+   &phy {
+       status = "disabled";
+   };
+
+   &enet_ptp_clock {
+       status = "disabled";
+   };
+
+To use only the 100M port, disable the 1G instance:
+
+.. code-block:: devicetree
+
+   &enet1g {
+       status = "disabled";
+   };
+
+   &enet1g_mac {
+       status = "disabled";
+   };
+
+   &enet1g_mdio {
+       status = "disabled";
+   };
+
+   &enet1g_phy {
+       status = "disabled";
+   };
+
+   &enet1g_ptp_clock {
+       status = "disabled";
+   };
+
+:zephyr_file:`boards/nxp/mimxrt1170_evk/mimxrt1170_evk_mimxrt1176_cm4.dts` disables
+the 1G instance this way, and
+:zephyr_file:`boards/nxp/mimxrt1170_evk/mimxrt1170_evk_mimxrt1176_cm4_B.overlay`
+disables the 100M instance.
 
 ENET_QOS Driver
 ===============

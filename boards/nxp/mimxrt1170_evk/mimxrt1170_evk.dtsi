@@ -176,33 +176,34 @@ arduino_serial: &lpuart2 {
 &enet1g {
 	pinctrl-0 = <&pinmux_enet1g>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &enet1g_mac {
 	phy-handle = <&enet1g_phy>;
 	phy-connection-type = "rgmii";
 	zephyr,random-mac-address;
-	status = "disabled";
+	status = "okay";
 };
 
 &enet1g_mdio {
 	pinctrl-0 = <&pinmux_enet1g_mdio>;
 	pinctrl-names = "default";
-	status = "disabled";
+	status = "okay";
 
 	enet1g_phy: phy@1 {
 		compatible = "realtek,rtl8211f";
 		reg = <1>;
 		reset-gpios = <&gpio11 14 GPIO_ACTIVE_HIGH>;
 		int-gpios = <&gpio5 13 GPIO_ACTIVE_LOW>;
-		status = "disabled";
+		status = "okay";
 	};
 };
 
 &enet1g_ptp_clock {
 	pinctrl-0 = <&pinmux_enet1g_ptp>;
 	pinctrl-names = "default";
-	status = "disabled";
+	status = "okay";
 };
 
 &csi {
