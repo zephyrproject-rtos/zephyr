@@ -55,10 +55,11 @@ static inline bool itm_port_ready(void)
 #endif
 }
 
-static void tracing_backend_itm_output(const struct tracing_backend *backend,
+static void tracing_backend_itm_output(const struct tracing_backend *backend, uint8_t stream_id,
 				       uint8_t *data, uint32_t length)
 {
 	ARG_UNUSED(backend);
+	ARG_UNUSED(stream_id);
 
 	if ((ITM->TCR & ITM_TCR_ITMENA_Msk) == 0UL ||
 	    (ITM->TER & (1UL << ITM_PORT)) == 0UL) {

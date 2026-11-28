@@ -261,6 +261,15 @@ Libraries / Subsystems
     command was run without that argument and its remaining arguments, which usually failed
     with a wrong argument count.
 
+* Tracing
+
+  * CTF traces from an SMP system can be read: each CPU produces its own CTF stream, and the
+    packet context names the CPU that filled it, so a reader merges the streams on the trace
+    clock instead of seeing one stream whose timestamps jump between cores.
+  * ``trace_viewer.py`` groups the timeline by CPU, with the threads that ran on each nested
+    underneath, and ``split_ctf_streams.py`` splits a capture that arrived over a single link
+    into one file per CPU.
+
 Devicetree
 **********
 

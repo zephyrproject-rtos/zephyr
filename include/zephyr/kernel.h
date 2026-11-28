@@ -1574,6 +1574,10 @@ const char *k_thread_name_get(k_tid_t thread);
 /**
  * @brief Copy the thread name into a supplied buffer
  *
+ * Takes a stable copy of the name, so a rename on another CPU cannot be read
+ * half-applied. The result is always NUL terminated; a name that does not fit
+ * is truncated to @a size - 1 characters.
+ *
  * @param thread Thread to obtain name information
  * @param buf Destination buffer
  * @param size Destination buffer size

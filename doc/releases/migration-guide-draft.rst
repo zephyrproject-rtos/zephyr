@@ -948,6 +948,32 @@ Task Watchdog
   returns the error without leaving a channel allocated. Applications must check
   the returned errors and avoid requesting pause options their backend does not support.
 
+Tracing
+=======
+
+* The ``output`` callback of :c:struct:`tracing_backend_api` takes the trace stream the data
+  belongs to as its second argument. An out-of-tree backend has to add the parameter; one
+  driving a single link can ignore it, since the framing in the stream lets the host
+  demultiplex.
+
+* A CTF capture is now a sequence of packets rather than a flat run of events: each packet
+  opens with a magic number, the stream it belongs to, its size and the CPU that produced it.
+  A tool that parses a capture itself has to follow that framing;
+  :zephyr_file:`scripts/tracing/trace_viewer.py` and
+  :zephyr_file:`scripts/tracing/split_ctf_streams.py` do. Captures taken with the previous
+  format still decode.
+
+* An application overriding the CTF timestamp with
+  :kconfig:option:`CONFIG_TRACING_CTF_CONFIGURABLE_TIMESTAMP` now overrides
+  ``tracing_timestamp_get()`` rather than ``ctf_top_timestamp_get()``, which no longer exists.
+  Rename the definition; the signature is unchanged.
+
+* CTF events are gathered into packets, so synchronous tracing hands a packet to the backend
+  when it fills or when the CPU goes idle instead of one event at a time. Events produced by
+  code that then hangs, faults or spins without idling no longer reach the backend. Enable
+  :kconfig:option:`CONFIG_TRACING_CTF_SYNC_IMMEDIATE` to send every event as it is produced,
+  at the cost of a packet header and context per event.
+
 Tools
 *****
 
