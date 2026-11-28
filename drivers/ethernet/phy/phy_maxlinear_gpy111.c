@@ -349,6 +349,9 @@ static void monitor_work_handler(struct k_work *work)
 	struct maxlinear_gpy111_dev_data *const data =
 		CONTAINER_OF(dwork, struct maxlinear_gpy111_dev_data, monitor_work);
 	const struct device *dev = data->dev;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int rc;
 
 	if (k_sem_take(&data->sem, K_NO_WAIT) == 0) {
@@ -376,17 +379,23 @@ static void monitor_work_handler(struct k_work *work)
 
 static int maxlinear_gpy111_read(const struct device *dev, uint16_t reg_addr, uint32_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	return maxlinear_gpy111_reg_read(dev, reg_addr, (uint16_t *)data);
 }
 
 static int maxlinear_gpy111_write(const struct device *dev, uint16_t reg_addr, uint32_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	return maxlinear_gpy111_reg_write(dev, reg_addr, (uint16_t)data);
 }
 
 static int phy_gpy111_config_link(const struct device *dev, enum phy_link_speed adv_speeds,
 				  enum phy_cfg_link_flag flags)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct maxlinear_gpy111_dev_data *const data = dev->data;
 	const struct maxlinear_gpy111_dev_config *const cfg = dev->config;
 	int ret = 0;
@@ -421,6 +430,8 @@ static int phy_gpy111_config_link(const struct device *dev, enum phy_link_speed 
 
 static int maxlinear_gpy111_get_link_state(const struct device *dev, struct phy_link_state *state)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct maxlinear_gpy111_dev_data *const data = dev->data;
 
 	k_sem_take(&data->sem, K_FOREVER);
@@ -456,6 +467,8 @@ static void invoke_link_cb(const struct device *dev)
 static int maxlinear_gpy111_link_cb_set(const struct device *dev, phy_callback_t cb,
 					void *user_data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct maxlinear_gpy111_dev_data *const data = dev->data;
 
 	data->cb = cb;
@@ -472,6 +485,8 @@ static int maxlinear_gpy111_link_cb_set(const struct device *dev, phy_callback_t
 
 static int maxlinear_gpy111_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct maxlinear_gpy111_dev_config *const cfg = dev->config;
 	struct maxlinear_gpy111_dev_data *const data = dev->data;
 	uint32_t phy_id;
