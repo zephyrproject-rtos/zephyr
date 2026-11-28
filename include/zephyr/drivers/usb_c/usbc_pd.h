@@ -210,6 +210,20 @@ extern "C" {
  * @brief Minimum time a response must be sent from a Port Partner
  *        See Table 6-68 Time Values
  */
+/**
+ * @brief PD 3.1 Table 6-68 PSSourceOff, how long the Sink in a Power Role Swap
+ *        waits for the old Source to stop sourcing.
+ */
+#define PD_T_PS_SOURCE_OFF_MIN_MS 750
+#define PD_T_PS_SOURCE_OFF_MAX_MS 920
+
+/**
+ * @brief PD 3.1 Table 6-68 PSSourceOn, how long the old Source waits for the
+ *        new one to start.
+ */
+#define PD_T_PS_SOURCE_ON_MIN_MS 390
+#define PD_T_PS_SOURCE_ON_MAX_MS 480
+
 #define PD_T_SENDER_RESPONSE_MIN_MS 24
 
 /**

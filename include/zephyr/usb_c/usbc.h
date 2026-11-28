@@ -63,6 +63,8 @@ enum usbc_policy_request_t {
 
 	/** Request Policy Engine layer to perform a Data Role Swap */
 	REQUEST_PE_DR_SWAP,
+	/** Request Policy Engine layer to perform a Power Role Swap */
+	REQUEST_PE_PR_SWAP,
 	/** Request Policy Engine layer to send a hard reset */
 	REQUEST_PE_HARD_RESET_SEND,
 	/** Request Policy Engine layer to send a soft reset */

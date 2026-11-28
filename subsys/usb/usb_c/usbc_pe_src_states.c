@@ -54,6 +54,11 @@ bool source_dpm_requests(const struct device *dev)
 	struct usbc_port_data *data = dev->data;
 	struct policy_engine *pe = data->pe;
 
+	/* Requests common to both power roles, as sink_dpm_requests() does */
+	if (common_dpm_requests(dev)) {
+		return true;
+	}
+
 	if (pe->dpm_request == REQUEST_GET_SNK_CAPS) {
 		atomic_set_bit(pe->flags, PE_FLAGS_DPM_INITIATED_AMS);
 		pe_set_state(dev, PE_GET_SINK_CAP);
@@ -460,6 +465,11 @@ enum smf_state_result pe_src_ready_run(void *obj)
 			case PD_CTRL_DR_SWAP:
 				pe_set_state(dev, PE_DRS_EVALUATE_SWAP);
 				break;
+#ifdef CONFIG_USBC_CSM_DRP
+			case PD_CTRL_PR_SWAP:
+				pe_set_state(dev, PE_PRS_SRC_SNK_EVALUATE_SWAP);
+				break;
+#endif /* CONFIG_USBC_CSM_DRP */
 			/*
 			 * USB PD 3.0 6.8.1:
 			 * Receiving an unexpected message shall be responded

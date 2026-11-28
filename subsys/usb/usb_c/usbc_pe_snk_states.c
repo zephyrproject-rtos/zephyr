@@ -475,6 +475,11 @@ enum smf_state_result pe_snk_ready_run(void *obj)
 			case PD_CTRL_DR_SWAP:
 				pe_set_state(dev, PE_DRS_EVALUATE_SWAP);
 				return SMF_EVENT_PROPAGATE;
+#ifdef CONFIG_USBC_CSM_DRP
+			case PD_CTRL_PR_SWAP:
+				pe_set_state(dev, PE_PRS_SNK_SRC_EVALUATE_SWAP);
+				return SMF_EVENT_PROPAGATE;
+#endif /* CONFIG_USBC_CSM_DRP */
 			case PD_CTRL_NOT_SUPPORTED:
 				/* Do nothing */
 				break;

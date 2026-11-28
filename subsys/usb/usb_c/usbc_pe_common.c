@@ -51,6 +51,14 @@ bool common_dpm_requests(const struct device *dev)
 		if (pe->dpm_request == REQUEST_PE_DR_SWAP) {
 			pe_set_state(dev, PE_DRS_SEND_SWAP);
 			return true;
+#ifdef CONFIG_USBC_CSM_DRP
+		} else if (pe->dpm_request == REQUEST_PE_PR_SWAP) {
+			/* Which family applies depends on the role being left. */
+			pe_set_state(dev, (pe->power_role == TC_ROLE_SOURCE)
+						  ? PE_PRS_SRC_SNK_SEND_SWAP
+						  : PE_PRS_SNK_SRC_SEND_SWAP);
+			return true;
+#endif /* CONFIG_USBC_CSM_DRP */
 		} else if (pe->dpm_request == REQUEST_PE_SOFT_RESET_SEND) {
 			pe_set_state(dev, PE_SEND_SOFT_RESET);
 			return true;
@@ -114,6 +122,8 @@ static void pe_init(const struct device *dev)
 
 	/* Initialize common timers */
 	usbc_timer_init(&pe->pd_t_sender_response, PD_T_NO_RESPONSE_MAX_MS);
+	usbc_timer_init(&pe->pd_t_ps_source_off, PD_T_PS_SOURCE_OFF_MAX_MS);
+	usbc_timer_init(&pe->pd_t_ps_source_on, PD_T_PS_SOURCE_ON_MAX_MS);
 	usbc_timer_init(&pe->pd_t_chunking_not_supported, PD_T_CHUNKING_NOT_SUPPORTED_NOM_MS);
 
 	/* Initialize common counters */
@@ -148,6 +158,30 @@ bool pe_is_running(const struct device *dev)
 }
 
 /**
+ * @brief Starts a Hard Reset the Device Policy Manager asked for, in the
+ *	  Hard Reset state of the current power role.
+ */
+static void pe_send_requested_hard_reset(const struct device *dev)
+{
+	struct usbc_port_data *data = dev->data;
+	struct policy_engine *pe = data->pe;
+
+#ifdef CONFIG_USBC_CSM_SUPPORTS_SOURCE
+	if (pe->power_role == TC_ROLE_SOURCE) {
+		/*
+		 * Leaving PE_SRC_Transition_Supply this way must not send the
+		 * PS_RDY its exit sends for an accepted request.
+		 */
+		pe->snk_request_reply = SNK_REQUEST_REJECT;
+		pe_set_state(dev, PE_SRC_HARD_RESET);
+		return;
+	}
+#endif
+	ARG_UNUSED(pe);
+	pe_set_state(dev, PE_SNK_HARD_RESET);
+}
+
+/**
  * @brief Run the Policy Engine layer
  */
 void pe_run(const struct device *dev, const int32_t dpm_request)
@@ -179,13 +213,13 @@ void pe_run(const struct device *dev, const int32_t dpm_request)
 		pe->dpm_request = dpm_request;
 
 		/*
-		 * 8.3.3.3.8 PE_SNK_Hard_Reset State
-		 * The Policy Engine Shall transition to the PE_SNK_Hard_Reset
-		 * state from any state when:
+		 * 8.3.3.2.9 PE_SRC_Hard_Reset and 8.3.3.3.8 PE_SNK_Hard_Reset
+		 * The Policy Engine Shall transition to the Hard Reset state of
+		 * its power role from any state when:
 		 * - Hard Reset request from Device Policy Manager
 		 */
 		if (dpm_request == REQUEST_PE_HARD_RESET_SEND) {
-			pe_set_state(dev, PE_SNK_HARD_RESET);
+			pe_send_requested_hard_reset(dev);
 		}
 
 		/* Run state machine */
@@ -417,6 +451,14 @@ bool pe_is_explicit_contract(const struct device *dev)
  * @brief Return true if the PE is within an atomic messaging sequence
  *	  that it initiated with a SOP* port partner.
  */
+bool pe_is_pr_swap_in_progress(const struct device *dev)
+{
+	struct usbc_port_data *data = dev->data;
+	struct policy_engine *pe = data->pe;
+
+	return atomic_test_bit(pe->flags, PE_FLAGS_PR_SWAP_IN_PROGRESS);
+}
+
 bool pe_dpm_initiated_ams(const struct device *dev)
 {
 	struct usbc_port_data *data = dev->data;
@@ -757,6 +799,347 @@ bool policy_change_src_caps(const struct device *dev)
 }
 
 #endif /* CONFIG_USBC_CSM_SUPPORTS_SOURCE */
+
+#ifdef CONFIG_USBC_CSM_DRP
+/**
+ * @brief PE_PRS_SRC_SNK_Send_Swap and PE_PRS_SNK_SRC_Send_Swap
+ *
+ * The initiating half. Both directions are identical up to which state the
+ * Accept leads into, so they share a run handler. The SenderResponseTimer is
+ * handled by the parent state, which returns to Ready on expiry.
+ */
+static void pe_prs_send_swap_entry(void *obj)
+{
+	struct policy_engine *pe = (struct policy_engine *)obj;
+	const struct device *dev = pe->dev;
+
+	LOG_INF("PE_PRS_Send_Swap");
+
+	pe_send_ctrl_msg(dev, PD_PACKET_SOP, PD_CTRL_PR_SWAP);
+}
+
+static enum smf_state_result pe_prs_send_swap_run(void *obj)
+{
+	struct policy_engine *pe = (struct policy_engine *)obj;
+	const struct device *dev = pe->dev;
+	struct usbc_port_data *data = dev->data;
+	struct protocol_layer_rx_t *prl_rx = data->prl_rx;
+	bool from_source = (pe_get_state(dev) == PE_PRS_SRC_SNK_SEND_SWAP);
+	union pd_header header;
+
+	if (!atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_RECEIVED)) {
+		return SMF_EVENT_PROPAGATE;
+	}
+
+	header = prl_rx->emsg.header;
+
+	if (received_control_message(dev, header, PD_CTRL_ACCEPT)) {
+		/*
+		 * Only now, because until the partner agrees nothing has
+		 * moved and the Type-C layer must keep behaving normally.
+		 */
+		atomic_set_bit(pe->flags, PE_FLAGS_PR_SWAP_IN_PROGRESS);
+		pe_set_state(dev, from_source ? PE_PRS_SRC_SNK_TRANSITION_TO_OFF
+					      : PE_PRS_SNK_SRC_TRANSITION_TO_OFF);
+	} else if (received_control_message(dev, header, PD_CTRL_REJECT) ||
+		   received_control_message(dev, header, PD_CTRL_WAIT)) {
+		policy_notify(dev, MSG_REJECTED_RECEIVED);
+		pe_set_state(dev, from_source ? PE_SRC_READY : PE_SNK_READY);
+	} else {
+		pe_set_state(dev, from_source ? PE_SRC_READY : PE_SNK_READY);
+	}
+
+	return SMF_EVENT_PROPAGATE;
+}
+
+/*
+ * Power Role Swap, PD 3.1 8.3.3.6. These are reached when the partner sends
+ * PR_Swap, or from PE_PRS_SRC_SNK_Send_Swap or PE_PRS_SNK_SRC_Send_Swap once
+ * the partner has accepted ours.
+ *
+ * The sequence runs with PE_FLAGS_PR_SWAP_IN_PROGRESS set throughout, because
+ * it takes VBUS away and crosses the terminations over while the partner stays
+ * attached, which the Type-C layer would otherwise read as a detach.
+ */
+
+/**
+ * @brief PE_PRS_SRC_SNK_Evaluate_Swap Entry state
+ *
+ * Accept and Reject are embedded here rather than given their own states, as
+ * the Data Role Swap below also does.
+ */
+static void pe_prs_src_snk_evaluate_swap_entry(void *obj)
+{
+	struct policy_engine *pe = (struct policy_engine *)obj;
+	const struct device *dev = pe->dev;
+
+	LOG_INF("PE_PRS_SRC_SNK_Evaluate_Swap");
+
+	if (policy_check(dev, CHECK_POWER_ROLE_SWAP)) {
+		atomic_set_bit(pe->flags, PE_FLAGS_PR_SWAP_IN_PROGRESS);
+		pe_send_ctrl_msg(dev, PD_PACKET_SOP, PD_CTRL_ACCEPT);
+	} else {
+		pe_send_ctrl_msg(dev, PD_PACKET_SOP, PD_CTRL_REJECT);
+	}
+}
+
+static enum smf_state_result pe_prs_src_snk_evaluate_swap_run(void *obj)
+{
+	struct policy_engine *pe = (struct policy_engine *)obj;
+	const struct device *dev = pe->dev;
+
+	if (!atomic_test_and_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE)) {
+		if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_PROTOCOL_ERROR)) {
+			atomic_clear_bit(pe->flags, PE_FLAGS_PR_SWAP_IN_PROGRESS);
+			pe_set_state(dev, PE_SRC_READY);
+		}
+		return SMF_EVENT_PROPAGATE;
+	}
+
+	if (atomic_test_bit(pe->flags, PE_FLAGS_PR_SWAP_IN_PROGRESS)) {
+		pe_set_state(dev, PE_PRS_SRC_SNK_TRANSITION_TO_OFF);
+	} else {
+		/* Rejected, so the contract stands and nothing has moved. */
+		pe_set_state(dev, PE_SRC_READY);
+	}
+
+	return SMF_EVENT_PROPAGATE;
+}
+
+/**
+ * @brief PE_PRS_SRC_SNK_Transition_to_off Entry state
+ */
+static void pe_prs_src_snk_transition_to_off_entry(void *obj)
+{
+	struct policy_engine *pe = (struct policy_engine *)obj;
+	const struct device *dev = pe->dev;
+
+	LOG_INF("PE_PRS_SRC_SNK_Transition_to_off");
+
+	/*
+	 * Tell the device policy manager before the supply goes, so it can put
+	 * its own power path in order while it still knows it is the Source.
+	 */
+	policy_notify(dev, POWER_ROLE_IS_SINK);
+	pe_set_state(dev, PE_PRS_SRC_SNK_ASSERT_RD);
+}
+
+/**
+ * @brief PE_PRS_SRC_SNK_Assert_Rd Entry state
+ */
+static void pe_prs_src_snk_assert_rd_entry(void *obj)
+{
+	struct policy_engine *pe = (struct policy_engine *)obj;
+	const struct device *dev = pe->dev;
+
+	LOG_INF("PE_PRS_SRC_SNK_Assert_Rd");
+
+	/*
+	 * One call covers both 8.3.3.6.3.5 and .6. Leaving Attached.SRC turns
+	 * the supply off through the Type-C layer's exit handler, and
+	 * tc_swap_power_role() then asserts Rd, so the supply is off before
+	 * the termination changes.
+	 */
+	pe->power_role = TC_ROLE_SINK;
+	tc_swap_power_role(dev, true);
+	pe_set_state(dev, PE_PRS_SRC_SNK_WAIT_SOURCE_ON);
+}
+
+/**
+ * @brief PE_PRS_SRC_SNK_Wait_Source_on Entry state
+ */
+static void pe_prs_src_snk_wait_source_on_entry(void *obj)
+{
+	struct policy_engine *pe = (struct policy_engine *)obj;
+	const struct device *dev = pe->dev;
+
+	LOG_INF("PE_PRS_SRC_SNK_Wait_Source_on");
+
+	/*
+	 * PS_RDY tells the partner the supply is off and it may start. The
+	 * roles have already changed, so this goes out as a Sink.
+	 */
+	pe_send_ctrl_msg(dev, PD_PACKET_SOP, PD_CTRL_PS_RDY);
+	usbc_timer_start(&pe->pd_t_ps_source_on);
+}
+
+static enum smf_state_result pe_prs_src_snk_wait_source_on_run(void *obj)
+{
+	struct policy_engine *pe = (struct policy_engine *)obj;
+	const struct device *dev = pe->dev;
+	struct usbc_port_data *data = dev->data;
+	struct protocol_layer_rx_t *prl_rx = data->prl_rx;
+
+	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_RECEIVED)) {
+		if (received_control_message(dev, prl_rx->emsg.header, PD_CTRL_PS_RDY)) {
+			/* The partner is sourcing; the swap is done. */
+			atomic_clear_bit(pe->flags, PE_FLAGS_PR_SWAP_IN_PROGRESS);
+			pe_set_state(dev, PE_SNK_STARTUP);
+			return SMF_EVENT_PROPAGATE;
+		}
+	}
+
+	/*
+	 * 8.3.3.6.3.7: no PS_RDY within PSSourceOn calls for Error Recovery
+	 * rather than a Hard Reset. Neither end is sourcing, so there is
+	 * nothing to reset to and the connection has to be rebuilt.
+	 */
+	if (usbc_timer_expired(&pe->pd_t_ps_source_on)) {
+		LOG_ERR("PSSourceOn expired; the partner never started sourcing");
+		atomic_clear_bit(pe->flags, PE_FLAGS_PR_SWAP_IN_PROGRESS);
+		usbc_request(dev, REQUEST_TC_ERROR_RECOVERY);
+	}
+
+	return SMF_EVENT_PROPAGATE;
+}
+
+static void pe_prs_src_snk_wait_source_on_exit(void *obj)
+{
+	struct policy_engine *pe = (struct policy_engine *)obj;
+
+	usbc_timer_stop(&pe->pd_t_ps_source_on);
+}
+
+/**
+ * @brief PE_PRS_SNK_SRC_Evaluate_Swap Entry state
+ */
+static void pe_prs_snk_src_evaluate_swap_entry(void *obj)
+{
+	struct policy_engine *pe = (struct policy_engine *)obj;
+	const struct device *dev = pe->dev;
+
+	LOG_INF("PE_PRS_SNK_SRC_Evaluate_Swap");
+
+	if (policy_check(dev, CHECK_POWER_ROLE_SWAP)) {
+		atomic_set_bit(pe->flags, PE_FLAGS_PR_SWAP_IN_PROGRESS);
+		pe_send_ctrl_msg(dev, PD_PACKET_SOP, PD_CTRL_ACCEPT);
+	} else {
+		pe_send_ctrl_msg(dev, PD_PACKET_SOP, PD_CTRL_REJECT);
+	}
+}
+
+static enum smf_state_result pe_prs_snk_src_evaluate_swap_run(void *obj)
+{
+	struct policy_engine *pe = (struct policy_engine *)obj;
+	const struct device *dev = pe->dev;
+
+	if (!atomic_test_and_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE)) {
+		if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_PROTOCOL_ERROR)) {
+			atomic_clear_bit(pe->flags, PE_FLAGS_PR_SWAP_IN_PROGRESS);
+			pe_set_state(dev, PE_SNK_READY);
+		}
+		return SMF_EVENT_PROPAGATE;
+	}
+
+	if (atomic_test_bit(pe->flags, PE_FLAGS_PR_SWAP_IN_PROGRESS)) {
+		pe_set_state(dev, PE_PRS_SNK_SRC_TRANSITION_TO_OFF);
+	} else {
+		pe_set_state(dev, PE_SNK_READY);
+	}
+
+	return SMF_EVENT_PROPAGATE;
+}
+
+/**
+ * @brief PE_PRS_SNK_SRC_Transition_to_off Entry state
+ */
+static void pe_prs_snk_src_transition_to_off_entry(void *obj)
+{
+	struct policy_engine *pe = (struct policy_engine *)obj;
+	const struct device *dev = pe->dev;
+
+	LOG_INF("PE_PRS_SNK_SRC_Transition_to_off");
+
+	policy_notify(dev, POWER_ROLE_IS_SOURCE);
+	usbc_timer_start(&pe->pd_t_ps_source_off);
+}
+
+static enum smf_state_result pe_prs_snk_src_transition_to_off_run(void *obj)
+{
+	struct policy_engine *pe = (struct policy_engine *)obj;
+	const struct device *dev = pe->dev;
+	struct usbc_port_data *data = dev->data;
+	struct protocol_layer_rx_t *prl_rx = data->prl_rx;
+
+	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_RECEIVED)) {
+		if (received_control_message(dev, prl_rx->emsg.header, PD_CTRL_PS_RDY)) {
+			/* The old Source has stopped; we may take over. */
+			pe_set_state(dev, PE_PRS_SNK_SRC_ASSERT_RP);
+			return SMF_EVENT_PROPAGATE;
+		}
+	}
+
+	if (usbc_timer_expired(&pe->pd_t_ps_source_off)) {
+		LOG_ERR("PSSourceOff expired; the partner never stopped sourcing");
+		atomic_clear_bit(pe->flags, PE_FLAGS_PR_SWAP_IN_PROGRESS);
+		usbc_request(dev, REQUEST_TC_ERROR_RECOVERY);
+	}
+
+	return SMF_EVENT_PROPAGATE;
+}
+
+static void pe_prs_snk_src_transition_to_off_exit(void *obj)
+{
+	struct policy_engine *pe = (struct policy_engine *)obj;
+
+	usbc_timer_stop(&pe->pd_t_ps_source_off);
+}
+
+/**
+ * @brief PE_PRS_SNK_SRC_Assert_Rp Entry state
+ */
+static void pe_prs_snk_src_assert_rp_entry(void *obj)
+{
+	struct policy_engine *pe = (struct policy_engine *)obj;
+	const struct device *dev = pe->dev;
+
+	LOG_INF("PE_PRS_SNK_SRC_Assert_Rp");
+
+	/*
+	 * tc_swap_power_role() asserts Rp, then enters Attached.SRC, which turns
+	 * the supply on: 8.3.3.6.2.5 and the start of .6.
+	 */
+	pe->power_role = TC_ROLE_SOURCE;
+	tc_swap_power_role(dev, false);
+	pe_set_state(dev, PE_PRS_SNK_SRC_SOURCE_ON);
+}
+
+/**
+ * @brief PE_PRS_SNK_SRC_Source_on Entry state
+ */
+static void pe_prs_snk_src_source_on_entry(void *obj)
+{
+	ARG_UNUSED(obj);
+
+	/*
+	 * Nothing to do here: Attached.SRC has already turned the supply on.
+	 * The run handler waits for it to come up before announcing it.
+	 */
+	LOG_INF("PE_PRS_SNK_SRC_Source_on");
+}
+
+static enum smf_state_result pe_prs_snk_src_source_on_run(void *obj)
+{
+	struct policy_engine *pe = (struct policy_engine *)obj;
+	const struct device *dev = pe->dev;
+
+	/* Announce the supply only once it is actually up. */
+	if (!atomic_test_bit(pe->flags, PE_FLAGS_PR_SWAP_IN_PROGRESS)) {
+		if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE)) {
+			pe_set_state(dev, PE_SRC_STARTUP);
+		}
+		return SMF_EVENT_PROPAGATE;
+	}
+
+	if (policy_is_ps_ready(dev)) {
+		atomic_clear_bit(pe->flags, PE_FLAGS_PR_SWAP_IN_PROGRESS);
+		atomic_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE);
+		pe_send_ctrl_msg(dev, PD_PACKET_SOP, PD_CTRL_PS_RDY);
+	}
+
+	return SMF_EVENT_PROPAGATE;
+}
+#endif /* CONFIG_USBC_CSM_DRP */
 
 /**
  * @brief PE_DRS_Evaluate_Swap Entry state
@@ -1204,6 +1587,20 @@ static enum smf_state_result pe_sender_response_run(void *obj)
 		 * Handle Sender Response Timeouts
 		 */
 		switch (current_state) {
+#ifdef CONFIG_USBC_CSM_DRP
+		/*
+		 * A Power Role Swap the partner never answered. Nothing has
+		 * moved yet, so returning to Ready is enough.
+		 */
+		case PE_PRS_SRC_SNK_SEND_SWAP:
+			LOG_INF("no answer to PR_Swap");
+			pe_set_state(dev, PE_SRC_READY);
+			break;
+		case PE_PRS_SNK_SRC_SEND_SWAP:
+			LOG_INF("no answer to PR_Swap");
+			pe_set_state(dev, PE_SNK_READY);
+			break;
+#endif /* CONFIG_USBC_CSM_DRP */
 #ifdef CONFIG_USBC_CSM_SUPPORTS_SINK
 		/* Sink states */
 		case PE_SNK_SELECT_CAPABILITY:
@@ -1459,6 +1856,51 @@ static const struct smf_state pe_states[PE_STATE_COUNT] = {
 		NULL,
 		NULL,
 		NULL),
+#ifdef CONFIG_USBC_CSM_DRP
+	[PE_PRS_SRC_SNK_SEND_SWAP] = SMF_CREATE_STATE(
+		pe_prs_send_swap_entry,
+		pe_prs_send_swap_run,
+		NULL,
+		&pe_states[PE_SENDER_RESPONSE_PARENT],
+		NULL),
+	[PE_PRS_SNK_SRC_SEND_SWAP] = SMF_CREATE_STATE(
+		pe_prs_send_swap_entry,
+		pe_prs_send_swap_run,
+		NULL,
+		&pe_states[PE_SENDER_RESPONSE_PARENT],
+		NULL),
+	[PE_PRS_SRC_SNK_EVALUATE_SWAP] = SMF_CREATE_STATE(
+		pe_prs_src_snk_evaluate_swap_entry,
+		pe_prs_src_snk_evaluate_swap_run,
+		NULL, NULL, NULL),
+	[PE_PRS_SRC_SNK_TRANSITION_TO_OFF] = SMF_CREATE_STATE(
+		pe_prs_src_snk_transition_to_off_entry,
+		NULL, NULL, NULL, NULL),
+	[PE_PRS_SRC_SNK_ASSERT_RD] = SMF_CREATE_STATE(
+		pe_prs_src_snk_assert_rd_entry,
+		NULL, NULL, NULL, NULL),
+	[PE_PRS_SRC_SNK_WAIT_SOURCE_ON] = SMF_CREATE_STATE(
+		pe_prs_src_snk_wait_source_on_entry,
+		pe_prs_src_snk_wait_source_on_run,
+		pe_prs_src_snk_wait_source_on_exit,
+		NULL, NULL),
+	[PE_PRS_SNK_SRC_EVALUATE_SWAP] = SMF_CREATE_STATE(
+		pe_prs_snk_src_evaluate_swap_entry,
+		pe_prs_snk_src_evaluate_swap_run,
+		NULL, NULL, NULL),
+	[PE_PRS_SNK_SRC_TRANSITION_TO_OFF] = SMF_CREATE_STATE(
+		pe_prs_snk_src_transition_to_off_entry,
+		pe_prs_snk_src_transition_to_off_run,
+		pe_prs_snk_src_transition_to_off_exit,
+		NULL, NULL),
+	[PE_PRS_SNK_SRC_ASSERT_RP] = SMF_CREATE_STATE(
+		pe_prs_snk_src_assert_rp_entry,
+		NULL, NULL, NULL, NULL),
+	[PE_PRS_SNK_SRC_SOURCE_ON] = SMF_CREATE_STATE(
+		pe_prs_snk_src_source_on_entry,
+		pe_prs_snk_src_source_on_run,
+		NULL, NULL, NULL),
+#endif /* CONFIG_USBC_CSM_DRP */
 	[PE_DRS_EVALUATE_SWAP] = SMF_CREATE_STATE(
 		pe_drs_evaluate_swap_entry,
 		pe_drs_evaluate_swap_run,
