@@ -1094,7 +1094,7 @@ class Gtest(Harness):
 
         # Check if the individual test finished
         state, name = self._check_result(non_ansi_line)
-        if state == TwisterStatus.NONE or name is None:
+        if state in ( TwisterStatus.NONE, TwisterStatus.SKIP ) or name is None:
             # Nothing finished, keep processing lines
             return
 
