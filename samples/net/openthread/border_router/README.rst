@@ -54,6 +54,31 @@ Example building with Web Server enabled for NXP's RW612 FRDM (RCP host).
    :goals: build
    :compact:
 
+MIMXRT1060-EVK Rev-C with IW612/IW610 M.2 modules
+==================================================
+
+The MIMXRT1060-EVK Rev-C runs the OpenThread host with an IW612 (Murata 2EL) or
+IW610 (Murata 2LL) M.2 module providing the 802.15.4 RCP over SPI. The build
+uses the ``nxp_m2_2ll_wifi_bt`` and ``nxp_m2_2el_2ll_ieee802154`` shields and the
+fragments in :file:`boards/mimxrt1060_evk_mimxrt1062_qspi_C/`, which select the
+backbone (``wifi.conf`` or ``eth.conf``) and the module (``iw612.conf`` or
+``iw610.conf``).
+
+Example building for an IW612 module with a wired Ethernet backbone:
+
+.. code-block:: console
+
+   west build -p -b mimxrt1060_evk@C/mimxrt1062/qspi \
+       --shield "nxp_m2_2ll_wifi_bt nxp_m2_2el_2ll_ieee802154" \
+       samples/net/openthread/border_router \
+       -- -DEXTRA_CONF_FILE=" \
+       boards/mimxrt1060_evk_mimxrt1062_qspi_C/mimxrt1060_evk_mimxrt1062_qspi_C.conf \
+       boards/mimxrt1060_evk_mimxrt1062_qspi_C/eth.conf \
+       boards/mimxrt1060_evk_mimxrt1062_qspi_C/iw612.conf"
+
+All four module and backbone combinations are described in
+:ref:`nxp_m2_ieee802154`.
+
 Web Server
 **********
 

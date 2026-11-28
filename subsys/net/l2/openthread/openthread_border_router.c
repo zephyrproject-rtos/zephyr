@@ -74,6 +74,26 @@ int openthread_start_border_router_services_ipv6(struct net_if *ot_iface, struct
 {
 	int error = 0;
 	otInstance *instance = openthread_get_default_instance();
+
+	openthread_mutex_lock();
+
+	/* An AIL up event queued before openthread_border_router_init() can be
+	 * dispatched after the services were started from there.
+	 */
+	if (is_border_router_started) {
+		openthread_mutex_unlock();
+		return 0;
+	}
+
+	/* The AIL interface can go down after it was found up. The down
+	 * handler then either ran before and found nothing to stop, or runs
+	 * after and stops the services started here.
+	 */
+	if (!net_if_is_up(ail_iface)) {
+		openthread_mutex_unlock();
+		return 0;
+	}
+
 	ail_iface_index = (uint32_t)net_if_get_by_iface(ail_iface);
 	ail_iface_ptr = ail_iface;
 	ot_iface_ptr = ot_iface;
@@ -82,8 +102,6 @@ int openthread_start_border_router_services_ipv6(struct net_if *ot_iface, struct
 	net_if_flag_set(ail_iface, NET_IF_FORWARD_MULTICASTS);
 
 	openthread_border_router_add_or_rm_route_to_multicast_groups(true);
-
-	openthread_mutex_lock();
 
 #if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_MDNS_AUTO_NAMING)
 	if (otMdnsSetLocalHostName(instance,
@@ -153,10 +171,10 @@ int openthread_start_border_router_services_ipv6(struct net_if *ot_iface, struct
 	otBackboneRouterSetEnabled(instance, true);
 	otSrpServerSetAutoEnableMode(instance, true);
 
-	openthread_mutex_unlock();
-
 	is_border_router_started = true;
 	border_router_ipv6_services_running = true;
+
+	openthread_mutex_unlock();
 
 exit:
 	if (error) {
@@ -174,6 +192,20 @@ int openthread_start_border_router_services_ipv4(struct net_if *ot_iface, struct
 	openthread_mutex_lock();
 
 #if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_TRANSLATOR)
+
+	/* Same as for IPv6: an IPv4 address event queued before
+	 * openthread_border_router_init() can be dispatched after it.
+	 */
+	if (border_router_ipv4_services_running) {
+		openthread_mutex_unlock();
+		return 0;
+	}
+
+	/* Same as for IPv6 */
+	if (!net_if_is_up(ail_iface)) {
+		openthread_mutex_unlock();
+		return 0;
+	}
 
 	if (openthread_border_router_start_nat64_service() == 0) {
 		openthread_border_router_set_nat64_translator_enabled(true);
@@ -240,6 +272,23 @@ void openthread_set_bbr_multicast_listener_cb(openthread_bbr_multicast_listener_
 	openthread_mutex_unlock();
 }
 
+static void ail_iface_up(struct net_if *ot_iface, struct net_if *ail_iface)
+{
+	if (!net_if_is_wifi(ail_iface)) {
+		net_if_up(ot_iface);
+	}
+	(void)openthread_start_border_router_services_ipv6(ot_iface, ail_iface);
+
+#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_IPV4)
+	if (net_if_ipv4_get_global_addr(ail_iface, NET_ADDR_PREFERRED) != NULL) {
+		has_ipv4_connectivity = true;
+		if (!border_router_ipv4_services_running) {
+			openthread_start_border_router_services_ipv4(ot_iface, ail_iface);
+		}
+	}
+#endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_IPV4 */
+}
+
 static void ail_connection_handler(uint64_t mgmt_event, struct net_if *iface, void *info __unused,
 				   size_t info_length __unused, void *user_data __unused)
 {
@@ -253,12 +302,17 @@ static void ail_connection_handler(uint64_t mgmt_event, struct net_if *iface, vo
 
 	struct openthread_context *ot_context = openthread_get_default_context();
 
+	/* The AIL interface may come up before the OpenThread L2 is initialized
+	 * (e.g. with a deferred radio interface). openthread_border_router_init()
+	 * handles AIL interfaces that are already up.
+	 */
+	if (ot_context->iface == NULL) {
+		return;
+	}
+
 	switch (mgmt_event) {
 	case NET_EVENT_IF_UP:
-		if (!net_if_is_wifi(iface)) {
-			net_if_up(ot_context->iface);
-		}
-		(void)openthread_start_border_router_services_ipv6(ot_context->iface, iface);
+		ail_iface_up(ot_context->iface, iface);
 		break;
 	case NET_EVENT_IF_DOWN:
 #if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_IPV4)
@@ -310,6 +364,10 @@ static void ail_ipv4_address_event_handler(uint64_t mgmt_event, struct net_if *i
 	}
 
 	struct openthread_context *ot_context = openthread_get_default_context();
+
+	if (ot_context->iface == NULL) {
+		return;
+	}
 
 	switch (mgmt_event) {
 	case NET_EVENT_IPV4_ADDR_ADD:
@@ -381,11 +439,33 @@ static void ot_bbr_multicast_listener_handler(void *context,
 	}
 }
 
+static void ail_iface_find_up(struct net_if *iface, void *user_data)
+{
+	struct net_if **ail_iface = user_data;
+
+	/* Same filter as the AIL event handlers: the Ethernet L2 covers both
+	 * wired Ethernet and native Wi-Fi interfaces.
+	 */
+	if (*ail_iface == NULL && net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET) &&
+	    net_if_is_up(iface)) {
+		*ail_iface = iface;
+	}
+}
+
 void openthread_border_router_init(struct openthread_context *ot_ctx)
 {
+	struct net_if *ail_iface = NULL;
+
 	udp_plat_init_sockfd();
 	openthread_set_bbr_multicast_listener_cb(ot_bbr_multicast_listener_handler, (void *)ot_ctx);
 	(void)infra_if_start_icmp6_listener();
+
+	/* With a deferred radio interface, the AIL interface may already be up */
+	net_if_foreach(ail_iface_find_up, &ail_iface);
+	if (ail_iface != NULL) {
+		ail_iface_up(ot_ctx->iface, ail_iface);
+		mdns_plat_monitor_interface(ail_iface);
+	}
 }
 
 void openthread_border_router_post_message(struct otbr_msg_ctx *msg_context)

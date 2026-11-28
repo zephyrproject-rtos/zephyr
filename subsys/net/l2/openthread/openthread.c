@@ -342,14 +342,17 @@ static int openthread_l2_init(struct net_if *iface)
 
 		openthread_set_receive_cb(ot_receive_handler, (void *)ot_l2_context);
 
+		/* Registered before openthread_border_router_init(), which may bring
+		 * the interface up if the AIL interface is already up.
+		 */
+		openthread_state_changed_callback_register(&ot_l2_state_changed_cb);
+
 #if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)
 #if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_TRANSLATOR)
 		openthread_set_nat64_receive_cb(ot_receive_nat64_handler, (void *)ot_l2_context);
 #endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_TRANSLATOR*/
 		openthread_border_router_init(ot_l2_context);
 #endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER */
-
-		openthread_state_changed_callback_register(&ot_l2_state_changed_cb);
 	}
 
 	return error;

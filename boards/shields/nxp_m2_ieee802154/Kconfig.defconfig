@@ -24,6 +24,9 @@ config SPI
 config I2C
 	default y
 
+config GPIO
+	default y
+
 config BT
 	default y
 
@@ -31,6 +34,9 @@ config BT_H4
 	default y
 
 config BT_H4_NXP_CTLR
+	default y
+
+config BT_NXP_CTRL_ENABLE_AT_BOOT
 	default y
 
 config NET_L2_OPENTHREAD
