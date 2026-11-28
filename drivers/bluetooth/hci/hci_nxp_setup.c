@@ -22,6 +22,15 @@
 #include <zephyr/drivers/bluetooth/h4.h>
 #include <zephyr/bluetooth/hci_types.h>
 
+#if defined(CONFIG_BT_NXP_CTRL_ENABLE_AT_BOOT)
+#include <zephyr/bluetooth/bluetooth.h>
+#endif
+
+#if defined(CONFIG_BT_NXP_CTRL_HDLC_RCP_INIT)
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/hdlc_rcp_if/hdlc_rcp_if.h>
+#endif
+
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_nxp_ctlr);
@@ -1620,6 +1629,98 @@ int bt_nxp_trigger_ir(const struct device *dev)
 }
 #endif /* defined(CONFIG_HCI_NXP_CONFIG_IR) */
 
+#if defined(CONFIG_BT_NXP_CTRL_HDLC_RCP_INIT)
+#if DT_NODE_HAS_PROP(DT_DRV_INST(0), spi_enable_gpios)
+static int bt_nxp_spi_enable(void)
+{
+	const struct gpio_dt_spec spi_enable = GPIO_DT_SPEC_GET(DT_DRV_INST(0), spi_enable_gpios);
+	int err;
+
+	if (!gpio_is_ready_dt(&spi_enable)) {
+		LOG_ERR("spi-enable gpio not ready");
+		return -ENODEV;
+	}
+
+	/* Route the IEEE 802.15.4 SPI lines only once the firmware runs */
+	err = gpio_pin_configure_dt(&spi_enable, GPIO_OUTPUT_ACTIVE);
+	if (err != 0) {
+		LOG_ERR("Failed to set spi-enable gpio: %d", err);
+	}
+
+	return err;
+}
+#else
+static int bt_nxp_spi_enable(void)
+{
+	return 0;
+}
+#endif /* DT_NODE_HAS_PROP(DT_DRV_INST(0), spi_enable_gpios) */
+
+static K_THREAD_STACK_DEFINE(hdlc_rcp_start_stack, CONFIG_BT_NXP_CTRL_HDLC_RCP_INIT_STACK_SIZE);
+static struct k_thread hdlc_rcp_start_thread_data;
+static atomic_t hdlc_rcp_start_requested;
+
+/*
+ * The HDLC RCP SPI driver processes RX from the system work queue, and
+ * deferred_init() blocks until the RCP answers. Run the start sequence from
+ * a dedicated thread so that the system work queue stays free.
+ *
+ * The thread is created at run time rather than with K_THREAD_DEFINE():
+ * static threads only start once every SYS_INIT level has completed, which
+ * can be delayed by other APPLICATION level hooks (e.g. net_config waiting
+ * for DHCP).
+ */
+static void hdlc_rcp_start_thread(void *p1, void *p2, void *p3)
+{
+	struct net_if *iface = net_if_get_first_by_type(&NET_L2_GET_NAME(OPENTHREAD));
+	const struct hdlc_driver_api *api;
+	int err;
+
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	k_sleep(K_MSEC(CONFIG_BT_NXP_CTRL_HDLC_RCP_INIT_DELAY));
+
+	err = bt_nxp_spi_enable();
+	if (err != 0) {
+		return;
+	}
+
+	if (iface == NULL) {
+		LOG_ERR("OpenThread interface not found");
+		return;
+	}
+
+	api = net_if_get_device(iface)->api;
+	if ((api != NULL) && (api->deferred_init != NULL)) {
+		err = api->deferred_init();
+		if (err != 0) {
+			LOG_ERR("HDLC RCP deferred init failed: %d", err);
+			return;
+		}
+	}
+
+	err = net_if_up(iface);
+	if ((err != 0) && (err != -EALREADY)) {
+		LOG_ERR("Failed to bring OpenThread interface up: %d", err);
+	}
+}
+
+static void bt_nxp_hdlc_rcp_start(void)
+{
+	/* Start the sequence only once, later calls are ignored */
+	if (!atomic_cas(&hdlc_rcp_start_requested, 0, 1)) {
+		return;
+	}
+
+	(void)k_thread_create(&hdlc_rcp_start_thread_data, hdlc_rcp_start_stack,
+			      K_THREAD_STACK_SIZEOF(hdlc_rcp_start_stack), hdlc_rcp_start_thread,
+			      NULL, NULL, NULL, K_PRIO_PREEMPT(10), 0, K_NO_WAIT);
+	(void)k_thread_name_set(&hdlc_rcp_start_thread_data, "hdlc_rcp_start");
+}
+#endif /* CONFIG_BT_NXP_CTRL_HDLC_RCP_INIT */
+
 int bt_hci_transport_setup(const struct device *dev)
 {
 	int ret = 0;
@@ -1659,6 +1760,36 @@ int bt_hci_transport_setup(const struct device *dev)
 
 	return ret;
 }
+
+#if defined(CONFIG_BT_NXP_CTRL_ENABLE_AT_BOOT)
+static void bt_nxp_boot_ready(int err)
+{
+	if (err != 0) {
+		LOG_ERR("Bluetooth init failed: %d", err);
+		return;
+	}
+
+#if defined(CONFIG_BT_NXP_CTRL_HDLC_RCP_INIT)
+	/* The controller is fully set up (baudrate, calibration, HCI reset) */
+	bt_nxp_hdlc_rcp_start();
+#endif
+}
+
+static int bt_nxp_enable_at_boot(void)
+{
+	int err;
+
+	/* Asynchronous: the firmware upload runs from the BT init work */
+	err = bt_enable(bt_nxp_boot_ready);
+	if ((err != 0) && (err != -EALREADY)) {
+		LOG_ERR("bt_enable failed: %d", err);
+	}
+
+	return 0;
+}
+
+SYS_INIT(bt_nxp_enable_at_boot, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+#endif /* CONFIG_BT_NXP_CTRL_ENABLE_AT_BOOT */
 
 int bt_hci_transport_teardown(const struct device *dev)
 {

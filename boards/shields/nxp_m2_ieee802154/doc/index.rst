@@ -124,6 +124,23 @@ The configuration fragments passed via ``EXTRA_CONF_FILE`` are applied in order:
    default. The host SPI controller pinmux and GPIO assignments are provided by
    the board-specific overlay in ``boards/<board>.overlay``.
 
+RCP Bring-up
+************
+
+The IW612/IW610 firmware, which also runs the IEEE 802.15.4 radio, is uploaded
+over the Bluetooth H:4 UART by the NXP HCI driver. The RCP SPI interface is
+built with :kconfig:option:`CONFIG_HDLC_RCP_IF_SPI_DEFERRED_INIT` and is started
+by the same driver once the upload completes, so no application code is needed:
+
+- :kconfig:option:`CONFIG_BT_NXP_CTRL_ENABLE_AT_BOOT` (enabled by default by
+  the shield) calls ``bt_enable()`` at boot to upload the firmware.
+- :kconfig:option:`CONFIG_BT_NXP_CTRL_HDLC_RCP_INIT` then drives the
+  ``spi-enable-gpios`` line of the Bluetooth node, if any, initializes the HDLC
+  RCP interface and brings the OpenThread interface up.
+
+Applications that call ``bt_enable()`` themselves must disable
+:kconfig:option:`CONFIG_BT_NXP_CTRL_ENABLE_AT_BOOT`.
+
 Pin Assignments (MIMXRT1060-EVK Rev-C)
 **************************************
 
@@ -151,6 +168,10 @@ On the MIMXRT1060-EVK Rev-C the RCP link uses LPSPI4 with the following signals:
    * - SPI INT
      - GPIO_B0_04 (GPIO2.04)
      - RCP host interrupt, active low
+   * - SPI enable
+     - PCAL6408A (LPI2C1, address 0x20) pin 0
+     - Routes the RCP SPI lines to the M.2 connector, driven by the NXP HCI
+       driver through ``spi-enable-gpios``
 
 .. note::
    The board overlay disables the LCD interface (``&lcdif``) to free the

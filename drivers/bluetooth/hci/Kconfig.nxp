@@ -186,6 +186,48 @@ config BT_NXP_EZURIO_NX611
 
 endchoice # BT_NXP_MODULE
 
+config BT_NXP_CTRL_ENABLE_AT_BOOT
+	bool "Upload the controller firmware at boot"
+	depends on BT_HCI_HOST
+	help
+	  Call bt_enable() from a SYS_INIT hook so that the controller
+	  firmware is uploaded at boot without application code. This is
+	  needed when the firmware also runs another radio, such as the
+	  IEEE 802.15.4 RCP of IW61x combo chips. Disable it when the
+	  application calls bt_enable() itself.
+
+config BT_NXP_CTRL_HDLC_RCP_INIT
+	bool "Start the IEEE 802.15.4 RCP interface once Bluetooth is ready"
+	depends on BT_NXP_CTRL_ENABLE_AT_BOOT
+	depends on HDLC_RCP_IF_SPI_DEFERRED_INIT
+	depends on NET_L2_OPENTHREAD
+	default y
+	help
+	  On combo controllers (IW61x) the firmware uploaded over the H:4 UART
+	  also runs the IEEE 802.15.4 radio co-processor. When enabled, the
+	  driver completes the deferred initialization of the HDLC RCP
+	  interface and brings the OpenThread interface up after the
+	  bt_enable() issued at boot has completed, with an additional delay
+	  of BT_NXP_CTRL_HDLC_RCP_INIT_DELAY.
+
+config BT_NXP_CTRL_HDLC_RCP_INIT_DELAY
+	int "Delay before starting the IEEE 802.15.4 RCP interface"
+	depends on BT_NXP_CTRL_HDLC_RCP_INIT
+	range 0 5000
+	default 1000
+	help
+	  Time to wait after Bluetooth is ready before starting the HDLC RCP
+	  interface, to let the controller start its IEEE 802.15.4 radio.
+	  Unit is millisecond.
+
+config BT_NXP_CTRL_HDLC_RCP_INIT_STACK_SIZE
+	int "Stack size of the IEEE 802.15.4 RCP start thread"
+	depends on BT_NXP_CTRL_HDLC_RCP_INIT
+	default 4096
+	help
+	  Stack size of the thread that starts the HDLC RCP interface. The
+	  thread runs the OpenThread radio initialization.
+
 endif # BT_H4_NXP_CTLR
 
 config BT_NXP_CTRL_BSP_CAPABLE
