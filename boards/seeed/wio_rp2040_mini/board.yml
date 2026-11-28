@@ -1,0 +1,6 @@
+board:
+  name: wio_rp2040_mini
+  full_name: Wio RP2040 Mini Dev Board
+  vendor: seeed
+  socs:
+    - name: rp2040

@@ -1,0 +1,131 @@
+/*
+ * Copyright (c) 2021 Yonatan Schachter
+ * Copyright (c) 2023 Seeed Studio
+ * Copyright (c) 2026 Saleemuddin Shaik
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <freq.h>
+#include <raspberrypi/rpi_pico/rp2040.dtsi>
+#include "wio_rp2040_mini-pinctrl.dtsi"
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+/ {
+	model = "Seeed Studio Wio RP2040 Mini";
+	compatible = "seeed,wio-rp2040-mini";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &ssi;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,code-partition = &code_partition;
+	};
+
+	aliases {
+		led0 = &led0;
+		rtc = &rtc;
+		watchdog0 = &wdt0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+			label = "User LED";
+		};
+	};
+};
+
+&flash0 {
+	reg = <0x10000000 DT_SIZE_M(2)>;
+	ranges = <0x0 0x10000000 DT_SIZE_M(2)>;
+
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		second_stage_bootloader: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x00000000 0x100>;
+			label = "second_stage_bootloader";
+			read-only;
+		};
+
+		code_partition: partition@100 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x100 (DT_SIZE_M(2) - 0x100)>;
+			label = "code-partition";
+			read-only;
+		};
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&uart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c0 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c1 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&spi0 {
+	clock-frequency = <DT_FREQ_M(8)>;
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&timer {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&clocks RPI_PICO_CLKID_CLK_RTC>;
+	status = "okay";
+};
+
+&adc {
+	pinctrl-0 = <&adc_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+zephyr_udc0: &usbd {
+	status = "okay";
+};
+
+&vreg {
+	status = "okay";
+};
+
+&xosc {
+	startup-delay-multiplier = <64>;
+};

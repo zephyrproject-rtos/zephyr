@@ -1,0 +1,10 @@
+# Copyright (c) 2023 Seeed Studio inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_WIO_RP2040_MINI
+
+config RP2_FLASH_W25Q080
+	bool "W25Q080 flash support"
+	default y
+
+endif # BOARD_WIO_RP2040_MINI
