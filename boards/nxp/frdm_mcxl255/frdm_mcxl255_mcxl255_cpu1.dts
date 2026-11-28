@@ -74,3 +74,10 @@
 &aon_lptmr0 {
 	status = "okay";
 };
+
+&lpacmp {
+	positive-input = "comp_in4";
+	negative-input = <4>;
+	sample-delay = <80>;
+	status = "okay";
+};
