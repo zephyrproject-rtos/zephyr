@@ -443,6 +443,11 @@ static void process_ff_sf(struct isotp_recv_ctx *rctx, struct can_frame *frame)
 			payload_len = index + 1 + sf_len;
 		}
 
+		if (sf_len == 0) {
+			LOG_INF("SF DL zero is reserved. Ignore");
+			return;
+		}
+
 		if (payload_len > can_dl) {
 			LOG_INF("SF DL does not fit. Ignore");
 			return;
