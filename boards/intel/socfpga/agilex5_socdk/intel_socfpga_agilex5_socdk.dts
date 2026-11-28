@@ -55,7 +55,7 @@
 	status = "okay";
 };
 
-&xgmac0 {
+&xgmac2 {
 	full-duplex-mode-en;
 	num-dma-ch = <1>;
 	num-tx-queues = <1>;
@@ -70,11 +70,12 @@
 	zephyr,random-mac-address;
 };
 
-&mdio0 {
+&mdio2 {
 	csr-clock-indx = <4>;
 
 	phy0: phy@0 {
-		compatible = "ethernet-phy";
+		compatible = "marvell,88e151x";
 		reg = <0>;
+		phy-connection-type = "rgmii";
 	};
 };

@@ -6,3 +6,12 @@ config HAS_COVERAGE_SUPPORT
 
 config MAX_THREAD_BYTES
 	default 5
+
+config NOCACHE_MEMORY
+	default y
+
+configdefault ETH_DRIVER
+	default y
+
+configdefault MDIO_INIT_PRIORITY
+	default 50
