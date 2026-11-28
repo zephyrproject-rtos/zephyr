@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* connect PB08 to PB09 */
+/* connect PC12 to PC13 */
 
 #define PWM_NODE    tcc1
 #define PWM_PINCTRL tcc1_pwm_default
@@ -12,19 +12,19 @@
 
 / {
 	zephyr,user {
-		pwms = <&tcc1 1 PWM_MSEC(20) 0>;
-		gpios = <&portb 9 GPIO_ACTIVE_HIGH>;
+		pwms = <&tcc1 2 PWM_MSEC(20) 0>;
+		gpios = <&portc 13 GPIO_ACTIVE_HIGH>;
 	};
 };
 
-&portb {
+&portc {
 	status = "okay";
 };
 
 &pinctrl {
 	tcc1_pwm_default: tcc1_pwm_default {
 		group1 {
-			pinmux = <PA8G_TCC1_WO4>;
+			pinmux = <PC12G_TCC1_WO6>;
 		};
 	};
 };
