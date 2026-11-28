@@ -17,6 +17,13 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		test_ast2700_otp: otp@10000000 {
+			compatible = "aspeed,ast2700-otp";
+			reg = <0x10000000 0x800>;
+			aspeed,word-size = <2>;
+			status = "okay";
+		};
+
 		test_i2c: i2c@11112222 {
 			compatible = "vnd,i2c";
 			reg = <0x11112222 0x1000>;

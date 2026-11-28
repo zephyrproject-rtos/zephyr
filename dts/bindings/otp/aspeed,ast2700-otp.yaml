@@ -1,0 +1,20 @@
+# Copyright (c) 2026 ASPEED Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ASPEED AST27x0 series OTP controller
+
+compatible: "aspeed,ast2700-otp"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  aspeed,word-size:
+    type: int
+    required: true
+    enum: [2, 4]
+    description: |
+      Size in bytes of one OTP word, the unit the controller reads at a
+      time. The AST27x0 series has 16-bit words.

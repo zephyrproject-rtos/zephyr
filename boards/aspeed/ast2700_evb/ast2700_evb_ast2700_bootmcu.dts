@@ -19,6 +19,10 @@
 	};
 };
 
+&otp {
+	status = "okay";
+};
+
 &uart12 {
 	current-speed = <115200>;
 	status = "okay";

@@ -20,6 +20,7 @@ source "subsys/logging/Kconfig.template.log_config"
 
 # zephyr-keep-sorted-start
 source "drivers/otp/Kconfig.adi_axi_sysid"
+source "drivers/otp/Kconfig.aspeed"
 source "drivers/otp/Kconfig.bflb"
 source "drivers/otp/Kconfig.emu"
 source "drivers/otp/Kconfig.gpio_straps"
