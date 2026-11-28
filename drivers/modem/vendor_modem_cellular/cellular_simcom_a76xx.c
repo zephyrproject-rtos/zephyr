@@ -78,7 +78,7 @@ static const struct modem_cellular_vendor_config simcom_a76xx_vendor = {
 	.chat_delimiter = "\r",
 	.chat_filter = "\n",
 	.power_pulse_duration_ms = 500,
-	.reset_pulse_duration_ms = 100,
+	.reset_pulse_duration_ms = 2500,
 	.startup_time_ms = 20000,
 	.shutdown_time_ms = 5000,
 };

@@ -1,0 +1,6 @@
+board:
+  name: t_a7670x
+  full_name: T-A7670X
+  vendor: lilygo
+  socs:
+  - name: esp32
