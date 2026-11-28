@@ -1124,6 +1124,14 @@ static int airoc_mgmt_ap_enable(const struct device *dev,
 		break;
 	}
 
+	/* WHD Wi-Fi 5 derives the band from the channel number and forces 20 MHz.
+	 * Passing an encoded chanspec makes a 2.4 GHz channel look like a 5 GHz one.
+	 * WHD Wi-Fi 6 instead expects the encoded band bits.
+	 */
+	if (!IS_ENABLED(CONFIG_AIROC_WIFI6)) {
+		chanspec = CHSPEC_CHANNEL(chanspec);
+	}
+
 	switch (params->security) {
 	case WIFI_SECURITY_TYPE_NONE:
 		security = WHD_SECURITY_OPEN;
