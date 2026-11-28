@@ -184,14 +184,30 @@ class SPDX3Serializer:
             # Credit the organization author alongside the automated agent, so the
             # SBOM declares a real author. Reuses the shared Organization element,
             # which package suppliers also reference.
-            organization = self.sbom_data.metadata.get("creator_organization")
-            self.author_agent = self._get_organization(organization)
+            metadata = self.sbom_data.metadata
+            self.author_agent = self._get_organization(metadata.get("creator_organization"))
             if self.author_agent:
                 self.creation_info.createdBy.append(self.author_agent._id)
+                self._add_contact(
+                    self.author_agent, metadata.get("creator_email"), metadata.get("creator_url")
+                )
 
         # Build profile elements; no-ops when no build information was collected.
         self._create_build_tools()
         self._create_build_object()
+
+    @staticmethod
+    def _add_contact(agent, email: str, url: str):
+        """Record an agent's contact e-mail address and URL as external identifiers."""
+        for id_type, value in (
+            (spdx.ExternalIdentifierType.email, email),
+            (spdx.ExternalIdentifierType.urlScheme, url),
+        ):
+            if value:
+                ext_id = spdx.ExternalIdentifier()
+                ext_id.externalIdentifierType = id_type
+                ext_id.identifier = value
+                agent.externalIdentifier.append(ext_id)
 
     def _get_organization(self, name: str):
         """Return a shared Organization element for ``name``, creating it once.
