@@ -26,14 +26,16 @@ struct vdac_config {
 	const struct pinctrl_dev_config *pincfg;
 	const struct device *clock_dev;
 	const struct silabs_clock_control_cmu_config clock_cfg;
-	sl_hal_vdac_init_t init;
+	sl_hal_vdac_vref_t reference;
+	sl_hal_vdac_refresh_t refresh;
+	uint32_t warmup_time;
 	sl_hal_vdac_init_channel_t channel_init[NUM_CHANNELS];
 };
 
 static int vdac_init(const struct device *dev)
 {
 	const struct vdac_config *config = dev->config;
-	sl_hal_vdac_init_t init = config->init;
+	sl_hal_vdac_init_t init = SL_HAL_VDAC_INIT_DEFAULT;
 	uint32_t freq;
 	int err;
 
@@ -60,6 +62,9 @@ static int vdac_init(const struct device *dev)
 		return err;
 	}
 	init.prescaler = sl_hal_vdac_calculate_prescaler(config->base, MAX_FREQUENCY, freq);
+	init.reference = config->reference;
+	init.refresh = config->refresh;
+	init.warmup_time = config->warmup_time;
 
 	/* Initialize VDAC */
 	sl_hal_vdac_init(config->base, &init);
@@ -146,10 +151,9 @@ static DEVICE_API(dac, vdac_api) = {
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),			\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),		\
 		.clock_cfg = SILABS_DT_INST_CLOCK_CFG(inst),			\
-		.init = SL_HAL_VDAC_INIT_DEFAULT,				\
-		.init.reference = DT_INST_ENUM_IDX(inst, voltage_reference),	\
-		.init.warmup_time = DT_INST_PROP(inst, warmup_cycles),		\
-		.init.refresh = DT_INST_ENUM_IDX(inst, refresh_period_cycles),	\
+		.reference = DT_INST_ENUM_IDX(inst, voltage_reference),		\
+		.refresh = DT_INST_ENUM_IDX(inst, refresh_period_cycles),	\
+		.warmup_time = DT_INST_PROP(inst, warmup_cycles),		\
 		DT_INST_FOREACH_CHILD(inst, VDAC_CHANNEL)			\
 	};									\
 										\
