@@ -802,6 +802,81 @@ static void test_main_reserved_bit(void)
 	TEST_PASS_AND_EXIT("GATT client passed");
 }
 
+static atomic_t reads_outstanding;
+
+static uint8_t fill_read_done(struct bt_conn *conn, uint8_t err, struct bt_gatt_read_params *params,
+			      const void *data, uint16_t length)
+{
+	TEST_ASSERT(err == 0U, "Read failed (err %u)", err);
+
+	(void)atomic_dec(&reads_outstanding);
+
+	return BT_GATT_ITER_STOP;
+}
+
+/* Nothing waits for an ATT request on the thread that runs this, so a subscribe here fails at once
+ * when they are used up
+ */
+static uint8_t fill_read_func(struct bt_conn *conn, uint8_t err, struct bt_gatt_read_params *params,
+			      const void *data, uint16_t length)
+{
+	static struct bt_gatt_read_params fill_params[CONFIG_BT_ATT_TX_COUNT];
+	int sub_err;
+
+	TEST_ASSERT(err == 0U, "Read failed (err %u)", err);
+
+	ARRAY_FOR_EACH_PTR(fill_params, fill) {
+		fill->func = fill_read_done;
+		fill->handle_count = 1;
+		fill->single.handle = chrc_handle;
+
+		if (bt_gatt_read(conn, fill) != 0) {
+			break;
+		}
+
+		(void)atomic_inc(&reads_outstanding);
+	}
+
+	sub_params_short.value_handle = chrc_handle;
+	sub_err = bt_gatt_subscribe(conn, &sub_params_short);
+	TEST_ASSERT(sub_err == -ENOMEM, "Subscribe did not run out of requests (err %d)", sub_err);
+
+	SET_FLAG(flag_read_complete);
+
+	return BT_GATT_ITER_STOP;
+}
+
+/* A CCC discovery that could not start must not get in the way of the next subscribe */
+static void test_main_subscribe_no_mem(void)
+{
+	int err;
+
+	setup();
+
+	gatt_discover(BT_ATT_CHAN_OPT_NONE);
+
+	read_params.func = fill_read_func;
+	read_params.handle_count = 1;
+	read_params.single.handle = chrc_handle;
+	err = bt_gatt_read(g_conn, &read_params);
+	TEST_ASSERT(err == 0, "Failed to read (err %d)", err);
+	WAIT_FOR_FLAG(flag_read_complete);
+
+	while (atomic_get(&reads_outstanding) > 0) {
+		k_sleep(K_MSEC(10));
+	}
+
+	err = bt_gatt_subscribe(g_conn, &sub_params_short);
+	TEST_ASSERT(err == 0, "Failed to subscribe (err %d)", err);
+	WAIT_FOR_FLAG(flag_short_subscribed);
+
+	while (atomic_get(&num_notifications) < 1) {
+		k_sleep(K_MSEC(10));
+	}
+
+	TEST_PASS_AND_EXIT("GATT client passed");
+}
+
 static const struct bst_test_instance test_vcs[] = {
 	{
 		.test_id = "gatt_client_none",
@@ -838,6 +913,10 @@ static const struct bst_test_instance test_vcs[] = {
 	{
 		.test_id = "gatt_client_reserved_bit",
 		.test_main_f = test_main_reserved_bit,
+	},
+	{
+		.test_id = "gatt_client_subscribe_no_mem",
+		.test_main_f = test_main_subscribe_no_mem,
 	},
 	BSTEST_END_MARKER,
 };
