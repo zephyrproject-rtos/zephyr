@@ -142,17 +142,23 @@ static int mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t devad,
 static int mdio_dwcxgmac_read(const struct device *dev, uint8_t prtad, uint8_t regad,
 			      uint16_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	return mdio_transfer(dev, prtad, regad, MDIO_READ_CMD, 0, data);
 }
 
 static int mdio_dwcxgmac_write(const struct device *dev, uint8_t prtad, uint8_t regad,
 			       uint16_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	return mdio_transfer(dev, prtad, regad, MDIO_WRITE_CMD, data, NULL);
 }
 
 static int mdio_dwcxgmac_initialize(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct mdio_dwcxgmac_dev_data *const data = (struct mdio_dwcxgmac_dev_data *)dev->data;
 	__maybe_unused const struct mdio_dwcxgmac_dev_config *const cfg = dev->config;
 	mem_addr_t ioaddr;
