@@ -19,6 +19,8 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 
+#include <psa/crypto.h>
+
 /** @cond INTERNAL_HIDDEN */
 
 enum bt_keys_type {
@@ -101,6 +103,11 @@ struct bt_keys {
 #endif /* BT_SIGNING */
 #if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
 	struct bt_ltk periph_ltk;
+#endif /* CONFIG_BT_SMP_SC_PAIR_ONLY */
+	psa_key_id_t ltk_psa_id;
+	psa_key_id_t irk_psa_id;
+#if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
+	psa_key_id_t periph_ltk_psa_id;
 #endif /* CONFIG_BT_SMP_SC_PAIR_ONLY */
 #if (defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST))
 	uint32_t aging_counter;
