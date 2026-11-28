@@ -21,3 +21,14 @@ properties:
   reset-gpios:
     type: phandle-array
     description: RESETn pin
+  wait-ready-timeout-ms:
+    type: int
+    default: 1500000
+    description: |
+      Time in milliseconds after which waiting for a program, erase or status
+      register write to complete fails with -ETIMEDOUT, so a device that never
+      clears its Write-In-Progress bit cannot hang the caller.
+      It must exceed the longest chip erase time of the device; refer to your
+      device's datasheet and correct accordingly.
+      The default exceeds the 1381 s maximum of the 1 Gb Infineon SEMPER
+      S25HL01GT/S25HS01GT. Set a lower value for smaller devices to fail faster.
