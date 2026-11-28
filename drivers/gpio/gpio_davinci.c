@@ -78,7 +78,7 @@ static int gpio_davinci_configure(const struct device *dev, gpio_pin_t pin,
 	if ((flags & GPIO_OUTPUT) != 0) {
 		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
 			regs->set_data = BIT(pin);
-		} else {
+		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0) {
 			regs->clr_data = BIT(pin);
 		}
 		regs->dir &= ~(BIT(pin));
