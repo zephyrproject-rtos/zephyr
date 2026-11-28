@@ -1,0 +1,58 @@
+# Copyright (c) 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI Unicomm SPI controller
+
+compatible: "ti,unicomm-spi"
+
+include: [spi-controller.yaml, pinctrl-device.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  fifo-depth:
+    type: int
+    default: 16
+    description: |
+      Depth of the UNICOMM SPI TX and RX FIFOs in bytes.
+
+  tx-fifo-threshold:
+    type: int
+    default: 4
+    description: |
+      TX FIFO interrupt threshold encoding (IFLS.TXIFLSEL field, bits [2:0]).
+      This value doesn't correspond to the number of bytes in the FIFO. Check TRM
+      for the actual encoding. The default value of 4 causes an interrupt to fire
+      when the FIFO is not full.
+
+  rx-fifo-threshold:
+    type: int
+    default: 4
+    description: |
+      RX FIFO interrupt threshold encoding (IFLS.RXIFLSEL field, bits [6:4]).
+      This value doesn't correspond to the number of bytes in the FIFO. Check TRM
+      for the actual encoding. The default value of 4 causes an interrupt to fire
+      when the FIFO is not empty.
+
+  dmas:
+    description: |
+      Optional DMA specifiers, used for asynchronous controller-mode transfers when
+      CONFIG_SPI_TI_UNICOMM_DMA is enabled. Both channels must be given, TX first then RX
+      (the channel cell is the DMA channel, the trigger cell is the SPI TX/RX DMA trigger).
+      Without it, transfers use interrupts.
+
+  dma-names:
+    description: DMA channel names, must be "tx" then "rx" when dmas is set.

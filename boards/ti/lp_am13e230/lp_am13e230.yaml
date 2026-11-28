@@ -7,6 +7,9 @@ toolchain:
 ram: 96
 flash: 512
 supported:
+  - dma
   - hwinfo
   - watchdog
+  - uart
+  - spi
 vendor: ti
