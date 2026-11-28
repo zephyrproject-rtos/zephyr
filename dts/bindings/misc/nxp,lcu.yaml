@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP logic control unit. Each instance contains three logic cells,
+  each with four shared inputs and four independently programmable LUT
+  outputs. Drivers use the NXP LCU API to reserve an entire logic cell,
+  not individual inputs or outputs.
+
+compatible: "nxp,lcu"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true

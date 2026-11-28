@@ -1,0 +1,9 @@
+tests:
+  drivers.lcu.nxp:
+    platform_allow:
+      - frdm_mcxe31b
+    integration_platforms:
+      - frdm_mcxe31b/mcxe31b
+    tags:
+      - drivers
+      - lcu

@@ -7,6 +7,20 @@ common:
   harness: console
 
 tests:
+  sample.sensor.nxp_emios_qdec:
+    platform_allow:
+      - frdm_mcxe31b
+    integration_platforms:
+      - frdm_mcxe31b/mcxe31b
+    filter: dt_compat_enabled("nxp,emios-qdec")
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "Quadrature decoder sensor test"
+        - "Position = (.*) degrees"
+        - "Revolutions = (.*)"
+
   sample.sensor.qdec_sensor:
     platform_type:
       - mcu

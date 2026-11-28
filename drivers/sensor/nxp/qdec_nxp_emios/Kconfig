@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config QDEC_NXP_EMIOS
+	bool "NXP eMIOS and LCU quadrature decoder"
+	default y
+	depends on DT_HAS_NXP_EMIOS_QDEC_ENABLED
+	depends on SOC_SERIES_MCXE31X
+	depends on CLOCK_CONTROL
+	select NXP_LCU
+	select MUX
+	select PINCTRL
+	help
+	  Decode quadrature signals with an LCU cell and two eMIOS counters.
+	  Each decoder exclusively owns one eMIOS instance. Period interrupts
+	  extend the hardware counters. Fetches provide position and revolution counts.

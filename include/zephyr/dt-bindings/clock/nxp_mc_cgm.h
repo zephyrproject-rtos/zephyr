@@ -128,4 +128,9 @@
 
 #define MCUX_TRGMUX_CLK MCUX_MC_CGM_CLK_ID(0x2D, 0x00)
 
+/** LCU0 functional and register interface clocks. */
+#define MCUX_LCU0_CLK MCUX_MC_CGM_CLK_ID(0x2E, 0x00)
+/** LCU1 functional and register interface clocks. */
+#define MCUX_LCU1_CLK MCUX_MC_CGM_CLK_ID(0x2E, 0x01)
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_NXP_MC_CGM_H_ */

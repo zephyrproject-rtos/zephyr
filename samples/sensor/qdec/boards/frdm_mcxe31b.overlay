@@ -1,0 +1,86 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		qdec0 = &encoder;
+		qenca = &phase_a;
+		qencb = &phase_b;
+	};
+
+	encoder-emulate {
+		compatible = "gpio-leds";
+
+		phase_a: phase-a {
+			gpios = <&gpioa_l 2 GPIO_ACTIVE_HIGH>;
+		};
+
+		phase_b: phase-b {
+			gpios = <&gpioa_l 3 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	encoder: encoder {
+		compatible = "nxp,emios-qdec";
+		lcu = <&lcu_0>;
+		lcu-cell = <0>;
+		lcu-inputs = <0 1>;
+		emios = <&emios_0>;
+		emios-channels = <5 6>;
+		/* Simulate 100 PPR with x4 decoding: about 20 seconds per revolution. */
+		counts-per-revolution = <400>;
+		pinctrl-0 = <&encoder_inputs>;
+		pinctrl-names = "default";
+		/* Destination register, input field shift, source selector. */
+		mux-states = <&trgmux 31 0 72>,  /* TRGMUX IN12 -> LCU_0 input 0 */
+			     <&trgmux 31 8 73>,  /* TRGMUX IN13 -> LCU_0 input 1 */
+			     <&trgmux 9 0 95>,   /* LCU_0 LC0 OUT2 -> eMIOS_0 CH5 */
+			     <&trgmux 9 8 96>;   /* LCU_0 LC0 OUT3 -> eMIOS_0 CH6 */
+	};
+};
+
+&gpioa_l {
+	status = "okay";
+};
+
+/* Loopback wiring:
+ *  J2-9 ---> J3-3 (EQDC PHASEA)
+ *  J2-5 --->  J3-1 (EQDC PHASEB)
+ */
+&pinctrl {
+	encoder_inputs: encoder_inputs {
+		group1 {
+			/* PTA18/19 -> TRGMUX IN12/13. */
+			pinmux = <NXP_SIUL2_PINMUX(0, 0, 18, 0, 356, 1)>,
+				 <NXP_SIUL2_PINMUX(0, 0, 19, 0, 357, 1)>,
+				 /* Repeat the same pad settings to select internal UC daisies. */
+				 <NXP_SIUL2_PINMUX(0, 0, 18, 0, 53, 3)>,
+				 <NXP_SIUL2_PINMUX(0, 0, 19, 0, 54, 3)>;
+			input-enable;
+		};
+	};
+};
+
+&lcu_0 {
+	status = "okay";
+};
+
+&trgmux {
+	status = "okay";
+};
+
+&emios_0 {
+	status = "okay";
+};
+
+&emios0_pwm {
+	status = "disabled";
+};
+
+&emios0_bus_a {
+	status = "disabled";
+};
