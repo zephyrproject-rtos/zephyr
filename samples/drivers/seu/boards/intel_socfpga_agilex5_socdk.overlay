@@ -1,0 +1,15 @@
+/*
+ * Copyright (C) 2023 Intel Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&sip_smc {
+	status = "okay";
+	zephyr,num-clients = <1>;
+};
+
+/ {
+	aliases {
+		seu = &seu;
+	};
+};
