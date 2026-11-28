@@ -95,7 +95,8 @@ config AARCH32_ARMV8_A_MONITOR_INIT
 	  On ARMv8-A AArch32 platforms booting bare-metal without Trusted
 	  Firmware-A, the core resets into Secure SVC mode. Certain system
 	  registers are only accessible from Monitor mode, such as ICC_MSRE
-	  (enables GICv3 CPU interface system register access). This option
+	  (enables GICv3 CPU interface system register access) and CNTVOFF
+	  (the virtual counter offset, which is set to zero). This option
 	  briefly switches to Monitor mode at reset to configure such
 	  registers before returning to SVC. This block executes on every
 	  cpu at reset, before the SMP voting.
