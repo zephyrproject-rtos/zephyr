@@ -151,7 +151,7 @@ static void bme680_read_complete_cb(struct rtio *r, const struct rtio_sqe *sqe,
 		edata->has_humidity = 1;
 		edata->reading.comp_humidity = reading.comp_humidity;
 	}
-	if (fetch_gas) {
+	if (IS_ENABLED(CONFIG_BME680_GAS) && fetch_gas) {
 		edata->has_gas = 1;
 		edata->reading.comp_gas = reading.comp_gas;
 	}
