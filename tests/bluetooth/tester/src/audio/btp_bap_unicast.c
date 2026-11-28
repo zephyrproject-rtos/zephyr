@@ -612,7 +612,8 @@ static void stream_enabled_cb(struct bt_bap_stream *stream)
 		 */
 		const bool start_stream =
 			(IS_ENABLED(CONFIG_BT_CENTRAL) && conn_info.role == BT_CONN_ROLE_CENTRAL &&
-			 ep_info.dir == BT_AUDIO_DIR_SOURCE) ||
+			 ep_info.dir == BT_AUDIO_DIR_SOURCE &&
+			 !stream_bap_to_unicast(stream)->cap_start_pending) ||
 			(IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
 			 conn_info.role == BT_CONN_ROLE_PERIPHERAL &&
 			 ep_info.dir == BT_AUDIO_DIR_SINK);
@@ -741,7 +742,8 @@ static void stream_connected_cb(struct bt_bap_stream *stream)
 
 	if (conn_info.role == BT_CONN_ROLE_CENTRAL) {
 		if (ep_info.dir == BT_AUDIO_DIR_SOURCE) {
-			if (ep_info.state == BT_BAP_EP_STATE_ENABLING) {
+			if (ep_info.state == BT_BAP_EP_STATE_ENABLING &&
+			    !stream_bap_to_unicast(stream)->cap_start_pending) {
 				/* Automatically do the receiver start ready operation for source
 				 * ASEs as the client when in the enabling state.
 				 * The CIS may be connected in the QoS Configured state as well, in

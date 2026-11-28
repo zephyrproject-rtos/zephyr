@@ -41,6 +41,8 @@
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
 static struct btp_bap_unicast_group *u_group;
+/* CIG of the pending CAP Unicast Audio Start */
+static uint8_t cap_start_cig_id;
 
 static K_SEM_DEFINE(source_stopped_sem, 0U, CONFIG_BT_BAP_BROADCAST_SRC_COUNT);
 
@@ -134,11 +136,28 @@ static void btp_send_cap_unicast_stop_completed_ev(uint8_t cig_id, uint8_t statu
 	tester_event(BTP_SERVICE_ID_CAP, BTP_CAP_EV_UNICAST_STOP_COMPLETED, &ev, sizeof(ev));
 }
 
+static void cap_start_pending_set(uint8_t cig_id, bool pending)
+{
+	for (size_t conn_index = 0U; conn_index < ARRAY_SIZE(btp_csip_set_members); conn_index++) {
+		struct btp_bap_unicast_connection *u_conn = btp_bap_unicast_conn_get(conn_index);
+
+		for (size_t i = 0U; i < ARRAY_SIZE(u_conn->streams); i++) {
+			struct btp_bap_unicast_stream *u_stream = &u_conn->streams[i];
+
+			if (u_stream->in_use && u_stream->cig_id == cig_id) {
+				u_stream->cap_start_pending = pending;
+			}
+		}
+	}
+}
+
 static void unicast_start_complete_cb(int err, struct bt_conn *conn)
 {
 	ARG_UNUSED(conn);
 
 	LOG_DBG("");
+
+	cap_start_pending_set(cap_start_cig_id, false);
 
 	if (err != 0) {
 		LOG_DBG("Failed to unicast-start, err %d", err);
@@ -394,9 +413,14 @@ static uint8_t btp_cap_unicast_audio_start(const void *cmd, uint16_t cmd_len,
 	start_param.count = stream_count;
 	start_param.stream_params = stream_params;
 
+	/* CAP does the Receiver Start Ready, so the tester shall not do it again */
+	cap_start_cig_id = cp->cig_id;
+	cap_start_pending_set(cap_start_cig_id, true);
+
 	err = bt_cap_initiator_unicast_audio_start(&start_param);
 	if (err != 0) {
 		LOG_ERR("Failed to start unicast audio: %d", err);
+		cap_start_pending_set(cap_start_cig_id, false);
 
 		return BTP_STATUS_FAILED;
 	}
