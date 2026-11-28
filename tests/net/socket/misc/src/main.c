@@ -1529,6 +1529,62 @@ ZTEST(socket_misc_test_suite, test_ipv6_tcp_bound_any)
 			    sizeof(srv_addr));
 }
 
+static void check_udp_bound_any(net_sa_family_t family)
+{
+	struct dummy_context *const devices[] = {&dummy_data1, &dummy_data2};
+	struct net_sockaddr_storage destination = {.ss_family = family};
+	struct net_sockaddr_storage any = {.ss_family = family};
+	const net_socklen_t len = ADDR_SIZE(family);
+	char payload = 'x';
+	char received = 0;
+	int sender = zsock_socket(family, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	int receiver = zsock_socket(family, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	struct zsock_pollfd pfd = {.fd = receiver, .events = ZSOCK_POLLIN};
+
+	zassert_true(sender >= 0);
+	zassert_true(receiver >= 0);
+	zassert_ok(zsock_bind(sender, net_sad(&any), len));
+	if (family == NET_AF_INET) {
+		net_sin(net_sad(&destination))->sin_port = net_htons(ANY_PORT);
+	} else {
+		net_sin6(net_sad(&destination))->sin6_port = net_htons(ANY_PORT);
+	}
+	zassert_ok(zsock_bind(receiver, net_sad(&destination), len));
+
+	for (size_t i = 0; i < ARRAY_SIZE(devices); i++) {
+		if (family == NET_AF_INET) {
+			net_sin(net_sad(&destination))->sin_addr = *devices[i]->ipv4_addr;
+		} else {
+			net_sin6(net_sad(&destination))->sin6_addr = *devices[i]->ipv6_addr;
+		}
+
+		current_dev = NULL;
+		zassert_ok(zsock_connect(sender, net_sad(&destination), len));
+		zassert_equal(zsock_send(sender, &payload, sizeof(payload), 0), sizeof(payload));
+		int ready = zsock_poll(&pfd, 1, 1000);
+
+		zexpect_equal(ready, 1);
+		if (ready == 1) {
+			zexpect_equal(zsock_recv(receiver, &received, sizeof(received),
+						 ZSOCK_MSG_DONTWAIT), sizeof(received));
+			zexpect_equal(received, payload);
+		}
+		zexpect_equal_ptr(current_dev, net_if_get_device(devices[i]->iface));
+	}
+	zassert_ok(zsock_close(receiver));
+	zassert_ok(zsock_close(sender));
+}
+
+ZTEST(socket_misc_test_suite, test_ipv4_udp_bound_any_reconnect)
+{
+	check_udp_bound_any(NET_AF_INET);
+}
+
+ZTEST(socket_misc_test_suite, test_ipv6_udp_bound_any_reconnect)
+{
+	check_udp_bound_any(NET_AF_INET6);
+}
+
 /* A client bound to 0.0.0.0 gets the interface of its peer at connect() time,
  * so the subnet broadcast of that interface is refused, also when it is not the
  * default one. An unbound client is covered by test_tcp_connect_not_unicast.
