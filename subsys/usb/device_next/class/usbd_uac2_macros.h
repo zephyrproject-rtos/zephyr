@@ -713,6 +713,12 @@
 #define AS_HS_DATA_EP_BINTERVAL(node)						\
 	USB_HS_ISO_EP_INTERVAL(DT_PROP_OR(node, polling_period_us, 125))
 
+#define AS_FS_FEEDBACK_EP_BINTERVAL(node)					\
+	USB_FS_ISO_EP_INTERVAL(DT_PROP_OR(node, feedback_polling_period_us, 1000))
+
+#define AS_HS_FEEDBACK_EP_BINTERVAL(node)					\
+	USB_HS_ISO_EP_INTERVAL(DT_PROP_OR(node, feedback_polling_period_us, 125))
+
 /* Asynchronous endpoints needs space for 1 extra sample */
 #define AS_SAMPLES_PER_FRAME(node)						\
 	(((ROUND_UP(AS_CLK_MAX_FREQUENCY(node), 1000) / 1000)			\
@@ -816,7 +822,7 @@ Apply only for working with non-compliant Windows UAC2 driver"
 	AS_NEXT_IN_EP_ADDR(node),				/* bEndpointAddress */	\
 	0x11,							/* bmAttributes */	\
 	U16_LE(EXPLICIT_FEEDBACK_ENDPOINT_FS_FEEDBACK_LEN),	/* wMaxPacketSize */	\
-	0x01, /* TODO: adjust to P 5.12.4.2 Feedback */		/* bInterval */
+	AS_FS_FEEDBACK_EP_BINTERVAL(node),			/* bInterval */
 
 #define AS_EXPLICIT_FEEDBACK_FS_DESCRIPTOR_ARRAY(node)				\
 	static uint8_t DESCRIPTOR_NAME(fs_feedback_ep, node)[] = {		\
@@ -832,7 +838,7 @@ Apply only for working with non-compliant Windows UAC2 driver"
 	AS_NEXT_IN_EP_ADDR(node),			/* bEndpointAddress */	\
 	0x11,						/* bmAttributes */	\
 	U16_LE(0x04),					/* wMaxPacketSize */	\
-	0x01, /* TODO: adjust to P 5.12.4.2 Feedback */	/* bInterval */
+	AS_HS_FEEDBACK_EP_BINTERVAL(node),		/* bInterval */
 
 #define AS_EXPLICIT_FEEDBACK_HS_DESCRIPTOR_ARRAY(node)				\
 	static uint8_t DESCRIPTOR_NAME(hs_feedback_ep, node)[] = {		\
