@@ -55,6 +55,18 @@ Libraries / Subsystems
     :kconfig:option:`CONFIG_XTENSA_EMULATED_TLS`. Userspace is not supported in
     this mode.
 
+* Kernel
+
+  * Added experimental priority ordering for work queue items.
+    When :kconfig:option:`CONFIG_WORKQUEUE_ITEM_PRIORITY` is enabled, work items
+    can be assigned execution priorities using :c:func:`k_work_init_priority()`.
+    Work items initialized with :c:func:`k_work_init()` receive a default priority
+    of 128, allowing applications to create both higher and lower priority work
+    relative to kernel subsystems.
+
+    **Limitations:** Priority assignment for delayable work items is not yet
+    supported.
+
 * Bluetooth
 
   * Added a HID Service server (:kconfig:option:`CONFIG_BT_HIDS`), the service

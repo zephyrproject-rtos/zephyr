@@ -525,6 +525,17 @@ config WORKQUEUE_WORK_TIMEOUT
 	  execute, the work queue thread will be aborted, and an error will be
 	  logged.
 
+config WORKQUEUE_ITEM_PRIORITY
+	bool "Priority ordering for work queue items"
+	help
+	  When enabled, work items can be assigned a priority value.
+	  Items with higher priority execute before lower priority items.
+	  Work items with equal priority maintain FIFO ordering. Avoid submitting work
+	  from ISR context in systems with large work queues
+
+	  Work items initialized with k_work_init() receive a default priority of
+	  128.
+
 menu "System Work Queue Options"
 config SYSTEM_WORKQUEUE_STACK_SIZE
 	int "System workqueue stack size"
