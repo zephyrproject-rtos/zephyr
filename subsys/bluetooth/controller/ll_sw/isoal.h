@@ -250,10 +250,23 @@ typedef isoal_status_t (*isoal_sink_sdu_write_cb)(
 	const size_t consume_len
 );
 
+/**
+ * @brief  Callback: Free an ISO SDU buffer that will not be emitted
+ *
+ * Hands back the ownership of a buffer from the alloc callback that was not
+ * passed to the emit callback.
+ */
+typedef void (*isoal_sink_sdu_free_cb)(
+	/*!< [in]  Sink context */
+	const struct isoal_sink *sink_ctx,
+	/*!< [in]  SDU buffer to free */
+	const struct isoal_sdu_buffer *sdu_buffer);
+
 struct isoal_sink_session {
 	isoal_sink_sdu_alloc_cb  sdu_alloc;
 	isoal_sink_sdu_emit_cb   sdu_emit;
 	isoal_sink_sdu_write_cb  sdu_write;
+	isoal_sink_sdu_free_cb   sdu_free;
 	isoal_sdu_cnt_t          sn;
 	uint16_t                 handle;
 	uint16_t                 iso_interval;
@@ -434,6 +447,7 @@ isoal_status_t isoal_sink_create(uint16_t handle,
 				 isoal_sink_sdu_alloc_cb sdu_alloc,
 				 isoal_sink_sdu_emit_cb  sdu_emit,
 				 isoal_sink_sdu_write_cb  sdu_write,
+				 isoal_sink_sdu_free_cb  sdu_free,
 				 isoal_sink_handle_t *hdl);
 
 void isoal_sink_enable(isoal_sink_handle_t hdl);
@@ -456,6 +470,8 @@ isoal_status_t sink_sdu_write_hci(void *dbuf,
 				  const size_t sdu_written,
 				  const uint8_t *pdu_payload,
 				  const size_t consume_len);
+void sink_sdu_free_hci(const struct isoal_sink *sink_ctx,
+		       const struct isoal_sdu_buffer *sdu_buffer);
 
 isoal_status_t isoal_source_create(uint16_t handle,
 				   uint8_t  role,

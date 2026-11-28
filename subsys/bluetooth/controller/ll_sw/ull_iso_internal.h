@@ -60,7 +60,8 @@ bool ll_data_path_sink_create(uint16_t handle,
 			      struct ll_iso_datapath *datapath,
 			      isoal_sink_sdu_alloc_cb *sdu_alloc,
 			      isoal_sink_sdu_emit_cb *sdu_emit,
-			      isoal_sink_sdu_write_cb *sdu_write);
+			      isoal_sink_sdu_write_cb *sdu_write,
+			      isoal_sink_sdu_free_cb *sdu_free);
 /* Must be implemented by vendor if vendor-specific data path is supported */
 bool ll_data_path_source_create(uint16_t handle,
 				struct ll_iso_datapath *datapath,

@@ -823,6 +823,16 @@ uint8_t ll_cig_remove(uint8_t cig_id)
 	for (uint8_t i = 0U; i < cig->lll.num_cis; i++)  {
 		cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
 		if (cis) {
+			/* Remove the data paths of the CIS, which a central keeps when
+			 * the CIS is disconnected, with their ISO-AL sink and source.
+			 * A direction without a data path is refused, which needs no
+			 * handling here.
+			 */
+			(void)ll_remove_iso_path(cis->lll.handle,
+						 BIT(BT_HCI_DATAPATH_DIR_HOST_TO_CTLR));
+			(void)ll_remove_iso_path(cis->lll.handle,
+						 BIT(BT_HCI_DATAPATH_DIR_CTLR_TO_HOST));
+
 			/* Release CIS instance */
 			ll_conn_iso_stream_release(cis);
 		}

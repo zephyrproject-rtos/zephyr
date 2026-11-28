@@ -95,12 +95,60 @@ struct
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 } isoal_global;
 
+#if defined(CONFIG_BT_CTLR_SYNC_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+/**
+ * @brief Free the SDU buffers that a sink holds
+ * @details These are the buffer of the SDU in production and the buffers of
+ *          the SDU fragments that are kept until the end of the SDU. None of
+ *          them was emitted.
+ * @param sink[in,out]  Sink that holds the buffers
+ */
+static void isoal_sink_sdu_free(struct isoal_sink *sink)
+{
+	const isoal_sink_sdu_free_cb sdu_free = sink->session.sdu_free;
+	struct isoal_sdu_production *sp = &sink->sdu_production;
+
+	if (sdu_free == NULL) {
+		return;
+	}
+
+#if defined(ISOAL_BUFFER_RX_SDUS_ENABLE)
+	for (uint16_t i = 0U; i < sp->sdu_list.next_write_indx; i++) {
+		sdu_free(sink, &sp->sdu_list.list[i].sdu.contents);
+	}
+
+	sp->sdu_list.next_write_indx = 0U;
+#endif /* ISOAL_BUFFER_RX_SDUS_ENABLE */
+
+	if (sp->sdu_allocated != 0U) {
+		sdu_free(sink, &sp->sdu.contents);
+		sp->sdu_allocated = 0U;
+	}
+}
+
+/**
+ * @brief Free the SDU buffers that the sinks hold
+ */
+static void isoal_sinks_sdu_free(void)
+{
+	ARRAY_FOR_EACH_PTR(isoal_global.sink_state, sink) {
+		isoal_sink_sdu_free(sink);
+	}
+}
+#else /* !CONFIG_BT_CTLR_SYNC_ISO && !CONFIG_BT_CTLR_CONN_ISO */
+static void isoal_sinks_sdu_free(void)
+{
+}
+#endif /* !CONFIG_BT_CTLR_SYNC_ISO && !CONFIG_BT_CTLR_CONN_ISO */
+
 /**
  * @brief Internal reset
  * Zero-init entire ISO-AL state
  */
 static isoal_status_t isoal_init_reset(void)
 {
+	isoal_sinks_sdu_free();
+
 	memset(&isoal_global, 0, sizeof(isoal_global));
 	return ISOAL_STATUS_OK;
 }
@@ -229,6 +277,7 @@ static void isoal_sink_deallocate(isoal_sink_handle_t hdl)
 	}
 
 	if (hdl < ARRAY_SIZE(isoal_global.sink_state)) {
+		isoal_sink_sdu_free(&isoal_global.sink_state[hdl]);
 		(void)memset(&isoal_global.sink_state[hdl], 0, sizeof(struct isoal_sink));
 	} else {
 		LL_ASSERT_DBG(0);
@@ -250,6 +299,8 @@ static void isoal_sink_deallocate(isoal_sink_handle_t hdl)
  * @param sdu_alloc[in]         Callback of SDU allocator
  * @param sdu_emit[in]          Callback of SDU emitter
  * @param sdu_write[in]         Callback of SDU byte writer
+ * @param sdu_free[in]          Callback to free an SDU buffer that is not emitted, NULL if the
+ *                              buffers need no freeing
  * @param hdl[out]              Handle to new sink
  *
  * @return ISOAL_STATUS_OK if we could create a new sink; otherwise ISOAL_STATUS_ERR_SINK_ALLOC
@@ -267,6 +318,7 @@ isoal_status_t isoal_sink_create(
 	isoal_sink_sdu_alloc_cb  sdu_alloc,
 	isoal_sink_sdu_emit_cb   sdu_emit,
 	isoal_sink_sdu_write_cb  sdu_write,
+	isoal_sink_sdu_free_cb   sdu_free,
 	isoal_sink_handle_t      *hdl)
 {
 	uint32_t iso_interval_us;
@@ -357,6 +409,7 @@ isoal_status_t isoal_sink_create(
 	session->sdu_alloc = sdu_alloc;
 	session->sdu_emit  = sdu_emit;
 	session->sdu_write = sdu_write;
+	session->sdu_free  = sdu_free;
 
 	/* Initialize running seq number to zero */
 	session->sn = 0;
@@ -371,6 +424,8 @@ isoal_status_t isoal_sink_create(
 void isoal_sink_enable(isoal_sink_handle_t hdl)
 {
 	if (hdl < ARRAY_SIZE(isoal_global.sink_state)) {
+		isoal_sink_sdu_free(&isoal_global.sink_state[hdl]);
+
 		/* Reset bookkeeping state */
 		memset(&isoal_global.sink_state[hdl].sdu_production, 0,
 		       sizeof(isoal_global.sink_state[hdl].sdu_production));
@@ -541,12 +596,17 @@ static isoal_status_t isoal_rx_buffered_emit_sdu(struct isoal_sink *sink, bool e
 			}
 		}
 
+		/* The sink gives up the fragments before the emit, as it does
+		 * with the buffer of the SDU in production.
+		 */
+		sp->sdu_list.next_write_indx = 0;
+
 		for (uint8_t i = 0; i < next_write_indx; i++) {
 			err |= session->sdu_emit(sink, &sp->sdu_list.list[i],
 						&sdu_status);
 		}
 
-		next_write_indx = sp->sdu_list.next_write_indx  = 0;
+		next_write_indx = 0;
 	}
 #endif /* ISOAL_BUFFER_RX_SDUS_ENABLE */
 
@@ -618,8 +678,13 @@ static isoal_status_t isoal_rx_try_emit_sdu(struct isoal_sink *sink, bool end_of
 		}
 		sdu->status = sp->sdu_status;
 
-		err = isoal_rx_buffered_emit_sdu(sink, end_of_sdu);
+		/* The sink gives up the buffer before the emit, so that a sink
+		 * which is released during the emit callback does not free a
+		 * buffer that was emitted. A buffer that is kept as a fragment
+		 * is accounted for in sdu_list.
+		 */
 		sp->sdu_allocated = 0U;
+		err = isoal_rx_buffered_emit_sdu(sink, end_of_sdu);
 
 		if (end_of_sdu) {
 			isoal_rx_framed_update_sdu_release(sink);

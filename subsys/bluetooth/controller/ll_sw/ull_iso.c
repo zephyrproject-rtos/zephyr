@@ -432,17 +432,20 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 						sink_sdu_alloc_hci,
 						sink_sdu_emit_hci,
 						sink_sdu_write_hci,
+						sink_sdu_free_hci,
 						&sink_handle);
 		} else {
 			/* Set up vendor specific data path */
 			isoal_sink_sdu_alloc_cb sdu_alloc;
 			isoal_sink_sdu_emit_cb  sdu_emit;
 			isoal_sink_sdu_write_cb sdu_write;
+			isoal_sink_sdu_free_cb  sdu_free;
 
 			/* Request vendor sink callbacks for path */
 			if (IS_ENABLED(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH) &&
 			    ll_data_path_sink_create(handle, dp, &sdu_alloc,
-						     &sdu_emit, &sdu_write)) {
+						     &sdu_emit, &sdu_write,
+						     &sdu_free)) {
 				err = isoal_sink_create(handle, role, framed,
 							burst_number,
 							flush_timeout,
@@ -451,7 +454,7 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 							stream_sync_delay,
 							group_sync_delay,
 							sdu_alloc, sdu_emit,
-							sdu_write,
+							sdu_write, sdu_free,
 							&sink_handle);
 			} else {
 				ull_iso_datapath_release(dp);
@@ -950,7 +953,8 @@ uint8_t ll_iso_receive_test(uint16_t handle, uint8_t payload_type)
 				stream_sync_delay, group_sync_delay,
 				ll_iso_test_sdu_alloc,
 				ll_iso_test_sdu_emit,
-				sink_sdu_write_hci, &sink_handle);
+				sink_sdu_write_hci, sink_sdu_free_hci,
+				&sink_handle);
 	if (err) {
 		/* Error creating test source - cleanup source and
 		 * datapath
