@@ -16,3 +16,9 @@ properties:
     description: |
       Interrupt GPIO. Used by the controller to signal touch data is
       available. Active low.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Optional reset GPIO. If present, the controller is reset during
+      initialization. Active low.
