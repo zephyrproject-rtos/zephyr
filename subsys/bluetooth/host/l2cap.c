@@ -3065,8 +3065,14 @@ static void l2cap_chan_le_recv(struct bt_l2cap_le_chan *chan,
 			l2cap_chan_send_credits(chan, credits);
 		}
 
-		/* A channel that could not give the credits has dropped the SDU */
-		if (bt_l2cap_chan_get_state(&chan->chan) != BT_L2CAP_CONNECTED) {
+		/* Without a buffer for the credits, l2cap_chan_send_credits()
+		 * disconnects the channel and shuts it down, which drops the SDU.
+		 * The channel is still connected if bt_l2cap_chan_disconnect()
+		 * failed, which it can while a request of its own, such as a
+		 * reconfiguration, waits for its response.
+		 */
+		if (bt_l2cap_chan_get_state(&chan->chan) != BT_L2CAP_CONNECTED ||
+		    chan->_sdu == NULL) {
 			return;
 		}
 
