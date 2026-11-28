@@ -14,6 +14,7 @@ from itertools import groupby
 
 import list_boards
 import scl
+import yaml
 from twisterlib.constants import SUPPORTED_SIMS, ZEPHYR_BASE
 
 logger = logging.getLogger('twister')
@@ -229,18 +230,41 @@ def generate_platforms(board_roots, soc_roots, arch_roots):
     yield from platforms
 
 
+def _board_yml_declaring_dir(board_dir, board_name):
+    # Board/Variant objects lose their declaring directory once merged by
+    # extend_v2_boards(), so re-read this directory's own board.yml.
+    quals = []
+    board_yml = board_dir / list_boards.BOARD_YML
+    if not board_yml.is_file():
+        return quals
+    with board_yml.open('r', encoding='utf-8') as f:
+        b = yaml.safe_load(f.read()) or {}
+    for entry in b.get('boards', [b.get('board')]):
+        if not entry:
+            continue
+        if entry.get('name', entry.get('extend')) != board_name:
+            continue
+        for v in entry.get('variants', []):
+            quals.append(f"{v['qualifier']}/{v['name']}")
+    return quals
+
+
 def _generate_platforms(board_roots, soc_roots, arch_roots):
     alias2target = {}
     target2board = {}
     target2data = {}
     dir2data = {}
     legacy_files = []
+    declaring_dir = {}
 
     lb_args = Namespace(board_roots=board_roots, soc_roots=soc_roots, arch_roots=arch_roots,
                         board=None, board_dir=None)
 
     for board in list_boards.find_v2_boards(lb_args).values():
         for board_dir in board.directories:
+            for qual in _board_yml_declaring_dir(board_dir, board.name):
+                declaring_dir[f"{board.name}/{qual}"] = str(board_dir)
+
             if board_dir in dir2data:
                 # don't load the same board data twice
                 continue
@@ -300,12 +324,38 @@ def _generate_platforms(board_roots, soc_roots, arch_roots):
                 raise Exception(f"Duplicate platform identifier {target} found")
             target2data[target] = variant_data[variant]
 
+    legacy_target_data = {}
+    for file in legacy_files:
+        data = scl.yaml_load_verify(file, Platform.platform_schema)
+        target = alias2target.get(data.get("identifier"))
+        if target is None:
+            continue
+        if target in target2data:
+            logger.error(f"Duplicate platform {target} in {os.path.dirname(file)}")
+            raise Exception(f"Duplicate platform identifier {target} found")
+        board = target2board[target]
+        if target in declaring_dir:
+            if declaring_dir[target] != os.path.dirname(file):
+                logger.error(f"Duplicate platform {target} in {os.path.dirname(file)}")
+                raise Exception(f"Duplicate platform identifier {target} found")
+        elif dir2data[board.dir] is not None:
+            logger.error(f"Duplicate platform {target} in {os.path.dirname(file)}")
+            raise Exception(f"Duplicate platform identifier {target} found")
+        legacy_target_data[target] = (file, data)
+
     # note: this inverse mapping will only be used for loading legacy files
     target2aliases = {}
 
     for target, aliases in groupby(alias2target, alias2target.get):
         aliases = list(aliases)
         board = target2board[target]
+        target2aliases[target] = aliases
+
+        if target in legacy_target_data:
+            # This target's data comes from the legacy file below, not
+            # board.dir's shared defaults -- e.g. a per-variant Renode
+            # uart/resc, which Platform.load() only reads from there.
+            continue
 
         # Default board data always comes from the primary 'board.dir'.
         # Other 'board.directories' can only supply variant data.
@@ -317,19 +367,8 @@ def _generate_platforms(board_roots, soc_roots, arch_roots):
             platform.load(board, target, aliases, data, variant_data)
             yield platform
 
-        target2aliases[target] = aliases
-
-    for file in legacy_files:
-        data = scl.yaml_load_verify(file, Platform.platform_schema)
-        target = alias2target.get(data.get("identifier"))
-        if target is None:
-            continue
-
+    for target, (_file, data) in legacy_target_data.items():
         board = target2board[target]
-        if dir2data[board.dir] is not None:
-            # all targets are already loaded for this board
-            logger.error(f"Duplicate platform {target} in {os.path.dirname(file)}")
-            raise Exception(f"Duplicate platform identifier {target} found")
 
         platform = Platform()
         platform.load(board, target, target2aliases[target], data, variant_data={})
