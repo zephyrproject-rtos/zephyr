@@ -6,6 +6,16 @@ arch: riscv
 toolchain:
   - zephyr
 testing:
+  post_connect_reset:
+    method: serial
+    open_state:
+      dtr: true
+      rts: false
+    sequence:
+      - dtr: false
+        rts: true
+      - delay_ms: 100
+      - rts: false
   ignore_tags:
     - heap
 supported:

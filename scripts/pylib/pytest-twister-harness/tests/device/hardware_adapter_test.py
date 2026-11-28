@@ -9,6 +9,7 @@ from unittest import mock
 
 import pytest
 
+from twister_harness.device.device_connection import create_device_connections
 from twister_harness.device.hardware_adapter import HardwareAdapter
 from twister_harness.exceptions import TwisterHarnessException
 from twister_harness.twister_harness_config import DeviceConfig, DeviceSerialConfig
@@ -277,3 +278,197 @@ def test_if_hardware_adapter_properly_send_data_to_subprocess(
     lines = device.readlines_until(regex='Namespaces are one honking great idea')
     assert 'The Zen of Python, by Tim Peters' in lines
     device.write(b'quit\n')
+
+
+@mock.patch('shutil.which', return_value='west')
+def test_if_get_command_adds_no_reset_for_post_connect_reset(patched_which, device: HardwareAdapter) -> None:
+    device.device_config.build_dir = Path('build')
+    device.device_config.post_connect_reset = {'method': 'west'}
+    device.device_config.west_flash_extra_args = ['--erase']
+    device.generate_command()
+    assert device.command == [
+        'west', 'flash', '--no-rebuild', '--build-dir', 'build', '--runner', 'runner', '--', '--erase', '--no-reset'
+    ]
+
+
+@mock.patch('shutil.which', return_value='west')
+def test_if_get_command_does_not_repeat_no_reset(patched_which, device: HardwareAdapter) -> None:
+    device.device_config.build_dir = Path('build')
+    device.device_config.post_connect_reset = {'method': 'west'}
+    device.device_config.west_flash_extra_args = ['--no-reset']
+    device.generate_command()
+    assert device.command.count('--no-reset') == 1
+
+
+@mock.patch('shutil.which', return_value='west')
+def test_if_west_reset_command_skips_flash_args(patched_which, device: HardwareAdapter) -> None:
+    device.device_config.runner = 'pyocd'
+    device.device_config.post_connect_reset = {'method': 'west'}
+    device.device_config.west_flash_extra_args = ['--erase']
+    command = device._build_west_command('reset', Path('build'))
+    assert command == [
+        'west', 'reset', '--no-rebuild', '--build-dir', 'build', '--runner', 'pyocd', '--', '--board-id', 'p_id'
+    ]
+
+
+@pytest.mark.parametrize('flash_before', [True, False], ids=['flash before', 'connect before'])
+def test_if_serial_post_connect_reset_runs_after_flash_and_connect(device: HardwareAdapter, flash_before) -> None:
+    config = {'method': 'serial', 'sequence': [{'rts': True}]}
+    device.device_config.flash_before = flash_before
+    device.device_config.post_connect_reset = config
+    calls = mock.Mock()
+    device._flash_and_run = calls.flash
+    device.connect = calls.connect
+    device.connections[0].run_post_connect_reset = calls.reset
+
+    device._device_launch()
+
+    expected = [mock.call.flash(), mock.call.connect()] if flash_before else \
+        [mock.call.connect(), mock.call.flash()]
+    assert calls.mock_calls == expected + [mock.call.reset(config)]
+
+
+@mock.patch('shutil.which', return_value='west')
+@mock.patch('twister_harness.device.hardware_adapter.post_connect_reset.run')
+def test_if_west_post_connect_reset_uses_west_reset(patched_run, patched_which, device: HardwareAdapter) -> None:
+    config = {'method': 'west'}
+    device.device_config.post_connect_reset = config
+    device._flash_and_run = mock.Mock()
+    device.connect = mock.Mock()
+
+    device._device_launch()
+
+    patched_run.assert_called_once_with(
+        config,
+        west_reset_command=device._build_west_command('reset', device.device_config.build_dir),
+    )
+
+
+@mock.patch('twister_harness.device.hardware_adapter.post_connect_reset.run')
+def test_if_post_connect_reset_failure_raises(patched_run, device: HardwareAdapter) -> None:
+    from twisterlib.post_connect_reset import PostConnectResetError
+
+    patched_run.side_effect = PostConnectResetError('dummy failure')
+    device.device_config.post_connect_reset = {'method': 'west'}
+    device._build_west_command = mock.Mock(return_value=['west', 'reset'])
+    device._flash_and_run = mock.Mock()
+    device.connect = mock.Mock()
+
+    with pytest.raises(TwisterHarnessException, match='Post-connect reset failed: dummy failure'):
+        device._device_launch()
+
+
+@pytest.mark.parametrize(
+    'flash_command, west_flash_cmd, expect_warning',
+    [('', '', False), ('', 'flash', False), ('custom', '', True), ('', 'debug', True)],
+    ids=['default', 'west flash', 'flash command', 'west debug'],
+)
+@mock.patch('twister_harness.device.hardware_adapter.post_connect_reset.run')
+def test_if_post_connect_reset_warns_when_device_is_not_stopped(
+    patched_run, device: HardwareAdapter, caplog, flash_command, west_flash_cmd, expect_warning
+) -> None:
+    device.device_config.post_connect_reset = {'method': 'west'}
+    device.device_config.flash_command = flash_command
+    device.device_config.west_flash_cmd = west_flash_cmd
+    device._build_west_command = mock.Mock(return_value=['west', 'reset'])
+    device._flash_and_run = mock.Mock()
+    device.connect = mock.Mock()
+
+    device._device_launch()
+
+    assert ('does not keep the device stopped' in caplog.text) == expect_warning
+    device._build_west_command.assert_called_once_with('reset', mock.ANY)
+    patched_run.assert_called_once_with(
+        device.device_config.post_connect_reset, west_reset_command=['west', 'reset']
+    )
+
+
+@mock.patch('twister_harness.device.device_connection.serial.Serial')
+def test_if_serial_lines_are_set_before_port_is_opened(patched_serial, device: HardwareAdapter) -> None:
+    device.device_config.post_connect_reset = {
+        'method': 'serial',
+        'open_state': {'dtr': True, 'rts': False},
+        'sequence': [],
+    }
+    device.connections = create_device_connections(device.device_config)
+    events = []
+    serial_mock = mock.Mock()
+    type(serial_mock).dtr = mock.PropertyMock(side_effect=lambda v: events.append(('dtr', v)))
+    type(serial_mock).rts = mock.PropertyMock(side_effect=lambda v: events.append(('rts', v)))
+    serial_mock.open.side_effect = lambda: events.append('open')
+    patched_serial.return_value = serial_mock
+
+    device.connections[0]._connect_device()
+
+    patched_serial.assert_called_once()
+    assert patched_serial.call_args.args == (None,)
+    assert events == [('dtr', True), ('rts', False), 'open']
+
+
+def test_if_open_state_is_only_given_to_main_serial_port(device: HardwareAdapter) -> None:
+    device.device_config.serial_configs.append(DeviceSerialConfig(port='/dev/second'))
+    device.device_config.post_connect_reset = {
+        'method': 'serial',
+        'open_state': {'dtr': True},
+        'sequence': [],
+    }
+    connections = create_device_connections(device.device_config)
+    assert connections[0].open_state == {'dtr': True}
+    assert connections[1].open_state is None
+
+
+def test_if_serial_post_connect_reset_rejects_serial_pty(device: HardwareAdapter) -> None:
+    from twisterlib.post_connect_reset import PostConnectResetError
+
+    device.device_config.serial_configs[0].serial_pty = 'script.py'
+    with pytest.raises(PostConnectResetError, match='serial_pty'):
+        device.connections[0].run_post_connect_reset({'method': 'serial', 'sequence': []})
+
+
+def test_if_reconnect_state_follows_the_lines_after_post_connect_reset(device: HardwareAdapter) -> None:
+    connection = device.connections[0]
+    connection.open_state = {'dtr': True, 'rts': False}
+    connection._serial_connection = mock.Mock(dtr=True, rts=False)
+
+    def mock_run(config, ser):
+        ser.dtr = False
+        ser.rts = False
+
+    with mock.patch('twister_harness.device.device_connection.post_connect_reset.run', mock_run):
+        connection.run_post_connect_reset({'method': 'serial', 'sequence': []})
+
+    assert connection.reconnect_state == {'dtr': False, 'rts': False}
+    assert connection.open_state == {'dtr': True, 'rts': False}
+
+
+@mock.patch('twister_harness.device.device_connection.serial.Serial')
+def test_if_each_launch_opens_port_with_configured_open_state(patched_serial, device: HardwareAdapter) -> None:
+    device.device_config.post_connect_reset = {
+        'method': 'serial',
+        'open_state': {'rts': True},
+        'sequence': [{'rts': False}],
+    }
+    device.connections = create_device_connections(device.device_config)
+    device._flash_and_run = mock.Mock()
+    rts_at_open = []
+
+    def mock_serial(*args, **kwargs):
+        ser = mock.Mock(is_open=False, dtr=False, rts=False)
+
+        def mock_open():
+            rts_at_open.append(ser.rts)
+            ser.is_open = True
+
+        ser.open.side_effect = mock_open
+        ser.close.side_effect = lambda: setattr(ser, 'is_open', False)
+        return ser
+
+    patched_serial.side_effect = mock_serial
+
+    device._device_launch()
+    device.disconnect()
+    device.connect()
+    device.disconnect()
+    device._device_launch()
+
+    assert rts_at_open == [True, False, True]

@@ -20,3 +20,14 @@ supported:
   - retained_mem
   - netif:wifi
 vendor: espressif
+testing:
+  post_connect_reset:
+    method: serial
+    open_state:
+      dtr: true
+      rts: false
+    sequence:
+      - dtr: false
+        rts: true
+      - delay_ms: 100
+      - rts: false

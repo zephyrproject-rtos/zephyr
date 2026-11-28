@@ -22,3 +22,14 @@ supported:
   - crypto
   - retained_mem
   - pulse_io
+testing:
+  post_connect_reset:
+    method: serial
+    open_state:
+      dtr: true
+      rts: false
+    sequence:
+      - dtr: false
+        rts: true
+      - delay_ms: 100
+      - rts: false

@@ -325,6 +325,14 @@ Other notable changes
     :c:func:`k_thread_cpu_mask_enable` while it is not runnable (before it is started, or while
     it is blocked or suspended).
 
+* Twister
+
+  * Boards and hardware map entries can declare ``post_connect_reset``, so Twister flashes the
+    device without resetting it, attaches the console and then starts the device through its
+    serial lines or ``west reset``. Both the console harnesses and the pytest harness
+    use it, so early boot output is no longer lost. See
+    :ref:`post_connect_reset <twister_board_post_connect_reset>`.
+
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the documentation of the change?

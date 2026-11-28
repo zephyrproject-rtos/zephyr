@@ -16,6 +16,7 @@ import time
 from pathlib import Path
 
 import serial
+from twisterlib import post_connect_reset
 
 from twister_harness.device.fifo_handler import FifoHandler
 from twister_harness.exceptions import TwisterHarnessException, TwisterHarnessTimeoutException
@@ -211,12 +212,22 @@ class DeviceConnection(abc.ABC):
 class SerialConnection(DeviceConnection):
     """Serial/UART connection implementation for hardware devices"""
 
-    def __init__(self, log_path: Path, timeout: float, serial_config: DeviceSerialConfig) -> None:
+    def __init__(
+        self,
+        log_path: Path,
+        timeout: float,
+        serial_config: DeviceSerialConfig,
+        open_state: dict | None = None,
+    ) -> None:
         """
         Initialize serial connection.
+
+        :param open_state: DTR/RTS state to set before the port is opened
         """
         super().__init__(log_path, timeout)
         self.serial_config: DeviceSerialConfig = serial_config
+        self.open_state: dict | None = open_state
+        self.reconnect_state: dict | None = None
         self._serial_connection: serial.Serial | None = None
         self._serial_pty_proc: subprocess.Popen | None = None
         self._serial_buffer: bytearray = bytearray()
@@ -228,14 +239,19 @@ class SerialConnection(DeviceConnection):
         serial_name = self._open_serial_pty() or self.serial_config.port
         logger.debug('Opening serial connection for %s', serial_name)
         try:
-            self._serial_connection = serial.Serial(
-                serial_name,
+            ser = serial.Serial(
+                None,
                 baudrate=self.serial_config.baud,
                 parity=serial.PARITY_NONE,
                 stopbits=serial.STOPBITS_ONE,
                 bytesize=serial.EIGHTBITS,
                 timeout=self.timeout,
             )
+            lines = self.open_state if self.reconnect_state is None else self.reconnect_state
+            post_connect_reset.apply_serial_lines(ser, lines)
+            ser.port = serial_name
+            ser.open()
+            self._serial_connection = ser
         except serial.SerialException as exc:
             logger.exception('Cannot open connection: %s', exc)
             self._close_serial_pty()
@@ -247,6 +263,19 @@ class SerialConnection(DeviceConnection):
 
     def is_device_connected(self) -> bool:
         return self._serial_connection and self._serial_connection.is_open
+
+    def run_post_connect_reset(self, config: dict) -> None:
+        """Run the serial post-connect reset sequence on the open port."""
+        if self.serial_config.serial_pty:
+            raise post_connect_reset.PostConnectResetError(
+                'Method serial is not supported with serial_pty'
+            )
+        post_connect_reset.run(config, ser=self._serial_connection)
+        # Reconnect with the lines as the sequence left them.
+        self.reconnect_state = {
+            'dtr': self._serial_connection.dtr,
+            'rts': self._serial_connection.rts,
+        }
 
     def _open_serial_pty(self) -> str | None:
         """Open a pty pair, run process and return tty name"""
@@ -459,9 +488,15 @@ def create_device_connections(device_config: DeviceConfig) -> list[DeviceConnect
 
     if device_config.type == "hardware":
         for core, serial_config in enumerate(device_config.serial_configs):
+            open_state = None
             if core > 0:
                 log_path = device_config.build_dir / f'{log_basename}_{core}.log'
-            connection = SerialConnection(log_path, timeout, serial_config)
+            elif (
+                post_connect_reset.is_serial(device_config.post_connect_reset)
+                and not serial_config.serial_pty
+            ):
+                open_state = device_config.post_connect_reset.get('open_state')
+            connection = SerialConnection(log_path, timeout, serial_config, open_state)
             connections.append(connection)
     elif device_config.type == "qemu":
         fifo_file = device_config.build_dir / 'qemu-fifo'

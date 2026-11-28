@@ -962,6 +962,15 @@ Tools
 * The deprecated ``--toolchains`` and ``--no-toolchains`` options of ``west sdk install`` have been
   removed. Use ``--gnu-toolchains`` and ``--no-gnu-toolchains`` instead.
 
+* Twister no longer pulses the DTR/RTS lines when the hardware map or ``--west-runner`` selects
+  the esp32 runner and ``flash_before`` is active. Boards declare this with the
+  ``post_connect_reset`` key in their :ref:`testing section <twister_board_post_connect_reset>`,
+  which the boards in ``boards/espressif`` do. Other boards using the esp32 runner, in or out of
+  the tree, need the key in their board files or in the hardware map to keep the previous
+  behavior. When the key is set, Twister passes ``--no-reset`` to ``west flash`` with or without
+  ``flash_before``. A hardware map entry whose console port does not drive the reset and boot
+  pins through DTR/RTS sets ``post_connect_reset: {method: none}``.
+
 
 IPC
 ===

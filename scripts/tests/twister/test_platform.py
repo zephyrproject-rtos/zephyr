@@ -252,6 +252,9 @@ type: unit
 arch: arm
 vendor: vendor3
 sysbuild: True
+testing:
+  post_connect_reset:
+    method: west
 variants:
   p3/s2/c1:
     testing:
@@ -259,6 +262,8 @@ variants:
   p3@B/s2/c1:
     testing:
       timeout_multiplier: 3.14159
+      post_connect_reset:
+        method: none
 """,
         'm0/soc/zephyr/soc.yml': """\
 family:
@@ -443,6 +448,7 @@ board:
             # m0/boards/arm/p3/twister.yaml (base + variant)
             'sysbuild': True,
             'timeout_multiplier': 2.71828,
+            'post_connect_reset': {'method': 'west'},
             'arch': 'arm',
             'type': 'unit',
         },
@@ -453,6 +459,7 @@ board:
             # m0/boards/arm/p3/twister.yaml (base + variant)
             'sysbuild': True,
             'timeout_multiplier': 3.14159,
+            'post_connect_reset': {'method': 'none'},
             'arch': 'arm',
             'type': 'unit',
         },
@@ -463,6 +470,7 @@ board:
             # m0/boards/arm/p3/twister.yaml (base)
             # m2/boards/misc/twister.yaml (variant)
             'sysbuild': False,
+            'post_connect_reset': {'method': 'west'},
             'arch': 'arm',
             'type': 'unit',
         },
@@ -472,6 +480,7 @@ board:
             'vendor': 'arm',
             # m0/boards/arm/p3/twister.yaml (base)
             'sysbuild': True,
+            'post_connect_reset': {'method': 'west'},
             'arch': 'arm',
             'type': 'unit',
         },
