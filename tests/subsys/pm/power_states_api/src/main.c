@@ -14,14 +14,28 @@
 /* Last state has not declared a minimum residency, so it should be
  * set the default 0 value
  */
-static struct pm_state_info infos[] = {{PM_STATE_SUSPEND_TO_IDLE, 0, 10000, 100},
-	       {PM_STATE_STANDBY, 0, 20000, 200}, {PM_STATE_SUSPEND_TO_RAM, 0, 50000, 500}};
+static struct pm_state_info infos[] = {
+	{.state = PM_STATE_SUSPEND_TO_IDLE, .min_residency_us = 10000, .exit_latency_us = 100},
+	{.state = PM_STATE_STANDBY, .min_residency_us = 20000, .exit_latency_us = 200},
+	{.state = PM_STATE_SUSPEND_TO_RAM, .min_residency_us = 50000, .exit_latency_us = 500},
+};
 static enum pm_state states[] = {PM_STATE_SUSPEND_TO_IDLE,
 			PM_STATE_STANDBY, PM_STATE_SUSPEND_TO_RAM};
 static enum pm_state wrong_states[] = {PM_STATE_SUSPEND_TO_DISK,
 		PM_STATE_SUSPEND_TO_RAM, PM_STATE_SUSPEND_TO_RAM};
 
 static uint8_t suspend_to_ram_count;
+
+static void assert_state_infos(const struct pm_state_info *actual)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(infos); i++) {
+		zassert_equal(actual[i].state, infos[i].state);
+		zassert_equal(actual[i].substate_id, infos[i].substate_id);
+		zassert_equal(actual[i].pm_device_disabled, infos[i].pm_device_disabled);
+		zassert_equal(actual[i].min_residency_us, infos[i].min_residency_us);
+		zassert_equal(actual[i].exit_latency_us, infos[i].exit_latency_us);
+	}
+}
 
 void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
@@ -40,6 +54,21 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	ARG_UNUSED(substate_id);
 }
 
+static void *power_states_setup(void)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(test_dev));
+
+	test_driver_release_init_constraints(dev);
+	return NULL;
+}
+
+ZTEST(power_states_1cpu, test_device_constraints_during_init)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(test_dev));
+
+	test_driver_check_init_constraints(dev);
+}
+
 ZTEST(power_states_1cpu, test_power_states)
 {
 	uint8_t ret;
@@ -53,8 +82,7 @@ ZTEST(power_states_1cpu, test_power_states)
 
 	zassert_true(ARRAY_SIZE(states) == dts_states_len,
 		     "Invalid number of pm states");
-	zassert_true(memcmp(infos, dts_infos, ARRAY_SIZE(dts_infos)) == 0,
-		     "Invalid pm_state_info array");
+	assert_state_infos(dts_infos);
 	zassert_true(memcmp(states, dts_states, ARRAY_SIZE(dts_states)) == 0,
 		     "Invalid pm-states array");
 
@@ -67,8 +95,7 @@ ZTEST(power_states_1cpu, test_power_states)
 	ret = pm_state_cpu_get_all(0U, &cpu_states);
 	zassert_true(ret == dts_states_len,
 		     "Invalid number of pm states");
-	zassert_true(memcmp(cpu_states, dts_infos, ARRAY_SIZE(dts_infos)) == 0,
-		     "Invalid pm_state_info array");
+	assert_state_infos(cpu_states);
 }
 
 ZTEST(power_states_1cpu, test_device_power_state_constraints)
@@ -95,5 +122,5 @@ ZTEST(power_states_1cpu, test_device_power_state_constraints)
 	zassert(suspend_to_ram_count != 0, "Not suspended to ram");
 }
 
-ZTEST_SUITE(power_states_1cpu, NULL, NULL, ztest_simple_1cpu_before,
+ZTEST_SUITE(power_states_1cpu, NULL, power_states_setup, ztest_simple_1cpu_before,
 			ztest_simple_1cpu_after, NULL);
