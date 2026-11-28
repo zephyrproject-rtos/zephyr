@@ -44,6 +44,7 @@
 		led0 = &led1;
 		led1 = &led2;
 		led2 = &led3;
+		pwm-0 = &pwm4;
 	};
 };
 
@@ -98,4 +99,24 @@
 
 &ioportf {
 	status = "okay";
+};
+
+&gpt2 {
+	status = "okay";
+
+	pwm2: pwm {
+		pinctrl-0 = <&gtioc2a_default>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&gpt4 {
+	status = "okay";
+
+	pwm4: pwm {
+		pinctrl-0 = <&gtioc4a_default>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
 };

@@ -313,6 +313,278 @@
 			};
 		};
 
+		gpt0: gpt0@8742c000 {
+			compatible = "renesas,rx-gpt";
+			reg = <0x8742c000 0x100>;
+			channel = <0>;
+			divider = "DIV_1";
+			interrupts = <147 4>, <148 4>;
+			interrupt-names = "gtioca", "overflow";
+			clocks = <&pclkd MSTPE 31>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rx-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt1: gpt1@8742c100 {
+			compatible = "renesas,rx-gpt";
+			reg = <0x8742c100 0x100>;
+			channel = <1>;
+			divider = "DIV_1";
+			interrupts = <149 4>, <150 4>;
+			interrupt-names = "gtioca", "overflow";
+			clocks = <&pclkd MSTPE 31>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rx-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt2: gpt2@8742c200 {
+			compatible = "renesas,rx-gpt";
+			reg = <0x8742c200 0x100>;
+			channel = <2>;
+			divider = "DIV_1";
+			interrupts = <151 4>, <152 4>;
+			interrupt-names = "gtioca", "overflow";
+			clocks = <&pclkd MSTPE 31>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rx-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt3: gpt3@8742c300 {
+			compatible = "renesas,rx-gpt";
+			reg = <0x8742c300 0x100>;
+			channel = <3>;
+			divider = "DIV_1";
+			interrupts = <153 4>, <154 4>;
+			interrupt-names = "gtioca", "overflow";
+			clocks = <&pclkd MSTPE 31>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rx-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt4: gpt4@8742c400 {
+			compatible = "renesas,rx-gpt";
+			reg = <0x8742c400 0x100>;
+			channel = <4>;
+			divider = "DIV_1";
+			interrupts = <155 4>, <156 4>;
+			interrupt-names = "gtioca", "overflow";
+			clocks = <&pclkd MSTPE 31>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rx-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt5: gpt5@8742c500 {
+			compatible = "renesas,rx-gpt";
+			reg = <0x8742c500 0x100>;
+			channel = <5>;
+			divider = "DIV_1";
+			interrupts = <157 4>, <158 4>;
+			interrupt-names = "gtioca", "overflow";
+			clocks = <&pclkd MSTPE 31>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rx-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt6: gpt6@8742c600 {
+			compatible = "renesas,rx-gpt";
+			reg = <0x8742c600 0x100>;
+			channel = <6>;
+			divider = "DIV_1";
+			interrupts = <159 4>, <160 4>;
+			interrupt-names = "gtioca", "overflow";
+			clocks = <&pclkd MSTPE 31>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rx-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt7: gpt7@8742c700 {
+			compatible = "renesas,rx-gpt";
+			reg = <0x8742c700 0x100>;
+			channel = <7>;
+			divider = "DIV_1";
+			interrupts = <161 4>, <162 4>;
+			interrupt-names = "gtioca", "overflow";
+			clocks = <&pclkd MSTPE 31>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rx-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt8: gpt8@8742c800 {
+			compatible = "renesas,rx-gpt";
+			reg = <0x8742c800 0x100>;
+			channel = <8>;
+			divider = "DIV_1";
+			interrupts = <163 4>, <164 4>;
+			interrupt-names = "gtioca", "overflow";
+			clocks = <&pclkd MSTPE 31>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rx-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt9: gpt9@8742c900 {
+			compatible = "renesas,rx-gpt";
+			reg = <0x8742c900 0x100>;
+			channel = <9>;
+			divider = "DIV_1";
+			interrupts = <165 4>, <166 4>;
+			interrupt-names = "gtioca", "overflow";
+			clocks = <&pclkd MSTPE 31>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rx-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt10: gpt10@8742ca00 {
+			compatible = "renesas,rx-gpt";
+			reg = <0x8742ca00 0x100>;
+			channel = <10>;
+			divider = "DIV_1";
+			interrupts = <167 4>, <168 4>;
+			interrupt-names = "gtioca", "overflow";
+			clocks = <&pclkd MSTPE 31>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rx-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt11: gpt11@8742cb00 {
+			compatible = "renesas,rx-gpt";
+			reg = <0x8742cb00 0x100>;
+			channel = <11>;
+			divider = "DIV_1";
+			interrupts = <169 4>, <170 4>;
+			interrupt-names = "gtioca", "overflow";
+			clocks = <&pclkd MSTPE 31>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rx-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt12: gpt12@8742cc00 {
+			compatible = "renesas,rx-gpt";
+			reg = <0x8742cc00 0x100>;
+			channel = <12>;
+			divider = "DIV_1";
+			interrupts = <171 4>, <172 4>;
+			interrupt-names = "gtioca", "overflow";
+			clocks = <&pclkd MSTPE 31>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rx-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt13: gpt13@8742cd00 {
+			compatible = "renesas,rx-gpt";
+			reg = <0x8742cd00 0x100>;
+			channel = <13>;
+			divider = "DIV_1";
+			interrupts = <173 4>, <174 4>;
+			interrupt-names = "gtioca", "overflow";
+			clocks = <&pclkd MSTPE 31>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rx-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt14: gpt14@8742ce00 {
+			compatible = "renesas,rx-gpt";
+			reg = <0x8742ce00 0x100>;
+			channel = <14>;
+			divider = "DIV_1";
+			interrupts = <175 4>, <176 4>;
+			interrupt-names = "gtioca", "overflow";
+			clocks = <&pclkd MSTPE 31>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rx-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt15: gpt15@8742cf00 {
+			compatible = "renesas,rx-gpt";
+			reg = <0x8742cf00 0x100>;
+			channel = <15>;
+			divider = "DIV_1";
+			interrupts = <177 4>, <178 4>;
+			interrupt-names = "gtioca", "overflow";
+			clocks = <&pclkd MSTPE 31>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rx-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
 		sci0: sci0@87458000 {
 			compatible = "renesas,rx-sci-b";
 			reg = <0x87458000 0x100>;

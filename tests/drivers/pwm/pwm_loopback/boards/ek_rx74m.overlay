@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		pwms = <&pwm4 0 0 PWM_POLARITY_NORMAL>,
+		       <&pwm2 0 0 PWM_POLARITY_NORMAL>;
+	};
+};
