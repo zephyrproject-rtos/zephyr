@@ -292,6 +292,13 @@ int main(void)
 		printk("Failed to configure codec: %d\n", ret);
 		return ret;
 	}
+	ret = audio_codec_start(codec_dev, AUDIO_DAI_DIR_TXRX);
+	if (ret == -ENOSYS) {
+		audio_codec_start_output(codec_dev);
+	} else if (ret < 0) {
+		printk("Failed to start codec: %d\n", ret);
+		return ret;
+	}
 	k_msleep(1000);
 #endif
 
