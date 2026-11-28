@@ -34,6 +34,16 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
+
+Known issues
+************
+
+- The LPSPI1_SIN line is forced low by the combined action of U30 and U12C.
+  To prevent this condition when accessing the NOR flash, you must first disable
+  U30. On a Rev A board, this is done by shorting JP6; on a Rev B board, you
+  remove the jumper from JP23. Disabling U30 releases the LPSPI1_SIN signal,
+  allowing normal flash operation.
+
 Fetch Binary Blobs
 ******************
 
