@@ -1,0 +1,47 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Perry Naseck, MIT Media Lab <pnaseck@media.mit.edu>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig DMX
+	bool "DMX512-A support"
+	help
+	  Enable support for the ANSI E1.11 DMX512-A protocol.
+
+if DMX
+
+config DMX_RX_BUF_SIZE
+	int "Default RX packet buffer size in bytes"
+	default 2048
+	range 256 8192
+	help
+	  Size of the per-interface SPSC ring buffer used for received
+	  DMX frames. Each buffered frame uses approximately
+	  9 + slot_count bytes (plus ring buffer overhead). With the
+	  default of 2048 bytes, roughly 3 full-universe frames can
+	  be buffered simultaneously.
+
+config DMX_INIT_PRIORITY
+	int "DMX device init priority"
+	default 90
+	help
+	  Initialization priority for DMX devices. Must be after the
+	  UART / PIO drivers they depend on.
+
+config DMX_UART_ISR
+	bool "DMX over UART (interrupt-driven, byte-by-byte)"
+	default y
+	depends on SERIAL && SERIAL_HAS_DRIVER && UART_INTERRUPT_DRIVEN
+	depends on DT_HAS_ZEPHYR_DMX_UART_ISR_ENABLED
+	imply UART_USE_RUNTIME_CONFIGURE
+	help
+	  Enable DMX512 reception using a standard UART peripheral with
+	  interrupt-driven byte-by-byte reception. Break conditions are
+	  detected via framing-error reporting in the UART IRQ callback,
+	  making this backend portable across all platforms with
+	  interrupt-driven UART support.
+
+module = DMX
+module-str = DMX512
+module-help = Sets log level for DMX512 subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # DMX

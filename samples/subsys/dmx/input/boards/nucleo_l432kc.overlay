@@ -1,0 +1,7 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Perry Naseck, MIT Media Lab <pnaseck@media.mit.edu>
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Nucleo L432KC - uses Arduino Nano connector.
+ */
+#include "arduino_nano_dmx.dtsi"
