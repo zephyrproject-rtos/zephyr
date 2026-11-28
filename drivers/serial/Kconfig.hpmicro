@@ -1,0 +1,15 @@
+# Copyright (c) 2024 HPMicro
+# Copyright (c) 2026 Cody Gu <gujiaqi@iscas.ac.cn>
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_HPMICRO
+	bool "HPMicro UART driver"
+	default y
+	depends on DT_HAS_HPMICRO_HPM_UART_ENABLED
+	depends on CLOCK_CONTROL
+	depends on HAS_HPMSDK_UART
+	select PINCTRL
+	select SERIAL_HAS_DRIVER
+	select USE_HPMSDK_UART
+	help
+	  Enable the polled UART driver for HPMicro UART controllers.

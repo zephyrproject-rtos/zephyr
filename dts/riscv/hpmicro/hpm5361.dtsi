@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2026 Cody Gu <gujiaqi@iscas.ac.cn>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <hpmicro/hpm53xx.dtsi>
+
+/ {
+	soc {
+		sram: memory@80000 {
+			compatible = "mmio-sram";
+			reg = <0x80000 DT_SIZE_K(128)>;
+		};
+
+		/* BootROM code and data, including the ROM API table (RM 19.8.5). */
+		bootrom: memory@20000000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x20000000 0x20000>;
+			zephyr,memory-region = "HPM_BOOTROM";
+		};
+
+		/* DM debug ROM, program buffer and abstract-command data (RM 67.1). */
+		dm: memory@30000000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x30000000 0x200>;
+			zephyr,memory-region = "HPM_DM";
+		};
+
+		ahb_sram: memory@f0400000 {
+			compatible = "zephyr,memory-region";
+			reg = <0xf0400000 DT_SIZE_K(32)>;
+			zephyr,memory-region = "AHB_SRAM";
+		};
+	};
+};

@@ -1,0 +1,21 @@
+# Copyright (c) 2025 HPMicro
+# Copyright (c) 2026 Cody Gu <gujiaqi@iscas.ac.cn>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_HPM5300
+	bool
+	select SOC_FAMILY_HPMICRO
+	help
+	  Enable support for the HPMicro HPM5300 SoC series.
+
+config SOC_SERIES
+	default "hpm5300" if SOC_SERIES_HPM5300
+
+config SOC_HPM5361
+	bool
+	select SOC_SERIES_HPM5300
+	help
+	  HPMicro HPM5361 SoC.
+
+config SOC
+	default "hpm5361" if SOC_HPM5361
