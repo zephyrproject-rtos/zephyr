@@ -5,9 +5,11 @@
  */
 
 /*
- * Register the maximum number of backends that runtime filtering supports
- * (LOG_FILTERS_MAX_BACKENDS) and check that the logger initializes and that
- * every backend's filter slot is independent.
+ * Register the maximum number of backends and check that the logger
+ * initializes. With runtime filtering the limit is LOG_FILTERS_MAX_BACKENDS
+ * and every backend's filter slot must be independent. Without it, the limit
+ * is the 32-bit backend activation mask and every backend must receive every
+ * message.
  */
 
 #include <string.h>
@@ -21,8 +23,12 @@ LOG_MODULE_REGISTER(test, LOG_LEVEL_DBG);
 
 #define NUM_BACKENDS CONFIG_TEST_NUM_BACKENDS
 
+#ifdef CONFIG_LOG_RUNTIME_FILTERING
 BUILD_ASSERT(NUM_BACKENDS == LOG_FILTERS_MAX_BACKENDS,
 	     "Test must register exactly LOG_FILTERS_MAX_BACKENDS backends");
+#else
+BUILD_ASSERT(NUM_BACKENDS == 32, "Test must register exactly 32 backends");
+#endif
 
 static uint32_t rx_cnt[NUM_BACKENDS];
 static int16_t test_source_id;
@@ -68,15 +74,41 @@ static uint32_t backend_level(int i, int pass)
 ZTEST(log_backend_limit, test_backend_count)
 {
 	/* Reaching this point means the logger initialized without asserting. */
-	zassert_equal(log_backend_count_get(), LOG_FILTERS_MAX_BACKENDS);
+	zassert_equal(log_backend_count_get(), NUM_BACKENDS);
 
 	for (int i = 0; i < log_backend_count_get(); i++) {
 		zassert_true(log_backend_is_active(log_backend_get(i)), "Backend %d not active", i);
 	}
 }
 
+ZTEST(log_backend_limit, test_all_backends_receive)
+{
+	/* One message per level: ERR, WRN, INF, DBG. */
+	const uint32_t expected_msgs = 4;
+
+	Z_TEST_SKIP_IFDEF(CONFIG_LOG_RUNTIME_FILTERING);
+
+	test_source_id = LOG_CURRENT_MODULE_ID();
+	memset(rx_cnt, 0, sizeof(rx_cnt));
+
+	LOG_ERR("err");
+	LOG_WRN("wrn");
+	LOG_INF("inf");
+	LOG_DBG("dbg");
+
+	while (log_process()) {
+	}
+
+	for (int i = 0; i < NUM_BACKENDS; i++) {
+		zassert_equal(rx_cnt[i], expected_msgs, "backend %d got %u messages, expected %u",
+			      i, rx_cnt[i], expected_msgs);
+	}
+}
+
 ZTEST(log_backend_limit, test_filter_slots_independent)
 {
+	Z_TEST_SKIP_IFNDEF(CONFIG_LOG_RUNTIME_FILTERING);
+
 	test_source_id = LOG_CURRENT_MODULE_ID();
 #ifdef CONFIG_LOG_FRONTEND
 	frontend_test_source = Z_LOG_CURRENT_DATA();
