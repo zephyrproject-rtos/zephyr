@@ -2,9 +2,23 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config INPUT_MCUX_TSI
-	bool "NXP MCUX TSI input driver"
+	bool "NXP TSI input driver"
 	default y
 	depends on DT_HAS_NXP_TSI_INPUT_ENABLED
 	help
-	  Enable input driver for NXP MCUX TSI (Touch Sensing Input).
+	  Enable input driver for NXP TSI (Touch Sensing Input).
 	  This driver reports touch events through the input subsystem.
+
+choice INPUT_MCUX_TSI_VERSION
+	prompt "NXP TSI IP version"
+	default INPUT_MCUX_TSI_V5 if SOC_FAMILY_KINETIS
+	default INPUT_MCUX_TSI_V6
+	depends on INPUT_MCUX_TSI
+
+config INPUT_MCUX_TSI_V5
+	bool "TSI version 5"
+
+config INPUT_MCUX_TSI_V6
+	bool "TSI version 6"
+
+endchoice

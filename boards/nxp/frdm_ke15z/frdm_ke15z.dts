@@ -143,6 +143,14 @@
 	status = "okay";
 };
 
+&tsi0 {
+	channel-mask = <0x00c00000>;
+	input-codes = <INPUT_KEY_2 INPUT_KEY_3>;
+	pinctrl-0 = <&tsi0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &gpiob {
 	status = "okay";
 };
