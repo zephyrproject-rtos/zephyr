@@ -53,6 +53,7 @@ struct ti_hdc302x_config {
 struct ti_hdc302x_data {
 	const struct device *dev;
 	struct gpio_callback cb_int;
+	struct k_work work;
 	sensor_trigger_handler_t th_handler;
 	const struct sensor_trigger *th_trigger;
 	uint16_t t_sample;
@@ -301,15 +302,22 @@ static int read_sensor_data(const struct device *dev, uint8_t *buf, size_t len)
 	return i2c_read_dt(&config->bus, buf, len);
 }
 
+static void trigger_work_handler(struct k_work *work)
+{
+	struct ti_hdc302x_data *data = CONTAINER_OF(work, struct ti_hdc302x_data, work);
+
+	if (data->th_handler != NULL) {
+		data->th_handler(data->dev, data->th_trigger);
+	}
+}
+
 static void interrupt_callback(const struct device *port, struct gpio_callback *cb, uint32_t pins)
 {
 	ARG_UNUSED(port);
 	ARG_UNUSED(pins);
 	struct ti_hdc302x_data *data = CONTAINER_OF(cb, struct ti_hdc302x_data, cb_int);
 
-	if (data->th_handler != NULL) {
-		data->th_handler(data->dev, data->th_trigger);
-	}
+	k_work_submit(&data->work);
 }
 
 /**
@@ -1007,6 +1015,7 @@ static int ti_hdc302x_init(const struct device *dev)
 			/* Continue without interrupt - it's optional */
 		}
 
+		k_work_init(&data->work, trigger_work_handler);
 		gpio_init_callback(&data->cb_int, interrupt_callback, BIT(config->int_gpio.pin));
 
 		rc = gpio_add_callback(config->int_gpio.port, &data->cb_int);

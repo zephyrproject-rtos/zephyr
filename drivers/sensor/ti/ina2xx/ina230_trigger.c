@@ -13,19 +13,24 @@
 
 LOG_MODULE_DECLARE(INA230, CONFIG_SENSOR_LOG_LEVEL);
 
+static void ina230_work_handler(struct k_work *work)
+{
+	struct ina230_data *ina230 = CONTAINER_OF(work, struct ina230_data, work);
+
+	if (ina230->handler_alert != NULL) {
+		ina230->handler_alert(ina230->dev, ina230->trig_alert);
+	}
+}
+
 static void ina230_gpio_callback(const struct device *port,
 				 struct gpio_callback *cb, uint32_t pin)
 {
 	struct ina230_data *ina230 = CONTAINER_OF(cb, struct ina230_data, gpio_cb);
-	const struct device *dev = (const struct device *)ina230->dev;
 
 	ARG_UNUSED(port);
 	ARG_UNUSED(pin);
-	ARG_UNUSED(cb);
 
-	if (ina230->handler_alert) {
-		ina230->handler_alert(dev, ina230->trig_alert);
-	}
+	k_work_submit(&ina230->work);
 }
 
 int ina230_trigger_set(const struct device *dev,
@@ -55,6 +60,7 @@ int ina230_trigger_mode_init(const struct device *dev)
 	}
 
 	ina230->dev = dev;
+	k_work_init(&ina230->work, ina230_work_handler);
 
 	ret = gpio_pin_configure_dt(&config->alert_gpio, GPIO_INPUT);
 	if (ret < 0) {
