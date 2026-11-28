@@ -199,6 +199,8 @@ static void init_rx_dma_desc(ETH_TypeDef *eth)
 
 static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_wch_data *data = dev->data;
 	const struct eth_wch_config *config = dev->config;
 	ETH_TypeDef *eth = config->regs;
@@ -333,6 +335,9 @@ release_desc:
 static void rx_thread(void *arg1, void *unused1, void *unused2)
 {
 	const struct device *dev = (const struct device *)arg1;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_wch_data *data = dev->data;
 	struct net_if *iface = data->iface;
 	struct net_pkt *pkt = NULL;
@@ -361,6 +366,8 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 
 static void eth_isr(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_wch_data *data = dev->data;
 	const struct eth_wch_config *config = dev->config;
 	ETH_TypeDef *eth = config->regs;
@@ -456,6 +463,9 @@ static void phy_link_state_changed(const struct device *phy_dev, struct phy_link
 				   void *user_data)
 {
 	const struct device *dev = (const struct device *)user_data;
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_wch_data *data = dev->data;
 
 	ARG_UNUSED(phy_dev);
@@ -518,6 +528,9 @@ static int eth_mac_init(const struct device *dev)
 static void eth_wch_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
+
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_wch_data *data = dev->data;
 	const struct eth_wch_config *config = dev->config;
 
@@ -573,6 +586,8 @@ static int eth_wch_set_config(const struct device *dev,
 			      enum ethernet_config_type type,
 			      const struct ethernet_config *config)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_wch_data *data = dev->data;
 	const struct eth_wch_config *dev_config = dev->config;
 	ETH_TypeDef *eth = dev_config->regs;
@@ -605,6 +620,8 @@ static int eth_wch_set_config(const struct device *dev,
 
 static const struct device *eth_wch_get_phy(const struct device *dev, struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	const struct eth_wch_config *config = dev->config;
 
 	return config->phy_dev;
@@ -614,6 +631,8 @@ static const struct device *eth_wch_get_phy(const struct device *dev, struct net
 static struct net_stats_eth *eth_wch_get_stats(const struct device *dev,
 					       struct net_if *iface __unused)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_wch_data *data = dev->data;
 
 	return &data->stats;
@@ -622,6 +641,8 @@ static struct net_stats_eth *eth_wch_get_stats(const struct device *dev,
 
 static int eth_wch_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct eth_wch_data *data = dev->data;
 	const struct eth_wch_config *config = dev->config;
 	clock_control_subsys_t clock_sys;

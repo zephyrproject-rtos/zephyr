@@ -78,6 +78,8 @@ static int mdio_wch_transfer(const struct device *dev, uint8_t prtad, uint8_t re
 
 static int mdio_wch_read(const struct device *dev, uint8_t prtad, uint8_t regad, uint16_t *data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	int ret = mdio_wch_transfer(dev, prtad, regad, data, false);
 
 	LOG_DBG("Fetch %u, %u", regad, *data);
@@ -87,6 +89,8 @@ static int mdio_wch_read(const struct device *dev, uint8_t prtad, uint8_t regad,
 
 static int mdio_wch_write(const struct device *dev, uint8_t prtad, uint8_t regad, uint16_t data)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	LOG_DBG("Write %u, %u", regad, data);
 
 	return mdio_wch_transfer(dev, prtad, regad, &data, true);
@@ -94,6 +98,8 @@ static int mdio_wch_write(const struct device *dev, uint8_t prtad, uint8_t regad
 
 static int mdio_wch_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME_ANY(dev);
+
 	struct mdio_wch_data *const dev_data = dev->data;
 	const struct mdio_wch_config *const config = dev->config;
 
