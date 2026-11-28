@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
+add_definitions(-D__ZEPHYR_SUPERVISOR__)
+
 zephyr_syscall_header(
   ${ZEPHYR_BASE}/include/zephyr/net/net_if.h
   ${ZEPHYR_BASE}/include/zephyr/net/net_ip.h

@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
+add_definitions(-D__ZEPHYR_SUPERVISOR__)
+
 if(CONFIG_NET_PKT_FILTER)
   zephyr_library()
   zephyr_library_sources(base.c)

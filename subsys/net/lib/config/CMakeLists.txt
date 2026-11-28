@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
+add_definitions(-D__ZEPHYR_SUPERVISOR__)
+
 zephyr_library()
 zephyr_library_compile_definitions_ifdef(
   CONFIG_NEWLIB_LIBC __LINUX_ERRNO_EXTENSIONS__

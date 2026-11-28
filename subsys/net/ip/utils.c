@@ -9,6 +9,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Utility functions are callable from user as well as supervisor mode */
+#undef __ZEPHYR_SUPERVISOR__
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_utils, CONFIG_NET_UTILS_LOG_LEVEL);
 
