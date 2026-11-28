@@ -451,28 +451,6 @@ static void test_udc_ep_mps(uint8_t type)
 	zassert_ok(err, "Failed to shoot-down UDC driver");
 }
 
-static void *test_udc_device_get(void)
-{
-	struct udc_device_caps caps;
-	const struct device *dev;
-
-	dev = DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0));
-	zassert_true(device_is_ready(dev), "UDC device not ready");
-
-	caps = udc_caps(dev);
-	LOG_INF("UDC device HS: %u", caps.hs);
-
-	k_thread_create(&test_udc_thread_data, test_udc_stack,
-			K_KERNEL_STACK_SIZEOF(test_udc_stack),
-			test_udc_thread,
-			(void *)dev, NULL, NULL,
-			K_PRIO_COOP(9), 0, K_NO_WAIT);
-
-	k_thread_name_set(&test_udc_thread_data, "test-udc");
-
-	return (void *)dev;
-}
-
 static struct usb_ep_descriptor ed_ctrl_out = {
 	.bLength = sizeof(struct usb_ep_descriptor),
 	.bDescriptorType = USB_DESC_ENDPOINT,
@@ -508,6 +486,47 @@ static struct usb_ep_descriptor ed_bulk_in = {
 	.wMaxPacketSize = sys_cpu_to_le16(64),
 	.bInterval = 0,
 };
+
+static void *test_udc_device_get(void)
+{
+	struct udc_device_caps caps;
+	const struct device *dev;
+	uint16_t mps0 = 64U;
+
+	dev = DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0));
+	zassert_true(device_is_ready(dev), "UDC device not ready");
+
+	caps = udc_caps(dev);
+	LOG_INF("UDC device HS: %u", caps.hs);
+
+	switch (caps.mps0) {
+	case UDC_MPS0_8:
+		mps0 = 8U;
+		break;
+	case UDC_MPS0_16:
+		mps0 = 16U;
+		break;
+	case UDC_MPS0_32:
+		mps0 = 32U;
+		break;
+	case UDC_MPS0_64:
+		mps0 = 64U;
+		break;
+	}
+
+	ed_ctrl_out.wMaxPacketSize = sys_cpu_to_le16(mps0);
+	ed_ctrl_in.wMaxPacketSize = sys_cpu_to_le16(mps0);
+
+	k_thread_create(&test_udc_thread_data, test_udc_stack,
+			K_KERNEL_STACK_SIZEOF(test_udc_stack),
+			test_udc_thread,
+			(void *)dev, NULL, NULL,
+			K_PRIO_COOP(9), 0, K_NO_WAIT);
+
+	k_thread_name_set(&test_udc_thread_data, "test-udc");
+
+	return (void *)dev;
+}
 
 ZTEST(udc_driver_test, test_udc_not_initialized)
 {
