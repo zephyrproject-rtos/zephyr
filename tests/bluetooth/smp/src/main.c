@@ -25,10 +25,10 @@ ZTEST(test_smp, test_bt_smp_err_to_str)
 			  "BT_SMP_ERR_INVALID_PARAMS");
 	zassert_str_equal(bt_smp_err_to_str(0x0F),
 			  "BT_SMP_ERR_KEY_REJECTED");
+	zassert_str_equal(bt_smp_err_to_str(0x10), "BT_SMP_ERR_BUSY");
 
 	/* Test entries that are not used */
-	zassert_mem_equal(bt_smp_err_to_str(0x10),
-			  "(unknown)", strlen("(unknown)"));
+	zassert_mem_equal(bt_smp_err_to_str(0x11), "(unknown)", strlen("(unknown)"));
 	zassert_mem_equal(bt_smp_err_to_str(0xFF),
 			  "(unknown)", strlen("(unknown)"));
 
