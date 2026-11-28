@@ -224,11 +224,12 @@ static void do_test_using(void (*sample_collection_fn)(void), const char *mechan
 		(double)CONFIG_TIMER_TEST_PERIOD * (double)sys_clock_hw_cycles_per_sec()
 		/ 1000000.0;
 	/*
-	 * Expected period drift(us) due to round up/down errors during the
-	 * conversion between ticks, cycles and delay.
+	 * Expected period drift(us) from rounding the period to whole ticks.
+	 * A tick lasts HW/ticks cycles on average, even when that is not a
+	 * whole number.
 	 */
-	uint32_t cyc_per_tick = sys_clock_hw_cycles_per_sec()
-				/ CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+	double cyc_per_tick = (double)sys_clock_hw_cycles_per_sec()
+			      / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 	double expected_period_drift = ((double)actual_timeout.ticks * cyc_per_tick
 		- expected_period) / sys_clock_hw_cycles_per_sec() * 1000000;
 	double expected_time_drift_us = expected_period_drift

@@ -99,13 +99,8 @@ ZTEST(threads_scheduling, test_slice_reset)
 	/* disable timeslice */
 	k_sched_time_slice_set(0, K_PRIO_PREEMPT(0));
 
-	/* Size the busy-wait as a whole number of ticks using the driver's
-	 * real cycles per tick, floor(HW/ticks). Converting the half-slice
-	 * with the fractional ratio (k_ticks_to_cyc_ceil32()) would skew the
-	 * measured ticks where a tick isn't a whole number of cycles.
-	 */
-	uint32_t cyc_per_tick = k_ticks_to_cyc_floor32(1);
-	uint32_t half_slice_cyc = HALF_SLICE_TICKS * cyc_per_tick;
+	/* Cycle-domain length of half a slice for the busy-wait below. */
+	uint32_t half_slice_cyc = k_ticks_to_cyc_ceil32(HALF_SLICE_TICKS);
 
 	for (int j = 0; j < 2; j++) {
 		k_sem_reset(&sema);
