@@ -120,6 +120,31 @@ int bmi270_adv_power_save_disable(const struct device *dev)
 					   BMI270_TRANSC_DELAY_SUSPEND);
 }
 
+int bmi270_feature_reg_write(const struct device *dev, const struct bmi270_feature_reg *reg,
+			     uint16_t value)
+{
+	int ret;
+	uint8_t feat_page = reg->page;
+	uint8_t buf[2];
+
+	ret = bmi270_reg_write(dev, BMI270_REG_FEAT_PAGE, &feat_page, 1);
+	if (ret < 0) {
+		LOG_ERR("bmi270_reg_write (0x%02x) failed: %d", BMI270_REG_FEAT_PAGE, ret);
+		return ret;
+	}
+
+	LOG_DBG("feature reg[0x%02x]@%d = 0x%04x", reg->addr, reg->page, value);
+
+	sys_put_le16(value, buf);
+	ret = bmi270_reg_write(dev, reg->addr, buf, sizeof(buf));
+	if (ret < 0) {
+		LOG_ERR("bmi270_reg_write (0x%02x) failed: %d", reg->addr, ret);
+		return ret;
+	}
+
+	return 0;
+}
+
 static void channel_accel_convert(struct sensor_value *val, int64_t raw_val,
 				  uint8_t range)
 {
@@ -639,8 +664,9 @@ static int bmi270_write_anymo_threshold(const struct device *dev,
 		val.val2 = 1e6;
 	}
 
-	/* max = BIT_MASK(11) = 1g => 0.49 mg/LSB */
-	uint16_t lsbs = ((uint32_t)val.val2 * BMI270_ANYMO_2_THRESHOLD_MASK) / 1000000U;
+	/* 2048 LSB = 1 g (0.49 mg/LSB), the 11 bit field caps just below 1 g */
+	uint16_t lsbs = MIN(((uint32_t)val.val2 * BMI270_ANYMO_2_THRESHOLD_LSB_PER_G) / 1000000U,
+			    BMI270_ANYMO_2_THRESHOLD_MASK);
 
 	if (!lsbs) {
 		LOG_ERR("Threshold too low!");

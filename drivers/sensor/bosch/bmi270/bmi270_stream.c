@@ -234,7 +234,7 @@ static void poll_work_fn(struct k_work *work)
 	data = dev->data;
 	if (data->streaming_sqe != NULL) {
 		bmi270_reg_read(dev, BMI270_REG_FIFO_LENGTH_0, (uint8_t *)&fifo_len, 2);
-		fifo_len = sys_get_le16((uint8_t *)&fifo_len) & 0x3FFF;
+		fifo_len = sys_get_le16((uint8_t *)&fifo_len) & BMI270_FIFO_LENGTH_MSK;
 		if (fifo_len >= data->fifo_watermark_bytes) {
 			bmi270_stream_submit_fifo_job(dev);
 		}
@@ -504,7 +504,7 @@ static void bmi270_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, int 
 		return;
 	}
 
-	fifo_len = sys_get_le16(data->fifo_status) & 0x3FFF;
+	fifo_len = sys_get_le16(data->fifo_status) & BMI270_FIFO_LENGTH_MSK;
 	if (fifo_len == 0) {
 		adv_power_save_enable_log_failure(dev);
 		data->streaming_sqe = NULL;
