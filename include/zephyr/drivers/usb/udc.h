@@ -201,6 +201,8 @@ struct udc_buf_info {
 	void *owner;
 	/** Transfer result, 0 on success, other values on error */
 	int err;
+	/** k_uptime_get_32() when the request was queued */
+	uint32_t queued_at;
 } __packed;
 
 /**
@@ -657,6 +659,21 @@ int udc_purge_queues(const struct device *dev);
  * @return true if endpoint queue is empty, false otherwise
  */
 bool udc_ep_queue_is_empty(const struct device *dev, const uint8_t ep);
+
+/**
+ * @brief How long the oldest request on an endpoint has been queued
+ *
+ * An IN request completes only when the host polls for it, so a growing age
+ * on an IN endpoint the host is expected to poll means it has stopped.
+ * Drivers must keep a request on the endpoint queue until its transfer
+ * completes, so the head of the queue is the request in flight.
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ * @param[in] ep     Endpoint address
+ *
+ * @return Milliseconds since the oldest request was queued, 0 if none
+ */
+uint32_t udc_ep_queue_age_ms(const struct device *dev, const uint8_t ep);
 
 /**
  * @brief Remove all USB device controller requests from endpoint queue

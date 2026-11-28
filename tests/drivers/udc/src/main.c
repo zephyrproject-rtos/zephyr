@@ -630,6 +630,47 @@ ZTEST(udc_driver_test, test_udc_enabled)
 	zassert_ok(err, "Failed to shoot-down UDC driver");
 }
 
+ZTEST(udc_driver_test, test_udc_ep_queue_age)
+{
+	const struct device *dev;
+	struct net_buf *buf;
+	int err;
+
+	dev = DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0));
+	zassert_true(device_is_ready(dev), "UDC device not ready");
+
+	err = udc_init(dev, test_udc_event_handler, &test_event_ctx);
+	zassert_ok(err, "Failed to initialize UDC driver");
+
+	err = udc_enable(dev);
+	zassert_ok(err, "Failed to enable UDC driver");
+
+	last_used_ep = ed_bulk_in.bEndpointAddress;
+	test_udc_ep_enable(dev, &ed_bulk_in);
+	zassert_equal(udc_ep_queue_age_ms(dev, last_used_ep), 0, "Empty queue has an age");
+
+	/* Not connected to a host, so the IN request stays queued */
+	buf = test_udc_ep_buf_alloc(dev, &ed_bulk_in);
+	err = udc_ep_enqueue(dev, buf);
+	zassert_ok(err, "Failed to queue request");
+
+	k_msleep(100);
+	zassert_true(udc_ep_queue_age_ms(dev, last_used_ep) >= 100,
+		     "Queue age did not grow");
+
+	test_udc_ep_disable(dev, &ed_bulk_in);
+	test_udc_ep_dequeue(dev, &ed_bulk_in);
+	err = k_sem_take(&ep_queue_sem, K_MSEC(100));
+	zassert_ok(err, "Request was not cancelled");
+	zassert_equal(udc_ep_queue_age_ms(dev, last_used_ep), 0, "Dequeued queue has an age");
+
+	err = udc_disable(dev);
+	zassert_ok(err, "Failed to disable UDC driver");
+
+	err = udc_shutdown(dev);
+	zassert_ok(err, "Failed to shoot-down UDC driver");
+}
+
 ZTEST(udc_driver_test, test_udc_ep_buf)
 {
 	test_udc_ep_mps(USB_EP_TYPE_BULK);
