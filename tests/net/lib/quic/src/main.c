@@ -8749,6 +8749,221 @@ ZTEST(net_socket_quic, test_536_timeout_drops_the_list_reference_once)
 	quic_test_endpoint_unref(ep);
 }
 
+ZTEST(net_socket_quic, test_501_idle_timer_restarts_on_first_send_after_receive)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	int64_t stale = k_uptime_get() - 5000;
+	uint64_t pn = 0;
+
+	/* A packet from the peer was processed a while ago */
+	quic_endpoint_restart_idle_timer(ep);
+	ep->idle.last_rx_time = stale;
+
+	/* A packet that does not ask for an acknowledgment is no activity */
+	quic_recovery_on_packet_sent(ep, QUIC_SECRET_LEVEL_APPLICATION, pn++, 50, false,
+				     false, 0);
+	zexpect_equal(ep->idle.last_rx_time, stale,
+		      "Idle timer restarted by a packet that is not ack-eliciting");
+
+	/* The first ack-eliciting packet after the receive restarts it */
+	quic_recovery_on_packet_sent(ep, QUIC_SECRET_LEVEL_APPLICATION, pn++, 100, true,
+				     false, 0);
+	zexpect_true(ep->idle.last_rx_time > stale,
+		     "Idle timer not restarted by the first ack-eliciting packet");
+
+	/* Further ones do not, or sending alone would keep the connection
+	 * from ever timing out.
+	 */
+	ep->idle.last_rx_time = stale;
+	quic_recovery_on_packet_sent(ep, QUIC_SECRET_LEVEL_APPLICATION, pn++, 100, true,
+				     false, 0);
+	zexpect_equal(ep->idle.last_rx_time, stale,
+		      "Idle timer restarted again without a packet from the peer");
+
+	/* After the next packet from the peer the same applies anew */
+	quic_endpoint_restart_idle_timer(ep);
+	ep->idle.last_rx_time = stale;
+	quic_recovery_on_packet_sent(ep, QUIC_SECRET_LEVEL_APPLICATION, pn++, 100, true,
+				     false, 0);
+	zexpect_true(ep->idle.last_rx_time > stale,
+		     "Idle timer not restarted by the first send after a receive");
+
+	k_work_cancel_delayable(&ep->recovery.pto_work);
+}
+
+ZTEST(net_socket_quic, test_513_idle_timeout_negotiation)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	uint64_t floor_ms;
+
+	/* RFC 9000 ch. 10.1: the minimum of the two values, or the sole
+	 * advertised one when only one side advertises a timeout.
+	 */
+	ep->idle.local_max_idle_timeout_ms = 30000;
+	ep->peer_params.max_idle_timeout = 0;
+	quic_endpoint_negotiate_idle_timeout(ep);
+	zexpect_equal(ep->idle.negotiated_timeout_ms, 30000, "Only ours: %" PRIu64,
+		      ep->idle.negotiated_timeout_ms);
+
+	ep->idle.local_max_idle_timeout_ms = 0;
+	ep->peer_params.max_idle_timeout = 20000;
+	quic_endpoint_negotiate_idle_timeout(ep);
+	zexpect_equal(ep->idle.negotiated_timeout_ms, 20000, "Only the peer's: %" PRIu64,
+		      ep->idle.negotiated_timeout_ms);
+	zexpect_false(ep->idle.idle_timeout_disabled, "Idle timeout disabled");
+
+	ep->idle.local_max_idle_timeout_ms = 30000;
+	quic_endpoint_negotiate_idle_timeout(ep);
+	zexpect_equal(ep->idle.negotiated_timeout_ms, 20000, "Both: %" PRIu64,
+		      ep->idle.negotiated_timeout_ms);
+
+	ep->idle.local_max_idle_timeout_ms = 0;
+	ep->peer_params.max_idle_timeout = 0;
+	quic_endpoint_negotiate_idle_timeout(ep);
+	zexpect_true(ep->idle.idle_timeout_disabled, "Idle timeout not disabled");
+
+	/* At least three times the PTO period, whatever was negotiated */
+	floor_ms = 3U * (ep->recovery.smoothed_rtt / 1000U +
+			 MAX(4U * (ep->recovery.rtt_var / 1000U), 1U) + QUIC_MAX_ACK_DELAY_MS);
+	ep->idle.negotiated_timeout_ms = 10;
+	zexpect_equal(quic_endpoint_idle_timeout_ms(ep), (int64_t)floor_ms,
+		      "Idle timeout %" PRId64 " ms below three PTOs (%" PRIu64 " ms)",
+		      quic_endpoint_idle_timeout_ms(ep), floor_ms);
+
+	ep->idle.negotiated_timeout_ms = floor_ms + 1000U;
+	zexpect_equal(quic_endpoint_idle_timeout_ms(ep), (int64_t)(floor_ms + 1000U),
+		      "A longer negotiated idle timeout was not kept");
+}
+
+ZTEST(net_socket_quic, test_522_idle_timeout_floor_follows_rtt)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_ack_range range = { .start = 0, .end = 0 };
+	struct quic_sent_pkt_info *sent = NULL;
+	uint64_t floor_ms;
+
+	/* Acknowledge a packet 100 ms after it was sent. The ACK path takes no
+	 * RTT sample from a packet sent at uptime 0, so let time pass first.
+	 */
+	k_msleep(100);
+	quic_recovery_on_packet_sent(ep, QUIC_SECRET_LEVEL_APPLICATION, 0, 100, true,
+				     false, 0);
+
+	ARRAY_FOR_EACH(ep->recovery.sent_pkts[2], i) {
+		if (ep->recovery.sent_pkts[2][i].in_flight) {
+			sent = &ep->recovery.sent_pkts[2][i];
+		}
+	}
+
+	zassert_not_null(sent, "Sent packet not recorded");
+
+	k_msleep(100);
+	quic_recovery_on_ack_received(ep, QUIC_SECRET_LEVEL_APPLICATION, &range, 1, 0);
+	k_work_cancel_delayable(&ep->recovery.pto_work);
+
+	zexpect_true(ep->recovery.rtt_initialized && ep->recovery.smoothed_rtt >= 100000U,
+		     "RTT sample not taken: %" PRIu64, ep->recovery.smoothed_rtt);
+
+	/* The idle timeout check reads the floor stored with the idle state,
+	 * so the ACK path has to update it with the RTT estimate.
+	 */
+	floor_ms = 3U * (ep->recovery.smoothed_rtt / 1000U +
+			 MAX(4U * (ep->recovery.rtt_var / 1000U), 1U) + QUIC_MAX_ACK_DELAY_MS);
+	ep->idle.negotiated_timeout_ms = 10;
+	zexpect_equal(quic_endpoint_idle_timeout_ms(ep), (int64_t)floor_ms,
+		      "Idle timeout %" PRId64 " ms, not three PTOs after the RTT sample (%" PRIu64
+		      " ms)", quic_endpoint_idle_timeout_ms(ep), floor_ms);
+}
+
+ZTEST(net_socket_quic, test_561_idle_period_starts_before_the_timeout_is_enabled)
+{
+	struct net_sockaddr_in remote = {
+		.sin_family = NET_AF_INET,
+		.sin_port = net_htons(4433),
+		.sin_addr = { { { 192, 0, 2, 4 } } },
+	};
+	struct quic_endpoint *tx_ep = reset_test_ep(&test_ep_a);
+	int64_t stale = k_uptime_get() - 100000;
+	struct quic_endpoint *ep;
+	struct quic_context *ctx;
+	int sock;
+	int ret;
+
+	/* With our own value 0 the idle timeout is disabled until the peer's
+	 * transport parameters are processed. A packet sent before that
+	 * starts the idle period all the same.
+	 */
+	tx_ep->idle.idle_timeout_disabled = true;
+	quic_endpoint_restart_idle_timer(tx_ep);
+	tx_ep->idle.last_rx_time = stale;
+	quic_recovery_on_packet_sent(tx_ep, QUIC_SECRET_LEVEL_APPLICATION, 0, 100, true,
+				     false, 0);
+	k_work_cancel_delayable(&tx_ep->recovery.pto_work);
+	zexpect_true(tx_ep->idle.last_rx_time > stale,
+		     "Idle timer not restarted by a send while the timeout was disabled");
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54397");
+
+	/* A client endpoint on a context, held also by the receive path */
+	ep = quic_test_endpoint_alloc();
+	zassert_not_null(ep, "Cannot allocate an endpoint");
+	ep->is_server = false;
+	ep->handshake.completed = true;
+	ep->sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(ep->sock >= 0, "Cannot create a socket (%d)", errno);
+	memcpy(&ep->remote_addr, &remote, sizeof(remote));
+	atomic_inc(&ep->refcount);
+	sys_slist_append(&ctx->endpoints, &ep->node);
+
+	/* Our own value is 0 and the connection started long ago */
+	ep->idle.local_max_idle_timeout_ms = 0;
+	ep->idle.idle_timeout_disabled = true;
+	ep->idle.negotiated_timeout_ms = 0;
+	ep->idle.pto_floor_ms = 0;
+	ep->idle.last_rx_time = stale;
+
+	/* The packet with the peer's transport parameters restarts the idle
+	 * timer before the timeout is negotiated from them.
+	 */
+	quic_endpoint_restart_idle_timer(ep);
+	zexpect_true(ep->idle.last_rx_time > stale,
+		     "Idle timer not restarted while the timeout was disabled");
+
+	ep->peer_params.max_idle_timeout = 20000;
+	quic_endpoint_negotiate_idle_timeout(ep);
+	zexpect_false(ep->idle.idle_timeout_disabled, "Idle timeout still disabled");
+
+	/* The idle period counts from that packet, not from the start */
+	quic_test_check_idle_timeouts();
+	zexpect_false(ep->list_ref_dropped, "The handshake was counted as idle time");
+
+	/* The teardown unlinks the endpoint and drops the list reference */
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+	zexpect_equal(atomic_get(&ep->refcount), 1,
+		      "The teardown did not drop the list reference alone");
+
+	/* Let the receive path go */
+	quic_test_endpoint_unref(ep);
+}
+
+ZTEST(net_socket_quic, test_562_local_idle_timeout_is_the_advertised_one)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	uint64_t advertised_ms = CONFIG_QUIC_MAX_IDLE_TIMEOUT;
+
+	/* The transport parameters advertise CONFIG_QUIC_MAX_IDLE_TIMEOUT, so
+	 * the negotiation has to start from the same value.
+	 */
+	quic_endpoint_init_idle_timeout(ep);
+	zexpect_equal(ep->idle.local_max_idle_timeout_ms, advertised_ms,
+		      "Own idle timeout %" PRIu64 " ms, advertised %" PRIu64 " ms",
+		      ep->idle.local_max_idle_timeout_ms, advertised_ms);
+	zexpect_equal(ep->idle.idle_timeout_disabled, advertised_ms == 0U,
+		      "Idle timeout disabled %d with %" PRIu64 " ms advertised",
+		      ep->idle.idle_timeout_disabled, advertised_ms);
+}
+
 ZTEST(net_socket_quic, test_488_token_replay_entry_survives_the_expiry_second)
 {
 	uint8_t nonce[8] = {
