@@ -1024,7 +1024,9 @@ static void tcp_conn_clear_accepted(struct tcp *accepted_conn)
 	SYS_SLIST_FOR_EACH_CONTAINER(&tcp_conns, conn, next) {
 		k_mutex_lock(&conn->lock, K_FOREVER);
 
-		if (net_context_get_state(conn->context) != NET_CONTEXT_LISTENING &&
+		/* A connection is on the list before it gets its context */
+		if (conn->context != NULL &&
+		    net_context_get_state(conn->context) != NET_CONTEXT_LISTENING &&
 		    conn->accepted_conn == accepted_conn) {
 			conn->accepted_conn = NULL;
 		}
@@ -1056,9 +1058,14 @@ static void tcp_conn_release(struct k_work *work)
 	if (net_context_get_state(conn->context) == NET_CONTEXT_LISTENING) {
 		/* If listening context, loop over active connections and clear
 		 * any `accepted_conn` backpointer if set to current context.
+		 * The context stops referring to the listener under the same
+		 * lock, so that tcp_recv() cannot set such a pointer after
+		 * the loop.
 		 */
-
+		k_mutex_lock(&tcp_lock, K_FOREVER);
+		conn->context->tcp = NULL;
 		tcp_conn_clear_accepted(conn);
+		k_mutex_unlock(&tcp_lock);
 	}
 
 	k_mutex_lock(&conn->lock, K_FOREVER);
@@ -2733,6 +2740,21 @@ static void tcp_conn_ref(struct tcp *conn)
 	NET_DBG("[%p] ref_count: %d", conn, ref_count);
 }
 
+/* Take a reference to a connection, unless it is already about to be released */
+static bool tcp_conn_ref_unless_released(struct tcp *conn)
+{
+	atomic_val_t ref_count;
+
+	do {
+		ref_count = atomic_get(&conn->ref_count);
+		if (ref_count == 0) {
+			return false;
+		}
+	} while (!atomic_cas(&conn->ref_count, ref_count, ref_count + 1));
+
+	return true;
+}
+
 static struct tcp *tcp_conn_alloc(void)
 {
 	struct tcp *conn = NULL;
@@ -2892,22 +2914,41 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 
 
 	if (th_flags(th) & SYN && !(th_flags(th) & ACK)) {
-		struct tcp *conn_old = ((struct net_context *)user_data)->tcp;
+		struct net_context *listen_ctx = user_data;
+		struct tcp *conn_old;
+
+		/* A listening connection is released under tcp_lock. The
+		 * reference keeps it and its context from being released,
+		 * and used for another listener, until the new connection
+		 * points to it.
+		 */
+		k_mutex_lock(&tcp_lock, K_FOREVER);
+		conn_old = listen_ctx->tcp;
+		if (conn_old != NULL && !tcp_conn_ref_unless_released(conn_old)) {
+			conn_old = NULL;
+		}
+		k_mutex_unlock(&tcp_lock);
 
 		if (conn_old == NULL || tcp_backlog_is_full(conn_old)) {
 			/* If the connection backlog is full, ignore the SYN
 			 * packet (same behavior as on Linux). Retransmitted SYN
 			 * attempts may be successful later.
 			 */
+			if (conn_old != NULL) {
+				(void)tcp_conn_unref(conn_old);
+			}
+
 			goto out;
 		}
 
 		conn = tcp_conn_new(pkt, th);
 		if (!conn) {
 			NET_ERR("Cannot allocate a new TCP connection");
+			(void)tcp_conn_unref(conn_old);
 			goto in;
 		}
 
+		k_mutex_lock(&tcp_lock, K_FOREVER);
 		conn->accepted_conn = conn_old;
 
 		/* The buffer sizes set on the listener apply to the
@@ -2920,6 +2961,9 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 #if defined(CONFIG_NET_CONTEXT_SNDBUF)
 		conn->context->options.sndbuf = conn_old->context->options.sndbuf;
 #endif
+		k_mutex_unlock(&tcp_lock);
+
+		(void)tcp_conn_unref(conn_old);
 	}
 in:
 	if (conn) {
@@ -3781,13 +3825,19 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 		break;
 	case TCP_SYN_RECEIVED:
 		if (th_ack(th) == conn->seq && th_seq(th) == conn->ack) {
+			struct tcp *listener = conn->accepted_conn;
 			net_tcp_accept_cb_t accept_cb = NULL;
 			struct net_context *context = NULL;
 
-			if (conn->accepted_conn != NULL) {
-				accept_cb = conn->accepted_conn->accept_cb;
-				context = conn->accepted_conn->context;
-				keep_alive_param_copy(conn, conn->accepted_conn);
+			if (listener != NULL) {
+				/* Held until the callback has returned, so that
+				 * net_tcp_accept() cannot take the callback
+				 * away while it is being called.
+				 */
+				k_mutex_lock(&listener->lock, K_FOREVER);
+				accept_cb = listener->accept_cb;
+				context = listener->context;
+				keep_alive_param_copy(conn, listener);
 			}
 
 			k_work_cancel_delayable(&conn->establish_timer);
@@ -3804,6 +3854,10 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 				 * the TCP context and put the connection into
 				 * active close (TCP_FIN_WAIT_1).
 				 */
+				if (listener != NULL) {
+					k_mutex_unlock(&listener->lock);
+				}
+
 				net_tcp_put(conn->context, false);
 				break;
 			}
@@ -3857,6 +3911,8 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 				  net_context_get_family(context) == NET_AF_INET6 ?
 				  sizeof(struct net_sockaddr_in6) : sizeof(struct net_sockaddr_in),
 				  0, context->user_data);
+
+			k_mutex_unlock(&listener->lock);
 
 			next = TCP_ESTABLISHED;
 			conn->send_max = conn->seq;
@@ -4876,7 +4932,12 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 		return -EINVAL;
 	}
 
+	/* tcp_in() calls the callback with the lock held */
+	k_mutex_lock(&conn->lock, K_FOREVER);
 	conn->accept_cb = cb;
+	context->user_data = user_data;
+	k_mutex_unlock(&conn->lock);
+
 	local_addr->sa_family = net_context_get_family(context);
 
 	switch (local_addr->sa_family) {
@@ -4924,8 +4985,6 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 	default:
 		return -EINVAL;
 	}
-
-	context->user_data = user_data;
 
 	/* Remove the temporary connection handler and register
 	 * a proper now as we have an established connection.
