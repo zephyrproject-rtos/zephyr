@@ -271,6 +271,11 @@ Devicetree
 * :dtcompatible:`gnss-nmea-generic` supports optional enable and reset GPIOs, with configurable
   reset pulse and wake-up delays.
 
+* :dtcompatible:`u-blox,m10` supports the receiver's power save modes and EXTINT pin control,
+  configured from devicetree, and device power management through software backup mode.
+  Applications drive the EXTINT input with :c:func:`gnss_u_blox_m10_set_extint`, for instance
+  to switch the receiver between running and backup mode.
+
 * :dtcompatible:`zephyr,charger-gpio` supports charging and charge-complete status inputs,
   including chargers without a software-controlled enable pin.
 
