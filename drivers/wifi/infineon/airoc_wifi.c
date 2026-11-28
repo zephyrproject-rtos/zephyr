@@ -22,6 +22,10 @@ LOG_MODULE_REGISTER(infineon_airoc_wifi, CONFIG_WIFI_LOG_LEVEL);
 #define AIROC_WIFI_TX_PACKET_POOL_COUNT (10)
 #endif
 
+#ifndef AIROC_WIFI_CTRL_PACKET_POOL_COUNT
+#define AIROC_WIFI_CTRL_PACKET_POOL_COUNT (4)
+#endif
+
 #ifndef AIROC_WIFI_RX_PACKET_POOL_COUNT
 #define AIROC_WIFI_RX_PACKET_POOL_COUNT (10)
 #endif
@@ -42,9 +46,6 @@ LOG_MODULE_REGISTER(infineon_airoc_wifi, CONFIG_WIFI_LOG_LEVEL);
 #define AIROC_WIFI_MGMT_TX_MAX_SIZE (256)
 #endif
 
-#define AIROC_WIFI_PACKET_POOL_COUNT                                                               \
-	(AIROC_WIFI_TX_PACKET_POOL_COUNT + AIROC_WIFI_RX_PACKET_POOL_COUNT)
-
 #define AIROC_WIFI_WAIT_SEMA_MS    (30 * 1000)
 #define AIROC_WIFI_SCAN_TIMEOUT_MS (12 * 1000)
 
@@ -62,9 +63,19 @@ static void airoc_wifi_network_process_ethernet_data(whd_interface_t interface,
 int airoc_wifi_init_primary(const struct device *dev, whd_interface_t *interface,
 			    whd_netif_funcs_t *netif_funcs, whd_buffer_funcs_t *buffer_if);
 
-/* Allocate network pool */
-NET_BUF_POOL_FIXED_DEFINE(airoc_pool, AIROC_WIFI_PACKET_POOL_COUNT, AIROC_WIFI_PACKET_POOL_SIZE, 0,
-			  NULL);
+/*
+ * Network buffer pools. Outgoing data frames, WHD's own outgoing control
+ * messages and received frames each have their own pool: data frames queued
+ * while the link is paused can then never take the buffers needed to send
+ * control messages or to receive the frames (TCP ACKs, credit updates) that
+ * drain the queue again.
+ */
+NET_BUF_POOL_FIXED_DEFINE(airoc_tx_pool, AIROC_WIFI_TX_PACKET_POOL_COUNT,
+			  AIROC_WIFI_PACKET_POOL_SIZE, 0, NULL);
+NET_BUF_POOL_FIXED_DEFINE(airoc_ctrl_pool, AIROC_WIFI_CTRL_PACKET_POOL_COUNT,
+			  AIROC_WIFI_PACKET_POOL_SIZE, 0, NULL);
+NET_BUF_POOL_FIXED_DEFINE(airoc_rx_pool, AIROC_WIFI_RX_PACKET_POOL_COUNT,
+			  AIROC_WIFI_PACKET_POOL_SIZE, 0, NULL);
 
 /* AIROC globals */
 static uint16_t ap_event_handler_index = 0xFF;
@@ -374,20 +385,18 @@ static void scan_callback(whd_scan_result_t **result_ptr, void *user_data, whd_s
 /*
  * Implement WHD network buffers functions
  */
-static whd_result_t airoc_wifi_host_buffer_get(whd_buffer_t *buffer, whd_buffer_dir_t direction,
-					       uint16_t size, uint32_t timeout_ms)
+static whd_result_t airoc_wifi_pool_buffer_get(struct net_buf_pool *pool, whd_buffer_t *buffer,
+					       uint16_t size)
 {
-	ARG_UNUSED(direction);
-	ARG_UNUSED(timeout_ms);
 	struct net_buf *buf;
 
-	buf = net_buf_alloc_len(&airoc_pool, size, K_NO_WAIT);
+	buf = net_buf_alloc_len(pool, size, K_NO_WAIT);
 	if (buf == NULL) {
 		return WHD_BUFFER_ALLOC_FAIL;
 	}
 	if (buf->size < size) {
 		/* net_buf_alloc_len() returned a buffer smaller than requested;
-		 * release it before failing or it leaks from airoc_pool.
+		 * release it before failing or it leaks from the pool.
 		 */
 		net_buf_unref(buf);
 		return WHD_BUFFER_ALLOC_FAIL;
@@ -398,6 +407,17 @@ static whd_result_t airoc_wifi_host_buffer_get(whd_buffer_t *buffer, whd_buffer_
 	(void)airoc_wifi_buffer_set_size(*buffer, size);
 
 	return WHD_SUCCESS;
+}
+
+/* Buffers WHD asks for: received frames, and its own outgoing control messages. */
+static whd_result_t airoc_wifi_host_buffer_get(whd_buffer_t *buffer, whd_buffer_dir_t direction,
+					       uint16_t size, uint32_t timeout_ms)
+{
+	ARG_UNUSED(timeout_ms);
+	struct net_buf_pool *pool = (direction == WHD_NETWORK_RX) ? &airoc_rx_pool
+								   : &airoc_ctrl_pool;
+
+	return airoc_wifi_pool_buffer_get(pool, buffer, size);
 }
 
 static void airoc_wifi_buffer_release(whd_buffer_t buffer, whd_buffer_dir_t direction)
@@ -461,8 +481,8 @@ static int airoc_mgmt_send(const struct device *dev, struct net_pkt *pkt)
 	}
 
 	/* Allocate Network Buffer from pool with Packet Length + Data Header */
-	ret = airoc_wifi_host_buffer_get((whd_buffer_t *)&buf, WHD_NETWORK_TX,
-					 pkt_len + sizeof(data_header_t), 0);
+	ret = airoc_wifi_pool_buffer_get(&airoc_tx_pool, (whd_buffer_t *)&buf,
+					 pkt_len + sizeof(data_header_t));
 	if ((ret != WHD_SUCCESS) || (buf == NULL)) {
 		return -EIO;
 	}
