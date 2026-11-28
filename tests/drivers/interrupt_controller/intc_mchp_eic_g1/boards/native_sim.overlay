@@ -1,0 +1,10 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	eic: zephyr,user {};
+};
+
+#include <arm/microchip/pic32c/pic32cm_sg_gc/common/pic32cm_sg_gc_eic_lines.dtsi>

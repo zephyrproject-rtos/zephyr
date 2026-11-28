@@ -177,16 +177,18 @@
 			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_EIC>,
 				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_EIC>;
 			clock-names = "mclk", "gclk";
-			porta-special-pins-1 = <0x20 0x1>; /*5*/
 			portc-unsupported-pins = <0x110000>; /*16|20*/
-			portc-special-pins-1 = <0x4 0x1>; /*2*/
 			portd-supported-pins = <0x3fbfffff>; /*0-21|23-29*/
-			portd-special-pins-1 = <0x8000 0xf>; /*15*/
-			portd-special-pins-2 = <0x3f6000 0x1>; /*13|14|16-21*/
 			porte-supported-pins = <0xfff>; /*0-11*/
 			portf-supported-pins = <0x1ff>; /*0-8*/
-			portf-special-pins-1 = <0x1 0x1>; /*0*/
 			portg-supported-pins = <0xfff>; /*0-11*/
+			porta-eic-lines = [10 32 44 76 98 ba dc fe 10 32 54 76 98 ba dc fe];
+			portb-eic-lines = [10 32 54 76 98 ba dc fe 10 32 54 76 98 ba dc fe];
+			portc-eic-lines = [10 31 54 76 98 ba dc fe 10 32 50 76 98 ba dc fe];
+			portd-eic-lines = [10 32 54 76 98 ba ec 0f 21 43 65 70 98 ba dc 00];
+			porte-eic-lines = [10 32 54 76 98 ba 00 00 00 00 00 00 00 00 00 00];
+			portf-eic-lines = [11 32 54 76 08 00 00 00 00 00 00 00 00 00 00 00];
+			portg-eic-lines = [10 32 54 76 98 ba 00 00 00 00 00 00 00 00 00 00];
 			status = "disabled";
 		};
 
