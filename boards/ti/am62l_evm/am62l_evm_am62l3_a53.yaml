@@ -8,9 +8,11 @@ toolchain:
 ram: 2048
 supported:
   - adc
-  - uart
-  - shdc
+  - gpio
+  - i2c
   - pwm
+  - sdhc
+  - uart
 testing:
   ignore_tags:
     - net
