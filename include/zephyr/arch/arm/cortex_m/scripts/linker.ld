@@ -43,12 +43,27 @@
 #endif
 
 #if defined(CONFIG_FLASH_USES_MAPPED_PARTITION)
+#if DT_REG_HAS_NAME(DT_CHOSEN(zephyr_code_partition), execution) && \
+	!DT_ENUM_HAS_VALUE_BY_IDX(DT_CHOSEN(zephyr_code_partition), reg_names, 0, cpu_mapped)
+#error "The code partition's cpu-mapped reg entry must be at index 0"
+#endif
 #if defined(CONFIG_XIP)
-#define ROM_ADDR (DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition)))
+#define ROM_ADDR \
+	DT_REG_ADDR_BY_NAME_OR(DT_CHOSEN(zephyr_code_partition), execution, \
+			       DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition)))
+/* ROM_SIZE is also used in #if expressions, so select the smaller size here. */
+#if DT_REG_SIZE_BY_NAME_OR(DT_CHOSEN(zephyr_code_partition), execution, \
+			   DT_REG_SIZE(DT_CHOSEN(zephyr_code_partition))) < \
+	DT_REG_SIZE(DT_CHOSEN(zephyr_code_partition))
+#define ROM_SIZE \
+	(DT_REG_SIZE_BY_NAME(DT_CHOSEN(zephyr_code_partition), execution) - ROM_END_OFFSET)
+#else
+#define ROM_SIZE (DT_REG_SIZE(DT_CHOSEN(zephyr_code_partition)) - ROM_END_OFFSET)
+#endif
 #else
 #define ROM_ADDR RAM_ADDR
-#endif
 #define ROM_SIZE (DT_REG_SIZE(DT_CHOSEN(zephyr_code_partition)) - ROM_END_OFFSET)
+#endif
 #else
 #if !defined(CONFIG_XIP) && (CONFIG_FLASH_SIZE == 0)
 #define ROM_ADDR RAM_ADDR
