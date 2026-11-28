@@ -9,6 +9,7 @@
 
 #include <zephyr/drivers/emul.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 /**
  * @brief Set the raw (uncompensated) magnetometer sample registers.
@@ -27,5 +28,21 @@ void bmm350_emul_set_mag_raw(const struct emul *target, int32_t x, int32_t y, in
  * @param temp Raw temperature value (signed 24-bit range).
  */
 void bmm350_emul_set_temp_raw(const struct emul *target, int32_t temp);
+
+/**
+ * @brief Set or clear the emulated data-ready interrupt status bit (INT_STATUS.drdy_data_reg).
+ *
+ * @param target Pointer to the emulator instance.
+ * @param ready True to set data-ready status, false to clear it.
+ */
+void bmm350_emul_set_drdy_int_status(const struct emul *target, bool ready);
+
+/**
+ * @brief Check whether the emulated data-ready interrupt status bit is currently latched.
+ *
+ * @param target Pointer to the emulator instance.
+ * @return True if INT_STATUS.drdy_data_reg is set, false otherwise.
+ */
+bool bmm350_emul_get_drdy_int_status(const struct emul *target);
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMM350_BMM350_EMUL_H_ */
