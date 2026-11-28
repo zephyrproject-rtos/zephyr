@@ -4,9 +4,11 @@
 menuconfig UART_VIRTIO_CONSOLE
 	bool "VIRTIO console paravirtualization device driver"
 	default y
+	select EVENTS if MULTITHREADING
 	select VIRTIO
 	depends on DT_HAS_VIRTIO_CONSOLE_ENABLED
 	select SERIAL_HAS_POST_KERNEL_INIT
+	select SERIAL_SUPPORT_INTERRUPT
 
 if UART_VIRTIO_CONSOLE
 
