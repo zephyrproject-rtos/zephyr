@@ -36,5 +36,7 @@ tests:
   sample.sensor.shell.shields:
     platform_allow:
       - adafruit_qt_py_rp2040/rp2040
+      - rak4631/nrf52840
     extra_args:
       - platform:adafruit_qt_py_rp2040/rp2040:SHIELD="adafruit_ina237"
+      - platform:rak4631/nrf52840:SHIELD="rakwireless_rak19007;rakwireless_rak12054"
