@@ -83,6 +83,9 @@ description: |
     - silabs,alternate-port-control: Use alternate port control settings.
                                      Allowed in drive-push-pull and
                                      drive-open-drain modes.
+    - silabs,route-disable: Disconnect the pins from their peripheral signal
+                            and drive them as GPIOs. Only has an effect on signals
+                            with a route enable bit.
 
     ABUS allocation is performed using the 'silabs,analog-bus' property. This
     property takes an array of buses to allocate. Example:
@@ -138,6 +141,13 @@ child-binding:
         description: |
           Enable input glitch filter on this pin. May be used in input-enable
           and drive-open-drain modes.
+        type: boolean
+
+      silabs,route-disable:
+        description: |
+          Disconnect the pins from their peripheral signal and drive them as
+          GPIOs with the mode and level given by the other properties of the
+          group. Only has an effect on signals with a route enable bit.
         type: boolean
 
       silabs,alternate-port-control:

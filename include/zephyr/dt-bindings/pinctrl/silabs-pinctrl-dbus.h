@@ -43,9 +43,6 @@
 #define SILABS_PINCTRL_ABUS_PARITY_MASK 0x00003000UL
 #define SILABS_PINCTRL_ABUS_PERIPH_MASK 0x00000F00UL
 
-#define SILABS_PINCTRL_UNUSED 0xFF
-#define SILABS_PINCTRL_ANALOG 0xAA
-
 #define SILABS_DBUS(port, pin, periph_base, en_present, en_bit, route)                             \
 	(FIELD_PREP(SILABS_PINCTRL_GPIO_PORT_MASK, port) |                                         \
 	 FIELD_PREP(SILABS_PINCTRL_GPIO_PIN_MASK, pin) |                                           \
