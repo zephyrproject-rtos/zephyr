@@ -1276,6 +1276,98 @@ ZTEST_USER(uart_async_var_buf_length, test_var_buf_length)
 	zassert_ok(uart_configure(uart_dev, &uart_cfg));
 }
 
+#define RELEASE_RX_BUF_SIZE 100
+#define RELEASE_TX_BUF_SIZE 64
+#define RELEASE_TX_BYTE     0x5AU
+#define RELEASE_CANARY      0xA5U
+
+#if NOCACHE_MEM
+static __aligned(sizeof(void *)) uint8_t release_rx_buf[RELEASE_RX_BUF_SIZE] __used __NOCACHE;
+static __aligned(sizeof(void *)) uint8_t release_tx_buf[RELEASE_TX_BUF_SIZE] __used __NOCACHE;
+#else
+static ZTEST_BMEM __aligned(sizeof(void *)) uint8_t release_rx_buf[RELEASE_RX_BUF_SIZE];
+static ZTEST_BMEM __aligned(sizeof(void *)) uint8_t release_tx_buf[RELEASE_TX_BUF_SIZE];
+#endif /* NOCACHE_MEM */
+static ZTEST_BMEM volatile uint32_t release_hold_us;
+
+static void test_release_on_disable_callback(const struct device *dev, struct uart_event *evt,
+					     void *user_data)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(user_data);
+
+	switch (evt->type) {
+	case UART_TX_DONE:
+		k_sem_give(&tx_done);
+		break;
+	case UART_RX_BUF_RELEASED:
+		/* The buffer belongs to the application again: reuse it as an
+		 * unrelated object and hold it while the peer keeps sending.
+		 */
+		if (evt->data.rx_buf.buf == release_rx_buf) {
+			memset(release_rx_buf, RELEASE_CANARY, sizeof(release_rx_buf));
+			k_busy_wait(release_hold_us);
+		}
+		k_sem_give(&rx_buf_released);
+		break;
+	case UART_RX_DISABLED:
+		k_sem_give(&rx_disabled);
+		break;
+	default:
+		break;
+	}
+}
+
+static void *release_on_disable_setup(void)
+{
+	static int idx;
+
+	uart_async_test_init(idx++);
+
+	uart_callback_set(uart_dev, test_release_on_disable_callback, NULL);
+
+	return NULL;
+}
+
+/* A buffer reported by UART_RX_BUF_RELEASED must not be written by the driver
+ * any more, even when RX is disabled while data is still arriving.
+ */
+ZTEST_USER(uart_async_release_on_disable, test_release_on_disable)
+{
+	struct uart_config cfg;
+	uint32_t byte_us;
+	size_t corrupted = 0;
+
+	zassert_ok(uart_config_get(uart_dev, &cfg));
+	/* Start, 9 data, parity and 2 stop bits: an upper bound on a frame */
+	byte_us = DIV_ROUND_UP(13U * USEC_PER_SEC, cfg.baudrate);
+	release_hold_us = 8U * byte_us;
+
+	memset(release_rx_buf, 0, sizeof(release_rx_buf));
+	memset(release_tx_buf, RELEASE_TX_BYTE, sizeof(release_tx_buf));
+
+	zassert_ok(uart_rx_enable(uart_dev, release_rx_buf, sizeof(release_rx_buf),
+				  SYS_FOREVER_US));
+	zassert_ok(uart_tx(uart_dev, release_tx_buf, sizeof(release_tx_buf), SYS_FOREVER_US));
+
+	/* Disable RX while the remaining bytes keep arriving on the loopback */
+	k_busy_wait(16U * byte_us);
+	zassert_ok(uart_rx_disable(uart_dev));
+
+	zassert_equal(k_sem_take(&rx_buf_released, K_MSEC(100)), 0, "RX_BUF_RELEASED timeout");
+	zassert_equal(k_sem_take(&rx_disabled, K_MSEC(100)), 0, "RX_DISABLED timeout");
+	zassert_equal(k_sem_take(&tx_done, K_MSEC(100)), 0, "TX_DONE timeout");
+
+	for (size_t i = 0; i < sizeof(release_rx_buf); i++) {
+		if (release_rx_buf[i] != RELEASE_CANARY) {
+			corrupted++;
+		}
+	}
+
+	zassert_equal(corrupted, 0, "%zu bytes written to the buffer after its release",
+		      corrupted);
+}
+
 ZTEST_SUITE(uart_async_single_read, NULL, single_read_setup,
 		NULL, NULL, NULL);
 
@@ -1304,6 +1396,9 @@ ZTEST_SUITE(uart_async_write_abort, NULL, write_abort_setup,
 		NULL, NULL, NULL);
 
 ZTEST_SUITE(uart_async_timeout, NULL, forever_timeout_setup,
+		NULL, NULL, NULL);
+
+ZTEST_SUITE(uart_async_release_on_disable, NULL, release_on_disable_setup,
 		NULL, NULL, NULL);
 
 #if defined(CONFIG_PM)

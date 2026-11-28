@@ -1717,13 +1717,16 @@ static int uart_stm32_async_rx_disable(const struct device *dev)
 
 	uart_stm32_dma_rx_flush(dev);
 
-	async_evt_rx_buf_release(data);
-
 	uart_stm32_dma_rx_disable(dev);
 
 	(void)k_work_cancel_delayable(&data->dma_rx.timeout_work);
 
 	dma_stop(data->dma_rx.dma_dev, data->dma_rx.dma_channel);
+
+	/* Release the buffer only once the DMA can no longer write to it: the
+	 * application may free or reuse it from the UART_RX_BUF_RELEASED callback.
+	 */
+	async_evt_rx_buf_release(data);
 
 	if (data->rx_next_buffer) {
 		struct uart_event rx_next_buf_release_evt = {
