@@ -6,6 +6,7 @@
 #define DT_DRV_COMPAT nxp_mcg_lite
 
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/clock_control_common.h>
 #include <zephyr/dt-bindings/clock/nxp_mcg_lite.h>
 #include <soc.h>
 #include <fsl_clock.h>
@@ -92,22 +93,6 @@ static int nxp_mcg_lite_init(const struct device *dev)
 	return 0;
 }
 
-static int nxp_mcg_lite_on(const struct device *dev, clock_control_subsys_t sub_system)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(sub_system);
-
-	return 0;
-}
-
-static int nxp_mcg_lite_off(const struct device *dev, clock_control_subsys_t sub_system)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(sub_system);
-
-	return 0;
-}
-
 static int nxp_mcg_lite_get_rate(const struct device *dev, clock_control_subsys_t sub_system,
 				  uint32_t *rate)
 {
@@ -135,8 +120,8 @@ static int nxp_mcg_lite_get_rate(const struct device *dev, clock_control_subsys_
 }
 
 static DEVICE_API(clock_control, nxp_mcg_lite_driver_api) = {
-	.on = nxp_mcg_lite_on,
-	.off = nxp_mcg_lite_off,
+	.on = clock_control_always_running_clk_on,
+	.off = clock_control_always_running_clk_off,
 	.get_rate = nxp_mcg_lite_get_rate,
 };
 

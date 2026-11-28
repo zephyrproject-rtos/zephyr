@@ -311,6 +311,13 @@ Clock control
   ``NXP_MCG_LITE_OUT_CLK``. The ``lircdiv2`` property is no longer supported by
   :dtcompatible:`nxp,kinetis-mcg` and should be removed from existing devicetrees.
 
+* Drivers had been returning inconsistent result codes for :c:func:`clock_control_on()` and
+  :c:func:`clock_control_off()` for clocks that aren't stoppable. In addition, some drivers had
+  implemented only the former function. Both have been marked as mandatory, with new helper
+  functions added to :file:`include/zephyr/drivers/clock_control/clock_control_common.h`. Drivers
+  are expected to use them instead of writing their own, whenever feasible. See :github:`118560`
+  for examples of how in-tree drivers have been updated.
+
 Comparator
 ==========
 
