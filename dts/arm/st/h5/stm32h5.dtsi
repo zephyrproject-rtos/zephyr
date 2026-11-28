@@ -459,7 +459,7 @@
 		};
 
 		usb: usb@40016000 {
-			compatible = "st,stm32-usb";
+			compatible = "st,stm32-usb-drd", "st,stm32-usb";
 			reg = <0x40016000 0x400>;
 			interrupts = <74 0>;
 			interrupt-names = "usb";
