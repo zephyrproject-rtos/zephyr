@@ -15,6 +15,12 @@ tests:
       tests_scripts:
         - tests_scripts/basic_advx.sh
         - tests_scripts/scan_req_tgta.sh
+        - tests_scripts/scan_sync_fal.sh
+        - tests_scripts/scan_sync_rl.sh
+        - tests_scripts/scan_sync_active.sh
+        - tests_scripts/scan_sync_aux_active.sh
+        - tests_scripts/scan_sync_found_addr.sh
+        - tests_scripts/scan_sync_found_list.sh
         - tests_scripts/anonymous.sh
         - tests_scripts/anonymous_other.sh
         - tests_scripts/connect_fal.sh

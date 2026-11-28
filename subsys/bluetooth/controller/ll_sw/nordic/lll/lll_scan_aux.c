@@ -64,7 +64,7 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		      uint8_t phy_aux, uint8_t phy_aux_flags_rx,
 		      uint8_t devmatch_ok, uint8_t devmatch_id,
 		      uint8_t irkmatch_ok, uint8_t irkmatch_id, uint8_t rl_idx,
-		      uint8_t rssi_ready);
+		      uint8_t rssi_ready, bool sync_only);
 static void isr_tx_scan_req_ull_schedule(void *param);
 static void isr_tx_scan_req_lll_schedule(void *param);
 #if defined(CONFIG_BT_CENTRAL)
@@ -827,6 +827,7 @@ static void isr_rx(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 	uint8_t trx_done;
 	uint8_t crc_ok;
 	uint8_t rl_idx;
+	bool sync_only;
 	bool has_adva;
 	int err;
 
@@ -901,6 +902,7 @@ static void isr_rx(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 	rl_idx = FILTER_IDX_NONE;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
+	sync_only = false;
 	if (has_adva) {
 		bool allow;
 
@@ -910,7 +912,13 @@ static void isr_rx(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC) && \
 	defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
 		} else if (allow || lll->is_sync) {
+			/* A PDU that the filters reject is still received
+			 * while a periodic sync is being created, as it can
+			 * hold the SyncInfo of the periodic advertiser to
+			 * sync to, but nothing is sent in response to it.
+			 */
 			devmatch_ok = allow ? 1U : 0U;
+			sync_only = !allow;
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC && CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 		} else if (!allow) {
 			err = -EINVAL;
@@ -921,7 +929,7 @@ static void isr_rx(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 
 	err = isr_rx_pdu(lll, lll_aux, node_rx, pdu, phy_aux, phy_aux_flags_rx,
 			 devmatch_ok, devmatch_id, irkmatch_ok, irkmatch_ok,
-			 rl_idx, rssi_ready);
+			 rl_idx, rssi_ready, sync_only);
 	if (!err) {
 		return;
 	}
@@ -976,7 +984,7 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		      uint8_t phy_aux, uint8_t phy_aux_flags_rx,
 		      uint8_t devmatch_ok, uint8_t devmatch_id,
 		      uint8_t irkmatch_ok, uint8_t irkmatch_id, uint8_t rl_idx,
-		      uint8_t rssi_ready)
+		      uint8_t rssi_ready, bool sync_only)
 {
 	struct node_rx_ftr *ftr;
 
@@ -986,7 +994,7 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 	if (0) {
 #if defined(CONFIG_BT_CENTRAL)
 	/* Initiator */
-	} else if (lll->conn && !lll->conn->central.cancelled &&
+	} else if (lll->conn && !lll->conn->central.cancelled && !sync_only &&
 		   (pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_CONN) &&
 		   lll_scan_ext_tgta_check(lll, false, true, pdu,
 					   rl_idx, NULL, NULL)) {
@@ -1183,14 +1191,14 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 
 	/* Active scanner */
 	} else if (!lll->conn &&
-		   lll->type &&
+		   lll->type && !sync_only &&
 		   ((lll_aux && !lll_aux->state) ||
 		    (lll->lll_aux && !lll->lll_aux->state)) &&
 		   (pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_SCAN) &&
 		   lll_scan_ext_tgta_check(lll, false, false, pdu, rl_idx,
 					   &dir_report, NULL)) {
 #else /* !CONFIG_BT_CENTRAL */
-	} else if (lll && lll->type &&
+	} else if (lll && lll->type && !sync_only &&
 		   ((lll_aux && !lll_aux->state) ||
 		    (lll->lll_aux && !lll->lll_aux->state)) &&
 		   (pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_SCAN) &&

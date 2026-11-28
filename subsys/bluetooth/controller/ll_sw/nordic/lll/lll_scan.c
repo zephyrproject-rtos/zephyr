@@ -770,7 +770,13 @@ static void isr_rx(void *param)
 		if (false) {
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC) && \
 	defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
-		} else if (allow || lll->is_sync) {
+		} else if (allow || (lll->is_sync && (pdu->type == PDU_ADV_TYPE_EXT_IND))) {
+			/* While a periodic sync is being created, an
+			 * ADV_EXT_IND that the filters reject is still
+			 * received, as its AUX_ADV_IND can hold the SyncInfo
+			 * of the periodic advertiser to sync to. A legacy PDU
+			 * cannot lead to a periodic sync.
+			 */
 			devmatch_ok = allow ? 1U : 0U;
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC && CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 		} else if (!allow) {
