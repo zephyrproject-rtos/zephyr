@@ -46,7 +46,7 @@ struct test_struct {
 
 struct elt {
 	const char *name;
-	const char name_buf[10];
+	char name_buf[10];
 	int height;
 };
 
