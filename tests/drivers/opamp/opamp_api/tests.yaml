@@ -17,3 +17,7 @@ tests:
   drivers.opamp.api.infineon_ctb:
     depends_on: opamp
     filter: dt_compat_enabled("infineon,autanalog-ctb-opamp")
+
+  drivers.opamp.api.am13_pga:
+    depends_on: opamp
+    filter: dt_compat_enabled("ti,am13-pga")

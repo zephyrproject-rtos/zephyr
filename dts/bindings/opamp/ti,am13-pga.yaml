@@ -1,0 +1,144 @@
+# Copyright (c) 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Texas Instruments AM13E Programmable Gain Amplifier (PGA).
+
+  Register and field names (PGACTL, MUXSEL, PWREN_SYSPERIPH, ...) are those of
+  the AM13E230x Technical Reference Manual (SPRUJF2), chapter "Programmable
+  Gain Amplifier (PGA)" and section "Peripheral Power Control".
+
+  An op-amp with an internal resistor ladder. Mux topology, filter resistor
+  and output routing are set in devicetree; only gain changes at runtime via
+  opamp_set_gain().
+
+  functional-mode must match the mux connections:
+    non_inverting: nmux rtap, mmux non-inverting. Gain x1, x2, x4 ... x64.
+    inverting: nmux rtap, mmux inm0..inm3 or shared. Gain -1, -3, -7 ... -63,
+      selected by magnitude.
+    differential: as inverting; gain selects G in G * INP - (G - 1) * INM.
+    follower: nmux rtop, mmux standalone. Fixed gain x1.
+    standalone: nmux inm0..inm3, mmux standalone. Gain set externally;
+      opamp_set_gain() has no effect.
+
+  The amplifier starts at the lowest gain of its mode.
+
+compatible: "ti,am13-pga"
+
+include: opamp-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  sysctl:
+    type: phandle
+    required: true
+    description: SYSCTL syscon containing the peripheral power control register.
+
+  ti,power-bit:
+    type: int
+    required: true
+    enum: [1, 2, 3]
+    description: PGA instance bit in SYSCTL PWREN_SYSPERIPH.
+
+  ti,pmux-input:
+    type: string
+    default: "inp0"
+    enum:
+      - "inp0"
+      - "inp1"
+      - "inp2"
+      - "inp3"
+      - "inp4"
+      - "inp5"
+      - "inp6"
+      - "inp7"
+      - "inp8"
+    description: |
+      Positive input mux selection (MUXSEL.PMUXSEL[3:0]).
+      Selects which PGA_INPx package pin is routed to the non-inverting op-amp input.
+
+  ti,nmux-input:
+    type: string
+    default: "rtap"
+    enum:
+      - "rtop"
+      - "rtap"
+      - "inm0"
+      - "inm1"
+      - "inm2"
+      - "inm3"
+    description: |
+      Negative input mux selection (MUXSEL.NMUXSEL[2:0]).
+      rtop: direct output feedback for follower mode.
+      rtap: internal feedback resistor tap for programmable-gain modes.
+      inm0..inm3: PGA_INMx package pin.
+
+  ti,mmux-input:
+    type: string
+    default: "non-inverting"
+    enum:
+      - "standalone"
+      - "non-inverting"
+      - "inm0"
+      - "inm1"
+      - "inm2"
+      - "inm3"
+      - "neg-shared-a"
+      - "neg-shared-b"
+    description: |
+      M-mux selection (MUXSEL.MMUXSEL[2:0]). Controls the bottom node of the
+      internal feedback resistor ladder (Ria bottom).
+      standalone: naked op-amp / G=1, no internal gain (MMUXSEL=0).
+      non-inverting: feedback to VSSA, non-inverting gain x1..x64 (MMUXSEL=1).
+      inm0..inm3: inverting gain via local PGA_INMx pin (MMUXSEL=2..5).
+      neg-shared-a/b: select shared inputs from another PGA instance
+        (MMUXSEL=6,7).
+
+  ti,filter-resistor-ohms:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 50
+      - 100
+      - 200
+      - 400
+      - 800
+    description: |
+      On-chip series filter resistor at PGA_OUT pin (PGACTL.FILT_RES_SEL).
+      0 disables the filtered output path; it does not select a zero-ohm bypass.
+      Connect an external capacitor to PGA_OUT for an RC low-pass filter with
+      cutoff 1 / (2 * pi * R * C), so the value depends on the application.
+      Minimum values per gain setting (from TRM Table 23-6):
+        G=1..4: 50 ohm, G=8..16: 100 ohm, G=32: 200 ohm, G=64: 400 ohm.
+      Gain changes that require a higher resistance are rejected.
+
+  ti,output-to-pin:
+    type: boolean
+    description: |
+      Route the PGA output to the PGA_OUT package pin (PGACTL.PGA_OUTENABLE),
+      through the filter resistor selected by ti,filter-resistor-ohms. Without
+      a filter resistor the driver also closes the internal feedback path
+      (PGACTL.PGA_OUTEN_INTGAIN), so the gain is kept. The unfiltered
+      PGA_OUT_INT signal for the ADC and CMPSS is always available.
+
+  ti,chop-mode:
+    type: string
+    default: "disabled"
+    enum:
+      - "disabled"
+      - "adc-soc"
+    description: |
+      Chopping mode (MUXSEL.PGA_CHOP[1:0]).
+      disabled: no chopping (default).
+      adc-soc: select ADC-assisted chopping when using the corresponding ADC.
+        The acquisition sequence must account for the alternating chop phases.
+
+  ti,feedback-on-pin:
+    type: boolean
+    description: |
+      Connect PGA_INM0 and the inverting input together (MUXSEL.PGA_FBONPIN=1).
+      Used in non-inverting mode for single-pole low-pass filtering via an
+      external capacitor across the feedback loop.

@@ -9,4 +9,5 @@ flash: 512
 supported:
   - hwinfo
   - watchdog
+  - opamp
 vendor: ti

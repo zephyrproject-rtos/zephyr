@@ -14,6 +14,33 @@
 			compatible = "ti,mspm0-pinctrl";
 			reg = <0x400cc000 0x400>;
 		};
+
+		pga0: pga@400fc000 {
+			compatible = "ti,am13-pga";
+			reg = <0x400fc000 0x20>;
+			sysctl = <&sysctl>;
+			functional-mode = "non_inverting";
+			ti,power-bit = <1>;
+			status = "disabled";
+		};
+
+		pga1: pga@400fd000 {
+			compatible = "ti,am13-pga";
+			reg = <0x400fd000 0x20>;
+			sysctl = <&sysctl>;
+			functional-mode = "non_inverting";
+			ti,power-bit = <2>;
+			status = "disabled";
+		};
+
+		pga2: pga@400fe000 {
+			compatible = "ti,am13-pga";
+			reg = <0x400fe000 0x20>;
+			sysctl = <&sysctl>;
+			functional-mode = "non_inverting";
+			ti,power-bit = <3>;
+			status = "disabled";
+		};
 	};
 
 	cpus {
