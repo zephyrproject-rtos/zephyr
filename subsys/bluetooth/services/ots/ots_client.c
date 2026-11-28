@@ -1606,12 +1606,18 @@ static int decode_record(struct net_buf_simple *buf,
 {
 	uint16_t start_len = buf->len;
 
+	/* The fields that the record leaves out are reported as zero, not as the values of the
+	 * previous record
+	 */
+	memset(rec, 0, sizeof(*rec));
+
 	rec->len = net_buf_simple_pull_le16(buf);
 
-	if (rec->len > buf->len) {
+	/* The Record Length includes the Record Length field itself */
+	if (rec->len > start_len) {
 		LOG_WRN("incorrect DirListing record length %u, "
 			"longer than remaining size %u",
-			rec->len, buf->len);
+			rec->len, start_len);
 		return -EINVAL;
 	}
 
@@ -1661,7 +1667,6 @@ static int decode_record(struct net_buf_simple *buf,
 	}
 
 	rec->metadata.name_c[rec->name_len] = '\0';
-	rec->flags = 0;
 
 	if ((start_len - buf->len) + sizeof(uint8_t) > rec->len) {
 		LOG_WRN("incorrect DirListing record, reclen %u too short, "
@@ -1760,6 +1765,11 @@ static int decode_record(struct net_buf_simple *buf,
 
 		rec->metadata.props = net_buf_simple_pull_le32(buf);
 	}
+
+	/* Skip the octets that follow the fields above, such as an Extension field, to the start
+	 * of the next record
+	 */
+	(void)net_buf_simple_pull(buf, rec->len - (start_len - buf->len));
 
 	return rec->len;
 }
