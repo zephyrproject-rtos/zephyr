@@ -11,9 +11,8 @@
 #include <zephyr/init.h>
 #include <zephyr/irq.h>
 #include <zephyr/spinlock.h>
+#include <zephyr/drivers/misc/litex/litex_csr.h>
 #include <zephyr/drivers/timer/system_timer.h>
-
-#include <soc.h>
 
 #define TIMER_LOAD_ADDR			DT_INST_REG_ADDR_BY_NAME(0, load)
 #define TIMER_RELOAD_ADDR		DT_INST_REG_ADDR_BY_NAME(0, reload)
@@ -39,7 +38,7 @@ static void litex_timer_irq_handler(const void *device)
 {
 	unsigned int key = irq_lock();
 
-	litex_write8(TIMER_EV, TIMER_EV_PENDING_ADDR);
+	sys_write8(TIMER_EV, TIMER_EV_PENDING_ADDR);
 	sys_clock_announce(1);
 
 	irq_unlock(key);
@@ -51,7 +50,7 @@ uint32_t sys_clock_cycle_get_32(void)
 	uint32_t uptime_cycles;
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	litex_write8(TIMER_UPTIME_LATCH, TIMER_UPTIME_LATCH_ADDR);
+	sys_write8(TIMER_UPTIME_LATCH, TIMER_UPTIME_LATCH_ADDR);
 	uptime_cycles = (uint32_t)litex_read64(TIMER_UPTIME_CYCLES_ADDR);
 
 	k_spin_unlock(&lock, key);
@@ -65,7 +64,7 @@ uint64_t sys_clock_cycle_get_64(void)
 	uint64_t uptime_cycles;
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	litex_write8(TIMER_UPTIME_LATCH, TIMER_UPTIME_LATCH_ADDR);
+	sys_write8(TIMER_UPTIME_LATCH, TIMER_UPTIME_LATCH_ADDR);
 	uptime_cycles = litex_read64(TIMER_UPTIME_CYCLES_ADDR);
 
 	k_spin_unlock(&lock, key);
@@ -85,14 +84,14 @@ static int sys_clock_driver_init(void)
 			litex_timer_irq_handler, NULL, 0);
 	irq_enable(TIMER_IRQ);
 
-	litex_write8(TIMER_DISABLE, TIMER_EN_ADDR);
+	sys_write8(TIMER_DISABLE, TIMER_EN_ADDR);
 
-	litex_write32(k_ticks_to_cyc_floor32(1), TIMER_RELOAD_ADDR);
-	litex_write32(k_ticks_to_cyc_floor32(1), TIMER_LOAD_ADDR);
+	sys_write32(k_ticks_to_cyc_floor32(1), TIMER_RELOAD_ADDR);
+	sys_write32(k_ticks_to_cyc_floor32(1), TIMER_LOAD_ADDR);
 
-	litex_write8(TIMER_ENABLE, TIMER_EN_ADDR);
-	litex_write8(litex_read8(TIMER_EV_PENDING_ADDR), TIMER_EV_PENDING_ADDR);
-	litex_write8(TIMER_EV, TIMER_EV_ENABLE_ADDR);
+	sys_write8(TIMER_ENABLE, TIMER_EN_ADDR);
+	sys_write8(sys_read8(TIMER_EV_PENDING_ADDR), TIMER_EV_PENDING_ADDR);
+	sys_write8(TIMER_EV, TIMER_EV_ENABLE_ADDR);
 
 	return 0;
 }

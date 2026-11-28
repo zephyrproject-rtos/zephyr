@@ -7,14 +7,13 @@
 #define DT_DRV_COMPAT litex_watchdog
 
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/misc/litex/litex_csr.h>
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/device.h>
 #include <zephyr/sys/clock.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(wdt_litex, CONFIG_WDT_LOG_LEVEL);
-
-#include <soc.h>
 
 struct wdt_litex_data {
 	wdt_callback_t callback;
@@ -43,7 +42,7 @@ static bool wdt_litex_is_enabled(const struct device *dev)
 {
 	const struct wdt_litex_config *config = dev->config;
 
-	return litex_read8(config->control_addr) & BIT(0);
+	return sys_read8(config->control_addr) & BIT(0);
 }
 
 static void wdt_litex_irq_enable(const struct device *dev)
@@ -55,9 +54,9 @@ static void wdt_litex_irq_enable(const struct device *dev)
 		return;
 	}
 
-	litex_write8(BIT(0), config->ev_pending_addr);
+	sys_write8(BIT(0), config->ev_pending_addr);
 
-	litex_write8(BIT(0), config->ev_enable_addr);
+	sys_write8(BIT(0), config->ev_enable_addr);
 }
 
 static void wdt_litex_enable(const struct device *dev)
@@ -67,7 +66,7 @@ static void wdt_litex_enable(const struct device *dev)
 	uint32_t control;
 
 	if (config->cycles_size <= 4) {
-		litex_write32(k_ms_to_cyc_floor32(data->timeout), config->cycles_addr);
+		sys_write32(k_ms_to_cyc_floor32(data->timeout), config->cycles_addr);
 	} else {
 		litex_write64(k_ms_to_cyc_floor64(data->timeout), config->cycles_addr);
 	}
@@ -81,7 +80,7 @@ static void wdt_litex_enable(const struct device *dev)
 		control |= CONTROL_PAUSE_HALTED_BIT;
 	}
 
-	litex_write32(control, config->control_addr);
+	sys_write32(control, config->control_addr);
 
 	wdt_litex_irq_enable(dev);
 }
@@ -90,12 +89,12 @@ static int wdt_litex_disable(const struct device *dev)
 {
 	const struct wdt_litex_config *config = dev->config;
 
-	litex_write8(0, config->ev_enable_addr);
+	sys_write8(0, config->ev_enable_addr);
 
 	if (!wdt_litex_is_enabled(dev)) {
 		return -EFAULT;
 	}
-	litex_write16(CONTROL_ENABLE_BIT, config->control_addr);
+	sys_write16(CONTROL_ENABLE_BIT, config->control_addr);
 
 	return 0;
 }
@@ -108,7 +107,7 @@ static int wdt_litex_feed(const struct device *dev, int channel_id)
 		return -EINVAL;
 	}
 
-	litex_write8(CONTROL_FEED_BIT, config->control_addr);
+	sys_write8(CONTROL_FEED_BIT, config->control_addr);
 
 	return 0;
 }
@@ -185,7 +184,7 @@ static void wdt_litex_isr(void *arg)
 		data->callback(dev, 0);
 	}
 
-	litex_write8(BIT(0), config->ev_pending_addr);
+	sys_write8(BIT(0), config->ev_pending_addr);
 
 	irq_unlock(key);
 }

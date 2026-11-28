@@ -89,7 +89,7 @@ static void spi_litex_set_frequency(const struct device *dev, const struct spi_c
 		divisor = DIV_ROUND_UP(sys_clock_hw_cycles_per_sec(), (2 * config->frequency)) - 1;
 	}
 
-	litex_write32(divisor, dev_config->clk_divisor_addr);
+	sys_write32(divisor, dev_config->clk_divisor_addr);
 }
 
 static bool spi_litex_set_mode(const struct device *dev, const struct spi_config *config)
@@ -100,10 +100,10 @@ static bool spi_litex_set_mode(const struct device *dev, const struct spi_config
 	if (dev_config->phy_mode_addr != 0U) {
 		switch (config->operation & (SPI_MODE_CPOL | SPI_MODE_CPHA)) {
 		case 0:
-			litex_write8(SPI_LITEX_SPI_MODE_0, dev_config->phy_mode_addr);
+			sys_write8(SPI_LITEX_SPI_MODE_0, dev_config->phy_mode_addr);
 			return true;
 		case SPI_MODE_CPOL | SPI_MODE_CPHA:
-			litex_write8(SPI_LITEX_SPI_MODE_3, dev_config->phy_mode_addr);
+			sys_write8(SPI_LITEX_SPI_MODE_3, dev_config->phy_mode_addr);
 			return true;
 		default:
 			return false;
@@ -192,7 +192,7 @@ static void spiflash_len_mask_width_write(uint32_t len, uint32_t width, uint32_t
 	word |= tmp << (SPIFLASH_MASTER_PHYCONFIG_WIDTH_OFFSET * 8);
 	tmp = mask & BIT_MASK(8);
 	word |= tmp << (SPIFLASH_MASTER_PHYCONFIG_MASK_OFFSET * 8);
-	litex_write32(word, addr);
+	sys_write32(word, addr);
 }
 
 static void spi_litex_spi_do_tx(const struct device *dev)
@@ -215,7 +215,7 @@ static void spi_litex_spi_do_tx(const struct device *dev)
 	}
 
 	LOG_DBG("txd: 0x%x", txd);
-	litex_write32(txd, dev_config->master_rxtx_addr);
+	sys_write32(txd, dev_config->master_rxtx_addr);
 }
 
 static void spi_litex_spi_do_rx(const struct device *dev)
@@ -225,7 +225,7 @@ static void spi_litex_spi_do_rx(const struct device *dev)
 	struct spi_context *ctx = &data->ctx;
 	uint32_t rxd;
 
-	rxd = litex_read32(dev_config->master_rxtx_addr);
+	rxd = sys_read32(dev_config->master_rxtx_addr);
 	LOG_DBG("rxd: 0x%x", rxd);
 
 	if (spi_context_rx_buf_on(ctx)) {
@@ -243,24 +243,24 @@ static int spi_litex_xfer(const struct device *dev, const struct spi_config *con
 	struct spi_context *ctx = &data->ctx;
 	uint32_t rxd;
 
-	litex_write32(BIT(config->peripheral), dev_config->master_cs_addr);
+	sys_write32(BIT(config->peripheral), dev_config->master_cs_addr);
 
 	/* Flush RX buffer */
-	while ((litex_read8(dev_config->master_status_addr) &
+	while ((sys_read8(dev_config->master_status_addr) &
 		BIT(SPIFLASH_MASTER_STATUS_RX_READY_OFFSET))) {
-		rxd = litex_read32(dev_config->master_rxtx_addr);
+		rxd = sys_read32(dev_config->master_rxtx_addr);
 		LOG_DBG("flushed rxd: 0x%x", rxd);
 	}
 
-	while (!(litex_read8(dev_config->master_status_addr) &
+	while (!(sys_read8(dev_config->master_status_addr) &
 		 BIT(SPIFLASH_MASTER_STATUS_TX_READY_OFFSET))) {
-		(void)litex_read32(dev_config->master_rxtx_addr);
+		(void)sys_read32(dev_config->master_rxtx_addr);
 	}
 
 #if SPI_LITEX_ANY_HAS_IRQ
 	if (SPI_LITEX_HAS_IRQ) {
-		litex_write8(BIT(0), dev_config->master_ev_pending_addr);
-		litex_write8(BIT(0), dev_config->master_ev_enable_addr);
+		sys_write8(BIT(0), dev_config->master_ev_pending_addr);
+		sys_write8(BIT(0), dev_config->master_ev_enable_addr);
 
 		spi_litex_spi_do_tx(dev);
 
@@ -271,7 +271,7 @@ static int spi_litex_xfer(const struct device *dev, const struct spi_config *con
 	do {
 		spi_litex_spi_do_tx(dev);
 
-		while (!(litex_read8(dev_config->master_status_addr) &
+		while (!(sys_read8(dev_config->master_status_addr) &
 			 BIT(SPIFLASH_MASTER_STATUS_RX_READY_OFFSET))) {
 			/* Wait for RX data */
 		}
@@ -280,7 +280,7 @@ static int spi_litex_xfer(const struct device *dev, const struct spi_config *con
 	} while (spi_context_tx_on(ctx) || spi_context_rx_on(ctx));
 
 	if ((config->operation & SPI_HOLD_ON_CS) == 0) {
-		litex_write32(0, dev_config->master_cs_addr);
+		sys_write32(0, dev_config->master_cs_addr);
 	}
 
 	spi_context_complete(ctx, dev, 0);
@@ -358,7 +358,7 @@ static int spi_litex_release(const struct device *dev, const struct spi_config *
 		return -EINVAL;
 	}
 
-	litex_write32(0, dev_config->master_cs_addr);
+	sys_write32(0, dev_config->master_cs_addr);
 
 	spi_context_unlock_unconditionally(&data->ctx);
 	return 0;
@@ -371,19 +371,19 @@ static void spi_litex_irq_handler(const struct device *dev)
 	const struct spi_litex_dev_config *dev_config = dev->config;
 	struct spi_context *ctx = &data->ctx;
 
-	if (litex_read8(dev_config->master_ev_pending_addr) & BIT(0)) {
+	if (sys_read8(dev_config->master_ev_pending_addr) & BIT(0)) {
 		spi_litex_spi_do_rx(dev);
 
 		/* ack reader irq */
-		litex_write8(BIT(0), dev_config->master_ev_pending_addr);
+		sys_write8(BIT(0), dev_config->master_ev_pending_addr);
 
 		if (spi_context_tx_on(ctx) || spi_context_rx_on(ctx)) {
 			spi_litex_spi_do_tx(dev);
 		} else {
-			litex_write8(0, dev_config->master_ev_enable_addr);
+			sys_write8(0, dev_config->master_ev_enable_addr);
 
 			if ((ctx->config->operation & SPI_HOLD_ON_CS) == 0) {
-				litex_write32(0, dev_config->master_cs_addr);
+				sys_write32(0, dev_config->master_cs_addr);
 			}
 
 			spi_context_complete(ctx, dev, 0);

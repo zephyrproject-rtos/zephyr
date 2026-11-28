@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(i2c_litex, CONFIG_I2C_LOG_LEVEL);
 #include "i2c-priv.h"
 #include "i2c_bitbang.h"
 
-#include <soc.h>
+#include <zephyr/arch/cpu.h>
 
 #define SCL_BIT_POS                0
 #define SDA_DIR_BIT_POS            1
@@ -44,9 +44,9 @@ static inline void set_bit(uint32_t addr, uint32_t bit, uint32_t val)
 	uint32_t mask = BIT(bit);
 
 	if (val) {
-		litex_write8(litex_read8(addr) | mask, addr);
+		sys_write8(sys_read8(addr) | mask, addr);
 	} else {
-		litex_write8(litex_read8(addr) & ~mask, addr);
+		sys_write8(sys_read8(addr) & ~mask, addr);
 	}
 }
 
@@ -54,7 +54,7 @@ static inline int get_bit(uint32_t addr, uint32_t bit)
 {
 	uint32_t mask = BIT(bit);
 
-	return !!(litex_read8(addr) & mask);
+	return !!(sys_read8(addr) & mask);
 }
 
 static void i2c_litex_bitbang_set_scl(void *context, int state)
@@ -95,7 +95,7 @@ static int i2c_litex_init(const struct device *dev)
 	struct i2c_bitbang *bitbang = GET_I2C_BITBANG(dev);
 	int ret;
 
-	litex_write8(litex_read8(config->write_addr) | HIGH_STATE_ON_I2C_LINES, config->write_addr);
+	sys_write8(sys_read8(config->write_addr) | HIGH_STATE_ON_I2C_LINES, config->write_addr);
 	i2c_bitbang_init(bitbang, &i2c_litex_bitbang_io, (void *)config);
 
 	ret = i2c_bitbang_configure(bitbang,

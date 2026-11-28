@@ -7,6 +7,8 @@
 #define DT_DRV_COMPAT litex_mmc
 
 #include <errno.h>
+
+#include <zephyr/drivers/misc/litex/litex_csr.h>
 #include <zephyr/drivers/sdhc.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/logging/log.h>
@@ -14,10 +16,7 @@
 #include <zephyr/cache.h>
 #include <zephyr/sys/byteorder.h>
 
-
 LOG_MODULE_REGISTER(sdhc_litex, CONFIG_SDHC_LOG_LEVEL);
-
-#include <soc.h>
 
 #define SDCARD_CTRL_DATA_TRANSFER_NONE  0
 #define SDCARD_CTRL_DATA_TRANSFER_READ  1
@@ -94,16 +93,16 @@ static void set_clk_divider(const struct device *dev, enum sdhc_clock_speed spee
 {
 	uint32_t divider = DIV_ROUND_UP(sys_clock_hw_cycles_per_sec(), speed);
 
-	litex_write16(CLAMP(divider, 2, 256), DEV_CFG(dev)->phy_clocker_divider_addr);
+	sys_write16(CLAMP(divider, 2, 256), DEV_CFG(dev)->phy_clocker_divider_addr);
 }
 
 static int sdhc_litex_card_busy(const struct device *dev)
 {
 	const struct sdhc_litex_config *dev_config = dev->config;
 
-	return !IS_BIT_SET(litex_read8(dev_config->core_cmd_event_addr),
+	return !IS_BIT_SET(sys_read8(dev_config->core_cmd_event_addr),
 			   SDCARD_CORE_EVENT_DONE_BIT) &&
-	       !IS_BIT_SET(litex_read8(dev_config->core_data_event_addr),
+	       !IS_BIT_SET(sys_read8(dev_config->core_data_event_addr),
 			   SDCARD_CORE_EVENT_DONE_BIT);
 }
 
@@ -117,16 +116,16 @@ static int litex_mmc_send_cmd(const struct device *dev, uint8_t cmd, uint8_t tra
 	LOG_DBG("Requesting command: opcode=%d, transfer=%d, arg=0x%08x, response_len=%d", cmd,
 		transfer, arg, response_len);
 
-	litex_write32(arg, dev_config->core_cmd_argument_addr);
-	litex_write32(cmd << 8 | transfer << 5 | response_len, dev_config->core_cmd_command_addr);
+	sys_write32(arg, dev_config->core_cmd_argument_addr);
+	sys_write32(cmd << 8 | transfer << 5 | response_len, dev_config->core_cmd_command_addr);
 
 	k_event_clear(&dev_data->irq_event, SDCARD_EV_CMD_DONE | SDCARD_EV_DATA_DONE);
 
-	litex_write8(1, dev_config->core_cmd_send_addr);
+	sys_write8(1, dev_config->core_cmd_send_addr);
 
-	litex_write8(litex_read8(dev_config->ev_enable_addr) | SDCARD_EV_CMD_DONE |
-			     SDCARD_EV_DATA_DONE,
-		     dev_config->ev_enable_addr);
+	sys_write8(sys_read8(dev_config->ev_enable_addr) | SDCARD_EV_CMD_DONE |
+		   SDCARD_EV_DATA_DONE,
+		   dev_config->ev_enable_addr);
 
 	k_event_wait(&dev_data->irq_event, SDCARD_EV_CMD_DONE, false, K_FOREVER);
 
@@ -135,7 +134,7 @@ static int litex_mmc_send_cmd(const struct device *dev, uint8_t cmd, uint8_t tra
 		LOG_HEXDUMP_DBG(response, sizeof(uint32_t) * 4, "Response: ");
 	}
 
-	cmd_event = litex_read8(dev_config->core_cmd_event_addr);
+	cmd_event = sys_read8(dev_config->core_cmd_event_addr);
 
 	if (IS_BIT_SET(cmd_event, SDCARD_CORE_EVENT_ERROR_BIT)) {
 		LOG_WRN("Command error for cmd %d", cmd);
@@ -162,7 +161,7 @@ static int sdhc_litex_wait_for_dma(const struct device *dev, struct sdhc_command
 
 	k_event_wait(&dev_data->irq_event, SDCARD_EV_DATA_DONE, false, K_FOREVER);
 
-	data_event = litex_read8(dev_config->core_data_event_addr);
+	data_event = sys_read8(dev_config->core_data_event_addr);
 
 	if (dev_data->cmd23_not_supported && (data->blocks > 1) &&
 	    ((cmd->opcode == SD_READ_MULTIPLE_BLOCK) ||
@@ -207,8 +206,8 @@ static void sdhc_litex_prepare_dma(const struct device *dev, struct sdhc_command
 	const struct sdhc_litex_config *dev_config = dev->config;
 	uint32_t dma_length = data->block_size * data->blocks;
 
-	litex_write32(data->timeout_ms * (sys_clock_hw_cycles_per_sec() / MSEC_PER_SEC),
-		      dev_config->phy_datar_timeout_addr);
+	sys_write32(data->timeout_ms * (sys_clock_hw_cycles_per_sec() / MSEC_PER_SEC),
+		    dev_config->phy_datar_timeout_addr);
 
 	if ((cmd->opcode == SD_WRITE_SINGLE_BLOCK) ||
 	    (cmd->opcode == SD_WRITE_MULTIPLE_BLOCK) ||
@@ -218,20 +217,20 @@ static void sdhc_litex_prepare_dma(const struct device *dev, struct sdhc_command
 		if (IS_ENABLED(CONFIG_SDHC_LITEX_LITESDCARD_NO_COHERENT_DMA)) {
 			sys_cache_data_flush_range(data->data, dma_length);
 		}
-		litex_write8(0, dev_config->mem2block_dma_enable_addr);
+		sys_write8(0, dev_config->mem2block_dma_enable_addr);
 		litex_write64((uint64_t)(uintptr_t)(data->data),
 			      dev_config->mem2block_dma_base_addr);
-		litex_write32(dma_length, dev_config->mem2block_dma_length_addr);
+		sys_write32(dma_length, dev_config->mem2block_dma_length_addr);
 	} else {
 		*transfer = SDCARD_CTRL_DATA_TRANSFER_READ;
-		litex_write8(0, dev_config->block2mem_dma_enable_addr);
+		sys_write8(0, dev_config->block2mem_dma_enable_addr);
 		litex_write64((uint64_t)(uintptr_t)(data->data),
 			      dev_config->block2mem_dma_base_addr);
-		litex_write32(dma_length, dev_config->block2mem_dma_length_addr);
+		sys_write32(dma_length, dev_config->block2mem_dma_length_addr);
 	}
 
-	litex_write16(data->block_size, dev_config->core_block_length_addr);
-	litex_write32(data->blocks, dev_config->core_block_count_addr);
+	sys_write16(data->block_size, dev_config->core_block_length_addr);
+	sys_write32(data->blocks, dev_config->core_block_count_addr);
 }
 
 static void sdhc_litex_do_dma(const struct device *dev, struct sdhc_command *cmd,
@@ -254,11 +253,11 @@ static void sdhc_litex_do_dma(const struct device *dev, struct sdhc_command *cmd
 	k_event_clear(&dev_data->irq_event, SDCARD_EV_BLOCK2MEM_DMA | SDCARD_EV_MEM2BLOCK_DMA);
 
 	if (*transfer == SDCARD_CTRL_DATA_TRANSFER_WRITE) {
-		litex_write8(0, dev_config->mem2block_dma_enable_addr);
-		litex_write8(1, dev_config->mem2block_dma_enable_addr);
+		sys_write8(0, dev_config->mem2block_dma_enable_addr);
+		sys_write8(1, dev_config->mem2block_dma_enable_addr);
 	} else {
-		litex_write8(0, dev_config->block2mem_dma_enable_addr);
-		litex_write8(1, dev_config->block2mem_dma_enable_addr);
+		sys_write8(0, dev_config->block2mem_dma_enable_addr);
+		sys_write8(1, dev_config->block2mem_dma_enable_addr);
 	}
 }
 
@@ -284,11 +283,11 @@ static int sdhc_litex_request(const struct device *dev, struct sdhc_command *cmd
 
 	k_mutex_lock(&dev_data->lock, K_FOREVER);
 
-	litex_write32(cmd->timeout_ms * (sys_clock_hw_cycles_per_sec() / MSEC_PER_SEC),
-		      dev_config->phy_cmdr_timeout_addr);
+	sys_write32(cmd->timeout_ms * (sys_clock_hw_cycles_per_sec() / MSEC_PER_SEC),
+		    dev_config->phy_cmdr_timeout_addr);
 
 	if (cmd->opcode == SD_GO_IDLE_STATE) {
-		litex_write8(BIT(0), dev_config->phy_init_initialize_addr);
+		sys_write8(BIT(0), dev_config->phy_init_initialize_addr);
 		k_sleep(K_MSEC(1));
 	}
 
@@ -353,7 +352,7 @@ static int sdhc_litex_request(const struct device *dev, struct sdhc_command *cmd
 
 static int sdhc_litex_get_card_present(const struct device *dev)
 {
-	int ret = IS_BIT_SET(litex_read8(DEV_CFG(dev)->phy_card_detect_addr), 0) ? 0 : 1;
+	int ret = IS_BIT_SET(sys_read8(DEV_CFG(dev)->phy_card_detect_addr), 0) ? 0 : 1;
 
 	LOG_DBG("Card present check: %s present", ret ? "" : "not");
 
@@ -410,7 +409,7 @@ static int sdhc_litex_set_io(const struct device *dev, struct sdhc_io *ios)
 			break;
 		}
 
-		litex_write8(phy_settings, dev_config->phy_settings_addr);
+		sys_write8(phy_settings, dev_config->phy_settings_addr);
 	}
 
 	return 0;
@@ -434,14 +433,14 @@ static int sdhc_litex_init(const struct device *dev)
 	k_event_init(&dev_data->irq_event);
 	k_mutex_init(&dev_data->lock);
 
-	litex_write8(UINT8_MAX, dev_config->ev_pending_addr);
-	litex_write8(0, dev_config->ev_enable_addr);
+	sys_write8(UINT8_MAX, dev_config->ev_pending_addr);
+	sys_write8(0, dev_config->ev_enable_addr);
 
 	dev_config->irq_config_func();
 
-	litex_write8(SDCARD_EV_BLOCK2MEM_DMA | SDCARD_EV_MEM2BLOCK_DMA, dev_config->ev_enable_addr);
+	sys_write8(SDCARD_EV_BLOCK2MEM_DMA | SDCARD_EV_MEM2BLOCK_DMA, dev_config->ev_enable_addr);
 
-	litex_write8(SDCARD_PHY_SETTINGS_PHY_SPEED_1X, dev_config->phy_settings_addr);
+	sys_write8(SDCARD_PHY_SETTINGS_PHY_SPEED_1X, dev_config->phy_settings_addr);
 
 	return 0;
 }
@@ -450,18 +449,18 @@ static void sdhc_litex_irq_handler(const struct device *dev)
 {
 	struct sdhc_litex_data *dev_data = dev->data;
 	const struct sdhc_litex_config *dev_config = dev->config;
-	uint8_t ev_enable = litex_read8(dev_config->ev_enable_addr);
-	uint8_t ev_pending = litex_read8(dev_config->ev_pending_addr) & ev_enable;
+	uint8_t ev_enable = sys_read8(dev_config->ev_enable_addr);
+	uint8_t ev_pending = sys_read8(dev_config->ev_pending_addr) & ev_enable;
 
 	if (IS_BIT_SET(ev_pending, SDCARD_EV_DATA_DONE_BIT)) {
-		litex_write8(ev_enable & ~SDCARD_EV_DATA_DONE, dev_config->ev_enable_addr);
+		sys_write8(ev_enable & ~SDCARD_EV_DATA_DONE, dev_config->ev_enable_addr);
 	}
 
 	if (IS_BIT_SET(ev_pending, SDCARD_EV_CMD_DONE_BIT)) {
-		litex_write8(ev_enable & ~SDCARD_EV_CMD_DONE, dev_config->ev_enable_addr);
+		sys_write8(ev_enable & ~SDCARD_EV_CMD_DONE, dev_config->ev_enable_addr);
 	}
 
-	litex_write8(ev_pending, dev_config->ev_pending_addr);
+	sys_write8(ev_pending, dev_config->ev_pending_addr);
 
 	k_event_post(&dev_data->irq_event, ev_pending);
 }

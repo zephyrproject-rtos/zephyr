@@ -8,7 +8,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/sys/reboot.h>
-#include <soc.h>
+#include <zephyr/arch/cpu.h>
 
 #define LITEX_CTRL_RESET DT_INST_REG_ADDR_BY_NAME(0, reset)
 
@@ -16,5 +16,5 @@ void sys_arch_reboot(int type)
 {
 	ARG_UNUSED(type);
 	/* SoC Reset on BIT(0)*/
-	litex_write8(BIT(0), LITEX_CTRL_RESET);
+	sys_write8(BIT(0), LITEX_CTRL_RESET);
 }

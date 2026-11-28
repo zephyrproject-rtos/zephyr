@@ -11,7 +11,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/mdio.h>
 
-#include <soc.h>
+#include <zephyr/arch/cpu.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(litex_liteeth_mdio, CONFIG_MDIO_LOG_LEVEL);
@@ -41,12 +41,12 @@ static void mdio_litex_read(const struct mdio_litex_config *dev_cfg, uint16_t *p
 
 	for (int i = 0; i < 16; i++) {
 		data <<= 1;
-		if (litex_read8(dev_cfg->r_addr) & LITEX_MDIO_DI) {
+		if (sys_read8(dev_cfg->r_addr) & LITEX_MDIO_DI) {
 			data |= 1;
 		}
-		litex_write8(LITEX_MDIO_CLK, dev_cfg->w_addr);
+		sys_write8(LITEX_MDIO_CLK, dev_cfg->w_addr);
 		k_busy_wait(1);
-		litex_write8(0, dev_cfg->w_addr);
+		sys_write8(0, dev_cfg->w_addr);
 		k_busy_wait(1);
 	}
 
@@ -65,18 +65,18 @@ static void mdio_litex_write(const struct mdio_litex_config *dev_cfg, uint32_t d
 	v_data <<= 32 - v_len;
 	while (v_len > 0) {
 		if (v_data & LITEX_MDIO_MSB) {
-			litex_write8(LITEX_MDIO_DO | LITEX_MDIO_OE, dev_cfg->w_addr);
+			sys_write8(LITEX_MDIO_DO | LITEX_MDIO_OE, dev_cfg->w_addr);
 			k_busy_wait(1);
-			litex_write8(LITEX_MDIO_CLK | LITEX_MDIO_DO | LITEX_MDIO_OE,
-				     dev_cfg->w_addr);
+			sys_write8(LITEX_MDIO_CLK | LITEX_MDIO_DO | LITEX_MDIO_OE,
+				   dev_cfg->w_addr);
 			k_busy_wait(1);
-			litex_write8(LITEX_MDIO_DO | LITEX_MDIO_OE, dev_cfg->w_addr);
+			sys_write8(LITEX_MDIO_DO | LITEX_MDIO_OE, dev_cfg->w_addr);
 		} else {
-			litex_write8(LITEX_MDIO_OE, dev_cfg->w_addr);
+			sys_write8(LITEX_MDIO_OE, dev_cfg->w_addr);
 			k_busy_wait(1);
-			litex_write8(LITEX_MDIO_CLK | LITEX_MDIO_OE, dev_cfg->w_addr);
+			sys_write8(LITEX_MDIO_CLK | LITEX_MDIO_OE, dev_cfg->w_addr);
 			k_busy_wait(1);
-			litex_write8(LITEX_MDIO_OE, dev_cfg->w_addr);
+			sys_write8(LITEX_MDIO_OE, dev_cfg->w_addr);
 		}
 		v_data <<= 1;
 		v_len--;
@@ -86,13 +86,13 @@ static void mdio_litex_write(const struct mdio_litex_config *dev_cfg, uint32_t d
 static void mdio_litex_turnaround(const struct mdio_litex_config *dev_cfg)
 {
 	k_busy_wait(1);
-	litex_write8(LITEX_MDIO_CLK, dev_cfg->w_addr);
+	sys_write8(LITEX_MDIO_CLK, dev_cfg->w_addr);
 	k_busy_wait(1);
-	litex_write8(0, dev_cfg->w_addr);
+	sys_write8(0, dev_cfg->w_addr);
 	k_busy_wait(1);
-	litex_write8(LITEX_MDIO_CLK, dev_cfg->w_addr);
+	sys_write8(LITEX_MDIO_CLK, dev_cfg->w_addr);
 	k_busy_wait(1);
-	litex_write8(0, dev_cfg->w_addr);
+	sys_write8(0, dev_cfg->w_addr);
 }
 
 static int mdio_litex_transfer(const struct device *dev, uint8_t prtad, uint8_t devad, uint8_t rw,
@@ -103,7 +103,7 @@ static int mdio_litex_transfer(const struct device *dev, uint8_t prtad, uint8_t 
 
 	k_sem_take(&dev_data->sem, K_FOREVER);
 
-	litex_write8(LITEX_MDIO_OE, dev_cfg->w_addr);
+	sys_write8(LITEX_MDIO_OE, dev_cfg->w_addr);
 	/* PRE32: 32 bits '1' for sync*/
 	mdio_litex_write(dev_cfg, UINT32_MAX, 32);
 	/* ST: 2 bits start of frame */
