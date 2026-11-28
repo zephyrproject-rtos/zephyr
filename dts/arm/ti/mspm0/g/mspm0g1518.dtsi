@@ -25,21 +25,11 @@
 };
 
 &flash0 {
-	reg = <0x0 DT_SIZE_K(128)>;
-	ranges = <0x0 0x0 DT_SIZE_K(128)>;
+	reg = <0x0 DT_SIZE_K(256)>;
+	ranges = <0x0 0x0 DT_SIZE_K(256)>;
 };
 
 &flashctl {
-	flash1: flash@40000 {
-		compatible = "soc-nv-flash";
-		reg = <0x40000 DT_SIZE_K(128)>;
-		ranges = <0x0 0x40000 DT_SIZE_K(128)>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-		erase-block-size = <1024>;
-		write-block-size = <8>;
-	};
-
 	flash2: flash@41e00000 {
 		compatible = "soc-nv-flash";
 		reg = <0x41e00000 DT_SIZE_K(16)>;

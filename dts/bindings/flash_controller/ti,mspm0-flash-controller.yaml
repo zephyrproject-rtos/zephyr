@@ -1,4 +1,5 @@
 # Copyright (c) 2026 Texas Instruments Incorporated
+# Copyright (c) 2026 Linumiz
 # SPDX-License-Identifier: Apache-2.0
 
 description: TI MSPM0 internal flash controller
@@ -6,3 +7,20 @@ description: TI MSPM0 internal flash controller
 compatible: "ti,mspm0-flash-controller"
 
 include: flash-controller.yaml
+
+properties:
+  ti,num-banks:
+    type: int
+    default: 1
+    description: |
+      Number of flash banks the MAIN region is made of. The banks are equally
+      sized and contiguous in the system address space, and are described by
+      a single soc-nv-flash child node. The DATA bank is not part of it.
+
+  ti,no-weprota:
+    type: boolean
+    description: |
+      The flash controller does not implement the CMDWEPROTA register.
+      The write and erase protection of the MAIN region is handled by
+      CMDWEPROTB only, one bit per group of 8 sectors starting from the
+      sector 0 of each bank.
