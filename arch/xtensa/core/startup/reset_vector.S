@@ -14,6 +14,10 @@
 #include <xtensa/xtruntime-core-state.h>
 #include <zephyr/arch/xtensa/cp_sharing.h>
 
+#if XCHAL_HAVE_MPU
+#include <xtensa/mpuasm.h>
+#endif
+
 /*
  * The following reset vector avoids initializing certain registers already
  * initialized by processor reset.  But it does initialize some of them
@@ -381,6 +385,24 @@ _ResetHandler:
 	 *  memory protection mechanism, the following code has no effect.)
 	 */
 #if XCHAL_HAVE_MPU
+	/*
+	 * Program the MPU from __xt_mpu_init_table if the SoC or application
+	 * provides one. The table and its size must be readable before .data
+	 * and .bss are set up (e.g. in .rodata).
+	 */
+	.weak	__xt_mpu_init_table
+	.weak	__xt_mpu_init_table_size
+
+	movi	a2, __xt_mpu_init_table
+	movi	a3, __xt_mpu_init_table_size
+	beqz	a2, .Lno_user_mpu
+	beqz	a3, .Lno_user_mpu
+	l32i	a3, a3, 0
+	beqz	a3, .Lno_user_mpu
+	mpu_write_map	a2, a3, a12, a13, a14, a15
+	j	.Lno_default_mpu
+
+.Lno_user_mpu:
 	/*  If there's an empty background map, setup foreground maps to mimic
 	 *  region protection:
 	 */
@@ -440,6 +462,7 @@ _xtos_mpu_attribs:
 	movi	a9, XCHAL_MPU_BG_CACHEADRDIS
 # endif
 	wsr.cacheadrdis a9			 /* update cacheadrdis */
+.Lno_default_mpu:
 #elif XCHAL_HAVE_CACHEATTR || XCHAL_HAVE_MIMIC_CACHEATTR \
 		|| XCHAL_HAVE_XLT_CACHEATTR \
 		|| (XCHAL_HAVE_PTP_MMU && XCHAL_HAVE_SPANNING_WAY)
