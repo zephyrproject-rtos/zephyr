@@ -66,6 +66,9 @@ LOG_MODULE_REGISTER(bt_rfcomm);
 
 static sys_slist_t servers = SYS_SLIST_STATIC_INIT(&servers);
 
+/* Protects receive ownership and flow-control state across DLCs. */
+static struct k_spinlock rfcomm_rx_lock;
+
 #define RFCOMM_SESSION(_ch) CONTAINER_OF(_ch, \
 					 struct bt_rfcomm_session, br_chan.chan)
 
@@ -574,6 +577,7 @@ static void rfcomm_dlc_init(struct bt_rfcomm_dlc *dlc,
 			    bt_rfcomm_role_t role)
 {
 	struct k_work_sync sync;
+	k_spinlock_key_t key;
 
 	LOG_DBG("dlc %p", dlc);
 
@@ -592,8 +596,11 @@ static void rfcomm_dlc_init(struct bt_rfcomm_dlc *dlc,
 		dlc->rx_credit_limit = MIN(dlc->rx_credit_limit, RFCOMM_MAX_CREDITS);
 	}
 	dlc->rx_credit = dlc->rx_credit_limit;
-	atomic_clear(&dlc->rx_credit_inprogress);
+	key = k_spin_lock(&rfcomm_rx_lock);
+	dlc->rx_credit_inprogress = 0U;
+	dlc->rx_callback_buf = NULL;
 	atomic_clear(&dlc->flags);
+	k_spin_unlock(&rfcomm_rx_lock, key);
 	dlc->state = BT_RFCOMM_STATE_INIT;
 	dlc->role = role;
 	k_work_init_delayable(&dlc->rtx_work, rfcomm_dlc_rtx_timeout);
@@ -1255,19 +1262,14 @@ static int rfcomm_dlc_start(struct bt_rfcomm_dlc *dlc)
 static inline uint8_t rfcomm_dlc_get_available_credits(struct bt_rfcomm_dlc *dlc)
 {
 	uint8_t max_credits = RFCOMM_DLC_CREDITS_MAX(dlc);
-	atomic_val_t inprogress_credits = atomic_get(&dlc->rx_credit_inprogress);
+	k_spinlock_key_t key;
+	uint16_t inprogress_credits;
 
-	__ASSERT(inprogress_credits >= 0, "Negative inprogress credits");
+	key = k_spin_lock(&rfcomm_rx_lock);
+	inprogress_credits = dlc->rx_credit_inprogress;
+	k_spin_unlock(&rfcomm_rx_lock, key);
+
 	__ASSERT(inprogress_credits <= max_credits, "Inprogress credits exceeds max");
-
-	/* The case only occurs when there is no inprogress receiving buffer, but the app calls
-	 * bt_rfcomm_dlc_recv_complete().
-	 */
-	if (inprogress_credits < 0) {
-		/* In this case, treat as if there is no inprogress receiving buffer */
-		LOG_ERR("rx_credit_inprogress of %p is underflow", dlc);
-		inprogress_credits = 0;
-	}
 
 	return max_credits - inprogress_credits;
 }
@@ -1364,9 +1366,20 @@ static void rfcomm_session_send_fc_off_rsp(struct bt_rfcomm_session *session)
 
 static void rfcomm_dlc_fc_check_and_on(struct bt_rfcomm_dlc *dlc)
 {
+	k_spinlock_key_t key;
+	bool clear_requested;
 	int err;
 
-	if (!atomic_test_and_clear_bit(&dlc->flags, RFCOMM_FLAG_MSC_FC_CLEAR_REQ)) {
+	/* A previous buffer can complete while recv retains a new one. */
+	key = k_spin_lock(&rfcomm_rx_lock);
+	if (dlc->rx_credit_inprogress > 0U) {
+		atomic_clear_bit(&dlc->flags, RFCOMM_FLAG_MSC_FC_CLEAR_REQ);
+		k_spin_unlock(&rfcomm_rx_lock, key);
+		return;
+	}
+	clear_requested = atomic_test_and_clear_bit(&dlc->flags, RFCOMM_FLAG_MSC_FC_CLEAR_REQ);
+	k_spin_unlock(&rfcomm_rx_lock, key);
+	if (!clear_requested) {
 		return;
 	}
 
@@ -2226,20 +2239,20 @@ static void rfcomm_handle_msg(struct bt_rfcomm_session *session, struct net_buf 
 
 static int rfcomm_handle_recv_inprogress(struct bt_rfcomm_dlc *dlc)
 {
+	k_spinlock_key_t key;
 	int err = 0;
-	atomic_val_t old_rx_credit_inprogress;
 	uint8_t v24_signals = BT_RFCOMM_DEFAULT_V24_SIG;
-
-	old_rx_credit_inprogress = atomic_inc(&dlc->rx_credit_inprogress);
 
 	if (dlc->session->cfc == BT_RFCOMM_CFC_SUPPORTED) {
 		return 0;
 	}
 
-	if (old_rx_credit_inprogress != 0) {
-		LOG_DBG("Only set FC bit at the first time for DLC %p", dlc);
+	key = k_spin_lock(&rfcomm_rx_lock);
+	if (dlc->rx_credit_inprogress == 0U) {
+		k_spin_unlock(&rfcomm_rx_lock, key);
 		return 0;
 	}
+	k_spin_unlock(&rfcomm_rx_lock, key);
 
 	if (atomic_test_and_clear_bit(&dlc->flags, RFCOMM_FLAG_MSC_FC_CLEARED)) {
 		v24_signals = BT_RFCOMM_V24_SIGNALS_SET_FC(v24_signals);
@@ -2256,6 +2269,7 @@ static void rfcomm_handle_data(struct bt_rfcomm_session *session, struct net_buf
 			       uint8_t pf)
 {
 	struct bt_rfcomm_dlc *dlc;
+	bool first_inprogress = false;
 	int err = 0;
 
 	LOG_DBG("dlci %d, pf %d", dlci, pf);
@@ -2296,9 +2310,35 @@ static void rfcomm_handle_data(struct bt_rfcomm_session *session, struct net_buf
 	}
 
 	if (dlc->ops != NULL && dlc->ops->recv != NULL) {
-		err = dlc->ops->recv(dlc, net_buf_ref(buf));
-		if (err != -EINPROGRESS) {
+		k_spinlock_key_t key;
+		bool completed;
+
+		buf = net_buf_ref(buf);
+		key = k_spin_lock(&rfcomm_rx_lock);
+		dlc->rx_callback_buf = buf;
+		atomic_clear_bit(&dlc->flags, RFCOMM_FLAG_RX_CALLBACK_COMPLETED);
+		k_spin_unlock(&rfcomm_rx_lock, key);
+
+		err = dlc->ops->recv(dlc, buf);
+
+		key = k_spin_lock(&rfcomm_rx_lock);
+		completed = atomic_test_and_clear_bit(&dlc->flags,
+						      RFCOMM_FLAG_RX_CALLBACK_COMPLETED);
+		if (err == -EINPROGRESS && !completed) {
+			first_inprogress = dlc->rx_credit_inprogress == 0U;
+			dlc->rx_credit_inprogress++;
+		}
+		dlc->rx_callback_buf = NULL;
+		k_spin_unlock(&rfcomm_rx_lock, key);
+
+		if (err != -EINPROGRESS || completed) {
 			net_buf_unref(buf);
+		}
+		if (completed && err != -EINPROGRESS) {
+			LOG_ERR("DLC recv completed without returning -EINPROGRESS (%d)", err);
+			if (err == 0) {
+				err = -EINVAL;
+			}
 		}
 	}
 
@@ -2308,7 +2348,7 @@ static void rfcomm_handle_data(struct bt_rfcomm_session *session, struct net_buf
 		return;
 	}
 
-	if (err == -EINPROGRESS) {
+	if (err == -EINPROGRESS && first_inprogress) {
 		err = rfcomm_handle_recv_inprogress(dlc);
 		if (err != 0) {
 			/* The buffer should not be released here, because the rfcomm does not
@@ -2742,11 +2782,25 @@ void bt_rfcomm_init(void)
 int bt_rfcomm_dlc_recv_complete(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 {
 	struct bt_rfcomm_session *session;
-	atomic_val_t old_rx_credit_inprogress;
+	uint16_t old_rx_credit_inprogress;
+	k_spinlock_key_t key;
 
 	if (dlc == NULL || buf == NULL) {
 		return -EINVAL;
 	}
+
+	key = k_spin_lock(&rfcomm_rx_lock);
+	if (dlc->rx_callback_buf == buf) {
+		/* Commit the completion only after recv confirms the handoff. */
+		if (atomic_test_and_set_bit(&dlc->flags, RFCOMM_FLAG_RX_CALLBACK_COMPLETED)) {
+			k_spin_unlock(&rfcomm_rx_lock, key);
+			LOG_ERR("Buffer %p already completed during recv on dlc %p", buf, dlc);
+			return -EALREADY;
+		}
+		k_spin_unlock(&rfcomm_rx_lock, key);
+		return 0;
+	}
+	k_spin_unlock(&rfcomm_rx_lock, key);
 
 	net_buf_unref(buf);
 
@@ -2767,21 +2821,25 @@ int bt_rfcomm_dlc_recv_complete(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 		return -EINVAL;
 	}
 
-	old_rx_credit_inprogress = atomic_dec(&dlc->rx_credit_inprogress);
-	if (old_rx_credit_inprogress <= 0) {
-		atomic_inc(&dlc->rx_credit_inprogress);
+	key = k_spin_lock(&rfcomm_rx_lock);
+	old_rx_credit_inprogress = dlc->rx_credit_inprogress;
+	if (old_rx_credit_inprogress == 0U) {
+		k_spin_unlock(&rfcomm_rx_lock, key);
 		LOG_ERR("rx_credit_inprogress underflow for dlc %p", dlc);
 		return -EINVAL;
 	}
+	dlc->rx_credit_inprogress--;
 
 	if (session->cfc == BT_RFCOMM_CFC_NOT_SUPPORTED) {
-		if (old_rx_credit_inprogress > 1) {
+		if (old_rx_credit_inprogress > 1U) {
+			k_spin_unlock(&rfcomm_rx_lock, key);
 			LOG_DBG("Only clear FC bit at the last time for DLC %p", dlc);
 			return 0;
 		}
 
 		atomic_set_bit(&dlc->flags, RFCOMM_FLAG_MSC_FC_CLEAR_REQ);
 	}
+	k_spin_unlock(&rfcomm_rx_lock, key);
 
 	rfcomm_dlc_tx_trigger(dlc);
 
