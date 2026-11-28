@@ -13,8 +13,17 @@
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/logging/log.h>
+
+/* True for the instance chosen as the system-timer low-power companion. */
+#if DT_HAS_CHOSEN(zephyr_system_timer_companion)
+#define COUNTER_MSPM_TIMER_IS_COMPANION(n) \
+	DT_SAME_NODE(DT_DRV_INST(n), DT_CHOSEN(zephyr_system_timer_companion))
+#else
+#define COUNTER_MSPM_TIMER_IS_COMPANION(n) 0
+#endif /* DT_HAS_CHOSEN(zephyr_system_timer_companion) */
 
 LOG_MODULE_REGISTER(mspm0_counter, CONFIG_COUNTER_LOG_LEVEL);
 
@@ -125,7 +134,7 @@ BUILD_ASSERT(offsetof(struct mspm0_gptimer_regs, counterregs) == 0x1800U);
 /* COMMONREGS.CCLKCTL */
 #define GPTIMER_CCLKCTL_CLKEN_ENABLED 0x00000001U
 
-/* CPU_INT interrupt bits (IMASK / RIS / ICLR) */
+/* CPU_INT interrupt bits (IMASK / MIS / ICLR) */
 #define GPTIMER_CPU_INT_IMASK_L_SET 0x00000002U
 
 #endif /* !CONFIG_HAS_MSPM0_SDK */
@@ -187,6 +196,7 @@ struct counter_mspm0_config {
 	uint32_t prescaler;
 	unsigned int irqn;
 	void (*irq_config_func)(void);
+	bool is_companion;
 };
 
 /* Software-pending interrupt for late alarm detection */
@@ -398,7 +408,7 @@ static uint32_t counter_mspm0_get_pending_int(const struct device *dev)
 	for (int i = 0; i < config->counter_info.channels; i++) {
 		mask |= GPTIMER_CPU_INT_CCU_MASK(i);
 	}
-	return !!(config->base->cpu_int.ris & mask);
+	return !!(config->base->cpu_int.mis & mask);
 }
 
 static uint32_t counter_mspm0_get_freq(const struct device *dev)
@@ -471,8 +481,25 @@ static int counter_mspm0_init(const struct device *dev)
 
 	config->irq_config_func();
 
+	/* Start the counter since its expected to be on when its used as lpm
+	 * companion.
+	 */
+	if (config->is_companion) {
+		counter_mspm0_start(dev);
+	}
+
 	return 0;
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int counter_mspm0_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(action);
+
+	return -ENOTSUP;
+}
+#endif /* CONFIG_PM_DEVICE */
 
 static DEVICE_API(counter, mspm0_counter_api) = {
 	.start = counter_mspm0_start,
@@ -498,14 +525,14 @@ static void counter_mspm0_isr(void *arg)
 	struct mspm0_gptimer_regs *base = config->base;
 	counter_alarm_callback_t cb;
 	void *user_data;
-	uint32_t ris;
+	uint32_t mis;
 
-	ris = base->cpu_int.ris;
-	base->cpu_int.iclr = ris;
+	mis = base->cpu_int.mis;
+	base->cpu_int.iclr = mis;
 
 	unsigned int key = irq_lock();
 
-	if ((ris & GPTIMER_CPU_INT_IMASK_L_SET) && data->top_cb) {
+	if ((mis & GPTIMER_CPU_INT_IMASK_L_SET) && data->top_cb) {
 		counter_top_callback_t top_cb = data->top_cb;
 		void *top_user = data->top_user_data;
 
@@ -516,7 +543,7 @@ static void counter_mspm0_isr(void *arg)
 	}
 
 	for (int i = 0; i < config->counter_info.channels; i++) {
-		bool hw = !!(ris & GPTIMER_CPU_INT_CCU_MASK(i));
+		bool hw = !!(mis & GPTIMER_CPU_INT_CCU_MASK(i));
 		bool sw = !!(atomic_and(&data->cc_int_pending, ~BIT(i)) & BIT(i));
 
 		if (!hw && !sw) {
@@ -550,6 +577,7 @@ static void counter_mspm0_isr(void *arg)
 	BUILD_ASSERT(DT_INST_PROP(n, channels) <= 4,					\
 		     "channels exceeds hardware maximum of 4");				\
 	static struct counter_mspm0_data counter_mspm0_data_ ## n;			\
+	PM_DEVICE_DT_INST_DEFINE(n, counter_mspm0_pm_action);				\
 	MSPM0_COUNTER_IRQ_REGISTER(n)							\
 											\
 	static const struct counter_mspm0_config counter_mspm0_config_ ## n = {		\
@@ -560,7 +588,7 @@ static void counter_mspm0_isr(void *arg)
 			.clk = DT_CLOCKS_CELL_BY_IDX(DT_INST_PARENT(n), 0, clk),	\
 			},								\
 		.irq_config_func = (mspm0_ ## n ##_irq_register),			\
-		.clk_sel = MSPM0_CLOCK_PERIPH_REG_MASK(				\
+		.clk_sel = MSPM0_CLOCK_PERIPH_REG_MASK(					\
 				DT_CLOCKS_CELL_BY_IDX(DT_INST_PARENT(n), 0, clk)),	\
 		.clk_div_reg = DT_PROP(DT_INST_PARENT(n), ti_clk_div) - 1U,		\
 		.prescaler = DT_PROP(DT_INST_PARENT(n), ti_clk_prescaler),		\
@@ -568,12 +596,13 @@ static void counter_mspm0_isr(void *arg)
 		.counter_info = {.max_top_value = (DT_INST_PROP(n, resolution) == 32)	\
 							? UINT32_MAX : UINT16_MAX,	\
 				 .flags = COUNTER_CONFIG_INFO_COUNT_UP,			\
-				 .channels = DT_INST_PROP(n, channels)},			\
+				 .channels = DT_INST_PROP(n, channels)},		\
+		.is_companion = COUNTER_MSPM_TIMER_IS_COMPANION(n),			\
 	};										\
 											\
 	DEVICE_DT_INST_DEFINE(n,							\
 			      counter_mspm0_init,					\
-			      NULL,							\
+			      PM_DEVICE_DT_INST_GET(n),					\
 			      &counter_mspm0_data_ ## n,				\
 			      &counter_mspm0_config_ ## n,				\
 			      POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,		\

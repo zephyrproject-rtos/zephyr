@@ -22,4 +22,5 @@ supported:
   - trng
   - watchdog
   - rtc
+  - counter
 vendor: ti
