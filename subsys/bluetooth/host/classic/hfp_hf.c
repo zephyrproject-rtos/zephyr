@@ -158,7 +158,7 @@ static struct bt_sdp_attribute hfp_attrs[] = {
 
 static struct bt_sdp_record hfp_rec = BT_SDP_RECORD(hfp_attrs);
 
-void hf_slc_error(struct at_client *hf_at)
+static void hf_slc_error(struct at_client *hf_at)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
 	int err;
@@ -253,8 +253,8 @@ static void hfp_hf_send_data(struct bt_hfp_hf *hf)
 	}
 }
 
-int hfp_hf_send_cmd(struct bt_hfp_hf *hf, at_resp_cb_t resp,
-		    at_finish_cb_t finish, const char *format, ...)
+static int hfp_hf_send_cmd(struct bt_hfp_hf *hf, at_resp_cb_t resp,
+			   at_finish_cb_t finish, const char *format, ...)
 {
 	struct net_buf *buf;
 	va_list vargs;
@@ -289,7 +289,7 @@ int hfp_hf_send_cmd(struct bt_hfp_hf *hf, at_resp_cb_t resp,
 	return 0;
 }
 
-int brsf_handle(struct at_client *hf_at)
+static int brsf_handle(struct at_client *hf_at)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
 	uint32_t val;
@@ -313,7 +313,7 @@ int brsf_handle(struct at_client *hf_at)
 	return 0;
 }
 
-int brsf_resp(struct at_client *hf_at, struct net_buf *buf)
+static int brsf_resp(struct at_client *hf_at, struct net_buf *buf)
 {
 	int err;
 
@@ -358,7 +358,7 @@ static void cind_handle_values(struct at_client *hf_at, uint32_t index,
 	}
 }
 
-int cind_handle(struct at_client *hf_at)
+static int cind_handle(struct at_client *hf_at)
 {
 	uint32_t index = 0U;
 
@@ -408,7 +408,7 @@ error:
 	return -EINVAL;
 }
 
-int cind_resp(struct at_client *hf_at, struct net_buf *buf)
+static int cind_resp(struct at_client *hf_at, struct net_buf *buf)
 {
 	int err;
 
@@ -1337,8 +1337,8 @@ static void ag_indicator_handle_call_held(struct bt_hfp_hf *hf, uint32_t value)
 	}
 }
 
-void ag_indicator_handle_values(struct at_client *hf_at, uint32_t index,
-				uint32_t value)
+static void ag_indicator_handle_values(struct at_client *hf_at, uint32_t index,
+				       uint32_t value)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
 
@@ -1401,7 +1401,7 @@ void ag_indicator_handle_values(struct at_client *hf_at, uint32_t index,
 	}
 }
 
-int cind_status_handle(struct at_client *hf_at)
+static int cind_status_handle(struct at_client *hf_at)
 {
 	uint32_t index = 0U;
 
@@ -1423,7 +1423,7 @@ int cind_status_handle(struct at_client *hf_at)
 	return 0;
 }
 
-int cind_status_resp(struct at_client *hf_at, struct net_buf *buf)
+static int cind_status_resp(struct at_client *hf_at, struct net_buf *buf)
 {
 	int err;
 
@@ -1437,7 +1437,7 @@ int cind_status_resp(struct at_client *hf_at, struct net_buf *buf)
 	return 0;
 }
 
-int ciev_handle(struct at_client *hf_at)
+static int ciev_handle(struct at_client *hf_at)
 {
 	uint32_t index, value;
 	int ret;
@@ -1464,7 +1464,7 @@ int ciev_handle(struct at_client *hf_at)
 	return 0;
 }
 
-int ring_handle(struct at_client *hf_at)
+static int ring_handle(struct at_client *hf_at)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
 	struct bt_hfp_hf_call *call;
@@ -1486,7 +1486,7 @@ int ring_handle(struct at_client *hf_at)
 }
 
 #if defined(CONFIG_BT_HFP_HF_CLI)
-int clip_handle(struct at_client *hf_at)
+static int clip_handle(struct at_client *hf_at)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
 	const char *number;
@@ -1522,7 +1522,7 @@ int clip_handle(struct at_client *hf_at)
 #endif /* CONFIG_BT_HFP_HF_CLI */
 
 #if defined(CONFIG_BT_HFP_HF_VOLUME)
-int vgm_handle(struct at_client *hf_at)
+static int vgm_handle(struct at_client *hf_at)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
 	uint32_t gain;
@@ -1546,7 +1546,7 @@ int vgm_handle(struct at_client *hf_at)
 	return 0;
 }
 
-int vgs_handle(struct at_client *hf_at)
+static int vgs_handle(struct at_client *hf_at)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
 	uint32_t gain;
@@ -1571,7 +1571,7 @@ int vgs_handle(struct at_client *hf_at)
 }
 #endif /* CONFIG_BT_HFP_HF_VOLUME */
 
-int bsir_handle(struct at_client *hf_at)
+static int bsir_handle(struct at_client *hf_at)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
 	uint32_t inband;
@@ -1596,7 +1596,7 @@ int bsir_handle(struct at_client *hf_at)
 }
 
 #if defined(CONFIG_BT_HFP_HF_CODEC_NEG)
-int bcs_handle(struct at_client *hf_at)
+static int bcs_handle(struct at_client *hf_at)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
 	uint32_t codec_id;
@@ -1730,7 +1730,7 @@ static int get_chld_feature(const char *name)
 	return -EINVAL;
 }
 
-int chld_handle(struct at_client *hf_at)
+static int chld_handle(struct at_client *hf_at)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
 	const char *value;
@@ -1931,7 +1931,7 @@ static const struct unsolicited *hfp_hf_unsol_lookup(struct at_client *hf_at)
 	return NULL;
 }
 
-int unsolicited_cb(struct at_client *hf_at, struct net_buf *buf)
+static int unsolicited_cb(struct at_client *hf_at, struct net_buf *buf)
 {
 	const struct unsolicited *handler;
 
@@ -2386,7 +2386,7 @@ static int slc_init_start(struct bt_hfp_hf *hf)
 	return err;
 }
 
-int hf_slc_establish(struct bt_hfp_hf *hf)
+static int hf_slc_establish(struct bt_hfp_hf *hf)
 {
 	int err;
 

@@ -532,7 +532,7 @@ void bt_hci_link_key_notify(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
-void link_key_neg_reply(const bt_addr_t *bdaddr)
+static void link_key_neg_reply(const bt_addr_t *bdaddr)
 {
 	struct bt_hci_cp_link_key_neg_reply *cp;
 	struct net_buf *buf;
@@ -550,7 +550,7 @@ void link_key_neg_reply(const bt_addr_t *bdaddr)
 	bt_hci_cmd_send_sync(BT_HCI_OP_LINK_KEY_NEG_REPLY, net_buf_take_plain(&buf), NULL);
 }
 
-void link_key_reply(const bt_addr_t *bdaddr, const uint8_t *lk)
+static void link_key_reply(const bt_addr_t *bdaddr, const uint8_t *lk)
 {
 	struct bt_hci_cp_link_key_reply *cp;
 	struct net_buf *buf;
@@ -608,7 +608,7 @@ void bt_hci_link_key_req(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
-void io_capa_neg_reply(const bt_addr_t *bdaddr, const uint8_t reason)
+static void io_capa_neg_reply(const bt_addr_t *bdaddr, const uint8_t reason)
 {
 	struct bt_hci_cp_io_capability_neg_reply *cp;
 	struct net_buf *resp_buf;

@@ -123,87 +123,87 @@ static void hf_sco_disconnected(struct bt_conn *sco_conn, uint8_t reason)
 	}
 }
 
-void hf_service(struct bt_hfp_hf *hf, uint32_t value)
+static void hf_service(struct bt_hfp_hf *hf, uint32_t value)
 {
 	bt_shell_print("HF service %d", value);
 }
 
-void hf_outgoing(struct bt_hfp_hf *hf, struct bt_hfp_hf_call *call)
+static void hf_outgoing(struct bt_hfp_hf *hf, struct bt_hfp_hf_call *call)
 {
 	hf_add_a_call(call);
 	bt_shell_print("HF call %p outgoing", call);
 }
 
-void hf_remote_ringing(struct bt_hfp_hf_call *call)
+static void hf_remote_ringing(struct bt_hfp_hf_call *call)
 {
 	bt_shell_print("HF remote call %p start ringing", call);
 }
 
-void hf_incoming(struct bt_hfp_hf *hf, struct bt_hfp_hf_call *call)
+static void hf_incoming(struct bt_hfp_hf *hf, struct bt_hfp_hf_call *call)
 {
 	hf_add_a_call(call);
 	bt_shell_print("HF call %p incoming", call);
 }
 
-void hf_incoming_held(struct bt_hfp_hf_call *call)
+static void hf_incoming_held(struct bt_hfp_hf_call *call)
 {
 	bt_shell_print("HF call %p is held", call);
 }
 
-void hf_accept(struct bt_hfp_hf_call *call)
+static void hf_accept(struct bt_hfp_hf_call *call)
 {
 	bt_shell_print("HF call %p accepted", call);
 }
 
-void hf_reject(struct bt_hfp_hf_call *call)
+static void hf_reject(struct bt_hfp_hf_call *call)
 {
 	hf_remove_a_call(call);
 	bt_shell_print("HF call %p rejected", call);
 }
 
-void hf_terminate(struct bt_hfp_hf_call *call)
+static void hf_terminate(struct bt_hfp_hf_call *call)
 {
 	hf_remove_a_call(call);
 	bt_shell_print("HF call %p terminated", call);
 }
 
-void hf_held(struct bt_hfp_hf_call *call)
+static void hf_held(struct bt_hfp_hf_call *call)
 {
 	bt_shell_print("hf call %p held", call);
 }
 
-void hf_retrieve(struct bt_hfp_hf_call *call)
+static void hf_retrieve(struct bt_hfp_hf_call *call)
 {
 	bt_shell_print("hf call %p retrieve", call);
 }
 
-void hf_signal(struct bt_hfp_hf *hf, uint32_t value)
+static void hf_signal(struct bt_hfp_hf *hf, uint32_t value)
 {
 	bt_shell_print("HF signal %d", value);
 }
 
-void hf_roam(struct bt_hfp_hf *hf, uint32_t value)
+static void hf_roam(struct bt_hfp_hf *hf, uint32_t value)
 {
 	bt_shell_print("HF roam %d", value);
 }
 
-void hf_battery(struct bt_hfp_hf *hf, uint32_t value)
+static void hf_battery(struct bt_hfp_hf *hf, uint32_t value)
 {
 	bt_shell_print("HF battery %d", value);
 }
 
-void hf_ring_indication(struct bt_hfp_hf_call *call)
+static void hf_ring_indication(struct bt_hfp_hf_call *call)
 {
 	bt_shell_print("HF call %p ring", call);
 }
 
-void hf_dialing(struct bt_hfp_hf *hf, int err)
+static void hf_dialing(struct bt_hfp_hf *hf, int err)
 {
 	bt_shell_print("HF start dialing call: err %d", err);
 }
 
 #if defined(CONFIG_BT_HFP_HF_CLI)
-void hf_clip(struct bt_hfp_hf_call *call, const char *number, uint8_t type)
+static void hf_clip(struct bt_hfp_hf_call *call, const char *number, uint8_t type)
 {
 	bt_shell_print("HF call %p CLIP %s %d", call, number, type);
 }
@@ -263,28 +263,28 @@ static void hf_call_waiting(struct bt_hfp_hf_call *call, const char *number, uin
 #endif /* CONFIG_BT_HFP_HF_3WAY_CALL */
 
 #if defined(CONFIG_BT_HFP_HF_VOICE_RECG)
-void hf_voice_recognition(struct bt_hfp_hf *hf, bool activate)
+static void hf_voice_recognition(struct bt_hfp_hf *hf, bool activate)
 {
 	bt_shell_print("Voice recognition %s", activate ? "activate" : "deactivate");
 }
 
 #if defined(CONFIG_BT_HFP_HF_ENH_VOICE_RECG)
-void hf_vre_state(struct bt_hfp_hf *hf, uint8_t state)
+static void hf_vre_state(struct bt_hfp_hf *hf, uint8_t state)
 {
 	bt_shell_print("Voice recognition engine state %d", state);
 }
 #endif /* CONFIG_BT_HFP_HF_ENH_VOICE_RECG */
 
 #if defined(CONFIG_BT_HFP_HF_VOICE_RECG_TEXT)
-void hf_textual_representation(struct bt_hfp_hf *hf, char *id, uint8_t type, uint8_t operation,
-			       const char *text)
+static void hf_textual_representation(struct bt_hfp_hf *hf, char *id, uint8_t type,
+				      uint8_t operation, const char *text)
 {
 	bt_shell_print("Text id %s, type %d, operation %d, string %s", id, type, operation, text);
 }
 #endif /* CONFIG_BT_HFP_HF_VOICE_RECG_TEXT */
 #endif /* CONFIG_BT_HFP_HF_VOICE_RECG */
 
-void hf_request_phone_number(struct bt_hfp_hf *hf, const char *number)
+static void hf_request_phone_number(struct bt_hfp_hf *hf, const char *number)
 {
 	if (number) {
 		bt_shell_print("Requested phone number %s", number);
@@ -293,13 +293,14 @@ void hf_request_phone_number(struct bt_hfp_hf *hf, const char *number)
 	}
 }
 
-void hf_subscriber_number(struct bt_hfp_hf *hf, const char *number, uint8_t type, uint8_t service)
+static void hf_subscriber_number(struct bt_hfp_hf *hf, const char *number, uint8_t type,
+				 uint8_t service)
 {
 	bt_shell_print("Subscriber number %s, type %d, service %d", number, type, service);
 }
 
 #if defined(CONFIG_BT_HFP_HF_ECS)
-void hf_query_call(struct bt_hfp_hf *hf, struct bt_hfp_hf_current_call *call)
+static void hf_query_call(struct bt_hfp_hf *hf, struct bt_hfp_hf_current_call *call)
 {
 	if (call == NULL) {
 		return;
@@ -1287,47 +1288,49 @@ static void ag_codec(struct bt_hfp_ag *ag, uint32_t ids)
 	bt_shell_print("AG received codec id bit map %x", ids);
 }
 
-void ag_vgm(struct bt_hfp_ag *ag, uint8_t gain)
+static void ag_vgm(struct bt_hfp_ag *ag, uint8_t gain)
 {
 	bt_shell_print("AG received vgm %d", gain);
 }
 
-void ag_vgs(struct bt_hfp_ag *ag, uint8_t gain)
+static void ag_vgs(struct bt_hfp_ag *ag, uint8_t gain)
 {
 	bt_shell_print("AG received vgs %d", gain);
 }
 
-void ag_codec_negotiate(struct bt_hfp_ag *ag, int err)
+static void ag_codec_negotiate(struct bt_hfp_ag *ag, int err)
 {
 	bt_shell_print("AG codec negotiation result %d", err);
 }
 
-void ag_audio_connect_req(struct bt_hfp_ag *ag)
+static void ag_audio_connect_req(struct bt_hfp_ag *ag)
 {
 	bt_shell_print("Receive audio connect request. "
 		       "Input `hfp ag audio_connect` to start audio connect");
 }
 
-void ag_ecnr_turn_off(struct bt_hfp_ag *ag)
+#if defined(CONFIG_BT_HFP_AG_ECNR)
+static void ag_ecnr_turn_off(struct bt_hfp_ag *ag)
 {
 	bt_shell_print("encr is disabled");
 }
+#endif /* CONFIG_BT_HFP_AG_ECNR */
 
 #if defined(CONFIG_BT_HFP_AG_3WAY_CALL)
-void ag_explicit_call_transfer(struct bt_hfp_ag *ag)
+static void ag_explicit_call_transfer(struct bt_hfp_ag *ag)
 {
 	bt_shell_print("explicit call transfer");
 }
 #endif /* CONFIG_BT_HFP_AG_3WAY_CALL */
 
 #if defined(CONFIG_BT_HFP_AG_VOICE_RECG)
-void ag_voice_recognition(struct bt_hfp_ag *ag, bool activate)
+static void ag_voice_recognition(struct bt_hfp_ag *ag, bool activate)
 {
 	bt_shell_print("AG Voice recognition %s", activate ? "activate" : "deactivate");
 }
 
 #if defined(CONFIG_BT_HFP_AG_ENH_VOICE_RECG)
-void ag_ready_to_accept_audio(struct bt_hfp_ag *ag)
+static void ag_ready_to_accept_audio(struct bt_hfp_ag *ag)
 {
 	bt_shell_print("hf is ready to accept audio");
 }
@@ -1335,7 +1338,7 @@ void ag_ready_to_accept_audio(struct bt_hfp_ag *ag)
 #endif /* CONFIG_BT_HFP_AG_VOICE_RECG */
 
 #if defined(CONFIG_BT_HFP_AG_VOICE_TAG)
-int ag_request_phone_number(struct bt_hfp_ag *ag, char **number)
+static int ag_request_phone_number(struct bt_hfp_ag *ag, char **number)
 {
 	static bool valid_number;
 
@@ -1350,7 +1353,7 @@ int ag_request_phone_number(struct bt_hfp_ag *ag, char **number)
 }
 #endif /* CONFIG_BT_HFP_AG_VOICE_TAG */
 
-void ag_transmit_dtmf_code(struct bt_hfp_ag *ag, char code)
+static void ag_transmit_dtmf_code(struct bt_hfp_ag *ag, char code)
 {
 	bt_shell_print("DTMF code is %c", code);
 }
@@ -1374,7 +1377,7 @@ struct {
 
 static bool subscriber;
 
-int ag_subscriber_number(struct bt_hfp_ag *ag, bt_hfp_ag_query_subscriber_func_t func)
+static int ag_subscriber_number(struct bt_hfp_ag *ag, bt_hfp_ag_query_subscriber_func_t func)
 {
 	int err;
 
@@ -1391,8 +1394,8 @@ int ag_subscriber_number(struct bt_hfp_ag *ag, bt_hfp_ag_query_subscriber_func_t
 	return 0;
 }
 
-void ag_hf_indicator_value(struct bt_hfp_ag *ag, enum hfp_ag_hf_indicators indicator,
-			   uint32_t value)
+static void ag_hf_indicator_value(struct bt_hfp_ag *ag, enum hfp_ag_hf_indicators indicator,
+				 uint32_t value)
 {
 	bt_shell_print("indicator %d value %d", indicator, value);
 }

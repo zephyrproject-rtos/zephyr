@@ -39,6 +39,17 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_l2cap_br, CONFIG_BT_L2CAP_LOG_LEVEL);
 
+#if defined(CONFIG_BT_L2CAP_LOG_LEVEL_DBG)
+static void bt_l2cap_br_chan_set_state_debug(struct bt_l2cap_chan *chan,
+					    bt_l2cap_chan_state_t state,
+					    const char *func, int line);
+#define bt_l2cap_br_chan_set_state(_chan, _state) \
+	bt_l2cap_br_chan_set_state_debug(_chan, _state, __func__, __LINE__)
+#else
+static void bt_l2cap_br_chan_set_state(struct bt_l2cap_chan *chan,
+				      bt_l2cap_chan_state_t state);
+#endif /* CONFIG_BT_L2CAP_LOG_LEVEL_DBG */
+
 #define BR_CHAN_RTX(_w) CONTAINER_OF(k_work_delayable_from_work(_w), \
 				     struct bt_l2cap_br_chan, rtx_work)
 
@@ -3007,8 +3018,9 @@ static void l2cap_br_conn_req_reply(struct bt_l2cap_br *l2cap, struct bt_l2cap_c
 }
 
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL) && defined(CONFIG_BT_L2CAP_LOG_LEVEL_DBG)
-void bt_l2cap_br_chan_set_state_debug(struct bt_l2cap_chan *chan, bt_l2cap_chan_state_t state,
-				      const char *func, int line)
+static void bt_l2cap_br_chan_set_state_debug(struct bt_l2cap_chan *chan,
+					    bt_l2cap_chan_state_t state,
+					    const char *func, int line)
 {
 	struct bt_l2cap_br_chan *br_chan;
 
@@ -3052,7 +3064,7 @@ void bt_l2cap_br_chan_set_state_debug(struct bt_l2cap_chan *chan, bt_l2cap_chan_
 	br_chan->state = state;
 }
 #else
-void bt_l2cap_br_chan_set_state(struct bt_l2cap_chan *chan, bt_l2cap_chan_state_t state)
+static void bt_l2cap_br_chan_set_state(struct bt_l2cap_chan *chan, bt_l2cap_chan_state_t state)
 {
 	BR_CHAN(chan)->state = state;
 }

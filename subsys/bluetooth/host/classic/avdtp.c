@@ -257,7 +257,7 @@ static void avdtp_media_disconnect_work(struct k_work *work)
 }
 
 /* L2CAP Interface callbacks */
-void bt_avdtp_media_l2cap_connected(struct bt_l2cap_chan *chan)
+static void bt_avdtp_media_l2cap_connected(struct bt_l2cap_chan *chan)
 {
 	struct bt_avdtp *session;
 	struct bt_avdtp_sep *sep = CONTAINER_OF(chan, struct bt_avdtp_sep, chan.chan);
@@ -289,7 +289,7 @@ void bt_avdtp_media_l2cap_connected(struct bt_l2cap_chan *chan)
 	avdtp_endpoint_established(sep);
 }
 
-void bt_avdtp_media_l2cap_disconnected(struct bt_l2cap_chan *chan)
+static void bt_avdtp_media_l2cap_disconnected(struct bt_l2cap_chan *chan)
 {
 	struct bt_avdtp *session;
 	struct bt_avdtp_sep *sep = CONTAINER_OF(chan, struct bt_avdtp_sep, chan.chan);
@@ -327,7 +327,7 @@ void bt_avdtp_media_l2cap_disconnected(struct bt_l2cap_chan *chan)
 	avdtp_endpoint_released(sep);
 }
 
-int bt_avdtp_media_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
+static int bt_avdtp_media_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	/* media data is received */
 	struct bt_avdtp_sep *sep = CONTAINER_OF(chan, struct bt_avdtp_sep, chan.chan);
@@ -861,7 +861,7 @@ struct bt_avdtp_service_category_handler {
 	uint8_t (*handler)(struct net_buf *buf);
 };
 
-uint8_t bt_avdtp_check_media_recovery_type(struct net_buf *buf)
+static uint8_t bt_avdtp_check_media_recovery_type(struct net_buf *buf)
 {
 	struct bt_avdtp_recovery_capabilities *cap
 				= (struct bt_avdtp_recovery_capabilities *)buf->data;
@@ -894,8 +894,8 @@ static struct bt_avdtp_service_category_handler category_handler[]  = {
 	{0, 0, 0, BT_AVDTP_BAD_LENGTH, NULL},             /*BT_AVDTP_SERVICE_DELAY_REPORTING*/
 };
 
-uint8_t bt_avdtp_check_service_category(struct net_buf *buf, uint8_t *service_category,
-					bool reconfig)
+static uint8_t bt_avdtp_check_service_category(struct net_buf *buf, uint8_t *service_category,
+					      bool reconfig)
 {
 	struct bt_avdtp_generic_service_cap *hdr;
 	uint8_t err;
@@ -1772,7 +1772,7 @@ static int avdtp_send_cmd(struct bt_avdtp *session, struct net_buf *buf, struct 
 }
 
 /* L2CAP Interface callbacks */
-void bt_avdtp_l2cap_connected(struct bt_l2cap_chan *chan)
+static void bt_avdtp_l2cap_connected(struct bt_l2cap_chan *chan)
 {
 	struct bt_avdtp *session;
 
@@ -1816,7 +1816,7 @@ static void avdtp_release_work(struct k_work *work)
 	}
 }
 
-void bt_avdtp_clear_tx(struct bt_avdtp *session)
+static void bt_avdtp_clear_tx(struct bt_avdtp *session)
 {
 	struct net_buf *buf, *next;
 	struct avdtp_buf_user_data *user_data;
@@ -1831,7 +1831,7 @@ void bt_avdtp_clear_tx(struct bt_avdtp *session)
 	}
 }
 
-void bt_avdtp_l2cap_disconnected(struct bt_l2cap_chan *chan)
+static void bt_avdtp_l2cap_disconnected(struct bt_l2cap_chan *chan)
 {
 	struct bt_avdtp *session = AVDTP_CHAN(chan);
 
@@ -2072,7 +2072,7 @@ static int avdtp_rel_and_rej(struct bt_avdtp *session, uint8_t sigid, uint8_t ti
 	return 0;
 }
 
-int bt_avdtp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
+static int bt_avdtp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_avdtp_single_sig_hdr *single_hdr;
 	struct bt_avdtp *session = AVDTP_CHAN(chan);
@@ -2239,8 +2239,8 @@ int bt_avdtp_disconnect(struct bt_avdtp *session)
 	return bt_l2cap_chan_disconnect(&session->br_chan.chan);
 }
 
-int bt_avdtp_l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
-			  struct bt_l2cap_chan **chan)
+static int bt_avdtp_l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
+				struct bt_l2cap_chan **chan)
 {
 	struct bt_avdtp *session = NULL;
 	int result;

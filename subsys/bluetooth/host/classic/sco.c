@@ -215,7 +215,7 @@ static uint8_t sco_server_check_security(struct bt_conn *conn)
 }
 
 #if defined(CONFIG_BT_CONN_LOG_LEVEL_DBG)
-const char *bt_sco_chan_state_str(uint8_t state)
+static const char *bt_sco_chan_state_str(uint8_t state)
 {
 	switch (state) {
 	case BT_SCO_STATE_DISCONNECTED:
