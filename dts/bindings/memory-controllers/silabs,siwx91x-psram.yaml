@@ -1,0 +1,24 @@
+# Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  PSRAM device attached to the Silicon Labs SiWx91x QSPI memory controller.
+
+compatible: "silabs,siwx91x-psram"
+
+include: [base.yaml, "zephyr,memory-region.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  half-sleep-supported:
+    type: boolean
+    description: |
+      Indicates that the PSRAM supports the C0 half-sleep command sequence.
+
+  external-ldo:
+    type: boolean
+    description: |
+      Present if the PSRAM is powered from the external LDO.
+      If absent, the internal PSRAM LDO is assumed.
