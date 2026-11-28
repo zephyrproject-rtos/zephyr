@@ -207,6 +207,7 @@ LOG_MODULE_REGISTER(wolfson_wm8960, CONFIG_AUDIO_CODEC_LOG_LEVEL);
 /* Register 0x18 (ADDCTL2) - Additional Control 2 */
 #define WM8960_ADDCTL2_HPSWPOL 0x0020 /* Headphone Switch Polarity */
 #define WM8960_ADDCTL2_HPSWEN  0x0040 /* Headphone Switch Enable */
+#define WM8960_ADDCTL2_LRCM    0x0004 /* LRC Disable Mode */
 #define WM8960_ADDCTL2_OUT3CAP 0x0008 /* OUT3 Capacitor */
 #define WM8960_ADDCTL2_ROUT1EN 0x0080 /* ROUT1 Output Enable */
 #define WM8960_ADDCTL2_LOUT1EN 0x0100 /* LOUT1 Output Enable */
@@ -249,15 +250,15 @@ LOG_MODULE_REGISTER(wolfson_wm8960, CONFIG_AUDIO_CODEC_LOG_LEVEL);
 #define WM8960_LINPATH_LMIC2B    0x0008
 #define WM8960_LINPATH_LMICBOOST 0x0030 /* Left Microphone Boost */
 #define WM8960_LINPATH_LMN1      0x0100 /* Left Input Mixer Negative Input 1 */
-#define WM8960_LINPATH_LMP3      0x0080 /* Left Input Mixer Positive Input 2 */
-#define WM8960_LINPATH_LMP2      0x0040 /* Left Input Mixer Positive Input 3 */
+#define WM8960_LINPATH_LMP3      0x0080 /* Left Input Mixer Positive Input 3 */
+#define WM8960_LINPATH_LMP2      0x0040 /* Left Input Mixer Positive Input 2 */
 
 /* Register 0x21 (RINPATH) - Right Input Mixer */
 #define WM8960_RINPATH_RMIC2B    0x0008
 #define WM8960_RINPATH_RMICBOOST 0x0030 /* Right Microphone Boost */
 #define WM8960_RINPATH_RMN1      0x0100 /* Right Input Mixer Negative Input 1 */
-#define WM8960_RINPATH_RMP3      0x0080 /* Right Input Mixer Positive Input 2 */
-#define WM8960_RINPATH_RMP2      0x0040 /* Right Input Mixer Positive Input 3 */
+#define WM8960_RINPATH_RMP3      0x0080 /* Right Input Mixer Positive Input 3 */
+#define WM8960_RINPATH_RMP2      0x0040 /* Right Input Mixer Positive Input 2 */
 
 /* Register 0x22 (LOUTMIX) - Left Output Mixer */
 #define WM8960_LOUTMIX_LD2LO    0x0100 /* Left DAC to Left Output Mixer */
@@ -346,10 +347,13 @@ LOG_MODULE_REGISTER(wolfson_wm8960, CONFIG_AUDIO_CODEC_LOG_LEVEL);
 #define WM8960_PLL4_PLLK_7_0 0x01FF /* PLL K Value [7:0] */
 
 /* Additional defines for driver implementation */
-#define WM8960_DEFAULT_IN_VOLUME  0xC3 /* Default input volume level */
+#define WM8960_DEFAULT_IN_VOLUME  0xC3 /* Default ADC digital volume (0dB) */
 #define WM8960_MAX_IN_VOLUME      0xFF /* Maximum input volume level */
 #define WM8960_DEFAULT_OUT_VOLUME 0x79 /* Default output volume level (0dB) */
 #define WM8960_MAX_OUT_VOLUME     0x7F /* Maximum output volume level */
+
+/* Analog input PGA gain, in 0.75 dB steps */
+#define WM8960_DEFAULT_IN_PGA_GAIN 0x17 /* 0 dB */
 
 /* VMID selection values */
 #define WM8960_VMID_OFF  0x0000
@@ -425,6 +429,7 @@ struct wm8960_config {
 	uint32_t clk_out;
 	uint32_t hp_jd;
 	uint32_t gpio1_sel;
+	bool shared_lrclk;
 	bool enable_spkr;
 	uint32_t left_input;
 	uint32_t right_input;
@@ -432,6 +437,17 @@ struct wm8960_config {
 
 struct wm8960_data {
 	bool initialized;
+	/*
+	 * Directions configured so far, as a mask of BIT(AUDIO_ROUTE_*). One
+	 * codec can be shared by a capture element and a playback element,
+	 * neither of which knows the other exists, so the route is
+	 * accumulated rather than replaced.
+	 */
+	uint8_t routes_seen;
+	/* The DAI the codec is currently programmed for, once configured. */
+	audio_dai_type_t active_dai_type;
+	audio_dai_cfg_t active_dai_cfg;
+	bool configured;
 	bool muted;
 	bool input_muted;
 	bool use_pll;
@@ -825,7 +841,9 @@ static int wm8960_configure_pll(const struct device *dev, struct audio_codec_cfg
 
 static int wm8960_configure_audio_interface(const struct device *dev, struct audio_codec_cfg *cfg)
 {
+	const struct wm8960_config *config = dev->config;
 	uint16_t iface1_val = 0;
+	int ret;
 
 	/* Configure audio format based on dai_type */
 	switch (cfg->dai_type) {
@@ -868,7 +886,31 @@ static int wm8960_configure_audio_interface(const struct device *dev, struct aud
 	}
 
 	/* Write audio interface configuration */
-	return wm8960_reg_write(dev, WM8960_IFACE1, iface1_val);
+	ret = wm8960_reg_write(dev, WM8960_IFACE1, iface1_val);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/*
+	 * Boards that route a single frame clock leave ADCLRC unconnected, so
+	 * the ADC has to take its frame clock from DACLRC. ALRCGPIO frees the
+	 * ADCLRC pin for that, and LRCM keeps DACLRC running while only the
+	 * ADC is enabled. Linux sets both on the i.MX8MP EVK (wlf,gpio-cfg and
+	 * wlf,shared-lrclk). LRCM alone was measured to be insufficient there:
+	 * capture produced only the noise floor until ALRCGPIO was set too.
+	 */
+	if (config->shared_lrclk) {
+		ret = wm8960_reg_update(dev, WM8960_ADDCTL2, WM8960_ADDCTL2_LRCM,
+					WM8960_ADDCTL2_LRCM);
+		if (ret < 0) {
+			return ret;
+		}
+
+		return wm8960_reg_update(dev, WM8960_IFACE2, WM8960_IFACE2_ALRCGPIO,
+					 WM8960_IFACE2_ALRCGPIO);
+	}
+
+	return 0;
 }
 
 static int wm8960_route_input(const struct device *dev, audio_channel_t channel, uint32_t input)
@@ -1213,6 +1255,7 @@ static int wm8960_power_up(const struct device *dev, struct audio_codec_cfg *cfg
 {
 	int ret;
 	const struct wm8960_config *config = dev->config;
+	struct wm8960_data *data = dev->data;
 
 	/* Power up sequence:
 	 * 1. Enable VMID and VREF
@@ -1234,7 +1277,7 @@ static int wm8960_power_up(const struct device *dev, struct audio_codec_cfg *cfg
 	/* Step 2: route (this includes power up and mixer configs) */
 	uint16_t i_left, i_right, o_hp_l, o_hp_r;
 
-	switch (cfg->dai_route) {
+	switch (data->route) {
 	case AUDIO_ROUTE_BYPASS:
 		i_left = WM8960_IN_MUTE;
 		i_right = WM8960_IN_MUTE;
@@ -1466,9 +1509,18 @@ static int wm8960_set_input_volume(const struct device *dev, uint8_t l, uint8_t 
 	l = CLAMP(l, 0U, WM8960_MAX_IN_VOLUME);
 	r = CLAMP(r, 0U, WM8960_MAX_IN_VOLUME);
 
-	/* Configure input path */
+	/*
+	 * The analog PGA and the ADC digital volume use different scales:
+	 * xINVOL[5:0] is the PGA gain (0x17 = 0dB, 0.75dB/step) while
+	 * xADCVOL[7:0] is the ADC digital volume (0xC3 = 0dB). Writing the
+	 * digital level into xINVOL puts its high bits on xINMUTE and xIZC,
+	 * so the default 0xC3 would mute the PGA and leave it at -15dB.
+	 * Hold the PGA at 0dB and let the level drive the ADC, whose 0x00
+	 * setting is a true digital mute.
+	 */
 	if (config->left_input != WM8960_IN_MUTE) {
-		ret = wm8960_reg_write(dev, WM8960_LINVOL, WM8960_LINVOL_IPVU | l);
+		ret = wm8960_reg_write(dev, WM8960_LINVOL,
+				       WM8960_LINVOL_IPVU | WM8960_DEFAULT_IN_PGA_GAIN);
 		if (ret < 0) {
 			return ret;
 		}
@@ -1478,7 +1530,8 @@ static int wm8960_set_input_volume(const struct device *dev, uint8_t l, uint8_t 
 		}
 	}
 	if (config->right_input != WM8960_IN_MUTE) {
-		ret = wm8960_reg_write(dev, WM8960_RINVOL, WM8960_RINVOL_IPVU | r);
+		ret = wm8960_reg_write(dev, WM8960_RINVOL,
+				       WM8960_RINVOL_IPVU | WM8960_DEFAULT_IN_PGA_GAIN);
 		if (ret < 0) {
 			return ret;
 		}
@@ -1863,10 +1916,31 @@ static int wm8960_apply_properties(const struct device *dev)
 	return 0;
 }
 
+/*
+ * True when cfg programs the codec as it is programmed now. Only the fields
+ * configure() writes to the codec count: the stream fields of i2s_config
+ * belong to each caller.
+ */
+static bool wm8960_cfg_matches_active(const struct wm8960_data *data,
+				      const struct audio_codec_cfg *cfg)
+{
+	const struct i2s_config *active = &data->active_dai_cfg.i2s;
+	const struct i2s_config *req = &cfg->dai_cfg.i2s;
+
+	return data->active_dai_type == cfg->dai_type && active->word_size == req->word_size &&
+	       active->channels == req->channels && active->format == req->format &&
+	       active->frame_clk_freq == req->frame_clk_freq &&
+	       ((active->options ^ req->options) & I2S_OPT_FRAME_CLK_TARGET) == 0U;
+}
+
 static int wm8960_configure(const struct device *dev,
 			    struct audio_codec_cfg *cfg)
 {
 	struct wm8960_data *data = dev->data;
+	audio_route_t saved_route;
+	uint8_t saved_routes_seen;
+	bool is_single_dir;
+	bool shares_codec;
 	int ret;
 
 	if (!data->initialized) {
@@ -1874,57 +1948,117 @@ static int wm8960_configure(const struct device *dev,
 		return -ENODEV;
 	}
 
-	data->route = cfg->dai_route;
-
 	ret = wm8960_validate_dai_cfg(cfg);
 	if (ret < 0) {
 		return ret;
 	}
 
+	/*
+	 * configure() soft-resets the device, so a second element configuring
+	 * its own direction would tear down the first element's. Accumulate
+	 * the directions instead: the codec ends up routed for every direction
+	 * that has been asked for, whatever order the elements run in.
+	 *
+	 * Only the clocking of the first caller is kept. Reprogramming it for
+	 * the second caller would silently change the sample rate or word
+	 * length under the first, so a conflicting configuration is refused
+	 * rather than accepted and ignored. This applies only when the codec
+	 * is actually shared: a single element reconfiguring its own direction
+	 * is a normal reconfiguration and reprograms everything. An element
+	 * switching direction at a different rate asks for an explicit route
+	 * (BYPASS or PLAYBACK_CAPTURE) first, which clears the directions.
+	 */
+	is_single_dir =
+		(cfg->dai_route == AUDIO_ROUTE_PLAYBACK || cfg->dai_route == AUDIO_ROUTE_CAPTURE);
+	shares_codec = is_single_dir && data->configured &&
+		       (data->routes_seen & ~BIT(cfg->dai_route)) != 0U;
+
+	if (shares_codec && !wm8960_cfg_matches_active(data, cfg)) {
+		LOG_ERR("codec is shared and already runs a different dai_cfg; "
+			"both directions must use the same format");
+		return -EBUSY;
+	}
+
+	saved_route = data->route;
+	saved_routes_seen = data->routes_seen;
+
+	if (is_single_dir) {
+		data->routes_seen |= (uint8_t)BIT(cfg->dai_route);
+
+		if (data->routes_seen == (BIT(AUDIO_ROUTE_PLAYBACK) | BIT(AUDIO_ROUTE_CAPTURE))) {
+			data->route = AUDIO_ROUTE_PLAYBACK_CAPTURE;
+		} else {
+			data->route = cfg->dai_route;
+		}
+	} else {
+		/* BYPASS and PLAYBACK_CAPTURE are explicit; they reset the mask. */
+		data->routes_seen = 0U;
+		data->route = cfg->dai_route;
+	}
+
+	if (data->route != saved_route) {
+		LOG_INF("codec route is now %u", (unsigned int)data->route);
+	}
+
 	ret = wm8960_soft_reset(dev);
 	if (ret < 0) {
 		LOG_ERR("Failed to reset WM8960: %d", ret);
-		return ret;
+		goto restore_route;
 	}
 
 	ret = wm8960_power_up(dev, cfg);
 	if (ret < 0) {
 		LOG_ERR("Failed to power up codec: %d", ret);
-		return ret;
+		goto restore_route;
 	}
 
 	ret = wm8960_update_mclk(dev, cfg);
 	if (ret < 0) {
-		return ret;
+		goto restore_route;
 	}
 
 	ret = wm8960_apply_clocking(dev, cfg);
 	if (ret < 0) {
-		return ret;
+		goto restore_route;
 	}
 
 	ret = wm8960_set_default_volumes(dev);
 	if (ret < 0) {
-		return ret;
+		goto restore_route;
 	}
 
 	ret = wm8960_apply_properties(dev);
 	if (ret < 0) {
-		return ret;
+		goto restore_route;
 	}
 
 	ret = wm8960_configure_jack_detect(dev);
 	if (ret < 0) {
-		return ret;
+		goto restore_route;
 	}
 
 	ret = wm8960_set_mute(dev, false);
 	if (ret < 0) {
 		LOG_ERR("Failed to set mute: %d", ret);
-		return ret;
+		goto restore_route;
 	}
 
+	data->active_dai_type = cfg->dai_type;
+	data->active_dai_cfg = cfg->dai_cfg;
+	data->configured = true;
+
 	return 0;
+
+restore_route:
+	/*
+	 * The device did not reach the requested state, so the driver must not
+	 * claim it did: a later power_up() or property write would be taken
+	 * from a route the codec is not in.
+	 */
+	data->route = saved_route;
+	data->routes_seen = saved_routes_seen;
+
+	return ret;
 }
 
 static int wm8960_set_input_mute_property(const struct device *dev,
@@ -2093,6 +2227,7 @@ static int wm8960_init(const struct device *dev)
 		.left_input = DT_INST_ENUM_IDX(inst, left_input), \
 		.right_input = DT_INST_ENUM_IDX(inst, right_input), \
 		.mclk_freq = DT_INST_PROP_OR(inst, mclk_freq, 12288000), \
+		.shared_lrclk = DT_INST_PROP(inst, shared_lrclk), \
 		.enable_spkr = DT_INST_PROP(inst, enable_spkr)}; \
 \
 	DEVICE_DT_INST_DEFINE( \
@@ -2123,6 +2258,7 @@ static int wm8960_init(const struct device *dev)
 			name, \
 			0\
 		), \
+		.shared_lrclk = DT_INST_PROP(inst, shared_lrclk), \
 		.enable_spkr = DT_INST_PROP(inst, enable_spkr)}; \
 \
 	DEVICE_DT_INST_DEFINE(\

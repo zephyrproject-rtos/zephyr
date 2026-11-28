@@ -42,6 +42,291 @@ static void wm8960_before(void *fixture)
 	wm8960_emul_set_reg(wm8960_emul, 0x0F, 0x0000); /* Trigger reset */
 }
 
+/* IFACE2 and its ADCLRC-pin-as-GPIO bit, ADDCTL2 and its LRCM bit. */
+#define TEST_WM8960_IFACE2          0x09
+#define TEST_WM8960_IFACE2_ALRCGPIO 0x0040
+#define TEST_WM8960_ADDCTL2         0x18
+#define TEST_WM8960_ADDCTL2_LRCM    0x0004
+
+/*
+ * A board routing a single frame clock leaves ADCLRC unconnected, so the ADC
+ * must take its frame clock from DACLRC. Only a node that asks for it should
+ * get ALRCGPIO set.
+ */
+ZTEST(wm8960_test, test_wm8960_shared_lrclk)
+{
+	const struct device *shared = DEVICE_DT_GET(DT_NODELABEL(wm8960_shared));
+	const struct emul *shared_emul = EMUL_DT_GET(DT_NODELABEL(wm8960_shared));
+	const struct device *plain = DEVICE_DT_GET(DT_NODELABEL(wm8960_plain));
+	const struct emul *plain_emul = EMUL_DT_GET(DT_NODELABEL(wm8960_plain));
+	struct audio_codec_cfg config = {
+		.dai_type = AUDIO_DAI_TYPE_I2S,
+		.dai_route = AUDIO_ROUTE_PLAYBACK_CAPTURE,
+		.dai_cfg.i2s = {
+			.word_size = 16,
+			.channels = 2,
+			.format = I2S_FMT_DATA_FORMAT_I2S,
+			.options = I2S_OPT_FRAME_CLK_CONTROLLER | I2S_OPT_BIT_CLK_CONTROLLER,
+			.frame_clk_freq = 48000,
+		}};
+
+	zassert_true(device_is_ready(shared), "shared-lrclk codec is not ready");
+	zassert_true(device_is_ready(plain), "plain codec is not ready");
+
+	zassert_equal(audio_codec_configure(shared, &config), 0);
+	zassert_equal(wm8960_emul_get_reg(shared_emul, TEST_WM8960_IFACE2) &
+			      TEST_WM8960_IFACE2_ALRCGPIO,
+		      TEST_WM8960_IFACE2_ALRCGPIO, "shared-lrclk must select ADCLRC as GPIO");
+	zassert_equal(wm8960_emul_get_reg(shared_emul, TEST_WM8960_ADDCTL2) &
+			      TEST_WM8960_ADDCTL2_LRCM,
+		      TEST_WM8960_ADDCTL2_LRCM,
+		      "shared-lrclk must keep the frame clock running for either direction");
+
+	zassert_equal(audio_codec_configure(plain, &config), 0);
+	zassert_equal(wm8960_emul_get_reg(plain_emul, TEST_WM8960_IFACE2) &
+			      TEST_WM8960_IFACE2_ALRCGPIO,
+		      0, "ALRCGPIO must stay clear without shared-lrclk");
+	zassert_equal(wm8960_emul_get_reg(plain_emul, TEST_WM8960_ADDCTL2) &
+			      TEST_WM8960_ADDCTL2_LRCM,
+		      0, "LRCM must stay clear without shared-lrclk");
+}
+
+/*
+ * A full-duplex pipeline drives one codec from two elements, each configuring
+ * its own direction and neither aware of the other. configure() soft-resets
+ * the device, so taking the new route verbatim silences whichever direction
+ * was configured first.
+ */
+ZTEST(wm8960_test, test_wm8960_shared_route)
+{
+	struct audio_codec_cfg config = {
+		.dai_type = AUDIO_DAI_TYPE_I2S,
+		.dai_route = AUDIO_ROUTE_PLAYBACK,
+		.dai_cfg.i2s = {
+			.word_size = 16,
+			.channels = 2,
+			.format = I2S_FMT_DATA_FORMAT_I2S,
+			.options = I2S_OPT_FRAME_CLK_CONTROLLER | I2S_OPT_BIT_CLK_CONTROLLER,
+			.frame_clk_freq = 48000,
+		}};
+
+	/* An explicit duplex or bypass route resets the accumulated mask. */
+	config.dai_route = AUDIO_ROUTE_BYPASS;
+	zassert_equal(audio_codec_configure(codec_dev, &config), 0);
+
+	/* The playback element configures first. */
+	config.dai_route = AUDIO_ROUTE_PLAYBACK;
+	zassert_equal(audio_codec_configure(codec_dev, &config), 0);
+	zassert_true(wm8960_emul_is_dac_enabled(wm8960_emul), "DAC off after playback route");
+
+	/* The capture element configures second: both directions must survive. */
+	config.dai_route = AUDIO_ROUTE_CAPTURE;
+	zassert_equal(audio_codec_configure(codec_dev, &config), 0);
+	zassert_true(wm8960_emul_is_adc_enabled(wm8960_emul), "ADC off after capture route");
+	zassert_true(wm8960_emul_is_dac_enabled(wm8960_emul),
+		     "capture route silenced the playback direction");
+
+	/*
+	 * A third configure() must not drop a direction again. Replacing the
+	 * route rather than accumulating it passes the two calls above and
+	 * fails here, which is the whole point of the mask.
+	 */
+	config.dai_route = AUDIO_ROUTE_PLAYBACK;
+	zassert_equal(audio_codec_configure(codec_dev, &config), 0);
+	zassert_true(wm8960_emul_is_adc_enabled(wm8960_emul),
+		     "reconfiguring playback dropped the capture direction");
+	zassert_true(wm8960_emul_is_dac_enabled(wm8960_emul), "DAC off after reconfigure");
+
+	/* Order-independent: capture first, then playback, reaches the same place. */
+	config.dai_route = AUDIO_ROUTE_BYPASS;
+	zassert_equal(audio_codec_configure(codec_dev, &config), 0);
+	config.dai_route = AUDIO_ROUTE_CAPTURE;
+	zassert_equal(audio_codec_configure(codec_dev, &config), 0);
+	config.dai_route = AUDIO_ROUTE_PLAYBACK;
+	zassert_equal(audio_codec_configure(codec_dev, &config), 0);
+	zassert_true(wm8960_emul_is_adc_enabled(wm8960_emul), "capture lost in the other order");
+	zassert_true(wm8960_emul_is_dac_enabled(wm8960_emul), "playback lost in the other order");
+
+	/* Leave the codec un-shared: this state outlives the test. */
+	config.dai_route = AUDIO_ROUTE_BYPASS;
+	zassert_equal(audio_codec_configure(codec_dev, &config), 0);
+}
+
+/* The second element must not silently retune the clocking of the first. */
+ZTEST(wm8960_test, test_wm8960_shared_route_rejects_conflicting_cfg)
+{
+	struct audio_codec_cfg config = {
+		.dai_type = AUDIO_DAI_TYPE_I2S,
+		.dai_route = AUDIO_ROUTE_BYPASS,
+		.dai_cfg.i2s = {
+			.word_size = 16,
+			.channels = 2,
+			.format = I2S_FMT_DATA_FORMAT_I2S,
+			.options = I2S_OPT_FRAME_CLK_CONTROLLER | I2S_OPT_BIT_CLK_CONTROLLER,
+			.frame_clk_freq = 48000,
+		}};
+
+	zassert_equal(audio_codec_configure(codec_dev, &config), 0);
+
+	config.dai_route = AUDIO_ROUTE_PLAYBACK;
+	zassert_equal(audio_codec_configure(codec_dev, &config), 0);
+
+	/* The same direction may reconfigure itself freely. */
+	config.dai_cfg.i2s.frame_clk_freq = 16000;
+	zassert_equal(audio_codec_configure(codec_dev, &config), 0,
+		      "a single direction must be free to reconfigure");
+
+	/* A second direction asking for a different format must be refused. */
+	config.dai_route = AUDIO_ROUTE_CAPTURE;
+	config.dai_cfg.i2s.frame_clk_freq = 48000;
+	zassert_equal(audio_codec_configure(codec_dev, &config), -EBUSY,
+		      "a shared codec accepted two different formats");
+
+	/* Matching the running format is accepted and promotes as usual. */
+	config.dai_cfg.i2s.frame_clk_freq = 16000;
+	zassert_equal(audio_codec_configure(codec_dev, &config), 0);
+	zassert_true(wm8960_emul_is_adc_enabled(wm8960_emul), "ADC off after matching cfg");
+	zassert_true(wm8960_emul_is_dac_enabled(wm8960_emul), "DAC off after matching cfg");
+
+	/* Leave the codec un-shared: this state outlives the test. */
+	config.dai_route = AUDIO_ROUTE_BYPASS;
+	zassert_equal(audio_codec_configure(codec_dev, &config), 0);
+}
+
+/*
+ * Two elements sharing the codec own separate streams, so the buffer fields of
+ * their i2s_config differ. Only what configure() programs into the codec
+ * decides whether the two configurations conflict.
+ */
+ZTEST(wm8960_test, test_wm8960_shared_route_compares_codec_fields)
+{
+	static struct k_mem_slab playback_slab, capture_slab;
+	struct audio_codec_cfg config = {
+		.dai_type = AUDIO_DAI_TYPE_I2S,
+		.dai_route = AUDIO_ROUTE_BYPASS,
+		.dai_cfg.i2s = {
+			.word_size = 16,
+			.channels = 2,
+			.format = I2S_FMT_DATA_FORMAT_I2S,
+			.options = I2S_OPT_FRAME_CLK_CONTROLLER | I2S_OPT_BIT_CLK_CONTROLLER,
+			.frame_clk_freq = 48000,
+		}};
+
+	zassert_equal(audio_codec_configure(codec_dev, &config), 0);
+
+	config.dai_route = AUDIO_ROUTE_PLAYBACK;
+	config.dai_cfg.i2s.mem_slab = &playback_slab;
+	config.dai_cfg.i2s.block_size = 1024;
+	config.dai_cfg.i2s.timeout = 1000;
+	zassert_equal(audio_codec_configure(codec_dev, &config), 0);
+
+	/* Same format, different stream: accepted, both directions kept. */
+	config.dai_route = AUDIO_ROUTE_CAPTURE;
+	config.dai_cfg.i2s.mem_slab = &capture_slab;
+	config.dai_cfg.i2s.block_size = 512;
+	config.dai_cfg.i2s.timeout = SYS_FOREVER_MS;
+	config.dai_cfg.i2s.options |= I2S_OPT_BIT_CLK_GATED;
+	zassert_equal(audio_codec_configure(codec_dev, &config), 0,
+		      "stream-only fields made the formats conflict");
+	zassert_true(wm8960_emul_is_adc_enabled(wm8960_emul), "ADC off after capture route");
+	zassert_true(wm8960_emul_is_dac_enabled(wm8960_emul),
+		     "capture route silenced the playback direction");
+
+	/* The DAI type sets IFACE1 like the word size does, so it conflicts too. */
+	config.dai_type = AUDIO_DAI_TYPE_LEFT_JUSTIFIED;
+	zassert_equal(audio_codec_configure(codec_dev, &config), -EBUSY,
+		      "a shared codec accepted a different DAI type");
+
+	/* Leave the codec un-shared: this state outlives the test. */
+	config.dai_route = AUDIO_ROUTE_BYPASS;
+	zassert_equal(audio_codec_configure(codec_dev, &config), 0);
+}
+
+/*
+ * One element switching direction at a different rate first asks for an
+ * explicit route, which clears the accumulated directions. The codec shell
+ * can issue only the duplex one.
+ */
+ZTEST(wm8960_test, test_wm8960_explicit_route_resets_directions)
+{
+	struct audio_codec_cfg config = {
+		.dai_type = AUDIO_DAI_TYPE_I2S,
+		.dai_route = AUDIO_ROUTE_BYPASS,
+		.dai_cfg.i2s = {
+			.word_size = 16,
+			.channels = 2,
+			.format = I2S_FMT_DATA_FORMAT_I2S,
+			.options = I2S_OPT_FRAME_CLK_CONTROLLER | I2S_OPT_BIT_CLK_CONTROLLER,
+			.frame_clk_freq = 48000,
+		}};
+
+	zassert_equal(audio_codec_configure(codec_dev, &config), 0);
+
+	config.dai_route = AUDIO_ROUTE_PLAYBACK;
+	zassert_equal(audio_codec_configure(codec_dev, &config), 0);
+
+	config.dai_route = AUDIO_ROUTE_PLAYBACK_CAPTURE;
+	zassert_equal(audio_codec_configure(codec_dev, &config), 0);
+
+	config.dai_route = AUDIO_ROUTE_CAPTURE;
+	config.dai_cfg.i2s.frame_clk_freq = 16000;
+	zassert_equal(audio_codec_configure(codec_dev, &config), 0,
+		      "a duplex route did not clear the accumulated directions");
+	zassert_true(wm8960_emul_is_adc_enabled(wm8960_emul), "ADC off after capture route");
+	zassert_false(wm8960_emul_is_dac_enabled(wm8960_emul),
+		      "the cleared playback direction was kept");
+
+	/* Leave the codec un-shared: this state outlives the test. */
+	config.dai_route = AUDIO_ROUTE_BYPASS;
+	zassert_equal(audio_codec_configure(codec_dev, &config), 0);
+}
+
+/*
+ * The route is stored before the hardware is touched, so a configure() that
+ * fails validation must leave it alone: power_up(), set_default_volumes() and
+ * set_property() all read it afterwards.
+ */
+ZTEST(wm8960_test, test_wm8960_rejected_configure_keeps_route)
+{
+	struct audio_codec_cfg config = {
+		.dai_type = AUDIO_DAI_TYPE_I2S,
+		.dai_route = AUDIO_ROUTE_BYPASS,
+		.dai_cfg.i2s = {
+			.word_size = 16,
+			.channels = 2,
+			.format = I2S_FMT_DATA_FORMAT_I2S,
+			.options = I2S_OPT_FRAME_CLK_CONTROLLER | I2S_OPT_BIT_CLK_CONTROLLER,
+			.frame_clk_freq = 48000,
+		}};
+
+	zassert_equal(audio_codec_configure(codec_dev, &config), 0);
+
+	config.dai_route = AUDIO_ROUTE_PLAYBACK;
+	zassert_equal(audio_codec_configure(codec_dev, &config), 0);
+	zassert_true(wm8960_emul_is_dac_enabled(wm8960_emul), "DAC off after playback route");
+
+	/* Rejected: 18 is not one of the supported word sizes. */
+	config.dai_route = AUDIO_ROUTE_CAPTURE;
+	config.dai_cfg.i2s.word_size = 18;
+	zassert_equal(audio_codec_configure(codec_dev, &config), -ENOTSUP);
+
+	/*
+	 * The rejected call must not have promoted the route. Re-running the
+	 * playback direction with a valid cfg must therefore still be playback
+	 * only, with the capture path untouched.
+	 */
+	config.dai_route = AUDIO_ROUTE_PLAYBACK;
+	config.dai_cfg.i2s.word_size = 16;
+	zassert_equal(audio_codec_configure(codec_dev, &config), 0);
+	zassert_false(wm8960_emul_is_adc_enabled(wm8960_emul),
+		      "a rejected configure() promoted the route anyway");
+	zassert_true(wm8960_emul_is_dac_enabled(wm8960_emul), "DAC off after playback route");
+
+	/* Leave the codec un-shared: this state outlives the test. */
+	config.dai_route = AUDIO_ROUTE_BYPASS;
+	zassert_equal(audio_codec_configure(codec_dev, &config), 0);
+}
+
 ZTEST_SUITE(wm8960_test, NULL, wm8960_setup, wm8960_before, NULL, NULL);
 
 ZTEST(wm8960_test, test_wm8960_init)
@@ -421,6 +706,18 @@ ZTEST(wm8960_test, test_wm8960_input_volume_control)
 		"Right ADC volume should be 0x40, got 0x%02x",
 		right_adc_vol
 	);
+
+	/*
+	 * The requested level belongs to the digital ADC volume. The analog
+	 * input PGA is a different, 6-bit scale, so the level must not reach
+	 * it: LINVOL/RINVOL stay at the 0 dB default.
+	 */
+	zassert_equal(wm8960_emul_get_reg(wm8960_emul, 0) & 0x3F, 0x17,
+		      "left input PGA should stay at 0 dB, got 0x%02x",
+		      wm8960_emul_get_reg(wm8960_emul, 0) & 0x3F);
+	zassert_equal(wm8960_emul_get_reg(wm8960_emul, 1) & 0x3F, 0x17,
+		      "right input PGA should stay at 0 dB, got 0x%02x",
+		      wm8960_emul_get_reg(wm8960_emul, 1) & 0x3F);
 
 	/* Test input mute */
 	val.mute = true;

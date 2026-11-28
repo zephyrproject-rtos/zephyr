@@ -35,4 +35,21 @@
 		right-input = "WM8960_IN_MIC_DE_12";
 		status = "okay";
 	};
+
+	/* Shares one frame clock: the ADC must follow DACLRC. */
+	wm8960_shared: wm8960@1b {
+		compatible = "wolfson,wm8960";
+		reg = <0x1b>;
+		clocks = <&dummy_clock>;
+		shared-lrclk;
+		status = "okay";
+	};
+
+	/* Separate frame clocks: ALRCGPIO must stay clear. */
+	wm8960_plain: wm8960@1c {
+		compatible = "wolfson,wm8960";
+		reg = <0x1c>;
+		clocks = <&dummy_clock>;
+		status = "okay";
+	};
 };
