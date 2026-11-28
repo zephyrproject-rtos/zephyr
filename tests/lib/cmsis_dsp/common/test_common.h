@@ -106,7 +106,7 @@ static inline bool test_equal_f16(
 	size_t index;
 
 	for (index = 0; index < length; index++) {
-		if (a[index] != b[index]) {
+		if ((float)a[index] != (float)b[index]) {
 			return false;
 		}
 	}
@@ -335,7 +335,7 @@ static inline bool test_rel_error_f16(
 		if (average != 0) {
 			rel = delta / average;
 
-			if (rel > threshold) {
+			if (rel > (float)threshold) {
 				return false;
 			}
 		}

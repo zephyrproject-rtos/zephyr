@@ -149,8 +149,9 @@ static inline float arm_snr_f16(const float16_t *pRef, const float16_t *pTest,
 		/* Checking for a NAN value in pTest array */
 		IFNANRETURNZERO((float)pTest[i]);
 
-		EnergySignal += pRef[i] * pRef[i];
-		EnergyError += (pRef[i] - pTest[i]) * (pRef[i] - pTest[i]);
+		EnergySignal += (float)pRef[i] * (float)pRef[i];
+		EnergyError += ((float)pRef[i] - (float)pTest[i]) *
+			       ((float)pRef[i] - (float)pTest[i]);
 	}
 
 	/* Checking for a NAN value in EnergyError */
