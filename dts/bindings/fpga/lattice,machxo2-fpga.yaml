@@ -1,0 +1,42 @@
+# Copyright (c) 2026 FIRST RF
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Lattice MachXO2 CPLD/FPGA configured through the sysCONFIG slave SPI port.
+
+  The optional GPIOs expose the PROGRAMN, DONE and INITN signals. The
+  configuration interface is only usable while the bitstream keeps the
+  sysCONFIG SSPI port enabled; when it does not, status and information
+  reads may fail and the driver reports them as unavailable.
+
+compatible: "lattice,machxo2-fpga"
+
+include: [spi-device.yaml]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Optional GPIO connected to the active-low PROGRAMN input. When present
+      the driver can assert it to turn the device off, release it to turn the
+      device on, and pulse it to force a configuration reset.
+
+  done-gpios:
+    type: phandle-array
+    description: |
+      Optional GPIO connected to the DONE output. When present the driver uses
+      the pin instead of the status register to report the configuration state.
+
+  initn-gpios:
+    type: phandle-array
+    description: |
+      Optional GPIO connected to the open-drain INITN output. Requires an
+      external pull-up. When present the driver waits for INITN to deassert
+      after a reset and treats an asserted INITN as a configuration error.
+
+  reset-delay-us:
+    type: int
+    default: 1000
+    description: |
+      Time in microseconds to hold PROGRAMN asserted and to wait for the device
+      to settle when no INITN GPIO is available.

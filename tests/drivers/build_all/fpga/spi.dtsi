@@ -45,3 +45,41 @@ test_spi_fpga_slg47910: slg47910@2 {
 	ss-gpios = <&test_gpio 0 0>;
 	status = "okay";
 };
+
+test_spi_fpga_machxo2: machxo2@3 {
+	compatible = "lattice,machxo2-fpga";
+
+	reg = <3>;
+	spi-max-frequency = <1000000>;
+
+	reset-gpios = <&test_gpio 0 0>;
+	done-gpios = <&test_gpio 0 0>;
+	initn-gpios = <&test_gpio 0 0>;
+	status = "okay";
+
+	ufm: ufm {
+		compatible = "lattice,machxo2-ufm";
+		size = <512>;
+		write-block-size = <16>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* The UFM has one erase sector; only a full-size partition is erasable. */
+			machxo2_storage_partition: partition@0 {
+				label = "storage";
+				reg = <0x0 0x200>;
+			};
+		};
+	};
+};
+
+test_spi_fpga_machxo2_min: machxo2@4 {
+	compatible = "lattice,machxo2-fpga";
+
+	reg = <4>;
+	spi-max-frequency = <1000000>;
+	status = "okay";
+};
