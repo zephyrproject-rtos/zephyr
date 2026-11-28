@@ -1,0 +1,55 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
+
+/ {
+	chosen {
+		zephyr,display = &ssd1351_mikroe_oled_c_click;
+	};
+
+	mikroe_oled_c_click_mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&mikrobus_spi>;
+		dc-gpios = <&mikrobus_header MIKROBUS_PWM GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&mikrobus_header MIKROBUS_RST GPIO_ACTIVE_LOW>;
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ssd1351_mikroe_oled_c_click: ssd1351@0 {
+			compatible = "solomon,ssd1351";
+			reg = <0>;
+			mipi-max-frequency = <10000000>;
+			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			width = <96>;
+			height = <96>;
+			column-offset = <16>;
+			display-offset = <32>;
+			start-line = <0>;
+			multiplex-ratio = <95>;
+			phase-length = <0x32>;
+			oscillator-freq = <0xf1>;
+			precharge-time = <0x01>;
+			precharge-voltage = <0x17>;
+			vcomh-voltage = <0x05>;
+			current-att = <0x0f>;
+			remap-value = <0x72>;
+		};
+	};
+
+	boost_regulator_mikroe_oled_c_click: boost-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "boost_regulator_mikroe_oled_c_click";
+		enable-gpios = <&mikrobus_header MIKROBUS_INT GPIO_ACTIVE_HIGH>;
+		regulator-always-on;
+	};
+};
+
+&mikrobus_spi {
+	cs-gpios = <&mikrobus_header MIKROBUS_CS GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
