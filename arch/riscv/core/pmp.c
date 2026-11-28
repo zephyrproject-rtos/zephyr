@@ -808,6 +808,21 @@ void z_riscv_pmp_init(void)
 		      (size_t)__rom_region_size,
 		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 
+#if defined(CONFIG_COVERAGE_GCOV) && defined(CONFIG_USERSPACE)
+	/*
+	 * Instrumented code updates the gcov counters in every mode, so user
+	 * threads need write access to them too.
+	 */
+	if ((uintptr_t)__gcov_bss_size > 0) {
+		uint8_t perm = PMP_R | PMP_W;
+
+		perm |= COND_CODE_1(CONFIG_PMP_NO_LOCK_GLOBAL, (0x0), (PMP_L));
+
+		set_pmp_entry(&index, perm, (uintptr_t)__gcov_bss_start, (size_t)__gcov_bss_size,
+			      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
+	}
+#endif
+
 	/* SoC-specific PMP regions defined via iterable sections */
 	STRUCT_SECTION_FOREACH(pmp_soc_region, region) {
 		uintptr_t start = (uintptr_t)region->start;
