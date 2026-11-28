@@ -99,5 +99,6 @@
 #define ESP32_LP_UART0_MODULE     138 /**< LP UART0 module */
 #define ESP32_EMAC_PTP_MODULE     139 /**< Ethernet MAC PTP reference clock */
 #define ESP32_UHCI0_MODULE        140 /**< UHCI0 module */
+#define ESP32_LP_I2S0_MODULE      141 /**< LP I2S0 module */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ESP32P4_CLOCK_H_ */
