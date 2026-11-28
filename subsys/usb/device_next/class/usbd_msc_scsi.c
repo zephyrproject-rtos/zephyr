@@ -173,6 +173,8 @@ struct scsi_inquiry_response {
 } __packed;
 
 #define MODE_SENSE_PAGE_CODE_ALL_PAGES		0x3F
+/* SBC-3 (T10/05-344r0), 6.3.1, Table 97: DEVICE-SPECIFIC PARAMETER field. */
+#define MODE_SENSE_WRITE_PROTECT		BIT(7)
 
 SCSI_CMD_STRUCT(MODE_SENSE_6) {
 	uint8_t opcode;
@@ -326,6 +328,13 @@ struct scsi_mode_sense_10_response {
 	uint16_t block_descriptor_length;
 } __packed;
 
+static bool disk_is_write_protected(const struct scsi_ctx *ctx)
+{
+	int status = disk_access_status(ctx->disk);
+
+	return status >= 0 && (status & DISK_STATUS_WR_PROTECT) != 0;
+}
+
 static int update_disk_info(struct scsi_ctx *const ctx)
 {
 	int status = disk_access_status(ctx->disk);
@@ -401,6 +410,15 @@ static size_t medium_error(struct scsi_ctx *ctx, enum scsi_additional_sense_code
 	return 0;
 }
 
+static size_t data_protect(struct scsi_ctx *ctx, enum scsi_additional_sense_code asc)
+{
+	ctx->status = CHECK_CONDITION;
+	ctx->sense_key = DATA_PROTECT;
+	ctx->asc = asc;
+
+	return 0;
+}
+
 void scsi_init(struct scsi_ctx *ctx, const char *disk, const char *vendor,
 	       const char *product, const char *revision)
 {
@@ -422,7 +440,9 @@ void scsi_reset(struct scsi_ctx *ctx)
 /* SPC-5 TEST UNIT READY command */
 SCSI_CMD_HANDLER(TEST_UNIT_READY)
 {
-	if (!ctx->medium_loaded || update_disk_info(ctx) != DISK_STATUS_OK) {
+	int status = ctx->medium_loaded ? update_disk_info(ctx) : DISK_STATUS_NOMEDIA;
+
+	if (status != DISK_STATUS_OK && status != DISK_STATUS_WR_PROTECT) {
 		return not_ready(ctx, MEDIUM_NOT_PRESENT);
 	} else {
 		return good(ctx, 0);
@@ -597,7 +617,7 @@ SCSI_CMD_HANDLER(MODE_SENSE_6)
 
 	r.mode_data_length = 3;
 	r.medium_type = 0x00;
-	r.device_specific_parameter = 0x00;
+	r.device_specific_parameter = disk_is_write_protected(ctx) ? MODE_SENSE_WRITE_PROTECT : 0;
 	r.block_descriptor_length = 0x00;
 
 	BUILD_ASSERT(sizeof(r) <= CONFIG_USBD_MSC_SCSI_BUFFER_SIZE);
@@ -686,10 +706,11 @@ SCSI_CMD_HANDLER(READ_FORMAT_CAPACITIES)
 SCSI_CMD_HANDLER(READ_CAPACITY_10)
 {
 	struct scsi_read_capacity_10_response r;
+	int status = ctx->medium_loaded ? update_disk_info(ctx) : DISK_STATUS_NOMEDIA;
 
 	ctx->cmd_is_data_read = true;
 
-	if (!ctx->medium_loaded || update_disk_info(ctx) != DISK_STATUS_OK) {
+	if (status != DISK_STATUS_OK && status != DISK_STATUS_WR_PROTECT) {
 		return not_ready(ctx, MEDIUM_NOT_PRESENT);
 	}
 
@@ -743,10 +764,11 @@ SCSI_CMD_HANDLER(READ_10)
 {
 	uint32_t lba = sys_be32_to_cpu(cmd->lba);
 	uint16_t transfer_length = sys_be16_to_cpu(cmd->transfer_length);
+	int status = ctx->medium_loaded ? update_disk_info(ctx) : DISK_STATUS_NOMEDIA;
 
 	ctx->cmd_is_data_read = true;
 
-	if (!ctx->medium_loaded || update_disk_info(ctx) != DISK_STATUS_OK) {
+	if (status != DISK_STATUS_OK && status != DISK_STATUS_WR_PROTECT) {
 		return not_ready(ctx, MEDIUM_NOT_PRESENT);
 	}
 
@@ -797,15 +819,20 @@ SCSI_CMD_HANDLER(WRITE_10)
 {
 	uint32_t lba = sys_be32_to_cpu(cmd->lba);
 	uint16_t transfer_length = sys_be16_to_cpu(cmd->transfer_length);
+	int status = ctx->medium_loaded ? update_disk_info(ctx) : DISK_STATUS_NOMEDIA;
 
 	ctx->cmd_is_data_write = true;
 
-	if (!ctx->medium_loaded || update_disk_info(ctx) != DISK_STATUS_OK) {
+	if (status != DISK_STATUS_OK && status != DISK_STATUS_WR_PROTECT) {
 		return not_ready(ctx, MEDIUM_NOT_PRESENT);
 	}
 
 	if (validate_transfer_length(ctx, lba, transfer_length)) {
 		return illegal_request(ctx, LOGICAL_BLOCK_ADDRESS_OUT_OF_RANGE);
+	}
+
+	if (status == DISK_STATUS_WR_PROTECT) {
+		return data_protect(ctx, WRITE_PROTECTED);
 	}
 
 	ctx->write_cb = store_write_10;
@@ -829,7 +856,7 @@ SCSI_CMD_HANDLER(MODE_SENSE_10)
 
 	r.mode_data_length = sys_cpu_to_be16(6);
 	r.medium_type = 0x00;
-	r.device_specific_parameter = 0x00;
+	r.device_specific_parameter = disk_is_write_protected(ctx) ? MODE_SENSE_WRITE_PROTECT : 0;
 	r.longlba = 0x00;
 	r.reserved5 = 0x00;
 	r.block_descriptor_length = sys_cpu_to_be16(0);
