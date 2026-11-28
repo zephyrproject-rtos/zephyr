@@ -245,9 +245,15 @@ static int peci_it8xxx2_transfer(const struct device *dev, struct peci_msg *msg)
 	struct peci_buf *peci_rx_buf = &msg->rx_buffer;
 	struct peci_buf *peci_tx_buf = &msg->tx_buffer;
 
-	int cnt, ret_code;
+	size_t cnt;
+	int ret_code;
 
 	ret_code = 0;
+
+	if (((peci_tx_buf->len > 1U) && (peci_tx_buf->buf == NULL)) ||
+	    ((peci_rx_buf->len > 0U) && (peci_rx_buf->buf == NULL))) {
+		return -EINVAL;
+	}
 
 	if (!(peci_regs->HOCTLR & PECIHEN)) {
 		LOG_ERR("[PECI] Please call the peci_enable() first.\r\n");
@@ -263,7 +269,7 @@ static int peci_it8xxx2_transfer(const struct device *dev, struct peci_msg *msg)
 	peci_regs->HORDLR = peci_rx_buf->len;
 	peci_regs->HOCMDR = msg->cmd_code;
 
-	if (msg->cmd_code != PECI_CMD_PING) {
+	if ((msg->cmd_code != PECI_CMD_PING) && (peci_tx_buf->len > 1U)) {
 		for (cnt = 0; cnt < (peci_tx_buf->len - 1); cnt++) {
 			peci_regs->HOWRDR = peci_tx_buf->buf[cnt];
 		}

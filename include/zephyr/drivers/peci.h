@@ -209,15 +209,27 @@ enum peci_command_code {
 
 /**
  * @brief PECI buffer structure
+ *
+ * The lengths of a message's two buffers are the PECI write and read lengths
+ * of the transaction, as given by the PECI_*_WR_LEN and PECI_*_RD_LEN macros.
  */
 struct peci_buf {
 	/**
-	 * Valid pointer on a data buffer, or NULL otherwise.
+	 * Pointer to the data buffer. It may be NULL only when the buffer
+	 * carries no data: a tx_buffer whose len is 0 or 1, or an rx_buffer
+	 * whose len is 0.
 	 */
 	uint8_t *buf;
 	/**
-	 * Length of the data buffer expected to be received without considering
-	 * the frame check sequence byte.
+	 * Length of the transfer in this direction.
+	 *
+	 * For tx_buffer, this is the PECI write length, which counts the
+	 * command code byte. The command code comes from peci_msg::cmd_code,
+	 * so buf holds only the len - 1 bytes that follow it. A PING has a
+	 * write length of 0.
+	 *
+	 * For rx_buffer, this is the number of data bytes expected back,
+	 * without the frame check sequence byte.
 	 *
 	 * @note Frame check sequence byte is added into rx buffer: need to allocate
 	 * an additional byte for this in rx buffer.
@@ -338,7 +350,10 @@ static inline int z_impl_peci_disable(const struct device *dev)
  * @param dev Pointer to the device structure for the driver instance.
  * @param msg Structure representing a PECI transaction.
  *
- * @return 0 on success, negative errno value on failure.
+ * @retval 0 on success.
+ * @retval -EINVAL if a buffer's buf is NULL but its len carries data
+ *         (see struct peci_buf).
+ * @return negative errno value on other failures.
  */
 
 __syscall int peci_transfer(const struct device *dev, struct peci_msg *msg);

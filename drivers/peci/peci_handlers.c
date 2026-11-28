@@ -45,13 +45,19 @@ static inline int z_vrfy_peci_transfer(const struct device *dev,
 	 * k_usermode_from_copy() only duplicates the outer struct; the buffer
 	 * pointers it carries are still caller supplied and the driver
 	 * dereferences them in supervisor mode, so they must be checked here.
+	 * A NULL buffer is only accepted with a length that carries no data.
 	 */
-	if ((msg_copy.tx_buffer.buf != NULL) && (msg_copy.tx_buffer.len > 1U)) {
+	if (msg_copy.tx_buffer.len > 1U) {
+		K_OOPS(K_SYSCALL_VERIFY_MSG(msg_copy.tx_buffer.buf != NULL,
+					    "tx_buffer.buf is NULL"));
 		K_OOPS(K_SYSCALL_MEMORY_READ(msg_copy.tx_buffer.buf,
 					     msg_copy.tx_buffer.len - 1U));
 	}
 
-	if (msg_copy.rx_buffer.buf != NULL) {
+	if (msg_copy.rx_buffer.buf == NULL) {
+		K_OOPS(K_SYSCALL_VERIFY_MSG(msg_copy.rx_buffer.len == 0U,
+					    "rx_buffer.buf is NULL"));
+	} else {
 		size_t rx_len;
 
 		K_OOPS(K_SYSCALL_VERIFY_MSG(!size_add_overflow(msg_copy.rx_buffer.len,
