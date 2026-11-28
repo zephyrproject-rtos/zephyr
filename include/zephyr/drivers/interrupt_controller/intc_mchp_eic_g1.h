@@ -143,12 +143,13 @@ struct eic_config_params {
  * This function configures the EIC interrupt for the specified pin, including setting up
  * the trigger type, enabling input, configuring debounce if required,
  * and updating the internal data structures to reflect the new assignment of pin to an eic line.
+ * Calling it again for a pin that already owns its EIC line reconfigures that line.
  *
  * @param eic_pin_config Pointer to the EIC pin configuration structure.
  *
  * @return 0 on success, or a negative error code on failure:
  *         - -ENOTSUP if no EIC line is available for the pin.
- *         - -EBUSY if the EIC line is already in use.
+ *         - -EBUSY if the EIC line is owned by another pin.
  */
 int eic_mchp_config_interrupt(struct eic_config_params *eic_pin_config);
 
