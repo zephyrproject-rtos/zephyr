@@ -2010,6 +2010,9 @@ static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 		frame_timeout_shorts_enable(uarte);
 	}
 #endif
+	/* Clear errors latched while RX was disabled before enabling the IRQ. */
+	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ERROR);
+	(void)nrf_uarte_errorsrc_get_and_clear(uarte);
 	nrf_uarte_int_enable(uarte, rx_int_mask);
 	async_rx->enabled = true;
 	nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STARTRX);
