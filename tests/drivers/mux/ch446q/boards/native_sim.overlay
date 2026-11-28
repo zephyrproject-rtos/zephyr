@@ -1,0 +1,83 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * CH446Q fixture on native_sim. xp0 and xp1 share their data, clock and
+ * reset lines on one 8-pin emulated GPIO port (as on an I2C GPIO expander),
+ * each with its own strobe line. xp2 has its data line on one port, inverted
+ * on the way (active low), and its clock and strobe lines on another, with
+ * no reset line.
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	gpio_x: gpio-x {
+		compatible = "zephyr,gpio-emul";
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+		rising-edge;
+		falling-edge;
+		high-level;
+		low-level;
+	};
+
+	gpio_a: gpio-a {
+		compatible = "zephyr,gpio-emul";
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+		rising-edge;
+		falling-edge;
+		high-level;
+		low-level;
+	};
+
+	gpio_b: gpio-b {
+		compatible = "zephyr,gpio-emul";
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+		rising-edge;
+		falling-edge;
+		high-level;
+		low-level;
+	};
+
+	xp0: crosspoint-0 {
+		compatible = "wch,ch446q";
+		data-gpios = <&gpio_x 0 GPIO_ACTIVE_HIGH>;
+		clock-gpios = <&gpio_x 1 GPIO_ACTIVE_HIGH>;
+		strobe-gpios = <&gpio_x 2 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio_x 4 GPIO_ACTIVE_HIGH>;
+		#mux-control-cells = <1>;
+		#mux-state-cells = <2>;
+	};
+
+	xp1: crosspoint-1 {
+		compatible = "wch,ch446q";
+		data-gpios = <&gpio_x 0 GPIO_ACTIVE_HIGH>;
+		clock-gpios = <&gpio_x 1 GPIO_ACTIVE_HIGH>;
+		strobe-gpios = <&gpio_x 3 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio_x 4 GPIO_ACTIVE_HIGH>;
+		#mux-control-cells = <1>;
+		#mux-state-cells = <2>;
+	};
+
+	xp2: crosspoint-2 {
+		compatible = "wch,ch446q";
+		data-gpios = <&gpio_a 5 GPIO_ACTIVE_LOW>;
+		clock-gpios = <&gpio_b 0 GPIO_ACTIVE_HIGH>;
+		strobe-gpios = <&gpio_b 7 GPIO_ACTIVE_HIGH>;
+		#mux-control-cells = <1>;
+		#mux-state-cells = <2>;
+	};
+
+	mux_consumer: mux-consumer {
+		compatible = "vnd,mux-consumer-test";
+		mux-controls = <&xp0 15>, <&xp0 7>, <&xp1 15>;
+		mux-control-names = "line-a", "line-b", "line-c";
+		mux-states = <&xp0 15 0x09>;
+	};
+};
