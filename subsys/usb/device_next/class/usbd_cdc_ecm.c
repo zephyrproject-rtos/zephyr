@@ -216,6 +216,7 @@ static int cdc_ecm_out_start(struct usbd_class_data *const c_data)
 	ep = cdc_ecm_get_bulk_out(c_data);
 	buf = cdc_ecm_buf_alloc(ep);
 	if (buf == NULL) {
+		atomic_clear_bit(&data->state, CDC_ECM_OUT_ENGAGED);
 		return -ENOMEM;
 	}
 
@@ -223,6 +224,7 @@ static int cdc_ecm_out_start(struct usbd_class_data *const c_data)
 	if (ret) {
 		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
 		net_buf_unref(buf);
+		atomic_clear_bit(&data->state, CDC_ECM_OUT_ENGAGED);
 	}
 
 	return  ret;
@@ -257,7 +259,7 @@ static int cdc_ecm_acl_out_cb(struct usbd_class_data *const c_data,
 	}
 
 	pkt = net_pkt_rx_alloc_with_buffer(data->iface, buf->len,
-					   NET_AF_UNSPEC, 0, K_FOREVER);
+					   NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("No memory for net_pkt");
 		goto restart_out_transfer;
@@ -405,6 +407,7 @@ static void usbd_cdc_ecm_disable(struct usbd_class_data *const c_data)
 
 	atomic_clear_bit(&data->state, CDC_ECM_DATA_IFACE_ENABLED);
 	atomic_clear_bit(&data->state, CDC_ECM_CLASS_SUSPENDED);
+	net_if_carrier_off(data->iface);
 	LOG_INF("Disabled %s", c_data->name);
 }
 

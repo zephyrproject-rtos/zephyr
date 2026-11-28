@@ -330,6 +330,7 @@ static int cdc_ncm_out_start(struct usbd_class_data *const c_data)
 	ep = cdc_ncm_get_bulk_out(c_data);
 	buf = cdc_ncm_buf_alloc(ep);
 	if (buf == NULL) {
+		atomic_clear_bit(&data->state, CDC_NCM_OUT_ENGAGED);
 		return -ENOMEM;
 	}
 
@@ -337,6 +338,7 @@ static int cdc_ncm_out_start(struct usbd_class_data *const c_data)
 	if (ret) {
 		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
 		net_buf_unref(buf);
+		atomic_clear_bit(&data->state, CDC_NCM_OUT_ENGAGED);
 	} else {
 		LOG_DBG("enqueue out %u", buf->size);
 	}
@@ -622,6 +624,9 @@ static void ncm_handle_notifications(const struct device *dev, const int err)
 		LOG_WRN("Notification request %s",
 			err == -ECONNABORTED ? "cancelled" : "failed");
 		data->if_state = IF_STATE_INIT;
+		if (err != -ECONNABORTED) {
+			(void)k_work_reschedule(&data->notif_work, K_MSEC(100));
+		}
 	}
 
 	if (data->if_state == IF_STATE_SPEED_CHANGE_SUBMITTED) {
@@ -633,6 +638,7 @@ static void ncm_handle_notifications(const struct device *dev, const int err)
 	if (data->if_state == IF_STATE_CONNECTION_STATUS_SUBMITTED) {
 		data->if_state = IF_STATE_CONNECTION_STATUS_SENT;
 		LOG_INF("Connection status sent");
+		(void)k_work_reschedule(&data->notif_work, K_MSEC(1));
 	}
 }
 
@@ -770,6 +776,11 @@ static int ncm_send_notification_sequence(const struct device *dev)
 	struct cdc_ncm_eth_data *data = dev->data;
 	int ret;
 
+	if (data->if_state == IF_STATE_SPEED_CHANGE_SUBMITTED ||
+	    data->if_state == IF_STATE_CONNECTION_STATUS_SUBMITTED) {
+		return -EINPROGRESS;
+	}
+
 	/* Speed change must be sent first, chapter 7.1 */
 	if (data->if_state == IF_STATE_INIT) {
 		ret = cdc_ncm_send_speed_change(dev);
@@ -780,7 +791,7 @@ static int ncm_send_notification_sequence(const struct device *dev)
 
 		LOG_INF("Speed change submitted");
 		data->if_state = IF_STATE_SPEED_CHANGE_SUBMITTED;
-		return -EAGAIN;
+		return -EINPROGRESS;
 	}
 
 	if (data->if_state == IF_STATE_SPEED_CHANGE_SENT) {
@@ -792,7 +803,7 @@ static int ncm_send_notification_sequence(const struct device *dev)
 
 		LOG_INF("Connected status submitted");
 		data->if_state = IF_STATE_CONNECTION_STATUS_SUBMITTED;
-		return -EAGAIN;
+		return -EINPROGRESS;
 	}
 
 	if (data->if_state == IF_STATE_CONNECTION_STATUS_SENT) {
@@ -815,12 +826,16 @@ static void send_notification_work(struct k_work *work)
 
 	if (atomic_test_bit(&data->state, CDC_NCM_IFACE_UP)) {
 		ret = ncm_send_notification_sequence(dev);
+		if (ret == 0) {
+			net_if_carrier_on(data->iface);
+		}
 	} else {
+		net_if_carrier_off(data->iface);
 		data->if_state = IF_STATE_INIT;
 		ret = cdc_ncm_send_connected(dev, false);
 	}
 
-	if (ret) {
+	if (ret != 0 && ret != -EINPROGRESS) {
 		(void)k_work_reschedule(&data->notif_work, K_MSEC(100));
 	}
 }
@@ -839,6 +854,9 @@ static void usbd_cdc_ncm_update(struct usbd_class_data *const c_data,
 
 	if (data_iface == iface && alternate == 0) {
 		atomic_clear_bit(&data->state, CDC_NCM_DATA_IFACE_ENABLED);
+		net_if_carrier_off(data->iface);
+		(void)k_work_cancel_delayable(&data->notif_work);
+		data->if_state = IF_STATE_INIT;
 		data->tx_seq = 0;
 		data->rx_seq = 0;
 	}
@@ -866,6 +884,9 @@ static void usbd_cdc_ncm_disable(struct usbd_class_data *const c_data)
 
 	atomic_clear_bit(&data->state, CDC_NCM_DATA_IFACE_ENABLED);
 	atomic_clear_bit(&data->state, CDC_NCM_CLASS_SUSPENDED);
+	net_if_carrier_off(data->iface);
+	(void)k_work_cancel_delayable(&data->notif_work);
+	data->if_state = IF_STATE_INIT;
 
 	LOG_INF("Disabled %s", c_data->name);
 }
@@ -1159,7 +1180,6 @@ static int cdc_ncm_iface_start(const struct device *dev, struct net_if *iface)
 	LOG_DBG("Start interface %d", net_if_get_by_iface(iface));
 
 	atomic_set_bit(&data->state, CDC_NCM_IFACE_UP);
-	net_if_carrier_on(iface);
 
 	if (atomic_test_bit(&data->state, CDC_NCM_DATA_IFACE_ENABLED)) {
 		(void)k_work_reschedule(&data->notif_work, K_MSEC(1));
