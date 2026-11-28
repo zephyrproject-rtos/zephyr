@@ -346,43 +346,6 @@ SECTIONS
 
     __data_region_end = .;
 
-    SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
-	{
-		MPU_MIN_SIZE_ALIGN
-		/*
-		 * For performance, BSS section is assumed to be 4 byte aligned and
-		 * a multiple of 4 bytes
-		 */
-		 . = ALIGN(4);
-		 __bss_start = .;
-
-/* Located in generated directory. This file is populated by the
- * zephyr_linker_sources() Cmake function.
- */
-#include <snippets-bss.ld>
-
-		 *(.sbss)
-		 *(".sbss.*")
-		 *(.bss)
-		 *(".bss.*")
-		 COMMON_SYMBOLS
-
-#ifdef CONFIG_CODE_DATA_RELOCATION
-#include <linker_sram_bss_relocate.ld>
-#endif
-
-		 /*
-		  * As memory is cleared in words only, it is simpler to ensure the BSS
-		  * section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
-		  */
-		  __bss_end = ALIGN(4);
-	}  GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
-
-#include <zephyr/linker/common-noinit.ld>
-
-	__kernel_ram_end = .;
-	__kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
-
 #if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_itcm), okay)
 GROUP_START(ITCM)
 
@@ -446,6 +409,43 @@ GROUP_START(DTCM)
 
 GROUP_END(DTCM)
 #endif
+
+    SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
+	{
+		MPU_MIN_SIZE_ALIGN
+		/*
+		 * For performance, BSS section is assumed to be 4 byte aligned and
+		 * a multiple of 4 bytes
+		 */
+		 . = ALIGN(4);
+		 __bss_start = .;
+
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-bss.ld>
+
+		 *(.sbss)
+		 *(".sbss.*")
+		 *(.bss)
+		 *(".bss.*")
+		 COMMON_SYMBOLS
+
+#ifdef CONFIG_CODE_DATA_RELOCATION
+#include <linker_sram_bss_relocate.ld>
+#endif
+
+		 /*
+		  * As memory is cleared in words only, it is simpler to ensure the BSS
+		  * section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
+		  */
+		  __bss_end = ALIGN(4);
+	}  GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+
+#include <zephyr/linker/common-noinit.ld>
+
+	__kernel_ram_end = .;
+	__kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
