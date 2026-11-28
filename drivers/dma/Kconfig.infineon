@@ -25,6 +25,7 @@ config DMA_INFINEON_CAT1_PDL
 
 config DMA_INFINEON_DESCRIPTOR_COUNT
 	int "Number of available descriptors per channel"
+	default 4 if SPI_INFINEON_DMA
 	default 2
 	depends on DMA_INFINEON_CAT1_PDL
 	help

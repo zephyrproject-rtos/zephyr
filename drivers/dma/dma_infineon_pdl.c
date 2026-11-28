@@ -133,7 +133,7 @@ static int ifx_cat1_dma_config(const struct device *dev, uint32_t channel,
 
 	/* DataWire only supports <=256 byte burst and <=256 bytes per burst */
 	if ((config->dest_burst_length > 256) ||
-	    (config->dest_burst_length <= 1 && config->head_block->block_size > 256) ||
+	    (config->dest_burst_length == 1 && config->head_block->block_size > 256) ||
 	    (config->dest_burst_length > 0 &&
 	     config->head_block->block_size > (config->dest_burst_length * 256))) {
 		LOG_ERR("DMA (DW) only supports <=256 byte burst and <=256 bytes per burst");
@@ -170,12 +170,6 @@ static int ifx_cat1_dma_config(const struct device *dev, uint32_t channel,
 		descriptor_config.interruptType = CY_DMA_DESCR_CHAIN;
 	} else {
 		descriptor_config.interruptType = CY_DMA_DESCR;
-	}
-
-	if (config->block_count > 1U) {
-		descriptor_config.channelState = CY_DMA_CHANNEL_ENABLED;
-	} else {
-		descriptor_config.channelState = CY_DMA_CHANNEL_DISABLED;
 	}
 
 	descriptor_config.triggerOutType = CY_DMA_DESCR_CHAIN;
@@ -228,7 +222,7 @@ static int ifx_cat1_dma_config(const struct device *dev, uint32_t channel,
 				descriptor_config.srcXincrement * config->dest_burst_length;
 			descriptor_config.dstYincrement =
 				descriptor_config.dstXincrement * config->dest_burst_length;
-		} else {
+		} else if (total_elements <= CY_DMA_LOOP_COUNT_MAX) {
 			descriptor_config.descriptorType = CY_DMA_1D_TRANSFER;
 			descriptor_config.xCount = total_elements;
 			descriptor_config.yCount = 1;
@@ -242,6 +236,21 @@ static int ifx_cat1_dma_config(const struct device *dev, uint32_t channel,
 					descriptor_config.dstXincrement *
 					block_config->dest_scatter_interval;
 			}
+		} else if ((block_config->dest_scatter_interval == 0) &&
+			   (total_elements % CY_DMA_LOOP_COUNT_MAX == 0) &&
+			   (total_elements / CY_DMA_LOOP_COUNT_MAX <= CY_DMA_LOOP_COUNT_MAX)) {
+			/* Too long for one X loop: split into full 256-element rows. */
+			descriptor_config.descriptorType = CY_DMA_2D_TRANSFER;
+			descriptor_config.xCount = CY_DMA_LOOP_COUNT_MAX;
+			descriptor_config.yCount = total_elements / CY_DMA_LOOP_COUNT_MAX;
+			descriptor_config.srcYincrement =
+				descriptor_config.srcXincrement * CY_DMA_LOOP_COUNT_MAX;
+			descriptor_config.dstYincrement =
+				descriptor_config.dstXincrement * CY_DMA_LOOP_COUNT_MAX;
+		} else {
+			LOG_ERR("Block %" PRIu32 ": %" PRIu32 " elements is neither <= %lu nor a "
+				"multiple of it", i, total_elements, CY_DMA_LOOP_COUNT_MAX);
+			return -EINVAL;
 		}
 
 		/* Set source and destination for descriptor
@@ -267,6 +276,11 @@ static int ifx_cat1_dma_config(const struct device *dev, uint32_t channel,
 				descriptor_config.nextDescriptor = NULL;
 			}
 		}
+
+		/* An enabled channel would raise CURR_PTR_NULL on a NULL next descriptor. */
+		descriptor_config.channelState = (descriptor_config.nextDescriptor != NULL)
+							 ? CY_DMA_CHANNEL_ENABLED
+							 : CY_DMA_CHANNEL_DISABLED;
 
 		/* initialize descriptor */
 		dma_status = Cy_DMA_Descriptor_Init(descriptor, &descriptor_config);
