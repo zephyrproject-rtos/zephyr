@@ -292,3 +292,34 @@ sy6970@f {
 		compatible = "silergy,sy6970-regulator";
 	};
 };
+
+max20356@10 {
+	compatible = "adi,max20356";
+	reg = <0xe>;
+
+	regulators {
+		compatible = "adi,max20356-regulator";
+
+		buck1 {};
+
+		buck2 {};
+
+		buck3 {};
+
+		buckboost {};
+
+		ldo1 {};
+
+		ldo2 {};
+
+		ldo3 {};
+
+		ldo4 {};
+
+		lsw1 {};
+
+		lsw2 {};
+
+		lsw3 {};
+	};
+};
