@@ -636,7 +636,8 @@ static int close(const struct device *instance)
 	rpmsg_inst = &data->rpmsg_inst;
 
 	if (!check_endpoints_freed(rpmsg_inst)) {
-		return -EBUSY;
+		err = -EBUSY;
+		goto error;
 	}
 
 	err = ipc_rpmsg_deinit(rpmsg_inst, data->role);
@@ -656,6 +657,8 @@ static int close(const struct device *instance)
 
 	memset(&data->vr, 0, sizeof(struct ipc_static_vrings));
 	memset(rpmsg_inst, 0, sizeof(struct ipc_rpmsg_instance));
+	/* Initialize the mutex cleared above, before the instance can be opened again */
+	k_mutex_init(&rpmsg_inst->mtx);
 
 	atomic_set(&data->state, STATE_READY);
 	return 0;

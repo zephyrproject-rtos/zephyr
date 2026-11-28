@@ -334,6 +334,24 @@ ZTEST(ipc_service_api, test_remote_deregister_endpoint)
 	zassert_ok(ret, "No PONG after remote-initiated deregister and re-bind");
 }
 
+ZTEST(ipc_service_api, test_close_with_endpoints)
+{
+	int ret;
+
+	if (!DT_NODE_HAS_COMPAT(IPC_NODE, zephyr_ipc_openamp_static_vrings)) {
+		ztest_test_skip();
+		return;
+	}
+
+	/* Closing must fail while endpoints are registered, and leave the instance usable */
+	for (int i = 0; i < 2; i++) {
+		ret = ipc_service_close_instance(ipc_instance);
+		zassert_equal(ret, -EBUSY, "[%d]: Unexpected close return value %d", i, ret);
+	}
+
+	test_echo(ep0());
+}
+
 ZTEST(ipc_service_api, test_get_tx_buffer_size)
 {
 	int ret;
