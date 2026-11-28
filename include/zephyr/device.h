@@ -1165,7 +1165,7 @@ __syscall int device_deinit(const struct device *dev);
  */
 #define Z_DEVICE_DEPS_DEFINE(node_id, dev_id, ...)                             \
 	extern Z_DEVICE_DEPS_CONST device_handle_t Z_DEVICE_DEPS_NAME(         \
-		dev_id)[];                                                     \
+		dev_id)[] Z_DEVICE_DEPS_SECTION;                               \
 	Z_DEVICE_DEPS_CONST Z_DECL_ALIGN(device_handle_t)                      \
 	Z_DEVICE_DEPS_SECTION Z_DEVICE_DEPS_EXTERN __weak                      \
 		Z_DEVICE_DEPS_NAME(dev_id)[] = {                               \
