@@ -35,4 +35,4 @@ typedef struct _thread_arch _thread_arch_t;
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_INCLUDE_ARCH_TREAD_THREAD_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_TRICORE_THREAD_H_ */
