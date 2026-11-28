@@ -69,6 +69,16 @@ LOG_MODULE_REGISTER(elf, CONFIG_LLEXT_LOG_LEVEL);
  */
 #define AARCH64_TLS_TCB_SIZE (sizeof(uintptr_t) * 2)
 
+/*
+ * R_AARCH64_TLSLE_ADD_TPREL_HI12 encodes TPREL(S+A) >> 12 in a 12-bit unsigned
+ * immediate, so AAELF64 defines its checked range as [0, 2^24). A is signed
+ * (r_addend is an elf64_sxword), so TPREL(S+A) can be negative, and such a
+ * value is just as far outside that range as one that does not fit in 24 bits.
+ */
+#define AARCH64_TLSLE_TPREL_HI12_LIMIT BIT64(24)
+/* The same bound in the signed category r_addend belongs to. */
+#define AARCH64_TLSLE_TPREL_HI12_SLIMIT ((int64_t)1 << 24)
+
 /* Masks for immediate values */
 #define AARCH64_MASK_IMM12 BIT_MASK(12)
 #define AARCH64_MASK_IMM14 BIT_MASK(14)
@@ -438,6 +448,8 @@ static int imm_reloc_handler(elf_rela_t *rel, elf_word reloc_type, uintptr_t loc
  * @param[in] tls_value TLS offset of the symbol (S in AArch64 ELF, st_value).
  *
  * @retval 0 Successful relocation
+ * @retval -ERANGE TPREL(S+A) does not fit the 24-bit range of
+ *                 R_AARCH64_TLSLE_ADD_TPREL_HI12
  */
 static int tls_reloc_handler(elf_rela_t *rel, elf_word reloc_type, uintptr_t loc,
 			     uintptr_t tls_value)
@@ -448,6 +460,25 @@ static int tls_reloc_handler(elf_rela_t *rel, elf_word reloc_type, uintptr_t loc
 
 	switch (reloc_type) {
 	case R_AARCH64_TLSLE_ADD_TPREL_HI12:
+		/*
+		 * Both S and A come from the extension, so bound each of them
+		 * before adding: an out-of-range symbol value or addend would
+		 * otherwise wrap the unsigned sum back into the accepted window
+		 * and relocate the instruction to the wrong TLS slot. With both
+		 * operands below 2^24 in magnitude the sum computed above cannot
+		 * wrap, and a negative TPREL(S+A) wraps to a value far above the
+		 * limit, so the single unsigned comparison below covers both.
+		 */
+		if (tls_value >= AARCH64_TLSLE_TPREL_HI12_LIMIT ||
+		    rel->r_addend <= -AARCH64_TLSLE_TPREL_HI12_SLIMIT ||
+		    rel->r_addend >= AARCH64_TLSLE_TPREL_HI12_SLIMIT) {
+			return -ERANGE;
+		}
+
+		if (tpoff >= AARCH64_TLSLE_TPREL_HI12_LIMIT) {
+			return -ERANGE;
+		}
+
 		imm = (tpoff >> 12) & AARCH64_MASK_IMM12;
 		break;
 	case R_AARCH64_TLSLE_ADD_TPREL_LO12_NC:
@@ -575,7 +606,12 @@ int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *r
 		break;
 
 	case R_AARCH64_TLSLE_ADD_TPREL_HI12:
+		/* HI12 is a checked relocation: TPREL(S+A) must fit in 24 bits. */
+		ret = tls_reloc_handler(rel, reloc_type, loc, sym.st_value);
+		break;
+
 	case R_AARCH64_TLSLE_ADD_TPREL_LO12_NC:
+		/* _NC: the low 12 bits alias by definition, nothing to check. */
 		overflow_check = false;
 		ret = tls_reloc_handler(rel, reloc_type, loc, sym.st_value);
 		break;
