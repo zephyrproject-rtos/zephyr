@@ -12,6 +12,15 @@ template available under :zephyr_file:`doc/templates/board.tmpl`.
 Shields are hardware add-ons that can be stacked on top of a board to add extra functionality.
 Refer to the :ref:`shield_porting_guide` for more information on how to port a shield.
 
+.. important::
+
+   The boards and shields in the Zephyr tree are mainly intended for development, evaluation and
+   testing, and are not considered a stable interface. Their names, Kconfig defaults, devicetree,
+   pin assignments and supported features can change at any time. Products should not rely on an
+   in-tree board staying the same between releases; instead, define a
+   :ref:`custom board <custom_board_definition>` in your own repository, using an in-tree board as a
+   starting point if needed.
+
 .. admonition:: Search Tips
    :class: dropdown
 
