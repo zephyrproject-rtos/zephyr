@@ -243,9 +243,33 @@ class HardwareMap:
 
         self.duts.append(device)
 
+    def _load_without_schema(self, map_file):
+        duts = scl.yaml_load(map_file)
+        if not isinstance(duts, list):
+            raise ValueError(f"Hardware map '{map_file}' must be a list")
+
+        schema = scl.yaml_load(self.schema_path)
+        supported = set(schema['items'].get('properties', {}))
+        for index, dut in enumerate(duts):
+            if not isinstance(dut, dict):
+                raise ValueError(
+                    f"Hardware-map entry {index} in '{map_file}' "
+                    "must be a mapping"
+                )
+            for name in sorted(set(dut) - supported):
+                logger.warning(
+                    "Ignoring unsupported hardware-map property '%s' "
+                    "in '%s' entry %d", name, map_file, index
+                )
+                del dut[name]
+        return duts
+
     def load(self, map_file):
         hwm_schema = scl.yaml_load(self.schema_path)
-        duts = scl.yaml_load_verify(map_file, hwm_schema)
+        if getattr(self.options, 'skip_hwmap_schema_check', False):
+            duts = self._load_without_schema(map_file)
+        else:
+            duts = scl.yaml_load_verify(map_file, hwm_schema)
         for dut in duts:
             pre_script = dut.get('pre_script')
             script_param = dut.get('script_param')
