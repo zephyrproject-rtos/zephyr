@@ -31,6 +31,9 @@ BUILD_ASSERT((CONFIG_SDHC_BUFFER_ALIGNMENT % sizeof(uint32_t)) == 0U);
 
 #define SDIO_OCR_SDIO_S18R BIT(24) /* SDIO OCR bit indicating support for 1.8V switching */
 
+/* Wait for the response to the CMD12 that aborts a polled transfer */
+#define SDHC_STM32_ABORT_TIMEOUT_MS 100
+
 /* Set IDMA buffer address: adapts to series with IDMABASER vs IDMABASE0 */
 #if defined(SDMMC_IDMABASER_IDMABASER)
 #define SDHC_STM32_IDMA_SET_BUFFER(instance, addr) ((instance)->IDMABASER = (uint32_t)(addr))
@@ -80,6 +83,7 @@ struct sdhc_stm32_data {
 	uint32_t total_transfer_bytes; /* number of bytes transferred */
 	uint32_t sdmmc_clk;            /* Specifies the clock*/
 	uint32_t block_size;           /* Block size for SDMMC data transfer */
+	uint32_t rca_arg;              /* CMD7 argument (RCA << 16) of the selected card */
 	uint32_t error_code;           /* SD Card Error codes */
 	bool is_sdio_transfer;         /* Flag to indicate if current transfer is SDIO */
 
@@ -626,6 +630,157 @@ static int sdhc_stm32_set_response(struct sdhc_stm32_data *dev_data, SDMMC_TypeD
 	return 0;
 }
 
+/* Read and drop whatever the receive FIFO holds (only while the DPSM is active). */
+static void sdhc_stm32_drop_rx_fifo(SDMMC_TypeDef *instance)
+{
+	while (__SDMMC_GET_FLAG(instance, SDMMC_FLAG_DPSMACT) &&
+	       !__SDMMC_GET_FLAG(instance, SDMMC_FLAG_RXFIFOE)) {
+		(void)SDMMC_ReadFIFO(instance);
+	}
+}
+
+/*
+ * Send CMD12 with CMDSTOP set: the CPSM abort that stops the DPSM, and the
+ * command that stops a card sending a multiple-block read. The receive FIFO
+ * is drained while waiting for the response: with hardware flow control a
+ * full FIFO stops the bus clock, and CMD12 could not be sent at all
+ * (SDMMC_CmdStopTransfer() would block until its loop timeout).
+ *
+ * A card that has already sent all data (single block, CMD6) is in the
+ * transfer state, where CMD12 is illegal: it does not answer and reports
+ * ILLEGAL_COMMAND in the response to the next command. After a response
+ * timeout, CMD13 is therefore sent to the selected card; its response
+ * reports and clears that error, and its error bits are ignored.
+ */
+static void sdhc_stm32_abort_transfer(struct sdhc_stm32_data *dev_data, SDMMC_TypeDef *instance)
+{
+	SDMMC_CmdInitTypeDef cmd = {
+		.Argument = 0U,
+		.CmdIndex = SDMMC_CMD_STOP_TRANSMISSION,
+		.Response = SDMMC_RESPONSE_SHORT,
+		.WaitForInterrupt = SDMMC_WAIT_NO,
+		.CPSM = SDMMC_CPSM_ENABLE,
+	};
+	int64_t deadline = k_uptime_get() + SDHC_STM32_ABORT_TIMEOUT_MS;
+	bool no_response;
+
+	__SDMMC_CMDSTOP_ENABLE(instance);
+	__SDMMC_CMDTRANS_DISABLE(instance);
+	(void)SDMMC_SendCommand(instance, &cmd);
+
+	while (!__SDMMC_GET_FLAG(instance, SDMMC_FLAG_CMDREND | SDMMC_FLAG_CTIMEOUT |
+						   SDMMC_FLAG_CCRCFAIL)) {
+		sdhc_stm32_drop_rx_fifo(instance);
+		if (k_uptime_get() > deadline) {
+			LOG_ERR("No response to CMD12");
+			break;
+		}
+		k_yield();
+	}
+
+	no_response = __SDMMC_GET_FLAG(instance, SDMMC_FLAG_CTIMEOUT);
+	__SDMMC_CMDSTOP_DISABLE(instance);
+	__SDMMC_CLEAR_FLAG(instance, SDMMC_STATIC_CMD_FLAGS);
+
+	if (no_response && (dev_data->rca_arg != 0U)) {
+		/* With the FIFO full, hardware flow control would stop the clock */
+		sdhc_stm32_drop_rx_fifo(instance);
+		(void)SDMMC_CmdSendStatus(instance, dev_data->rca_arg);
+	}
+}
+
+/*
+ * Abort a polled data transfer and return the DPSM to idle. Without this, a
+ * failed transfer leaves DPSMACT set and every following data command fails.
+ *
+ * DCTRL.FIFORST alone is not enough: RM0486 Rev 4 (SDMMC_DCTRL) says it "only
+ * takes effect when a transfer error or transfer hold occurs". After a pure
+ * software timeout (no error flag set) the DPSM must first be aborted by the
+ * CPSM, i.e. a command sent with CMDSTOP (sdhc_stm32_abort_transfer()). The
+ * DPSM then goes idle once the FIFO is empty or has been reset with FIFORST,
+ * and sets DABORT.
+ *
+ * stop_card also sends CMD12 when an error flag is set, to stop a card that
+ * is still sending a multiple-block read.
+ */
+static int sdhc_stm32_reset_data_path(struct sdhc_stm32_data *dev_data, SDMMC_TypeDef *instance,
+				      bool stop_card)
+{
+	int ret = 0;
+
+	if (__SDMMC_GET_FLAG(instance, SDMMC_FLAG_DPSMACT)) {
+		if (stop_card || !__SDMMC_GET_FLAG(instance, SDMMC_DATA_ERROR_FLAGS)) {
+			sdhc_stm32_abort_transfer(dev_data, instance);
+		}
+		if (__SDMMC_GET_FLAG(instance, SDMMC_FLAG_DPSMACT)) {
+			instance->DCTRL |= SDMMC_DCTRL_FIFORST;
+		}
+		if (!WAIT_FOR(!__SDMMC_GET_FLAG(instance, SDMMC_FLAG_DPSMACT), 1000,
+			      k_busy_wait(1))) {
+			LOG_ERR("Data path still active after abort");
+			ret = -EIO;
+		}
+	} else if (stop_card) {
+		sdhc_stm32_abort_transfer(dev_data, instance);
+	} else {
+		/* Data path idle and card not sending: nothing to abort */
+	}
+
+	instance->DCTRL = 0U;
+	/* Includes DABORT */
+	__SDMMC_CLEAR_FLAG(instance, SDMMC_STATIC_DATA_FLAGS);
+
+	return ret;
+}
+
+/*
+ * Receive data by polling: read the FIFO word by word while it holds data,
+ * until DATAEND or a data error flag is set.
+ *
+ * The FIFO must be drained to the end: the DPSM only sets DATAEND and goes
+ * idle once the FIFO is empty. Reading only when RXFIFOHF is set does not
+ * work on every SDMMC version, because the FIFO depth differs (16 words on
+ * STM32H7, 256 words on STM32N6): a block shorter than half the FIFO never
+ * sets RXFIFOHF. Reading word by word until DATAEND does not depend on the
+ * FIFO depth.
+ *
+ * Up to len bytes are stored at buf (no alignment needed), in the order they
+ * were received; further words are read and dropped.
+ *
+ * Returns 0 once DATAEND or an error flag is set (the caller checks which),
+ * -ETIMEDOUT if neither happens within timeout_ms.
+ */
+static int sdhc_stm32_poll_rx(SDMMC_TypeDef *instance, uint8_t *buf, size_t len,
+			      uint32_t timeout_ms)
+{
+	int64_t deadline = k_uptime_get() + timeout_ms;
+	size_t pos = 0U;
+
+	while (!__SDMMC_GET_FLAG(instance, SDMMC_WAIT_RX_FLAGS)) {
+		if (!__SDMMC_GET_FLAG(instance, SDMMC_FLAG_RXFIFOE)) {
+			uint32_t data = SDMMC_ReadFIFO(instance);
+
+			if ((len - pos) >= sizeof(data)) {
+				UNALIGNED_PUT(data, (uint32_t *)&buf[pos]);
+				pos += sizeof(data);
+			} else {
+				while (pos < len) {
+					buf[pos] = (uint8_t)data;
+					pos++;
+					data >>= 8;
+				}
+			}
+			continue;
+		}
+		if (k_uptime_get() > deadline) {
+			return -ETIMEDOUT;
+		}
+		k_yield();
+	}
+
+	return 0;
+}
+
 static void sdhc_stm32_read_fifo_block(SDMMC_TypeDef *instance, uint8_t **p_buf)
 {
 	__ASSERT_NO_MSG(p_buf != NULL);
@@ -656,31 +811,6 @@ static void sdhc_stm32_write_fifo_block(SDMMC_TypeDef *instance, const uint8_t *
 		buf += 4;
 	}
 	*p_buf = buf;
-}
-
-static int sdhc_stm32_poll_read_transfer(SDMMC_TypeDef *instance, uint8_t **tempbuff,
-					 uint32_t *dataremaining, uint32_t timeout,
-					 struct sdhc_stm32_data *data)
-{
-	int ret;
-
-	ret = WAIT_FOR(__SDMMC_GET_FLAG(instance, SDMMC_WAIT_RX_FLAGS), timeout * USEC_PER_MSEC, ({
-				if (__SDMMC_GET_FLAG(instance, SDMMC_FLAG_RXFIFOHF) &&
-				    (*dataremaining >= SDMMC_HALFFIFOBYTES)) {
-					/* Read data from SDMMC Rx FIFO */
-					sdhc_stm32_read_fifo_block(instance, tempbuff);
-					*dataremaining -= SDMMC_HALFFIFOBYTES;
-				}
-				k_yield();
-		       }));
-
-	if (ret == 0) {
-		/* Clear all the static flags */
-		__SDMMC_CLEAR_FLAG(instance, SDMMC_STATIC_FLAGS);
-		data->error_code |= SDMMC_ERROR_TIMEOUT;
-		return -ETIMEDOUT;
-	}
-	return 0;
 }
 
 static int sdhc_stm32_poll_write_transfer(SDMMC_TypeDef *instance, const uint8_t **tempbuff,
@@ -776,12 +906,16 @@ static int sdhc_stm32_rw_blocks_poll(struct sdhc_stm32_data *dev_data, struct sd
 		res = sdhc_stm32_poll_write_transfer(instance, &tempbuff, &dataremaining, timeout,
 						     dev_data);
 	} else {
-		uint8_t *tempbuff = p_data;
-
-		res = sdhc_stm32_poll_read_transfer(instance, &tempbuff, &dataremaining, timeout,
-						    dev_data);
+		res = sdhc_stm32_poll_rx(instance, p_data, dataremaining, timeout);
+		if (res != 0) {
+			dev_data->error_code |= SDMMC_ERROR_TIMEOUT;
+		}
 	}
 	if (res != 0) {
+		if (!is_write) {
+			/* Abort, and stop a card still sending a multiple-block read */
+			(void)sdhc_stm32_reset_data_path(dev_data, instance, number_of_blocks > 1U);
+		}
 		return res;
 	}
 
@@ -796,6 +930,8 @@ static int sdhc_stm32_rw_blocks_poll(struct sdhc_stm32_data *dev_data, struct sd
 	/* Check for data transfer errors */
 	errorstate = __SDMMC_GET_FLAG(instance, SDMMC_DATA_ERROR_FLAGS);
 	if (errorstate != 0U) {
+		/* Return the DPSM to idle and stop a multiple-block transfer */
+		(void)sdhc_stm32_reset_data_path(dev_data, instance, number_of_blocks > 1U);
 		return sdhc_stm32_handle_data_error(instance, errorstate, dev_data);
 	}
 
@@ -999,9 +1135,7 @@ static int sdhc_stm32_mmc_read_ext_csd(struct sdhc_stm32_data *dev_data, SDMMC_T
 {
 	SDMMC_DataInitTypeDef config = {0};
 	uint32_t errorstate;
-	uint32_t dataremaining;
 	uint32_t data_len;
-	uint8_t *tempbuff;
 	int res;
 
 	if ((data == NULL) || (data->data == NULL)) {
@@ -1040,26 +1174,12 @@ static int sdhc_stm32_mmc_read_ext_csd(struct sdhc_stm32_data *dev_data, SDMMC_T
 		return res;
 	}
 
-	/* Poll on SDMMC flags and transfer data from FIFO */
-	dataremaining = config.DataLength;
-	tempbuff = data->data;
-	res = WAIT_FOR(__SDMMC_GET_FLAG(instance, SDMMC_WAIT_RX_FLAGS),
-		       data->timeout_ms * USEC_PER_MSEC, ({
-			if (__SDMMC_GET_FLAG(instance, SDMMC_FLAG_RXFIFOHF) &&
-			    (dataremaining >= SDMMC_FIFO_SIZE)) {
-				sdhc_stm32_read_fifo_block(instance, &tempbuff);
-				dataremaining -= SDMMC_FIFO_SIZE;
-			} else if (dataremaining < SDMMC_FIFO_SIZE) {
-				sdhc_stm32_read_remaining_bytes(instance, &tempbuff,
-								&dataremaining);
-			}
-			k_yield();
-	       }));
-
-	if (res == 0) {
-		__SDMMC_CLEAR_FLAG(instance, SDMMC_STATIC_FLAGS);
+	/* Read the FIFO until DATAEND */
+	res = sdhc_stm32_poll_rx(instance, data->data, data_len, data->timeout_ms);
+	if (res != 0) {
 		dev_data->error_code |= SDMMC_ERROR_TIMEOUT;
-		return -ETIMEDOUT;
+		(void)sdhc_stm32_reset_data_path(dev_data, instance, false);
+		return res;
 	}
 
 	__SDMMC_CMDTRANS_DISABLE(instance);
@@ -1067,6 +1187,7 @@ static int sdhc_stm32_mmc_read_ext_csd(struct sdhc_stm32_data *dev_data, SDMMC_T
 	/* Check for data transfer errors */
 	errorstate = __SDMMC_GET_FLAG(instance, SDMMC_DATA_ERROR_FLAGS);
 	if (errorstate != 0U) {
+		(void)sdhc_stm32_reset_data_path(dev_data, instance, false);
 		return sdhc_stm32_handle_data_error(instance, errorstate, dev_data);
 	}
 
@@ -1140,8 +1261,13 @@ static int sdhc_stm32_find_scr(struct sdhc_command *cmd, SDMMC_TypeDef *instance
 	/* Clear all the static flags */
 	__SDMMC_CLEAR_FLAG(instance, SDMMC_STATIC_DATA_FLAGS);
 
-	scr[0] = sys_cpu_to_be32(tempscr[1]);
-	scr[1] = sys_cpu_to_be32(tempscr[0]);
+	/*
+	 * The SD stack expects the SCR as the 8 bytes in the order the card sent
+	 * them (it decodes them with sys_be32_to_cpu()). The FIFO returns the
+	 * first received byte in bits 7:0 of each word.
+	 */
+	sys_put_le32(tempscr[0], (uint8_t *)&scr[0]);
+	sys_put_le32(tempscr[1], (uint8_t *)&scr[1]);
 
 	return 0;
 }
@@ -1364,13 +1490,12 @@ static int sdhc_stm32_sdio_rw_extended_dma(struct sdhc_command *cmd, SDMMC_TypeD
 }
 
 static int sdhc_stm32_switch_speed(SDMMC_TypeDef *instance, uint32_t switch_arg, uint8_t status[64],
-				   uint32_t block_size, uint32_t buf_size,
+				   uint32_t block_size, uint32_t buf_size, uint32_t timeout_ms,
 				   struct sdhc_stm32_data *dev_data)
 {
 	uint32_t errorstate;
 	SDMMC_DataInitTypeDef sdmmc_datainitstructure;
 	uint32_t sd_hs[16] = {0};
-	uint32_t loop = 0;
 	int ret;
 
 	if ((block_size == 0U) || (block_size % sizeof(uint32_t) != 0U) || (buf_size < 64U)) {
@@ -1394,40 +1519,32 @@ static int sdhc_stm32_switch_speed(SDMMC_TypeDef *instance, uint32_t switch_arg,
 	errorstate = SDMMC_CmdSwitch(instance, switch_arg);
 	if (errorstate != SDMMC_ERROR_NONE) {
 		dev_data->error_code |= errorstate;
+		(void)sdhc_stm32_reset_data_path(dev_data, instance, false);
 		return -EIO;
 	}
 
-	ret = WAIT_FOR(__SDMMC_GET_FLAG(instance, SDMMC_WAIT_RX_DBCKEND_FLAGS),
-		       SDMMC_SWDATATIMEOUT * USEC_PER_MSEC, ({
-			if (__SDMMC_GET_FLAG(instance, SDMMC_FLAG_RXFIFOHF)) {
-				if ((loop + 1) * SDMMC_HALFFIFOBYTES <= sizeof(sd_hs)) {
-					uint8_t *buf =
-						((uint8_t *)sd_hs) + (loop * SDMMC_HALFFIFOBYTES);
-
-					sdhc_stm32_read_fifo_block(instance, &buf);
-					loop++;
-				}
-			}
-			k_yield();
-		       }));
-
-	if (ret == 0) {
+	ret = sdhc_stm32_poll_rx(instance, (uint8_t *)sd_hs, sizeof(sd_hs), timeout_ms);
+	if (ret != 0) {
 		dev_data->error_code |= SDMMC_ERROR_TIMEOUT;
-		return -ETIMEDOUT;
+		(void)sdhc_stm32_reset_data_path(dev_data, instance, false);
+		return ret;
 	}
 
 	if (__SDMMC_GET_FLAG(instance, SDMMC_FLAG_DTIMEOUT)) {
-		__SDMMC_CLEAR_FLAG(instance, SDMMC_FLAG_DTIMEOUT);
 		dev_data->error_code |= SDMMC_ERROR_DATA_TIMEOUT;
-		return -ETIMEDOUT;
+		ret = -ETIMEDOUT;
 	} else if (__SDMMC_GET_FLAG(instance, SDMMC_FLAG_DCRCFAIL)) {
-		__SDMMC_CLEAR_FLAG(instance, SDMMC_FLAG_DCRCFAIL);
 		dev_data->error_code |= SDMMC_ERROR_DATA_CRC_FAIL;
-		return -EILSEQ;
+		ret = -EILSEQ;
 	} else if (__SDMMC_GET_FLAG(instance, SDMMC_FLAG_RXOVERR)) {
-		__SDMMC_CLEAR_FLAG(instance, SDMMC_FLAG_RXOVERR);
 		dev_data->error_code |= SDMMC_ERROR_RX_OVERRUN;
-		return -EIO;
+		ret = -EIO;
+	} else {
+		/* No data error: the whole status block was received */
+	}
+	if (ret != 0) {
+		(void)sdhc_stm32_reset_data_path(dev_data, instance, false);
+		return ret;
 	}
 
 	/* Clear all the static flags */
@@ -1594,6 +1711,14 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 		if (res == 0) {
 			res = sdhc_stm32_set_response(dev_data, instance, cmd);
 		}
+		/* Track the selected card for sdhc_stm32_abort_transfer() */
+		if ((res == 0) && (cmd->opcode == SD_SELECT_CARD)) {
+			dev_data->rca_arg = cmd->arg;
+		} else if (cmd->opcode == SD_GO_IDLE_STATE) {
+			dev_data->rca_arg = 0U;
+		} else {
+			/* The selected card is unchanged */
+		}
 		break;
 
 	case SD_SEND_IF_COND:
@@ -1613,7 +1738,8 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 		if (data != NULL) {
 			res = sdhc_stm32_switch_speed(instance, cmd->arg, data->data,
 						      data->block_size,
-						      data->blocks * data->block_size, dev_data);
+						      data->blocks * data->block_size,
+						      data->timeout_ms, dev_data);
 		} else {
 			res = sdhc_stm32_send_cmd(dev_data, instance, cmd);
 			if (res == 0) {
@@ -1690,6 +1816,27 @@ static int sdhc_stm32_set_io(const struct device *dev, struct sdhc_io *ios)
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 	k_mutex_lock(&data->bus_mutex, K_FOREVER);
 
+	if ((ios->timing != 0) && (host_io->timing != ios->timing)) {
+		switch (ios->timing) {
+		case SDHC_TIMING_LEGACY:
+		case SDHC_TIMING_HS:
+			/*
+			 * Default and High Speed (up to 50 MHz) need no register
+			 * change: they use the internal receive clock
+			 * sdmmc_io_in_ck, no BUSSPEED and no delay block. Only
+			 * the clock differs, which the stack sets separately.
+			 */
+			host_io->timing = ios->timing;
+			LOG_DBG("Timing set to %s",
+				(ios->timing == SDHC_TIMING_HS) ? "High Speed" : "Legacy");
+			break;
+		default:
+			LOG_ERR("Unsupported timing %d", ios->timing);
+			res = -ENOTSUP;
+			goto end;
+		}
+	}
+
 	if ((ios->clock != 0) && (host_io->clock != ios->clock)) {
 		if ((ios->clock > props->f_max) || (ios->clock < props->f_min)) {
 			LOG_ERR("Invalid clock frequency, domain (%u, %u)", props->f_min,
@@ -1704,15 +1851,33 @@ static int sdhc_stm32_set_io(const struct device *dev, struct sdhc_io *ios)
 			goto end;
 		}
 
-		/* Calculate clock divider
-		 * Formula: clock_div = PeripheralClock / (2 * DesiredClock)
+		/*
+		 * Bus clock = kernel clock / (2 * CLKDIV), or the kernel clock
+		 * itself for CLKDIV = 0. Round the divider up so the bus clock
+		 * never exceeds the requested one.
 		 */
-		uint32_t clock_div = data->sdmmc_clk / (2U * ios->clock);
+		uint32_t clock_div;
+		uint32_t bus_clk;
+
+		if (data->sdmmc_clk <= ios->clock) {
+			clock_div = 0U;
+			bus_clk = data->sdmmc_clk;
+		} else {
+			clock_div = DIV_ROUND_UP(data->sdmmc_clk, 2U * ios->clock);
+			if (clock_div > (SDMMC_CLKCR_CLKDIV >> SDMMC_CLKCR_CLKDIV_Pos)) {
+				LOG_ERR("Clock %u Hz too low for kernel clock %u Hz", ios->clock,
+					data->sdmmc_clk);
+				res = -EINVAL;
+				goto end;
+			}
+			bus_clk = data->sdmmc_clk / (2U * clock_div);
+		}
 
 		stm32_reg_modify_bits(&instance->CLKCR, SDMMC_CLKCR_CLKDIV, clock_div);
 
 		host_io->clock = ios->clock;
-		LOG_DBG("Clock set to %d", ios->clock);
+		LOG_DBG("Clock set to %u Hz (requested %u Hz, CLKDIV %u)", bus_clk, ios->clock,
+			clock_div);
 	}
 
 	if (ios->power_mode == SDHC_POWER_OFF) {
@@ -1762,6 +1927,8 @@ static void sdhc_stm32_init_props(const struct device *dev)
 	props->host_caps.vol_330_support = true;
 	props->host_caps.vol_180_support = sdhc_config->support_1_8_v;
 	props->host_caps.bus_8_bit_support = (sdhc_config->bus_width == SDHC_BUS_WIDTH8BIT);
+	/* Boards opt in to High Speed with a max-bus-freq above Default Speed */
+	props->host_caps.high_spd_support = (sdhc_config->max_freq > SD_CLOCK_25MHZ);
 	props->bus_4_bit_support = (sdhc_config->bus_width == SDHC_BUS_WIDTH4BIT);
 }
 
