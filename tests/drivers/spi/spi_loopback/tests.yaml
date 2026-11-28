@@ -103,13 +103,17 @@ tests:
       - nucleo_f767zi
       - nucleo_g071rb
       - nucleo_g474re
+      - nucleo_l432kc
       - nucleo_h743zi
       - nucleo_h745zi_q/stm32h745xx/m4
       - nucleo_h745zi_q/stm32h745xx/m7
+      - nucleo_h755zi_q/stm32h755xx/m7
       - nucleo_h753zi
+      - nucleo_h7s3l8/stm32h7s3xx/ext_flash_app
       - nucleo_l152re
       - nucleo_u083rc
       - nucleo_u385rg_q
+      - nucleo_u3c5zi_q
       - nucleo_wb55rg
       - nucleo_wba55cg
       - nucleo_wl55jc
@@ -145,6 +149,7 @@ tests:
       - nucleo_h743zi
       - nucleo_h745zi_q/stm32h745xx/m4
       - nucleo_h745zi_q/stm32h745xx/m7
+      - nucleo_h755zi_q/stm32h755xx/m7
       - nucleo_h753zi
     integration_platforms:
       - nucleo_h753zi
@@ -166,8 +171,10 @@ tests:
       - nucleo_h753zi
       - nucleo_h7p5ii
       - nucleo_l152re
+      - nucleo_l432kc
       - nucleo_u083rc
       - nucleo_u385rg_q
+      - nucleo_u3c5zi_q
       - nucleo_wb55rg
       - nucleo_wba55cg
       - nucleo_wl55jc
@@ -195,7 +202,9 @@ tests:
       - nucleo_h753zi
       - nucleo_h7p5ii
       - nucleo_l152re
+      - nucleo_l432kc
       - nucleo_u083rc
+      - nucleo_u3c5zi_q
       - nucleo_wb55rg
       - nucleo_wba55cg
       - nucleo_wl55jc
@@ -221,7 +230,9 @@ tests:
       - nucleo_h745zi_q/stm32h745xx/m7
       - nucleo_h753zi
       - nucleo_l152re
+      - nucleo_l432kc
       - nucleo_u083rc
+      - nucleo_u3c5zi_q
       - nucleo_wb55rg
       - nucleo_wba55cg
       - nucleo_wl55jc
