@@ -522,6 +522,24 @@ PCIe
   mastering; dependent drivers such as NVMe, ivshmem and IGC fail to initialize. This is
   intentional: use a 64-bit MSI capability or a target address below 4 GiB. (:github:`124156`)
 
+Pin Control
+===========
+
+* The Renesas RZ ``pinctrl-rz*-common.h`` devicetree binding headers now only hold the helper
+  macros shared by an RZ series. The port and dedicated-pin definitions moved to a header per
+  SoC, which includes the common header. Out-of-tree boards must include the header of their
+  SoC instead:
+
+  * RZ/A3UL: :zephyr_file:`include/zephyr/dt-bindings/pinctrl/renesas/pinctrl-rza3ul.h`
+    instead of ``pinctrl-rza-common.h``.
+  * RZ/G2L, RZ/G2LC and RZ/G2UL:
+    :zephyr_file:`include/zephyr/dt-bindings/pinctrl/renesas/pinctrl-rzg2.h` instead of
+    ``pinctrl-rzg2-common.h``, which is removed.
+  * RZ/G3S: :zephyr_file:`include/zephyr/dt-bindings/pinctrl/renesas/pinctrl-rzg3s.h`
+    instead of ``pinctrl-rzg-common.h``.
+  * RZ/V2L: :zephyr_file:`include/zephyr/dt-bindings/pinctrl/renesas/pinctrl-rzv2l.h`
+    instead of ``pinctrl-rzv-common.h``.
+
 Power Management
 ================
 

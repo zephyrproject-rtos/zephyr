@@ -5,12 +5,14 @@
 
 /**
  * @file
- * @brief Renesas RZ/G2L, RZ/G2LC and RZ/G2UL pin and function definitions
- * @ingroup pinctrl_rzg
+ * @brief Renesas RZ/V2L pin and function definitions
+ * @ingroup pinctrl_rzv
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZG2_COMMON_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZG2_COMMON_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZV2L_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZV2L_H_
+
+#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rzv-common.h>
 
 /** @cond INTERNAL_HIDDEN */
 
@@ -65,20 +67,16 @@
 #define PORT_47 0x2F00 /* IO port 47 */
 #define PORT_48 0x3000 /* IO port 48 */
 
-/*
- * Create the value contain port/pin/function information
- *
- * port: port number BSP_IO_PORT_00..BSP_IO_PORT_48
- * pin: pin number
- * func: pin function
- */
-#define RZG_PINMUX(port, pin, func) (port | pin | (func << 4))
+/** @endcond */
+
+/** @cond INTERNAL_HIDDEN */
 
 /* Special purpose port */
 #define BSP_IO_NMI 0xFFFF0100 /* NMI */
 
 #define BSP_IO_TMS_SWDIO 0xFFFF0200 /* TMS_SWDIO */
-#define BSP_IO_TDO       0xFFFF0300 /* TDO */
+
+#define BSP_IO_TDO 0xFFFF0300 /* TDO */
 
 #define BSP_IO_AUDIO_CLK1 0xFFFF0400 /* AUDIO_CLK1 */
 #define BSP_IO_AUDIO_CLK2 0xFFFF0401 /* AUDIO_CLK2 */
@@ -129,20 +127,6 @@
 #define BSP_IO_RIIC1_SDA 0xFFFF0E02 /* RIIC1_SDA */
 #define BSP_IO_RIIC1_SCL 0xFFFF0E03 /* RIIC1_SCL */
 
-/* FILNUM */
-#define RZG_FILNUM_4_STAGE  0
-#define RZG_FILNUM_8_STAGE  1
-#define RZG_FILNUM_12_STAGE 2
-#define RZG_FILNUM_16_STAGE 3
-
-/* FILCLKSEL */
-#define RZG_FILCLKSEL_NOT_DIV   0
-#define RZG_FILCLKSEL_DIV_9000  1
-#define RZG_FILCLKSEL_DIV_18000 2
-#define RZG_FILCLKSEL_DIV_36000 3
-
-#define RZG_FILTER_SET(filnum, filclksel) (((filnum) & 0x3) << 0x2) | (filclksel & 0x3)
-
 /** @endcond */
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZG2_COMMON_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZV2L_H_ */

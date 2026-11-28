@@ -2,9 +2,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
+  The pin definitions are provided by a header per SoC, which includes the
+  helpers common to the RZ/A SoCs from pinctrl-rza-common.h:
+    - pinctrl-rza3ul.h for RZ/A3UL
+    - pinctrl-rza3m.h for RZ/A3M
+
   Below generic example shows of supported pinctrl definitions:
 
-    #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rza-common.h>
+    #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rza3ul.h>
     example_pins: device_pin {
         device-pinmux {
           pinmux = <RZA_PINMUX(PORT_08, 1, 5)>,
@@ -60,13 +65,13 @@ child-binding:
           Pinmux configuration node.
           Values are constructed from GPIO port number, pin number, and
           alternate function configuration number using the RZA_PINMUX()
-          helper macro in pinctrl_rza.h
+          helper macro in the header of the SoC
 
       pins:
         type: array
         description: |
           Special Purpose pins configuration node.
-          Values are define in pinctrl_rza.h.
+          Values are defined in the header of the SoC.
           Ex: BSP_IO_XSPI_IO0,BSP_IO_I3C_SCL,...
 
       drive-strength:
@@ -80,7 +85,7 @@ child-binding:
         type: int
         description: |
           Digital Noise Filter configuration for a pin which shall be defined
-          using RZA_FILTER_SET() helper macro in pinctrl_rza.h to specify
+          using RZA_FILTER_SET() helper macro in pinctrl-rza-common.h to specify
           FILNUM and FILCLKSEL. With 24Mhz external clock:
           - min debounce time will be 166.666ns for FILNUM=0 and FILCLKSEL=0
           - max debounce time will be 24ms for FILNUM=3 and FILCLKSEL=3.

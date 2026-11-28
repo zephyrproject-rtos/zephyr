@@ -12,50 +12,10 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZA3M_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZA3M_H_
 
-/**
- * @addtogroup renesas_pinctrl Renesas pin control helpers
- * @ingroup devicetree-pinctrl
- */
+#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rza-common.h>
 
 /**
- * @defgroup pinctrl_rza Renesas RZ/A pin control helpers
- * @brief Macros for pin control configuration of Renesas RZ/A SoCs
- * @ingroup renesas_pinctrl
- *
- * General-purpose pins are configured with the RZA_PINMUX() macro, which takes
- * three fields:
- *
- * - @c port — the port identifier, one of the @c PORT_* values.
- * - @c pin — the pin number within that port.
- * - @c func — the alternate-function number selecting the peripheral signal
- *   routed to the pin, taken from the SoC's Pin Function Controller table; it
- *   has no symbolic macro and is passed as a plain integer.
- *
- * Dedicated-function pins that sit outside the general-purpose port matrix are
- * referenced directly through their @c BSP_IO_* identifiers, covering debug
- * (@c BSP_IO_NMI, @c BSP_IO_TMS_SWDIO), audio clocks, SD/MMC,
- * QSPI and octal-memory flash, RIIC (I2C) and watchdog overflow.
- *
- * An optional digital noise filter can be applied to a pin group with
- * RZA_FILTER_SET(), built from a stage count (@c RZA_FILNUM_*) and a sampling
- * clock divider (@c RZA_FILCLKSEL_*).
- *
- * @code{.dts}
- * #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rza3m.h>
- *
- * &pinctrl {
- *         scif0_default: scif0_default {
- *                 device-pinmux {
- *                         pinmux = <RZA_PINMUX(PORT_08, 1, 5)>,
- *                                  <RZA_PINMUX(PORT_08, 2, 5)>;
- *                         bias-pull-up;
- *                         renesas,filter =
- *                                 RZA_FILTER_SET(RZA_FILNUM_8_STAGE, RZA_FILCLKSEL_DIV_18000);
- *                 };
- *         };
- * };
- * @endcode
- *
+ * @addtogroup pinctrl_rza
  * @{
  */
 
@@ -106,40 +66,6 @@
 #define BSP_IO_RIIC0_SCL      0xFFFF0701 /**< RIIC0_SCL */
 
 /** @endcond */
-
-/**
- * @name Renesas RZ/A digital noise filter options
- *
- * Set the number of filter stages (FILNUM) and the sampling clock divider
- * (FILCLKSEL).
- * @{
- */
-
-#define RZA_FILNUM_4_STAGE  0 /**< FILNUM: 4-stage filter */
-#define RZA_FILNUM_8_STAGE  1 /**< FILNUM: 8-stage filter */
-#define RZA_FILNUM_12_STAGE 2 /**< FILNUM: 12-stage filter */
-#define RZA_FILNUM_16_STAGE 3 /**< FILNUM: 16-stage filter */
-
-#define RZA_FILCLKSEL_NOT_DIV   0 /**< FILCLKSEL: Not divided */
-#define RZA_FILCLKSEL_DIV_9000  1 /**< FILCLKSEL: Divided by 9000 */
-#define RZA_FILCLKSEL_DIV_18000 2 /**< FILCLKSEL: Divided by 18000 */
-#define RZA_FILCLKSEL_DIV_36000 3 /**< FILCLKSEL: Divided by 36000 */
-
-/** @} */
-
-/**
- * @brief Encode filter stage count and clock selection into one configuration value.
- *
- * Encoding:
- * - bits [3:2] = FILNUM (masked to 2 bits)
- * - bits [1:0] = FILCLKSEL (masked to 2 bits)
- *
- * @param filnum Filter stage selection (RZA_FILNUM_*).
- * @param filclksel Filter clock selection (RZA_FILCLKSEL_*).
- *
- * @return Encoded filter configuration value.
- */
-#define RZA_FILTER_SET(filnum, filclksel) ((((filnum) & 0x3) << 0x2) | ((filclksel) & 0x3))
 
 /** @} */
 
