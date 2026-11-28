@@ -8,5 +8,6 @@ ram: 96
 flash: 512
 supported:
   - hwinfo
+  - dac
   - watchdog
 vendor: ti

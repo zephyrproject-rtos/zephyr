@@ -1,0 +1,52 @@
+# Copyright (c) 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Texas Instruments AM13 CMPSS low DAC (DACL) used as a general purpose DAC.
+
+  Each node is one CMPSS instance exposing a single 12-bit channel (channel 0).
+  The DAC output range is VSSA to VDDA (fixed, not selectable). The output
+  voltage is ((value + 1) * VDDA) / 4096.
+
+compatible: "ti,am13-cmpss-dac"
+
+include: dac-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  ti,sysctl:
+    type: phandle
+    required: true
+    description: |
+      SYSCTL syscon node. The CMPSSCTL register that routes the low DAC output
+      to the device pin lives there, not in the CMPSS register block.
+
+  ti,ldacouten-bit:
+    type: int
+    required: true
+    enum: [0, 1]
+    description: |
+      Bit position of this instance's LDACOUTEN field in SYSCTL.CMPSSCTL.
+      0 for CMPSS2 (CMP2LDACOUTEN), 1 for CMPSS3 (CMP3LDACOUTEN).
+
+  ti,pwren-bit:
+    type: int
+    required: true
+    description: |
+      Bit position of this instance's PWREN bit field in SYSCTL.PWREN_MCPERIPH.
+      12 for CMPSS2 (cmpss2), 13 for CMPSS3 (cmpss3).
+
+  ti,reset-bit:
+    type: int
+    required: true
+    description: |
+      Bit position of this instance's RSTCTL bit field in SYSCTL.RSTCTL Registers.
+      12 for CMPSS2 (cmpss2), 13 for CMPSS3 (cmpss3).
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - output
