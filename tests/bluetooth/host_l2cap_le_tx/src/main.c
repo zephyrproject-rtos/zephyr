@@ -649,12 +649,24 @@ static void host_pdus_give(void)
 	}
 }
 
-/* The SDU that test_credits_no_buf receives */
+/* The SDUs that the credits tests receive, one at a time */
 NET_BUF_POOL_FIXED_DEFINE(rx_sdu_pool, 1, LE_MIN_MTU, sizeof(uint16_t), NULL);
 
 static struct net_buf *chan_alloc_buf(struct bt_l2cap_chan *ch)
 {
 	return net_buf_alloc(&rx_sdu_pool, K_NO_WAIT);
+}
+
+/* The first K-frame of an SDU that needs more */
+static void recv_sdu_start(uint16_t cid)
+{
+	struct net_buf *buf;
+
+	buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
+	(void)net_buf_add(buf, sizeof(struct bt_hci_acl_hdr) + sizeof(struct bt_l2cap_hdr));
+	net_buf_add_le16(buf, LE_MIN_MTU);
+	(void)net_buf_add_mem(buf, DATA, strlen(DATA));
+	recv_pdu(buf, cid);
 }
 
 /* What the disconnection by chan_shutdown_disconnect() returned */
@@ -681,19 +693,12 @@ static ZTEST(host_l2cap_le_tx, test_credits_no_buf)
 	static struct bt_l2cap_le_chan sdu_chan;
 	/* Not a CID of the other tests */
 	const uint16_t peer_cid = PEER_CID + 5U;
-	struct net_buf *buf;
 
 	chan_connect(&sdu_chan, &ops, peer_cid);
 
 	/* No buffer is left for an LE Flow Control Credit packet */
 	host_pdus_take();
-
-	/* The first K-frame of an SDU that needs more */
-	buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
-	(void)net_buf_add(buf, sizeof(struct bt_hci_acl_hdr) + sizeof(struct bt_l2cap_hdr));
-	net_buf_add_le16(buf, LE_MIN_MTU);
-	(void)net_buf_add_mem(buf, DATA, strlen(DATA));
-	recv_pdu(buf, sdu_chan.rx.cid);
+	recv_sdu_start(sdu_chan.rx.cid);
 
 	/* Until the Host gives up waiting for a buffer for the credits */
 	(void)k_sleep(BT_L2CAP_RTX_TIMEOUT);
@@ -704,6 +709,73 @@ static ZTEST(host_l2cap_le_tx, test_credits_no_buf)
 	zassert_equal(sdu_chan.state, BT_L2CAP_DISCONNECTED);
 
 	host_pdus_give();
+	tx_none();
+}
+
+static K_SEM_DEFINE(shutdown_sem, 0, 1);
+
+static void chan_shutdown(struct bt_l2cap_chan *ch, atomic_t *status)
+{
+	if (atomic_test_bit(status, BT_L2CAP_STATUS_SHUTDOWN)) {
+		k_sem_give(&shutdown_sem);
+	}
+}
+
+/* A channel that cannot give the peer credits for the rest of an SDU drops the
+ * K-frame also when a request of its own keeps it from being disconnected
+ */
+static ZTEST(host_l2cap_le_tx, test_credits_no_buf_reconf_pending)
+{
+	static const struct bt_l2cap_chan_ops ops = {
+		.alloc_buf = chan_alloc_buf,
+		.recv = chan_recv,
+		.status = chan_shutdown,
+	};
+	static struct bt_l2cap_le_chan chans[2];
+	struct bt_l2cap_chan *reconf[] = {&chans[1].chan, NULL};
+	/* Not CIDs of the other tests */
+	const uint16_t peer_cid = PEER_CID + 9U;
+	struct net_buf *buf;
+	uint8_t ident;
+
+	chan_connect(&chans[0], &chan_ops, peer_cid);
+	chan_connect(&chans[1], &ops, peer_cid + 1U);
+
+	zassert_ok(bt_l2cap_ecred_chan_reconfigure(reconf, LE_MIN_MTU));
+	ident = tx_sig(BT_L2CAP_ECRED_RECONF_REQ);
+
+	/* A response takes the controller's buffer until release() */
+	hold = true;
+	recv_unknown_conn_req(PEER_IDENT + 6U);
+	zassert_equal(tx_sig(BT_L2CAP_LE_CONN_RSP), PEER_IDENT + 6U);
+
+	/* No buffer is left for an LE Flow Control Credit packet */
+	host_pdus_take();
+	recv_sdu_start(chans[1].rx.cid);
+
+	/* Meanwhile the Disconnection Request of the first channel takes the
+	 * disconnect buffer. Its RTX timer expires after the wait for credits.
+	 */
+	zassert_ok(bt_l2cap_chan_disconnect(&chans[0].chan));
+
+	/* Once the Host gives up waiting for a buffer for the credits */
+	zassert_ok(k_sem_take(&shutdown_sem, K_TIMEOUT_SUM(BT_L2CAP_RTX_TIMEOUT, TX_TIMEOUT)),
+		   "The channel was not shut down");
+	zassert_equal(chans[1].state, BT_L2CAP_CONNECTED);
+	zassert_is_null(chans[1]._sdu);
+
+	host_pdus_give();
+	release();
+	zassert_equal(disconn_accept(), peer_cid);
+
+	buf = sig_cmd(BT_L2CAP_ECRED_RECONF_RSP, ident);
+	net_buf_add_le16(buf, BT_L2CAP_RECONF_SUCCESS);
+	recv_sig(buf);
+
+	zassert_ok(bt_l2cap_chan_disconnect(&chans[1].chan));
+	zassert_equal(disconn_accept(), peer_cid + 1U);
+	zassert_equal(chans[1].state, BT_L2CAP_DISCONNECTED);
+
 	tx_none();
 }
 
