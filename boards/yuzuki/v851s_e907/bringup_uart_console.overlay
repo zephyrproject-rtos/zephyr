@@ -1,0 +1,26 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Bring-up only: route the Zephyr console to UART3 so boot messages are
+ * visible on a serial cable before OpenAMP/RPMsg is working.
+ *
+ * Do NOT use this overlay for an application that owns UART3: it would
+ * compete with that application for the port. Build such images with the
+ * RAM console instead.
+ *
+ * Usage: pass this file to the build with -DDTC_OVERLAY_FILE=<absolute path>
+ * and select the UART console with CONFIG_RAM_CONSOLE=n and
+ * CONFIG_UART_CONSOLE=y. The board documentation has the full command.
+ */
+
+/ {
+	chosen {
+		zephyr,console = &uart3;
+		zephyr,shell-uart = &uart3;
+	};
+};
+
+&uart3 {
+	status = "okay";
+};

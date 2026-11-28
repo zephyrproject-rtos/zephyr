@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Allwinner V851S MSGBOX, RISC (E907) side. Two register windows: the local
+  (RISC) MSGBOX block for RX and the peer CPUX block for TX.
+
+compatible: "allwinner,sunxi-msgbox-riscv"
+
+include: [base.yaml, mailbox-controller.yaml]
+
+properties:
+  reg:
+    required: true
+  reg-names:
+    required: true
+    const: ["rx", "tx"]
+  interrupts-extended:
+    required: true
+
+mbox-cells:
+  - channel
