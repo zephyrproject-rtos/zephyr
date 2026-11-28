@@ -82,62 +82,72 @@ The current minimum required versions for the main dependencies are:
 
       .. _install_dependencies_ubuntu:
 
-      #. Use ``apt`` to install the required dependencies:
+      .. steps::
 
-         .. code-block:: bash
+         .. step:: Install the required dependencies with ``apt``
 
-            sudo apt install --no-install-recommends git cmake ninja-build gperf \
-              ccache dfu-util device-tree-compiler wget python3-dev python3-venv python3-tk \
-              xz-utils file make gcc gcc-multilib g++-multilib libsdl2-dev libmagic1
+            .. code-block:: bash
 
-         .. note::
+               sudo apt install --no-install-recommends git cmake ninja-build gperf \
+                 ccache dfu-util device-tree-compiler wget python3-dev python3-venv python3-tk \
+                 xz-utils file make gcc gcc-multilib g++-multilib libsdl2-dev libmagic1
 
-            Due to the unavailability of ``gcc-multilib`` and ``g++-multilib`` on AArch64
-            (ARM64) systems, you may need to omit them from the list of packages to install.
+            .. note::
 
-      #. Verify the versions of the main dependencies installed on your system by entering:
+               Due to the unavailability of ``gcc-multilib`` and ``g++-multilib`` on AArch64
+               (ARM64) systems, you may need to omit them from the list of packages to install.
 
-         .. code-block:: bash
+         .. step:: Verify the versions of the main dependencies
 
-            cmake --version
-            python3 --version
-            dtc --version
+            Print the versions installed on your system:
 
-         Check those against the versions in the table in the beginning of this section.
-         Refer to the :ref:`installation_linux` page for additional information on updating
-         the dependencies manually.
+            .. code-block:: bash
+
+               cmake --version
+               python3 --version
+               dtc --version
+
+            Check those against the versions in the table in the beginning of this section.
+            Refer to the :ref:`installation_linux` page for additional information on updating
+            the dependencies manually.
 
    .. group-tab:: macOS
 
       .. _install_dependencies_macos:
 
-      #. Install `Homebrew <https://brew.sh/>`_:
+      .. steps::
 
-         .. code-block:: bash
+         .. step:: Install `Homebrew <https://brew.sh/>`_
 
-            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+            .. code-block:: bash
 
-      #. After the Homebrew installation script completes, follow the on-screen
-         instructions to add the Homebrew installation to the path.
+               /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-         .. code-block:: bash
+         .. step:: Add Homebrew to the path
 
-            (echo; echo 'eval "$(/opt/homebrew/bin/brew shellenv)"') >> ~/.zprofile
-            source ~/.zprofile
+            After the Homebrew installation script completes, follow the on-screen
+            instructions to add the Homebrew installation to the path.
 
-      #. Use ``brew`` to install the required dependencies:
+            .. code-block:: bash
 
-         .. code-block:: bash
+               (echo; echo 'eval "$(/opt/homebrew/bin/brew shellenv)"') >> ~/.zprofile
+               source ~/.zprofile
 
-            brew install cmake ninja gperf python3 python-tk ccache qemu dtc libmagic wget openocd
+         .. step:: Install the required dependencies with ``brew``
 
-      #. Add the Homebrew Python folder to the path so you can execute ``python`` and
-         ``pip`` as well as ``python3`` and ``pip3``.
+            .. code-block:: bash
 
-           .. code-block:: bash
+               brew install cmake ninja gperf python3 python-tk ccache qemu dtc libmagic wget openocd
 
-              (echo; echo 'export PATH="'$(brew --prefix)'/opt/python/libexec/bin:$PATH"') >> ~/.zprofile
-              source ~/.zprofile
+         .. step:: Add the Homebrew Python folder to the path
+
+            This lets you execute ``python`` and ``pip`` as well as ``python3`` and
+            ``pip3``.
+
+            .. code-block:: bash
+
+               (echo; echo 'export PATH="'$(brew --prefix)'/opt/python/libexec/bin:$PATH"') >> ~/.zprofile
+               source ~/.zprofile
 
    .. group-tab:: Windows
 
@@ -164,21 +174,27 @@ The current minimum required versions for the main dependencies are:
 
       .. _install_dependencies_windows:
 
-      #. In modern Windows versions, winget is already pre-installed by default.
-         You can verify that this is the case by typing ``winget`` in a terminal
-         window. If that fails, you can then `install winget`_.
+      .. steps::
 
-      #. Open a Command Prompt (``cmd.exe``) or PowerShell terminal window.
-         To do so, press the Windows key, type ``cmd.exe`` or PowerShell and
-         click on the result.
+         .. step:: Check that winget is installed
 
-      #. Use ``winget`` to install the required dependencies:
+            In modern Windows versions, winget is already pre-installed by default.
+            You can verify that this is the case by typing ``winget`` in a terminal
+            window. If that fails, you can then `install winget`_.
 
-         .. code-block:: bat
+         .. step:: Open a terminal window
 
-            winget install Kitware.CMake Ninja-build.Ninja oss-winget.gperf Python.Python.3.12 Git.Git oss-winget.dtc wget 7zip.7zip
+            Open a Command Prompt (``cmd.exe``) or PowerShell terminal window.
+            To do so, press the Windows key, type ``cmd.exe`` or PowerShell and
+            click on the result.
 
-      #. Close the terminal window.
+         .. step:: Install the required dependencies with ``winget``
+
+            .. code-block:: bat
+
+               winget install Kitware.CMake Ninja-build.Ninja oss-winget.gperf Python.Python.3.12 Git.Git oss-winget.dtc wget 7zip.7zip
+
+         .. step:: Close the terminal window
 
       .. note::
 
@@ -206,213 +222,217 @@ installation.
 
 .. _Python virtual environment: https://docs.python.org/3/library/venv.html
 
-#. Create a new virtual environment:
+.. steps::
 
-   .. tabs::
+   .. step:: Create a new virtual environment
 
-      .. group-tab:: Ubuntu
+      .. tabs::
 
-         .. code-block:: bash
-
-            python3 -m venv ~/zephyrproject/.venv
-
-      .. group-tab:: macOS
-
-         .. code-block:: bash
-
-            python3 -m venv ~/zephyrproject/.venv
-
-      .. group-tab:: Windows
-
-         Open a ``cmd.exe`` or PowerShell terminal window **as a regular user**.
-
-         .. tabs::
-
-            .. code-tab:: bat
-
-               cd %HOMEPATH%
-               py -3.12 -m venv zephyrproject\.venv
-
-            .. code-tab:: powershell
-
-               cd $Env:HOMEPATH
-               py -3.12 -m venv zephyrproject\.venv
-
-#. Activate the virtual environment:
-
-   .. tabs::
-
-      .. group-tab:: Ubuntu
-
-         .. code-block:: bash
-
-            source ~/zephyrproject/.venv/bin/activate
-
-      .. group-tab:: macOS
-
-         .. code-block:: bash
-
-            source ~/zephyrproject/.venv/bin/activate
-
-      .. group-tab:: Windows
-
-         .. note::
-
-            Python's virtual environment activation in PowerShell requires
-            running a script itself, which needs to be allowed.
-
-            .. code-block:: powershell
-
-               Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-
-         .. tabs::
-
-            .. code-tab:: bat
-
-               zephyrproject\.venv\Scripts\activate.bat
-
-            .. code-tab:: powershell
-
-               zephyrproject\.venv\Scripts\Activate.ps1
-
-   Once activated your shell will be prefixed with ``(.venv)``. The
-   virtual environment can be deactivated at any time by running
-   ``deactivate``.
-
-   .. note::
-
-      Remember to activate the virtual environment every time you start a new
-      terminal session before working with Zephyr. If you don't, commands such
-      as ``west`` will not be found, or may run against a different Python
-      environment, leading to confusing errors.
-
-#. Install west:
-
-   West is Zephyr's workspace manager; the next commands use it to create and
-   update the workspace.
-
-   .. code-block:: shell
-
-      pip install west
-
-#. Get the Zephyr source code:
-
-   ``west init`` creates a :term:`west workspace` and clones
-   ``https://github.com/zephyrproject-rtos/zephyr`` as its :term:`manifest
-   repository <west manifest repository>`.
-
-   ``west update`` then fetches the various
-   :term:`west projects <west project>` (modules) listed in Zephyr's
-   :term:`west manifest` (hardware abstraction layers (HALs), libraries, etc.).
-
-   .. tabs::
-
-      .. group-tab:: Ubuntu
-
-         .. only:: not release
+         .. group-tab:: Ubuntu
 
             .. code-block:: bash
 
-               west init -m https://github.com/zephyrproject-rtos/zephyr ~/zephyrproject
-               cd ~/zephyrproject
-               west update
+               python3 -m venv ~/zephyrproject/.venv
 
-         .. only:: release
-
-            .. We need to use a parsed-literal here because substitutions do not work in code
-               blocks. This means users can't copy-paste these lines as easily as other blocks but
-               should be good enough still :)
-
-            .. parsed-literal::
-
-               west init -m https://github.com/zephyrproject-rtos/zephyr ~/zephyrproject --mr v |zephyr-version-ltrim|
-               cd ~/zephyrproject
-               west update
-
-      .. group-tab:: macOS
-
-         .. only:: not release
+         .. group-tab:: macOS
 
             .. code-block:: bash
 
-               west init -m https://github.com/zephyrproject-rtos/zephyr ~/zephyrproject
-               cd ~/zephyrproject
-               west update
+               python3 -m venv ~/zephyrproject/.venv
 
-         .. only:: release
+         .. group-tab:: Windows
 
-            .. parsed-literal::
+            Open a ``cmd.exe`` or PowerShell terminal window **as a regular user**.
 
-               west init -m https://github.com/zephyrproject-rtos/zephyr ~/zephyrproject --mr v |zephyr-version-ltrim|
-               cd ~/zephyrproject
-               west update
+            .. tabs::
 
-      .. group-tab:: Windows
+               .. code-tab:: bat
 
-         .. only:: not release
+                  cd %HOMEPATH%
+                  py -3.12 -m venv zephyrproject\.venv
 
-            .. code-block:: bat
+               .. code-tab:: powershell
 
-               west init -m https://github.com/zephyrproject-rtos/zephyr zephyrproject
-               cd zephyrproject
-               west update
+                  cd $Env:HOMEPATH
+                  py -3.12 -m venv zephyrproject\.venv
 
-         .. only:: release
+   .. step:: Activate the virtual environment
 
-            .. parsed-literal::
+      .. tabs::
 
-               west init -m https://github.com/zephyrproject-rtos/zephyr zephyrproject --mr v |zephyr-version-ltrim|
-               cd zephyrproject
-               west update
+         .. group-tab:: Ubuntu
 
-   .. tip::
+            .. code-block:: bash
 
-      To reduce disk space usage and avoid downloading unnecessary modules or vendor HALs during
-      setup, you may configure :ref:`west-manifest-groups` before running ``west update``.
+               source ~/zephyrproject/.venv/bin/activate
 
-#. Install Zephyr's Python dependencies:
+         .. group-tab:: macOS
 
-   ``west packages`` reads the Python requirements from the checked-out Zephyr
-   workspace (including its modules), so the installed packages match the Zephyr
-   version you fetched.
+            .. code-block:: bash
 
-   .. tabs::
+               source ~/zephyrproject/.venv/bin/activate
 
-      .. group-tab:: Ubuntu
+         .. group-tab:: Windows
 
-         .. code-block:: bash
+            .. note::
 
-            west packages pip --install
+               Python's virtual environment activation in PowerShell requires
+               running a script itself, which needs to be allowed.
 
-      .. group-tab:: macOS
+               .. code-block:: powershell
 
-         .. code-block:: bash
+                  Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
-            west packages pip --install
+            .. tabs::
 
-      .. group-tab:: Windows
+               .. code-tab:: bat
 
-         .. tabs::
+                  zephyrproject\.venv\Scripts\activate.bat
 
-            .. code-tab:: bat
+               .. code-tab:: powershell
 
-               cmd /c zephyr\scripts\utils\west-packages-pip-install.cmd
+                  zephyrproject\.venv\Scripts\Activate.ps1
 
-            .. code-tab:: powershell
+      Once activated your shell will be prefixed with ``(.venv)``. The
+      virtual environment can be deactivated at any time by running
+      ``deactivate``.
 
-               python -m pip install @((west packages pip) -split ' ')
+      .. note::
 
-   .. note::
+         Remember to activate the virtual environment every time you start a new
+         terminal session before working with Zephyr. If you don't, commands such
+         as ``west`` will not be found, or may run against a different Python
+         environment, leading to confusing errors.
 
-      Installing these dependencies can downgrade or upgrade west itself.
+   .. step:: Install west
 
-#. Export a :ref:`Zephyr CMake package <cmake_pkg>`. This registers your current
-   Zephyr checkout in CMake's user package registry so ``find_package(Zephyr)``
-   can locate it automatically when building applications.
+      West is Zephyr's workspace manager; the next commands use it to create and
+      update the workspace.
 
-   .. code-block:: shell
+      .. code-block:: shell
 
-      west zephyr-export
+         pip install west
+
+   .. step:: Get the Zephyr source code
+
+      ``west init`` creates a :term:`west workspace` and clones
+      ``https://github.com/zephyrproject-rtos/zephyr`` as its :term:`manifest
+      repository <west manifest repository>`.
+
+      ``west update`` then fetches the various
+      :term:`west projects <west project>` (modules) listed in Zephyr's
+      :term:`west manifest` (hardware abstraction layers (HALs), libraries, etc.).
+
+      .. tabs::
+
+         .. group-tab:: Ubuntu
+
+            .. only:: not release
+
+               .. code-block:: bash
+
+                  west init -m https://github.com/zephyrproject-rtos/zephyr ~/zephyrproject
+                  cd ~/zephyrproject
+                  west update
+
+            .. only:: release
+
+               .. We need to use a parsed-literal here because substitutions do not work in code
+                  blocks. This means users can't copy-paste these lines as easily as other blocks
+                  but should be good enough still :)
+
+               .. parsed-literal::
+
+                  west init -m https://github.com/zephyrproject-rtos/zephyr ~/zephyrproject --mr v |zephyr-version-ltrim|
+                  cd ~/zephyrproject
+                  west update
+
+         .. group-tab:: macOS
+
+            .. only:: not release
+
+               .. code-block:: bash
+
+                  west init -m https://github.com/zephyrproject-rtos/zephyr ~/zephyrproject
+                  cd ~/zephyrproject
+                  west update
+
+            .. only:: release
+
+               .. parsed-literal::
+
+                  west init -m https://github.com/zephyrproject-rtos/zephyr ~/zephyrproject --mr v |zephyr-version-ltrim|
+                  cd ~/zephyrproject
+                  west update
+
+         .. group-tab:: Windows
+
+            .. only:: not release
+
+               .. code-block:: bat
+
+                  west init -m https://github.com/zephyrproject-rtos/zephyr zephyrproject
+                  cd zephyrproject
+                  west update
+
+            .. only:: release
+
+               .. parsed-literal::
+
+                  west init -m https://github.com/zephyrproject-rtos/zephyr zephyrproject --mr v |zephyr-version-ltrim|
+                  cd zephyrproject
+                  west update
+
+      .. tip::
+
+         To reduce disk space usage and avoid downloading unnecessary modules or vendor HALs during
+         setup, you may configure :ref:`west-manifest-groups` before running ``west update``.
+
+   .. step:: Install Zephyr's Python dependencies
+
+      ``west packages`` reads the Python requirements from the checked-out Zephyr
+      workspace (including its modules), so the installed packages match the Zephyr
+      version you fetched.
+
+      .. tabs::
+
+         .. group-tab:: Ubuntu
+
+            .. code-block:: bash
+
+               west packages pip --install
+
+         .. group-tab:: macOS
+
+            .. code-block:: bash
+
+               west packages pip --install
+
+         .. group-tab:: Windows
+
+            .. tabs::
+
+               .. code-tab:: bat
+
+                  cmd /c zephyr\scripts\utils\west-packages-pip-install.cmd
+
+               .. code-tab:: powershell
+
+                  python -m pip install @((west packages pip) -split ' ')
+
+      .. note::
+
+         Installing these dependencies can downgrade or upgrade west itself.
+
+   .. step:: Export a :ref:`Zephyr CMake package <cmake_pkg>`
+
+      This registers your current Zephyr checkout in CMake's user package
+      registry so ``find_package(Zephyr)`` can locate it automatically when
+      building applications.
+
+      .. code-block:: shell
+
+         west zephyr-export
 
 Install the Zephyr SDK
 **********************
