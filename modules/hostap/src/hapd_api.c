@@ -52,7 +52,7 @@ static struct wifi_enterprise_creds_params hapd_enterprise_creds;
 
 static inline struct hostapd_iface *get_hostapd_handle(struct net_if *iface)
 {
-	char if_name[CONFIG_NET_INTERFACE_NAME_LEN + 1];
+	char if_name[NET_IFNAMSIZ + 1];
 	struct hostapd_iface *hapd;
 	int ret;
 

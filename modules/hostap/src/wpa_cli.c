@@ -31,7 +31,7 @@
 static int cmd_wpa_cli(const struct shell *sh, size_t argc, const char *argv[])
 {
 	struct net_if *iface = NULL;
-	char if_name[CONFIG_NET_INTERFACE_NAME_LEN + 1];
+	char if_name[NET_IFNAMSIZ + 1];
 	struct wpa_supplicant *wpa_s = NULL;
 	size_t arg_offset = 1;
 	int idx = -1;
@@ -100,7 +100,7 @@ static int cmd_hostapd_cli(const struct shell *sh, size_t argc, const char *argv
 	struct hostapd_iface *hapd_iface;
 	int idx = -1;
 	bool iface_found = false;
-	char if_name[CONFIG_NET_INTERFACE_NAME_LEN + 1];
+	char if_name[NET_IFNAMSIZ + 1];
 	int ret;
 
 	if (argc > 2 &&
