@@ -215,7 +215,8 @@ AI Coding Assistants
 ********************
 
 This section provides guidance for contributors using AI tools and assistants when contributing to
-the Zephyr project.
+the Zephyr project. The same rules apply to AI agents working on a contributor's behalf;
+:zephyr_file:`AGENTS.md` summarizes them for agents.
 
 Licensing and Legal Requirements
 ================================
@@ -223,41 +224,54 @@ Licensing and Legal Requirements
 All contributions must comply with the licensing requirements of the project and be compatible with
 Zephyr's licensing (e.g. Apache-2.0, see :ref:`licensing_requirements` for more details).
 
+AI tools can reproduce existing code verbatim or nearly verbatim. The submitter must check that
+generated content does not copy third-party code. Code intentionally imported from another project
+follows the process in :ref:`licensing_requirements`, whether or not an AI tool was used.
+
 Signed-off-by and Developer Certificate of Origin
 =================================================
 
 AI agents **must not** add ``Signed-off-by`` tags. Only humans can legally certify the :ref:`DCO`.
-The human submitter is responsible for:
+Do not add ``Co-authored-by`` tags naming an AI tool either. The human submitter is responsible
+for:
 
-- Reviewing all AI-generated code.
+- Reviewing and understanding all AI-generated content, including code, tests, documentation and
+  commit messages.
+- Building and testing the change, and stating in the pull request what was not done (for example,
+  not built for all affected platforms, not run on hardware, or no reproducer) instead of implying
+  it was.
 - Ensuring compliance with licensing requirements.
 - Adding their own Signed-off-by tag to certify the DCO.
+- Explaining the change and addressing review comments without relying on the AI tool.
 - Taking full responsibility for the contribution.
 
-Usage disclosure and attribution
-================================
+Do not submit changes you cannot explain and defend during review.
 
-When AI tools are being used to help write a contribution, proper attribution helps track the
-evolving role of AI in the development process. Contributions should include an ``Assisted-by:`` tag
-in the following format:
+Disclosure of AI Use
+====================
 
-.. code-block:: none
+There is no need to add a dedicated tag, such as ``Assisted-by:``, to commits. Instead, when an AI
+tool produced a meaningful part of a contribution, describe this in the commit message or in the
+pull request description, so reviewers can assess the change. Useful details include:
 
-   Assisted-by: [Agent Name]:[Model Version] [Tool1] [Tool2]
+- Which tool was used.
+- Which parts of the change it produced or modified.
+- How the change was verified and tested.
 
-Where:
+If an AI tool found the problem that a change fixes, mention this in the commit message.
 
-- ``[Agent Name]`` is the name of the AI tool or framework.
-- ``[Model Version]`` is the specific model version used.
-- ``[Tool1] [Tool2]`` are optional specialized analysis tools used.
+Disclosure is not needed for trivial assistance, such as code completion, spelling and grammar
+fixes, or mechanical transformations like reformatting and renaming. When in doubt, disclose.
 
-Basic development tools (git, gcc, make, editors) should not be listed.
+Maintainers may ask for additional testing, review or explanation for contributions produced
+largely with AI tools.
 
-Example:
+Reviews and Comments
+====================
 
-.. code-block:: none
-
-   Assisted-by: Claude:claude-opus-4.6 coccinelle
+Review comments, issue reports and discussion posts written with AI help follow the rules in
+:ref:`reviewer-expectations`: a human verifies the content before posting it and is accountable
+for it. Never post raw, unverified model output.
 
 .. _source_tree_v2:
 
