@@ -1,6 +1,7 @@
 # Copyright 2025 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
+# pylint: disable=duplicate-code
 
 
 import asyncio
@@ -173,7 +174,7 @@ class SmpDevice(Device):
         # Ask what the pairing config should be for this connection
         pairing_config = self.pairing_config_factory(connection)
         io_capability = pairing_config.delegate.classic_io_capability
-        peer_io_capability = connection.peer_pairing_io_capability
+        peer_io_capability = connection.pairing_peer_io_capability
 
         async def confirm() -> bool:
             # Ask the user to confirm the pairing, without display

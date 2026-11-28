@@ -1,29 +1,26 @@
 # Copyright 2025 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
+# pylint: disable=duplicate-code
 
 import asyncio
 import logging
 import sys
 
 from bumble.a2dp import (
+    CodecType,
     SbcMediaCodecInformation,
 )
 from bumble.avdtp import (
-    A2DP_SBC_CODEC_TYPE,
     AVDTP_AUDIO_MEDIA_TYPE,
-    AVDTP_CLOSING_STATE,
-    AVDTP_CONFIGURED_STATE,
-    AVDTP_IDLE_STATE,
     AVDTP_MEDIA_TRANSPORT_SERVICE_CATEGORY,
-    AVDTP_OPEN_STATE,
-    AVDTP_STREAMING_STATE,
     AVDTP_TSEP_SRC,
     Listener,
     LocalStreamEndPoint,
     MediaCodecCapabilities,
     Protocol,
     ServiceCapabilities,
+    State,
     Stream,
     StreamEndPointProxy,
 )
@@ -150,7 +147,7 @@ class Delegate(PairingDelegate):
 def source_codec_capabilities():
     return MediaCodecCapabilities(
         media_type=AVDTP_AUDIO_MEDIA_TYPE,
-        media_codec_type=A2DP_SBC_CODEC_TYPE,
+        media_codec_type=CodecType.SBC,
         media_codec_information=SbcMediaCodecInformation(
             sampling_frequency=SbcMediaCodecInformation.SamplingFrequency.SF_48000
             | SbcMediaCodecInformation.SamplingFrequency.SF_44100
@@ -176,7 +173,7 @@ def source_codec_capabilities():
 def sbc_codec_configuration():
     return MediaCodecCapabilities(
         media_type=AVDTP_AUDIO_MEDIA_TYPE,
-        media_codec_type=A2DP_SBC_CODEC_TYPE,
+        media_codec_type=CodecType.SBC,
         media_codec_information=SbcMediaCodecInformation(
             sampling_frequency=SbcMediaCodecInformation.SamplingFrequency.SF_48000,
             channel_mode=SbcMediaCodecInformation.ChannelMode.MONO,
@@ -243,11 +240,11 @@ SDP_SERVICE_RECORDS_A2DP = {
 
 class local_stream(Stream):
     async def configure(self, configuration) -> None:
-        if self.state != AVDTP_IDLE_STATE:
+        if self.state != State.IDLE:
             raise InvalidStateError('current state is not IDLE')
 
         await self.remote_endpoint.set_configuration(self.local_endpoint.seid, configuration)
-        self.change_state(AVDTP_CONFIGURED_STATE)
+        self.change_state(State.CONFIGURED)
 
 
 async def local_create_stream(
@@ -278,20 +275,6 @@ async def generate_packets(packet_count):
         packet.timestamp_seconds = timestamp / 44100
         timestamp += 10
         yield packet
-
-
-async def a2dp_source_case_register_ep(hci_port, shell, dut, address, snoop_file) -> None:
-    """
-    Test API register_ep
-    """
-    logger.info('<<< a2dp_source_case_register_ep ...')
-
-    async with await open_transport_or_link(hci_port) as _:
-        await send_cmd_to_iut(shell, dut, "br clear all", None)
-        await send_cmd_to_iut(shell, dut, "a2dp_source register_cb", 'success')
-        await send_cmd_to_iut(
-            shell, dut, "a2dp_source register_ep source sbc", 'SBC source endpoint is registered'
-        )
 
 
 async def a2dp_source_case_connect(hci_port, shell, dut, address, snoop_file) -> None:
@@ -585,17 +568,17 @@ async def a2dp_source_case_sink_to_source(hci_port, shell, dut, address, snoop_f
         stream = await sink.create_stream(sink, source_endpoint, remote_sink_ep, sbc_codec_config)
 
         await stream.open()
-        assert stream.state == AVDTP_OPEN_STATE
+        assert stream.state == State.OPEN
 
         await stream.start()
-        assert stream.state == AVDTP_STREAMING_STATE
+        assert stream.state == State.STREAMING
 
         await asyncio.sleep(3)
         await stream.stop()
-        assert stream.state == AVDTP_OPEN_STATE
+        assert stream.state == State.OPEN
 
         await stream.close()
-        assert stream.state in (AVDTP_CLOSING_STATE, AVDTP_IDLE_STATE)
+        assert stream.state in (State.CLOSING, State.IDLE)
 
         sink.create_stream = origin_create_stream_func
 
@@ -656,27 +639,21 @@ async def a2dp_source_case_source_to_sink(hci_port, shell, dut, address, snoop_f
                 break
 
         await send_cmd_to_iut(shell, dut, 'a2dp_source establish', 'success to establish')
-        assert stream.state == AVDTP_OPEN_STATE
+        assert stream.state == State.OPEN
 
         await send_cmd_to_iut(shell, dut, 'a2dp_source start', 'success to start')
-        assert stream.state == AVDTP_STREAMING_STATE
+        assert stream.state == State.STREAMING
 
         await send_cmd_to_iut(shell, dut, 'a2dp_source suspend', "success to suspend")
-        assert stream.state == AVDTP_OPEN_STATE
+        assert stream.state == State.OPEN
 
         await send_cmd_to_iut(shell, dut, 'a2dp_source release', "success to release")
-        assert stream.state in (AVDTP_CLOSING_STATE, AVDTP_IDLE_STATE)
+        assert stream.state in (State.CLOSING, State.IDLE)
 
         await bumble_acl_disconnect(shell, dut, device, connection)
 
 
 class TestA2dpSource:
-    def test_a2dp_source_register_ep(self, shell: Shell, dut: DeviceAdapter, a2dp_source_dut):
-        logger.info(f'test_a2dp_source_case_register_ep {a2dp_source_dut}')
-        hci, iut_address = a2dp_source_dut
-        with open(f"bumble_hci_{sys._getframe().f_code.co_name}.log", "wb") as snoop_file:
-            asyncio.run(a2dp_source_case_register_ep(hci, shell, dut, iut_address, snoop_file))
-
     def test_a2dp_source_connect(self, shell: Shell, dut: DeviceAdapter, a2dp_source_dut):
         logger.info(f'test_a2dp_source_case_connect {a2dp_source_dut}')
         hci, iut_address = a2dp_source_dut
